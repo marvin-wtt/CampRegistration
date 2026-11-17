@@ -251,14 +251,10 @@ const GROUP_I18N_ALIAS: Record<string, string> = {
   program_items: 'program',
 };
 
-/** `event.tasks.update` and `event.program_items.update` read as "edit" in the UI. */
-const ACTION_I18N_ALIAS: Record<string, string> = { update: 'edit' };
-
 const ACTION_ICONS: Record<string, string> = {
   view: 'visibility',
   create: 'add_circle',
   edit: 'edit',
-  update: 'edit',
   delete: 'delete',
   sign: 'draw',
   configure: 'tune',
@@ -315,7 +311,7 @@ function groupLabel(group: string): string {
 /** `edit:own` reads "Edit (own)": only on records the user owns. */
 function actionLabel(action: string): string {
   const [verb = action, qualifier] = action.split(':');
-  const key = `permissions.action.${ACTION_I18N_ALIAS[verb] ?? verb}`;
+  const key = `permissions.action.${verb}`;
   const label = te(key) ? t(key) : verb;
 
   return qualifier === 'own' ? `${label} (${t('permissions.own')})` : label;

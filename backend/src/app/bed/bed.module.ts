@@ -28,7 +28,6 @@ export class BedModule implements AppModule {
           'event.rooms.beds.delete',
         ],
         COUNSELOR: ['event.rooms.beds.edit'],
-        VIEWER: [],
       },
     };
   }

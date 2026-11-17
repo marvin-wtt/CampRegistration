@@ -24,7 +24,7 @@ export class ProgramItemModule implements AppModule {
     resolve(SettingsRegistry).register(SETTING_KEYS.PROGRAM_PLANNER, {
       schema: ProgramSettingsValidation,
       viewPermission: 'event.program_items.view',
-      editPermission: 'event.program_items.update',
+      editPermission: 'event.program_items.edit',
     });
   }
 
@@ -41,19 +41,19 @@ export class ProgramItemModule implements AppModule {
         DIRECTOR: [
           'event.program_items.view',
           'event.program_items.create',
-          'event.program_items.update',
+          'event.program_items.edit',
           'event.program_items.delete',
         ],
         COORDINATOR: [
           'event.program_items.view',
           'event.program_items.create',
-          'event.program_items.update',
+          'event.program_items.edit',
           'event.program_items.delete',
         ],
         COUNSELOR: [
           'event.program_items.view',
           'event.program_items.create',
-          'event.program_items.update',
+          'event.program_items.edit',
           'event.program_items.delete',
         ],
         VIEWER: ['event.program_items.view'],

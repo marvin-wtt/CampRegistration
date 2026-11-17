@@ -30,17 +30,17 @@ export class ProgramPublishedDayRouter extends ModuleRouter {
     );
     this.router.patch(
       '/',
-      guard(hasEventPermission('event.program_items.update')),
+      guard(hasEventPermission('event.program_items.edit')),
       controller(this.programPublishedDayController, 'bulkPublish'),
     );
     this.router.put(
       '/:date',
-      guard(hasEventPermission('event.program_items.update')),
+      guard(hasEventPermission('event.program_items.edit')),
       controller(this.programPublishedDayController, 'update'),
     );
     this.router.delete(
       '/:date',
-      guard(hasEventPermission('event.program_items.update')),
+      guard(hasEventPermission('event.program_items.edit')),
       controller(this.programPublishedDayController, 'destroy'),
     );
   }

@@ -91,7 +91,7 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 
 - JWT bearer tokens; TOTP 2FA support
 - System roles: `USER`, `ADMIN`
-- Event-scoped roles: `DIRECTOR`, `COORDINATOR`, `COUNSELOR`, `VIEWER`
+- Event-scoped roles: `DIRECTOR`, `COORDINATOR`, `TREASURER`, `COUNSELOR`, `VIEWER`
 - Newsletter-scoped roles: `OWNER`, `EDITOR`, `VIEWER`
 - Organization-scoped roles: `ADMIN`, `MEMBER` (a permission scope of its own, unrelated to the system role)
 

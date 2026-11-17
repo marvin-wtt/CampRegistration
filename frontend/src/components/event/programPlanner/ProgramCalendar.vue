@@ -391,7 +391,7 @@ const quasar = useQuasar();
 const { can } = usePermissions();
 
 const canCreate = computed<boolean>(() => can('event.program_items.create'));
-const canUpdate = computed<boolean>(() => can('event.program_items.update'));
+const canUpdate = computed<boolean>(() => can('event.program_items.edit'));
 const canDelete = computed<boolean>(() => can('event.program_items.delete'));
 // Moving an event is an update; copy-dragging (Ctrl/⌘) is a create.
 const canDrag = computed<boolean>(() => canUpdate.value || canCreate.value);

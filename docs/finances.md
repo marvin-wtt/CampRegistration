@@ -285,7 +285,7 @@ Event   … lastIncomeNumber, incomeNumberPrefix (default "I")
   income sheet; registration fees appear there as their source's total.
 - **Permissions**: seeing it goes with `event.expenses.view`; recording,
   changing and deleting need `event.income.create` / `.edit` / `.delete`,
-  held by directors, treasurers and coordinators. Counselors record no
+  held by directors and treasurers. Coordinators and counselors record no
   income.
 
 ## Changes
@@ -395,7 +395,7 @@ needs no `event.managers.view`.
 | ------------- | ------------------------------------------------------------------------ |
 | `DIRECTOR`    | everything                                                               |
 | `TREASURER`   | everything                                                               |
-| `COORDINATOR` | everything but `event.finances.configure`                                |
+| `COORDINATOR` | `create`; `view`/`edit`/`delete:own` expenses, `view`/`sign:own` payouts |
 | `COUNSELOR`   | `create`; `view`/`edit`/`delete:own` expenses, `view`/`sign:own` payouts |
 | `VIEWER`      | nothing                                                                  |
 

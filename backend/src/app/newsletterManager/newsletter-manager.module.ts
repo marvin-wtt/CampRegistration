@@ -36,10 +36,9 @@ export class NewsletterManagerModule implements AppModule {
         OWNER: [
           'newsletter.managers.view',
           'newsletter.managers.create',
+          'newsletter.managers.edit',
           'newsletter.managers.delete',
         ],
-        EDITOR: ['newsletter.managers.view'],
-        VIEWER: [],
       },
     };
   }

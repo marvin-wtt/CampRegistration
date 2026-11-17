@@ -49,13 +49,13 @@ export type BedPermission =
 export type ProgramItemPermission =
   | 'event.program_items.view'
   | 'event.program_items.create'
-  | 'event.program_items.update'
+  | 'event.program_items.edit'
   | 'event.program_items.delete';
 
 export type TaskPermission =
   | 'event.tasks.view'
   | 'event.tasks.create'
-  | 'event.tasks.update'
+  | 'event.tasks.edit'
   | 'event.tasks.delete';
 
 export type ChorePermission =
@@ -91,6 +91,7 @@ export type NewsletterPermission =
   | 'newsletter.delete'
   | 'newsletter.managers.view'
   | 'newsletter.managers.create'
+  | 'newsletter.managers.edit'
   | 'newsletter.managers.delete'
   | 'newsletter.subscribers.view'
   | 'newsletter.subscribers.create'
@@ -149,7 +150,7 @@ export type Permissions = Permission[];
 export const ORGANIZATION_EVENT_ACCESS_ROLES = ['ADMIN'] as const;
 
 /**
- * The complete, fixed event permission set an organization OWNER/ADMIN holds on
+ * The complete, fixed event permission set an organization ADMIN holds on
  * every event their organization owns, without any event-manager record.
  *
  * Deliberately minimal: see that the event exists, stop it accepting

@@ -40,8 +40,6 @@ export class MessageTemplateModule implements AppModule {
           'event.message_templates.edit',
           'event.message_templates.delete',
         ],
-        COUNSELOR: ['event.message_templates.view'],
-        VIEWER: [],
       },
     };
   }

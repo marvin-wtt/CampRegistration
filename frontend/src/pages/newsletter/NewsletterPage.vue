@@ -40,7 +40,10 @@
             <div
               class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
             >
-              <div class="row items-center q-gutter-x-xs">
+              <div
+                v-if="visibleTabs.includes('subscribers')"
+                class="row items-center q-gutter-x-xs"
+              >
                 <q-icon
                   name="people"
                   size="xs"
