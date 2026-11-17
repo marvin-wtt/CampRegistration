@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
+import { partyNameKey } from '@camp-registration/common/utils';
 
 export interface FinanceParty {
   userId: string | null;
@@ -37,9 +38,61 @@ export class FinancePartyService extends BaseService {
     }
 
     // An empty name counts as none: event funds.
-    const name = party.name?.trim() ?? '';
+    const name = party.name?.trim().replace(/\s+/g, ' ') ?? '';
+    if (name.length === 0) {
+      return { userId: null, name: null };
+    }
 
-    return { userId: null, name: name.length > 0 ? name : null };
+    return (await this.matchKnown(eventId, name)) ?? { userId: null, name };
+  }
+
+  /**
+   * A typed name that is already someone: the manager of that name, else the
+   * name as typed before. Balances group by account or exact name, so a
+   * second spelling would split the person. Two managers of one name are
+   * ambiguous and left as typed.
+   */
+  private async matchKnown(
+    eventId: string,
+    name: string,
+  ): Promise<FinanceParty | undefined> {
+    const key = partyNameKey(name);
+    const [managers, expenses, payouts] = await Promise.all([
+      this.db.eventManager.findMany({
+        where: {
+          eventId,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        select: { user: { select: { id: true, name: true } } },
+      }),
+      this.db.expense.findMany({
+        where: { eventId, paidByUserId: null, paidByName: { not: null } },
+        select: { paidByName: true },
+        distinct: ['paidByName'],
+      }),
+      this.db.payout.findMany({
+        where: { eventId, recipientUserId: null },
+        select: { recipientName: true },
+        distinct: ['recipientName'],
+      }),
+    ]);
+
+    const accounts = managers.flatMap((m) =>
+      m.user && partyNameKey(m.user.name) === key ? [m.user] : [],
+    );
+    if (accounts.length === 1 && accounts[0]) {
+      return { userId: accounts[0].id, name: accounts[0].name };
+    }
+    if (accounts.length > 1) {
+      return undefined;
+    }
+
+    const typed = [
+      ...expenses.map((e) => e.paidByName),
+      ...payouts.map((p) => p.recipientName),
+    ].find((known) => known !== null && partyNameKey(known) === key);
+
+    return typed ? { userId: null, name: typed } : undefined;
   }
 
   /**

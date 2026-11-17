@@ -20,10 +20,11 @@
         >
           #{{ expense.receiptNumber }}
         </div>
-        <!-- The persistent sheet can't be swiped away; cancel lives here. -->
+        <!-- The persistent sheet can't be swiped away, so cancel lives here;
+             once saved, Done closes it. -->
         <m-btn
+          v-if="quasar.screen.lt.sm && !saved"
           color="on-surface-variant"
-          v-if="quasar.screen.lt.sm"
           icon="close"
           flat
           round
@@ -45,7 +46,7 @@
               name="check_circle"
               size="20px"
             />
-            <span>{{ t('finance.capture.savedAs') }}</span>
+            <span>{{ t('finance.capture.receiptNumber') }}</span>
           </div>
           <div class="receipt-number text-mono">#{{ saved.receiptNumber }}</div>
           <div class="row items-center no-wrap q-gutter-x-xs text-body2">
@@ -391,7 +392,9 @@ const typeOptions = computed(() => [
 
 const title = computed(() => {
   if (saved.value) {
-    return t('finance.capture.savedTitle');
+    return saved.value.type === 'REFUND'
+      ? t('finance.capture.savedRefund')
+      : t('finance.capture.savedExpense');
   }
   if (expense) {
     return t('finance.capture.editTitle');

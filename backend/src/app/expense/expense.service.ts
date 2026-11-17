@@ -202,6 +202,14 @@ export class ExpenseService extends BaseService {
     if (userId && userId === expense.paidByUserId) {
       return { userId, name: expense.paidByName };
     }
+    // Saved as typed: not re-matched, so an edit doesn't move it elsewhere.
+    if (
+      !userId &&
+      !expense.paidByUserId &&
+      data.paidByName === expense.paidByName
+    ) {
+      return { userId: null, name: expense.paidByName };
+    }
 
     return this.partyService.resolveParty(expense.eventId, {
       userId,

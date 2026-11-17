@@ -21,3 +21,11 @@ export const recipientKey = (p: {
   recipientUserId: string | null;
   recipientName: string | null;
 }) => partyKey(p.recipientUserId, p.recipientName);
+
+/**
+ * A typed name as compared against the known ones: case and spacing don't
+ * make another person, so "anna " is the "Anna" already there.
+ */
+export function partyNameKey(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}

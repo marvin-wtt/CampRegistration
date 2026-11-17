@@ -44,10 +44,28 @@
         </q-item-section>
       </q-item>
     </template>
+    <template #before-options>
+      <q-item
+        v-if="!needle.trim() || match"
+        dense
+      >
+        <q-item-section class="text-caption text-on-surface-variant">
+          {{
+            match
+              ? t('finance.party.alreadyKnown', { name: match.name })
+              : t('finance.party.typeName')
+          }}
+        </q-item-section>
+      </q-item>
+    </template>
     <template #no-option>
       <q-item>
         <q-item-section class="text-on-surface-variant">
-          {{ t('finance.party.typeName') }}
+          {{
+            needle.trim()
+              ? t('finance.party.enterToAdd', { name: needle.trim() })
+              : t('finance.party.typeName')
+          }}
         </q-item-section>
       </q-item>
     </template>
@@ -58,6 +76,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { FinanceParties } from '@camp-registration/common/entities';
+import { partyNameKey } from '@camp-registration/common/utils';
 
 export interface PartyValue {
   userId: string | null;
@@ -148,6 +167,25 @@ const selected = computed<PartyOption | null>(() => {
   );
 });
 
+/**
+ * The person the typed name already is, as the backend matches it: the one
+ * manager of that name, else the name typed before.
+ */
+const match = computed<PartyOption | undefined>(() => {
+  const key = partyNameKey(needle.value);
+  if (!key) {
+    return undefined;
+  }
+  const same = options.value.filter(
+    (o) => o.name !== null && partyNameKey(o.name) === key,
+  );
+  const managers = same.filter((o) => o.userId);
+  if (managers.length > 1) {
+    return undefined;
+  }
+  return managers[0] ?? same[0];
+});
+
 function onFilter(value: string, update: (fn: () => void) => void) {
   update(() => {
     needle.value = value;
@@ -158,13 +196,22 @@ function onNewValue(
   value: string,
   done: (item?: PartyOption, mode?: 'add' | 'add-unique' | 'toggle') => void,
 ) {
-  const name = value.trim();
+  const name = value.trim().replace(/\s+/g, ' ');
   if (!name) {
     done();
     return;
   }
-  model.value = { userId: null, name };
-  done();
+  // Handed back as an option, so the select fills the input with it and
+  // closes the menu; done() alone would leave the input cleared.
+  done(
+    match.value ?? {
+      key: `name:${name}`,
+      userId: null,
+      name,
+      label: name,
+      icon: 'badge',
+    },
+  );
 }
 
 function onSelect(option: PartyOption | null) {

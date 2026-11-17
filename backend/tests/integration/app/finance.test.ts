@@ -136,6 +136,48 @@ describe('finances', () => {
       ]);
     });
 
+    it('files a typed name under the person it already is', async () => {
+      const { event, user, token } = await setup();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { name: 'Anna Berg' },
+      });
+
+      const manager = await createExpense(event, token, {
+        paidByName: 'anna  berg',
+      });
+      const first = await createExpense(event, token, { paidByName: 'Tomasz' });
+      const again = await createExpense(event, token, {
+        paidByName: ' TOMASZ',
+      });
+
+      const rows = await prisma.expense.findMany({
+        where: { id: { in: [manager.id, first.id, again.id] } },
+        orderBy: { receiptNumber: 'asc' },
+      });
+      expect(rows.map((r) => [r.paidByUserId, r.paidByName])).toEqual([
+        [user.id, 'Anna Berg'],
+        [null, 'Tomasz'],
+        [null, 'Tomasz'],
+      ]);
+    });
+
+    it('leaves a typed name alone when two managers share it', async () => {
+      const { event, user, token } = await setup();
+      const { user: other } = await addManager(event, 'COUNSELOR');
+      await prisma.user.updateMany({
+        where: { id: { in: [user.id, other.id] } },
+        data: { name: 'Anna' },
+      });
+
+      const created = await createExpense(event, token, { paidByName: 'Anna' });
+
+      const row = await prisma.expense.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      expect([row.paidByUserId, row.paidByName]).toEqual([null, 'Anna']);
+    });
+
     it('keeps who was paid, and clears it when left blank', async () => {
       const { event, token } = await setup();
       const created = await createExpense(event, token, {
@@ -861,7 +903,8 @@ describe('finances', () => {
     });
 
     it.each([
-      { role: 'COORDINATOR', status: 201 },
+      { role: 'TREASURER', status: 201 },
+      { role: 'COORDINATOR', status: 403 },
       { role: 'COUNSELOR', status: 403 },
     ])('lets $role record payouts: $status', async ({ role, status }) => {
       const { event, token } = await setup(role);

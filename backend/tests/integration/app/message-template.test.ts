@@ -35,7 +35,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
-      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
       { role: 'VIEWER', expectedStatus: 403 },
     ])(
       'should respond with $expectedStatus status code when user is $role',

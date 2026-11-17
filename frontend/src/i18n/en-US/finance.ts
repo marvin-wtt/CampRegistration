@@ -62,6 +62,9 @@ export default {
     me: 'Me ({name})',
     fundsCaption: 'Cash box or the association’s account',
     typeName: 'Type a name to add someone else',
+    enterToAdd: 'Press Enter to add “{name}”',
+    alreadyKnown:
+      '“{name}” is in the list already. For someone else, add e.g. an initial.',
   },
   action: {
     retry: 'Try again',
@@ -95,8 +98,9 @@ export default {
     newExpense: 'New expense',
     newRefund: 'New refund',
     editTitle: 'Edit expense',
-    savedTitle: 'Saved',
-    savedAs: 'Saved as receipt',
+    savedExpense: 'Expense saved',
+    savedRefund: 'Refund saved',
+    receiptNumber: 'Receipt number',
     writeNumber: 'Write this number on the paper receipt.',
     noFile: 'No receipt file yet — you can add it later.',
     restored: 'Your unsaved expense was kept. Save it again or discard it.',

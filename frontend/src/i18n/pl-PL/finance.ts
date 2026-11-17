@@ -62,6 +62,9 @@ export default {
     me: 'Ja ({name})',
     fundsCaption: 'Kasa lub konto stowarzyszenia',
     typeName: 'Wpisz imię, aby dodać kogoś innego',
+    enterToAdd: 'Naciśnij Enter, aby dodać „{name}”',
+    alreadyKnown:
+      '„{name}” jest już na liście. Dla kogoś innego dodaj np. inicjał.',
   },
   action: {
     retry: 'Spróbuj ponownie',
@@ -95,8 +98,9 @@ export default {
     newExpense: 'Nowy wydatek',
     newRefund: 'Nowy zwrot',
     editTitle: 'Edytuj wydatek',
-    savedTitle: 'Zapisano',
-    savedAs: 'Zapisano jako paragon',
+    savedExpense: 'Wydatek zapisany',
+    savedRefund: 'Zwrot zapisany',
+    receiptNumber: 'Numer paragonu',
     writeNumber: 'Zapisz ten numer na papierowym paragonie.',
     noFile: 'Brak pliku — możesz dodać go później.',
     restored:

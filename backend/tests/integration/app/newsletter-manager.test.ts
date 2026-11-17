@@ -93,7 +93,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
 
     it.each([
       ['OWNER', 200],
-      ['EDITOR', 200],
+      ['EDITOR', 403],
       ['VIEWER', 403],
     ] as const)('role %s → %i', async (role, status) => {
       const { accessToken, newsletter } = await createNewsletterWithRole(role);

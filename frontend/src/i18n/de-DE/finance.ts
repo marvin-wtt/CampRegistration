@@ -62,6 +62,9 @@ export default {
     me: 'Ich ({name})',
     fundsCaption: 'Kasse oder Vereinskonto',
     typeName: 'Tippe einen Namen, um jemand anderen hinzuzufügen',
+    enterToAdd: 'Drücke Enter, um „{name}“ hinzuzufügen',
+    alreadyKnown:
+      '„{name}“ gibt es schon. Für jemand anderen ergänze z. B. eine Initiale.',
   },
   action: {
     retry: 'Erneut versuchen',
@@ -95,8 +98,9 @@ export default {
     newExpense: 'Neue Ausgabe',
     newRefund: 'Neue Erstattung',
     editTitle: 'Ausgabe bearbeiten',
-    savedTitle: 'Gespeichert',
-    savedAs: 'Gespeichert als Beleg',
+    savedExpense: 'Ausgabe gespeichert',
+    savedRefund: 'Erstattung gespeichert',
+    receiptNumber: 'Belegnummer',
     writeNumber: 'Schreib diese Nummer auf den Papierbeleg.',
     noFile: 'Noch keine Belegdatei — du kannst sie später hinzufügen.',
     restored:

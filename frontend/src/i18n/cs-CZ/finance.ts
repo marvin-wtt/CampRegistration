@@ -61,6 +61,9 @@ export default {
     me: 'Já ({name})',
     fundsCaption: 'Pokladna nebo účet spolku',
     typeName: 'Napiš jméno a přidej někoho dalšího',
+    enterToAdd: 'Stiskni Enter a přidej „{name}“',
+    alreadyKnown:
+      '„{name}“ už v seznamu je. Pro někoho jiného přidej třeba iniciálu.',
   },
   action: {
     retry: 'Zkusit znovu',
@@ -94,8 +97,9 @@ export default {
     newExpense: 'Nový výdaj',
     newRefund: 'Nová vratka',
     editTitle: 'Upravit výdaj',
-    savedTitle: 'Uloženo',
-    savedAs: 'Uloženo jako doklad',
+    savedExpense: 'Výdaj uložen',
+    savedRefund: 'Vratka uložena',
+    receiptNumber: 'Číslo dokladu',
     writeNumber: 'Napiš toto číslo na papírový doklad.',
     noFile: 'Zatím bez souboru — můžeš ho přidat později.',
     restored:

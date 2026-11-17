@@ -62,6 +62,9 @@ export default {
     me: 'Moi ({name})',
     fundsCaption: 'Caisse ou compte de l’association',
     typeName: 'Saisissez un nom pour ajouter quelqu’un d’autre',
+    enterToAdd: 'Appuyez sur Entrée pour ajouter « {name} »',
+    alreadyKnown:
+      '« {name} » figure déjà dans la liste. Pour quelqu’un d’autre, ajoutez par ex. une initiale.',
   },
   action: {
     retry: 'Réessayer',
@@ -95,8 +98,9 @@ export default {
     newExpense: 'Nouvelle dépense',
     newRefund: 'Nouveau remboursement',
     editTitle: 'Modifier la dépense',
-    savedTitle: 'Enregistré',
-    savedAs: 'Enregistré comme justificatif',
+    savedExpense: 'Dépense enregistrée',
+    savedRefund: 'Remboursement enregistré',
+    receiptNumber: 'Numéro de justificatif',
     writeNumber: 'Notez ce numéro sur le justificatif papier.',
     noFile: 'Pas encore de fichier — vous pourrez l’ajouter plus tard.',
     restored:
