@@ -4,6 +4,7 @@ export default {
   subtitle: 'Dépenses, versements et à qui il reste de l’argent dû.',
   eventFunds: 'Caisse commune',
   noFile: 'aucun fichier',
+  noCategory: 'sans catégorie',
   receiptPending: 'Justificatif attendu',
   files: '{n} fichier | {n} fichiers',
   receiptCount: '{n} justificatif | {n} justificatifs',
@@ -29,20 +30,23 @@ export default {
       'Enregistrez le premier justificatif directement en caisse — avec une photo, depuis votre téléphone.',
   },
   field: {
+    vendor: 'Payé à',
+    vendorRefund: 'Remboursé par',
+    vendorHint: 'Facultatif, p. ex. le magasin ou l’entreprise',
+    noCategoryMatch: 'Aucune catégorie correspondante',
     paidOn: 'Payé le',
     receiptPending: 'Vide : justificatif à venir',
     receiptDate: 'Date du justificatif',
     amount: 'Montant',
     category: 'Catégorie',
     date: 'Date',
-    description: 'Pour quoi ?',
+    description: 'Description',
     note: 'Note (facultatif)',
     originalToggle: 'Payé dans une autre devise',
     originalCurrency: 'Devise',
     originalAmount: 'Montant sur le justificatif',
     paidBy: 'Payé par',
     receivedBy: 'Reçu par',
-    recipient: 'Personne',
     receipt: 'Justificatif',
   },
   filter: {
@@ -51,6 +55,7 @@ export default {
     activeCount: 'Filtres ({count})',
     reset: 'Réinitialiser',
     missingFile: 'Fichier manquant ({count})',
+    missingCategory: 'Sans catégorie ({count})',
     noMatch: 'Aucune dépense ne correspond à ces filtres.',
   },
   party: {
@@ -63,9 +68,9 @@ export default {
     add: 'Ajouter',
     addExpense: 'Ajouter une dépense',
     expense: 'Dépense',
-    addPhoto: 'Ajouter une photo',
-    takePhoto: 'Photo du justificatif',
-    removePhoto: 'Retirer la photo',
+    addFile: 'Autre fichier',
+    addReceipt: 'Ajouter le justificatif',
+    removeFile: 'Retirer le fichier',
     openFile: 'Ouvrir {name}',
     cancel: 'Annuler',
     close: 'Fermer',
@@ -80,6 +85,10 @@ export default {
     printSlip: 'Imprimer le justificatif',
     undoPayout: 'Annuler le versement',
   },
+  expenseDetails: {
+    statements: 'Sur les versements',
+    edit: 'Modifier',
+  },
   capture: {
     keepOriginal: "Conservez l'original papier.",
     newExpense: 'Nouvelle dépense',
@@ -88,15 +97,23 @@ export default {
     savedTitle: 'Enregistré',
     savedAs: 'Enregistré comme justificatif',
     writeNumber: 'Notez ce numéro sur le justificatif papier.',
-    noPhoto: 'Pas encore de photo — vous pourrez l’ajouter plus tard.',
+    noFile: 'Pas encore de fichier — vous pourrez l’ajouter plus tard.',
     restored:
       'Votre dépense non enregistrée a été conservée. Enregistrez-la à nouveau ou abandonnez-la.',
-    uploadFailed: 'La photo n’a pas pu être envoyée. Réessayez.',
+    uploadFailed: 'Le fichier n’a pas pu être envoyé. Réessayez.',
+    onStatement: {
+      title: 'Modifier le justificatif n°{number} ?',
+      message:
+        'Ce justificatif figure sur le versement {labels}. La modification le rend obsolète.',
+      ok: 'Modifier',
+    },
   },
   delete: {
     title: 'Supprimer le justificatif n° {number} ?',
     message:
       'Le numéro n’est pas réutilisé : la liste gardera un trou à sa place.',
+    onStatement:
+      'Il figure sur le versement {labels}, qui devient alors obsolète.',
     ok: 'Supprimer',
   },
   balance: {
@@ -107,7 +124,10 @@ export default {
     owedToEvent: 'Dû à l’événement',
     settled: 'Soldé',
     pending: 'Paiement convenu',
-    settledCount: '{settled} sur {total} personnes',
+    stillOpen: 'Encore ouvert',
+    agreedUnpaid: 'Convenu, pas encore payé',
+    toComeBack: 'À récupérer',
+    settledProgress: '{settled} sur {total} soldés',
     eventOwes: 'L’événement doit à {name}',
     owesEvent: '{name} doit à l’événement',
     manager: 'Membre de l’équipe',
@@ -127,8 +147,22 @@ export default {
       'Voici votre propre solde. Demandez un versement à la trésorerie ou à la direction.',
   },
   payout: {
+    details: {
+      created: 'Créé le {date}',
+      outTo: 'Versement à {name}',
+      inFrom: 'Remboursement de {name}',
+      note: 'Note',
+      paidOn: 'Payé le {date}',
+      toPay: 'Pas encore payé',
+      signedOn: 'Signé le {date}',
+      signedScan: 'Signé sur papier (scan)',
+      unsigned: 'Pas encore signé',
+    },
     markPaid: 'Marquer comme payé',
+    markUnpaid: 'Marquer comme non payé',
     toPayHint: 'Vide : virement encore à faire',
+    frozenHint:
+      'Figé dans la déclaration. Pour le modifier, supprimez le versement et créez-en un nouveau.',
     toPay: 'À payer',
     out: 'Verser',
     in: 'Encaisser',
@@ -147,11 +181,13 @@ export default {
       title: 'Annuler le versement {label} ?',
       message:
         'Le solde revient à sa valeur précédente. Le numéro n’est pas réutilisé.',
+      messagePaid:
+        'Ce versement a été payé. Ne l’annulez que s’il a été saisi par erreur ; une correction est un nouveau versement. Imprimez d’abord la déclaration si vous en avez besoin.',
       ok: 'Annuler le versement',
     },
   },
   summary: {
-    pending: 'Justificatif encore attendu pour {numbers}.',
+    complete: 'Tous les justificatifs sont complets.',
     total: 'Total dépensé',
     totalCaption: '{expenses} de dépenses − {refunds} de remboursements',
     expenses: 'Dépenses',
@@ -164,8 +200,6 @@ export default {
     people: 'Personnes',
     gross: 'Brut, avant remboursements.',
     receiptFiles: 'Fichiers des justificatifs',
-    filesCount: '{withFile} justificatifs sur {total} ont un fichier.',
-    missingFiles: 'Aucun fichier pour {numbers}.',
     recordsNote:
       'Les justificatifs papier et l’export font foi ; les fichiers sont une copie pratique.',
   },
@@ -198,33 +232,42 @@ export default {
     csv: 'CSV',
     receipts: 'Fichiers des justificatifs (ZIP)',
     receiptsText:
-      'Tous les fichiers, nommés d’après leur numéro de justificatif.',
+      'Tous les fichiers, nommés d’après leur numéro de justificatif, ensemble ou dans un dossier par groupe.',
+    receiptsFlat: 'Tout dans un dossier',
+    receiptsByGroup: 'Un dossier par groupe',
   },
   statement: {
-    title: 'Déclaration {label}',
+    title: 'Versement {label}',
+    showAll: 'Afficher les {count} justificatifs',
     expenses: 'Justificatifs payés par {name}',
     noExpenses: 'Aucun justificatif enregistré pour cette personne.',
-    open: 'Solde avant ce versement',
     signHere: 'Signez ici, {name}',
     clear: 'Effacer',
+    signLarge: 'Signer en plein écran',
     sign: 'Signer',
-    signAgain: 'Signer à nouveau',
     unsign: {
       action: 'Retirer la signature',
       title: 'Retirer la signature de {label} ?',
       message:
-        'Le versement compte alors comme non signé. Le journal garde qui l’a retirée et quand.',
+        'Le versement compte alors comme non signé, et un scan importé est retiré aussi. Il peut ensuite être signé de nouveau. Le journal garde qui l’a retirée et quand.',
       ok: 'Retirer',
     },
     signed: 'Signé',
-    signedBefore: 'Signé le {date}. Une nouvelle signature la remplace.',
-    declarationOut:
-      'Je confirme que les dépenses ci-dessus ont réellement été engagées pour « {event} », que les montants et justificatifs sont exacts et que je ne les ai pas présentées ailleurs pour remboursement. J’ai reçu {amount}.',
-    declarationIn:
-      'Je confirme que les dépenses ci-dessus ont réellement été engagées pour « {event} », que les montants et justificatifs sont exacts et que je ne les ai pas présentées ailleurs pour remboursement. J’ai rendu {amount} à la caisse commune.',
+    outdatedHint:
+      'Un justificatif de cette déclaration a changé depuis. Supprimez le versement et créez-en un nouveau.',
+    correctedLaterHint:
+      'Un justificatif a changé après ce versement. Le versement reste tel quel ; la différence figure dans le solde et se règle par un nouveau versement.',
+    outdatedNoSign:
+      'Un justificatif de cette déclaration a changé depuis sa création ; elle ne peut plus être signée.',
+    uploadScan: 'Importer la déclaration signée',
+    openScan: 'Ouvrir la déclaration signée',
   },
   settings: {
-    title: 'Numéros de versement',
+    title: 'Paramètres des finances',
+    payoutNumbers: 'Numéros de versement',
+    flagMissingCategories: 'Signaler les dépenses sans catégorie',
+    flagMissingCategoriesHint:
+      'À désactiver si cet événement ne classe pas ses dépenses par catégorie.',
     prefix: 'Préfixe',
     prefixHint:
       'Les versements ont leur propre numérotation, séparée des justificatifs, pour que la liste remise aux financeurs n’ait pas de trous. Le préfixe figure sur le justificatif de versement.',

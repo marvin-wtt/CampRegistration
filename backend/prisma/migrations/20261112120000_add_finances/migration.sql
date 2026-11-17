@@ -4,7 +4,8 @@ ALTER TABLE `events` ADD COLUMN `last_payout_number` INTEGER UNSIGNED NOT NULL D
     ADD COLUMN `payout_number_prefix` VARCHAR(8) NOT NULL DEFAULT 'P';
 
 -- AlterTable
-ALTER TABLE `files` ADD COLUMN `expense_id` CHAR(26) NULL;
+ALTER TABLE `files` ADD COLUMN `expense_id` CHAR(26) NULL,
+    ADD COLUMN `payout_id` CHAR(26) NULL;
 
 -- CreateTable
 CREATE TABLE `expense_categories` (
@@ -34,6 +35,7 @@ CREATE TABLE `expenses` (
     `original_currency` CHAR(3) NULL,
     `date` CHAR(10) NULL,
     `description` VARCHAR(255) NOT NULL,
+    `vendor` VARCHAR(255) NULL,
     `category_id` CHAR(26) NULL,
     `paid_by_user_id` CHAR(26) NULL,
     `paid_by_name` VARCHAR(255) NULL,
@@ -62,6 +64,7 @@ CREATE TABLE `payouts` (
     `note` VARCHAR(255) NULL,
       `signature` TEXT NULL,
     `signed_at` DATETIME(3) NULL,
+    `statement` JSON NOT NULL,
     `created_by_user_id` CHAR(26) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,
@@ -76,8 +79,14 @@ CREATE TABLE `payouts` (
 -- CreateIndex
 CREATE INDEX `files_expense_id_index` ON `files`(`expense_id`);
 
+-- CreateIndex
+CREATE INDEX `files_payout_id_index` ON `files`(`payout_id`);
+
 -- AddForeignKey
 ALTER TABLE `files` ADD CONSTRAINT `files_expense_id_fkey` FOREIGN KEY (`expense_id`) REFERENCES `expenses`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `files` ADD CONSTRAINT `files_payout_id_fkey` FOREIGN KEY (`payout_id`) REFERENCES `payouts`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `expense_categories` ADD CONSTRAINT `expense_categories_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

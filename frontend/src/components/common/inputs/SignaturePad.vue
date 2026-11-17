@@ -1,5 +1,8 @@
 <template>
-  <div class="column q-gutter-y-xs">
+  <div
+    class="signature-field column no-wrap q-gutter-y-xs"
+    :class="{ 'signature-field--fill': fill }"
+  >
     <div
       class="signature-pad rounded-md"
       :class="{ 'signature-pad--empty': !model }"
@@ -35,7 +38,10 @@
         {{ label }}
       </span>
     </div>
-    <div class="row justify-end">
+    <!-- Pad tools: the caller's on the left, clearing on the right. -->
+    <div class="row items-center no-wrap">
+      <slot name="tools" />
+      <q-space />
       <q-btn
         :label="clearLabel"
         :disable="!model"
@@ -54,10 +60,16 @@
 import { computed, ref, useTemplateRef } from 'vue';
 import { SIGNATURE_VIEWBOX } from '@camp-registration/common/entities';
 
-const { label, clearLabel } = defineProps<{
+const {
+  label,
+  clearLabel,
+  fill = false,
+} = defineProps<{
   /** Shown in the empty pad and read by screen readers. */
   label: string;
   clearLabel: string;
+  /** As wide as its container, e.g. full screen, not a signature line. */
+  fill?: boolean;
 }>();
 
 /** SVG path data in the shared view box; `null` until something is drawn. */
@@ -115,7 +127,26 @@ function clear() {
 </script>
 
 <style scoped>
+/* Stored as 3 : 1, so the width caps its height: about a signature line's
+   size on desktop, the full width on phones. */
+.signature-field {
+  flex: none;
+  width: 100%;
+  max-width: 420px;
+  /* Sideways only: a parent's gutter sets the top margin. */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.signature-field--fill {
+  max-width: none;
+}
+
+/* Never shrunk by a flex parent: the surface keeps its ratio and would
+   spill out, baseline and strokes drawn below the box. */
 .signature-pad {
+  flex: none;
+  overflow: hidden;
   position: relative;
   border: 1px solid var(--md3-outline);
   background: var(--md3-surface-container-lowest);

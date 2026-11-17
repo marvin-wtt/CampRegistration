@@ -4,6 +4,10 @@ import { defaultExpenseCategoriesForCountries } from '#app/expenseCategory/expen
 import { BaseSeeder } from './BaseSeeder';
 import { EVENT_IDS, USER_IDS } from './ids';
 import { seedReceiptFile } from './file.seeder';
+import { initI18n } from '#core/i18n/i18n.client.js';
+import { freezeStatement } from '#app/payout/payout.statement.js';
+import type { Prisma } from '#generated/prisma/client.js';
+import type { Translatable } from '@camp-registration/common/entities';
 
 type Payer = keyof typeof USER_IDS | { name: string } | null;
 
@@ -12,6 +16,8 @@ interface SeedExpense {
    * receipt is still to come. */
   day: number | null;
   description: string;
+  /** Who was paid, when the receipt names a shop or company. */
+  vendor?: string;
   category: string;
   /** Major units. */
   amount: number;
@@ -63,6 +69,7 @@ const SPRING: SeedLedger = {
     {
       day: 0,
       description: 'Train tickets, outward',
+      vendor: 'National Rail',
       category: 'Travel',
       amount: 412,
       payer: 'john',
@@ -78,7 +85,8 @@ const SPRING: SeedLedger = {
     },
     {
       day: 1,
-      description: 'Groceries, Tesco',
+      description: 'Groceries',
+      vendor: 'Tesco',
       category: 'Food',
       amount: 186.45,
       payer: 'erika',
@@ -109,7 +117,8 @@ const SPRING: SeedLedger = {
     },
     {
       day: 3,
-      description: 'Groceries, Sainsbury’s',
+      description: 'Groceries',
+      vendor: 'Sainsbury’s',
       category: 'Food',
       amount: 152.1,
       payer: 'john',
@@ -141,7 +150,8 @@ const SPRING: SeedLedger = {
     },
     {
       day: 5,
-      description: 'Groceries, Tesco',
+      description: 'Groceries',
+      vendor: 'Tesco',
       category: 'Food',
       amount: 171.35,
       payer: 'john',
@@ -340,6 +350,8 @@ class FinanceSeeder extends BaseSeeder {
   }
 
   async run(prisma: PrismaClient): Promise<void> {
+    // Payout statements are frozen as formatted text.
+    await initI18n();
     // Every event has categories, as on a real database after the migration.
     const events = await prisma.event.findMany({
       select: { id: true, countries: true },
@@ -435,6 +447,7 @@ class FinanceSeeder extends BaseSeeder {
           originalCurrency: item.original?.currency ?? null,
           date: item.day === null ? null : date(item.day),
           description: item.description,
+          vendor: item.vendor ?? null,
           categoryId: categoryId(item.category),
           paidByUserId: payer.userId,
           paidByName: payer.name,
@@ -451,12 +464,49 @@ class FinanceSeeder extends BaseSeeder {
       }
     }
 
+    if (ledger.deleted?.length) {
+      await prisma.expense.deleteMany({
+        where: { eventId, receiptNumber: { in: ledger.deleted } },
+      });
+    }
+
+    // Each statement is frozen from what exists when its payout is made.
     let payoutNumber = 0;
     for (const item of ledger.payouts) {
       payoutNumber++;
       const recipient = party(item.recipient);
+      const [expenses, payouts] = await Promise.all([
+        prisma.expense.findMany({ where: { eventId } }),
+        prisma.payout.findMany({ where: { eventId } }),
+      ]);
+      const createdAt = new Date();
+      const statement = freezeStatement(
+        {
+          id: '',
+          number: payoutNumber,
+          direction: item.direction,
+          amount: minor(item.amount),
+          paidOn: item.day === null ? null : date(item.day),
+          recipientUserId: recipient.userId,
+          recipientName: recipient.name ?? '',
+          createdAt,
+        },
+        expenses,
+        payouts,
+        receiptNumber,
+        {
+          locale: 'de-DE',
+          currency: event.currency,
+          timezone: event.timezone,
+          payoutNumberPrefix: event.payoutNumberPrefix,
+          eventName: event.name as Translatable,
+          organizer: event.organizer as Translatable,
+        },
+      );
       await prisma.payout.create({
         data: {
+          statement: statement as unknown as Prisma.InputJsonValue,
+          createdAt,
           eventId,
           number: payoutNumber,
           recipientUserId: recipient.userId,
@@ -469,12 +519,6 @@ class FinanceSeeder extends BaseSeeder {
           signedAt: item.signed ? event.endAt : null,
           createdByUserId: USER_IDS.john,
         },
-      });
-    }
-
-    if (ledger.deleted?.length) {
-      await prisma.expense.deleteMany({
-        where: { eventId, receiptNumber: { in: ledger.deleted } },
       });
     }
 

@@ -4,6 +4,7 @@ export default {
   subtitle: 'Ausgaben, Auszahlungen und wem noch Geld zusteht.',
   eventFunds: 'Gemeinsame Kasse',
   noFile: 'keine Datei',
+  noCategory: 'keine Kategorie',
   receiptPending: 'Beleg ausstehend',
   files: '{n} Datei | {n} Dateien',
   receiptCount: '{n} Beleg | {n} Belege',
@@ -29,20 +30,23 @@ export default {
       'Erfasse den ersten Beleg direkt an der Kasse — mit Foto, vom Handy aus.',
   },
   field: {
+    vendor: 'Bezahlt an',
+    vendorRefund: 'Erstattet von',
+    vendorHint: 'Optional, z. B. das Geschäft oder die Firma',
+    noCategoryMatch: 'Keine passende Kategorie',
     paidOn: 'Bezahlt am',
     receiptPending: 'Leer: Beleg steht noch aus',
     receiptDate: 'Belegdatum',
     amount: 'Betrag',
     category: 'Kategorie',
     date: 'Datum',
-    description: 'Wofür?',
+    description: 'Beschreibung',
     note: 'Notiz (optional)',
     originalToggle: 'In einer anderen Währung bezahlt',
     originalCurrency: 'Währung',
     originalAmount: 'Betrag auf dem Beleg',
     paidBy: 'Bezahlt von',
     receivedBy: 'Erhalten von',
-    recipient: 'Person',
     receipt: 'Beleg',
   },
   filter: {
@@ -51,6 +55,7 @@ export default {
     activeCount: 'Filter ({count})',
     reset: 'Zurücksetzen',
     missingFile: 'Belegdatei fehlt ({count})',
+    missingCategory: 'Ohne Kategorie ({count})',
     noMatch: 'Keine Ausgaben passen zu diesen Filtern.',
   },
   party: {
@@ -63,9 +68,9 @@ export default {
     add: 'Hinzufügen',
     addExpense: 'Ausgabe erfassen',
     expense: 'Ausgabe',
-    addPhoto: 'Foto hinzufügen',
-    takePhoto: 'Foto vom Beleg',
-    removePhoto: 'Foto entfernen',
+    addFile: 'Weitere Datei',
+    addReceipt: 'Beleg hinzufügen',
+    removeFile: 'Datei entfernen',
     openFile: '{name} öffnen',
     cancel: 'Abbrechen',
     close: 'Schließen',
@@ -80,6 +85,10 @@ export default {
     printSlip: 'Beleg drucken',
     undoPayout: 'Auszahlung rückgängig machen',
   },
+  expenseDetails: {
+    statements: 'Auf Auszahlungen',
+    edit: 'Bearbeiten',
+  },
   capture: {
     keepOriginal: 'Papierbeleg bitte aufbewahren.',
     newExpense: 'Neue Ausgabe',
@@ -88,16 +97,23 @@ export default {
     savedTitle: 'Gespeichert',
     savedAs: 'Gespeichert als Beleg',
     writeNumber: 'Schreib diese Nummer auf den Papierbeleg.',
-    noPhoto: 'Noch kein Foto — du kannst es später hinzufügen.',
+    noFile: 'Noch keine Belegdatei — du kannst sie später hinzufügen.',
     restored:
       'Deine nicht gespeicherte Ausgabe wurde aufbewahrt. Speichere sie erneut oder verwirf sie.',
     uploadFailed:
-      'Das Foto konnte nicht hochgeladen werden. Versuch es noch einmal.',
+      'Die Datei konnte nicht hochgeladen werden. Versuch es noch einmal.',
+    onStatement: {
+      title: 'Beleg #{number} ändern?',
+      message:
+        'Dieser Beleg steht auf Auszahlung {labels}. Durch die Änderung veraltet sie.',
+      ok: 'Ändern',
+    },
   },
   delete: {
     title: 'Beleg #{number} löschen?',
     message:
       'Die Belegnummer wird nicht neu vergeben: In der Liste bleibt eine Lücke.',
+    onStatement: 'Er steht auf Auszahlung {labels}, die damit veraltet.',
     ok: 'Löschen',
   },
   balance: {
@@ -108,7 +124,10 @@ export default {
     owedToEvent: 'Der Veranstaltung geschuldet',
     settled: 'Ausgeglichen',
     pending: 'Zahlung vereinbart',
-    settledCount: '{settled} von {total} Personen',
+    stillOpen: 'Noch offen',
+    agreedUnpaid: 'Vereinbart, nicht bezahlt',
+    toComeBack: 'Zurückzubekommen',
+    settledProgress: '{settled} von {total} ausgeglichen',
     eventOwes: 'Veranstaltung schuldet {name}',
     owesEvent: '{name} schuldet der Veranstaltung',
     manager: 'Teammitglied',
@@ -128,8 +147,22 @@ export default {
       'Das ist dein eigener Saldo. Frag die Kasse oder Leitung nach einer Auszahlung.',
   },
   payout: {
+    details: {
+      created: 'Erstellt am {date}',
+      outTo: 'Auszahlung an {name}',
+      inFrom: 'Rückzahlung von {name}',
+      note: 'Notiz',
+      paidOn: 'Bezahlt am {date}',
+      toPay: 'Noch nicht bezahlt',
+      signedOn: 'Unterschrieben am {date}',
+      signedScan: 'Auf Papier unterschrieben (Scan)',
+      unsigned: 'Noch nicht unterschrieben',
+    },
     markPaid: 'Als bezahlt markieren',
+    markUnpaid: 'Als unbezahlt markieren',
     toPayHint: 'Leer: Überweisung steht noch aus',
+    frozenHint:
+      'In der Erklärung festgeschrieben. Um es zu ändern, lösche die Auszahlung und lege eine neue an.',
     toPay: 'Offen',
     out: 'Auszahlen',
     in: 'Einnehmen',
@@ -147,11 +180,13 @@ export default {
     delete: {
       title: 'Auszahlung {label} rückgängig machen?',
       message: 'Der Saldo wird wie vorher. Die Nummer wird nicht neu vergeben.',
+      messagePaid:
+        'Diese Auszahlung ist bezahlt. Mach sie nur rückgängig, wenn sie versehentlich erfasst wurde; eine Korrektur ist eine neue Auszahlung. Drucke vorher die Erklärung, falls du sie brauchst.',
       ok: 'Rückgängig machen',
     },
   },
   summary: {
-    pending: 'Beleg steht noch aus für {numbers}.',
+    complete: 'Alle Belege sind vollständig.',
     total: 'Gesamtausgaben',
     totalCaption: '{expenses} Ausgaben − {refunds} Erstattungen',
     expenses: 'Ausgaben',
@@ -164,8 +199,6 @@ export default {
     people: 'Personen',
     gross: 'Brutto, vor Erstattungen.',
     receiptFiles: 'Belegdateien',
-    filesCount: '{withFile} von {total} Belegen haben eine Datei.',
-    missingFiles: 'Keine Datei für {numbers}.',
     recordsNote:
       'Die Papierbelege und der Export sind die Unterlagen; Dateien sind eine Kopie zur Bequemlichkeit.',
   },
@@ -197,34 +230,43 @@ export default {
     xlsx: 'XLSX',
     csv: 'CSV',
     receipts: 'Belegdateien (ZIP)',
-    receiptsText: 'Alle Belegdateien, benannt nach ihrer Belegnummer.',
+    receiptsText:
+      'Alle Belegdateien, benannt nach ihrer Belegnummer, zusammen oder in einem Ordner je Gruppe.',
+    receiptsFlat: 'Alle in einem Ordner',
+    receiptsByGroup: 'Ein Ordner je Gruppe',
   },
   statement: {
-    title: 'Erklärung {label}',
+    title: 'Auszahlung {label}',
+    showAll: 'Alle {count} Belege anzeigen',
     expenses: 'Belege, bezahlt von {name}',
     noExpenses: 'Für diese Person sind keine Belege erfasst.',
-    open: 'Offen vor dieser Auszahlung',
     signHere: 'Hier unterschreiben, {name}',
     clear: 'Löschen',
+    signLarge: 'Groß unterschreiben',
     sign: 'Unterschreiben',
-    signAgain: 'Neu unterschreiben',
     unsign: {
       action: 'Unterschrift entfernen',
       title: 'Unterschrift unter {label} entfernen?',
       message:
-        'Die Auszahlung gilt dann als nicht unterschrieben. Das Protokoll hält fest, wer sie wann entfernt hat.',
+        'Die Auszahlung gilt dann als nicht unterschrieben; ein hochgeladener Scan wird mit entfernt. Danach kann sie neu unterschrieben werden. Das Protokoll hält fest, wer sie wann entfernt hat.',
       ok: 'Entfernen',
     },
     signed: 'Unterschrieben',
-    signedBefore:
-      'Unterschrieben am {date}. Eine neue Unterschrift ersetzt sie.',
-    declarationOut:
-      'Ich bestätige, dass die oben aufgeführten Ausgaben tatsächlich für „{event}“ entstanden sind, die Beträge und Belege korrekt sind und ich sie nirgends anders zur Erstattung eingereicht habe. Den Betrag von {amount} habe ich erhalten.',
-    declarationIn:
-      'Ich bestätige, dass die oben aufgeführten Ausgaben tatsächlich für „{event}“ entstanden sind, die Beträge und Belege korrekt sind und ich sie nirgends anders zur Erstattung eingereicht habe. Den Betrag von {amount} habe ich an die gemeinsame Kasse zurückgezahlt.',
+    outdatedHint:
+      'Ein Beleg auf dieser Erklärung hat sich seitdem geändert. Lösche die Auszahlung und lege eine neue an.',
+    correctedLaterHint:
+      'Ein Beleg hat sich nach dieser Auszahlung geändert. Die Auszahlung bleibt, wie sie ist; die Differenz steht im Saldo und wird mit einer neuen Auszahlung ausgeglichen.',
+    outdatedNoSign:
+      'Ein Beleg auf dieser Erklärung hat sich geändert, seit sie erstellt wurde. Sie kann daher nicht mehr unterschrieben werden.',
+    uploadScan: 'Unterschriebene Erklärung hochladen',
+    openScan: 'Unterschriebene Erklärung öffnen',
   },
   settings: {
-    title: 'Auszahlungsnummern',
+    title: 'Finanzeinstellungen',
+    payoutNumbers: 'Auszahlungsnummern',
+    flagMissingCategories: 'Ausgaben ohne Kategorie markieren',
+    flagMissingCategoriesHint:
+      'Schalte es aus, wenn die Ausgaben dieser Veranstaltung nicht nach Kategorien sortiert werden.',
     prefix: 'Präfix',
     prefixHint:
       'Auszahlungen werden getrennt von den Belegen nummeriert, damit die Belegliste für Förderer keine Lücken hat. Das Präfix steht auf dem Auszahlungsbeleg.',

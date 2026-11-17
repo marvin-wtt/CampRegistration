@@ -39,6 +39,7 @@ export default {
       success: 'Pliki paragonów pobrane',
       error: 'Nie udało się pobrać plików paragonów',
     },
+    uploadScan: { error: 'Nie udało się przesłać podpisanego rozliczenia' },
     fetch: { error: 'Nie udało się pobrać finansów' },
     updateSettings: {
       success: 'Ustawienia zapisane',

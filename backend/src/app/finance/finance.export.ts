@@ -1,5 +1,6 @@
 import i18n from '#core/i18n/i18n.client';
 import type { CellValue, Sheet } from '#utils/spreadsheet';
+import { zipPathSegment } from '#utils/zip';
 import { computeCategoryTotals } from '#app/finance/finance.balances';
 import { fromMinorUnits, translate } from '@camp-registration/common/utils';
 import type {
@@ -54,6 +55,7 @@ export function buildFinanceSheets(
     excelDate(e.date),
     t(`value.${e.type}`),
     e.description,
+    e.vendor,
     groupName(e.categoryId),
     categoryName(e.categoryId),
     e.paidByName ?? t('value.eventFunds'),
@@ -95,6 +97,7 @@ export function buildFinanceSheets(
         { header: t('column.date'), width: 12, numFmt: DATE },
         { header: t('column.type'), width: 12 },
         { header: t('column.description'), width: 32 },
+        { header: t('column.vendor'), width: 22 },
         { header: t('column.group'), width: 18 },
         { header: t('column.category'), width: 18 },
         { header: t('column.paidBy'), width: 22 },
@@ -154,25 +157,53 @@ export function buildFinanceSheets(
 }
 
 /**
- * Receipt files named by receipt number, as written on the paper: `017.jpg`,
- * and `017-2.jpg` for a receipt's further pages.
+ * A receipt's folder in the grouped ZIP: its category's group, or `null`
+ * (the root) when it has no group.
  */
-export function receiptFileNames<F extends { originalName: string }>(
-  expenses: { receiptNumber: number; files: F[] }[],
-): { file: F; name: string }[] {
+export function receiptGroupFolder(
+  categories: Pick<ExpenseCategory, 'id' | 'parentId' | 'name'>[],
+  locale: string,
+): (expense: { categoryId: string | null }) => string | null {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+
+  return ({ categoryId }) => {
+    const parentId = categoryId ? byId.get(categoryId)?.parentId : null;
+    const group = parentId ? byId.get(parentId) : undefined;
+    if (!group) {
+      return null;
+    }
+    return zipPathSegment(translate(group.name, locale) ?? '', group.id);
+  };
+}
+
+/**
+ * Receipt files named by receipt number, as written on the paper: `017.jpg`,
+ * and `017-2.jpg` for a receipt's further pages, optionally inside a folder.
+ */
+export function receiptFileNames<
+  E extends { receiptNumber: number; files: { originalName: string }[] },
+>(
+  expenses: E[],
+  folder?: (expense: E) => string | null,
+): { file: E['files'][number]; name: string }[] {
   const width = Math.max(
     3,
     ...expenses.map((e) => e.receiptNumber.toString().length),
   );
 
-  return expenses.flatMap((expense) =>
-    expense.files.map((file, index) => {
+  return expenses.flatMap((expense) => {
+    const name = folder?.(expense);
+    const prefix = name ? `${name}/` : '';
+    return expense.files.map((file, index) => {
       const extension = /\.[a-z0-9]{1,8}$/i.exec(file.originalName)?.[0] ?? '';
       const number = expense.receiptNumber.toString().padStart(width, '0');
       const suffix = index === 0 ? '' : `-${(index + 1).toString()}`;
-      return { file, name: `${number}${suffix}${extension.toLowerCase()}` };
-    }),
-  );
+      return {
+        file,
+        name: `${prefix}${number}${suffix}${extension.toLowerCase()}`,
+      };
+    });
+  });
 }
 
 export function exportFileName(locale: string, extension: string): string {

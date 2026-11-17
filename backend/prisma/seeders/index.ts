@@ -29,13 +29,19 @@ async function main() {
     auditSeeder,
   ];
 
+  console.time('Seeding');
   console.log(`Start seeding ...`);
   for (const seeder of seeders) {
     console.log(`Starting to seed with ${seeder.name()} seeder.`);
     await seeder.run(prisma);
+    console.timeLog(
+      'Seeding',
+      `Finished seeding with ${seeder.name()} seeder.`,
+    );
   }
   console.log(`Seeding finished. See prisma/seeders/README.md for the`);
   console.log(`accounts and the scenario each seeded event covers.`);
+  console.timeEnd('Seeding');
 }
 
 main()

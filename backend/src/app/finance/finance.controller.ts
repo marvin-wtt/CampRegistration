@@ -8,6 +8,7 @@ import {
   buildFinanceSheets,
   exportFileName,
   receiptFileNames,
+  receiptGroupFolder,
 } from '#app/finance/finance.export';
 import { toCsv, toXlsx } from '#utils/spreadsheet';
 import { streamZip } from '#utils/zip';
@@ -79,17 +80,25 @@ export class FinanceController extends BaseController {
       .send(await toXlsx(sheets));
   }
 
-  /** Every receipt file, named by receipt number. */
+  /** Every receipt file, named by receipt number; `?folders=group` sorts them into group folders. */
   async receipts(req: Request, res: Response) {
-    await req.validate(validator.receipts);
+    const { query } = await req.validate(validator.receipts);
     const event = req.modelOrFail('event');
     const locale = req.preferredLocale();
 
-    const { expenses } = await this.financeService.getExportData(event.id);
-    const entries = receiptFileNames(expenses).map(({ file, name }) => ({
-      name,
-      open: () => this.fileService.getFileStream(file),
-    }));
+    const { expenses, categories } = await this.financeService.getExportData(
+      event.id,
+    );
+    const folder =
+      query.folders === 'group'
+        ? receiptGroupFolder(categories, locale)
+        : undefined;
+    const entries = receiptFileNames(expenses, folder).map(
+      ({ file, name }) => ({
+        name,
+        open: () => this.fileService.getFileStream(file),
+      }),
+    );
 
     res.type('application/zip');
     res.setHeader(

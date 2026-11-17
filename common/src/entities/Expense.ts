@@ -21,6 +21,8 @@ export interface Expense extends Identifiable, Ownable, Timestamps {
   /** `YYYY-MM-DD` on the receipt; `null` while the receipt is still to come. */
   date: string | null;
   description: string;
+  /** Who was paid: a shop, a bus company. */
+  vendor: string | null;
   categoryId: string | null;
   paidByUserId: string | null;
   paidByName: string | null;
@@ -35,6 +37,7 @@ export interface ExpenseCreateData {
   originalCurrency?: string | null | undefined;
   date?: string | null | undefined;
   description: string;
+  vendor?: string | null | undefined;
   categoryId?: string | null | undefined;
   paidByUserId?: string | null | undefined;
   /** Ignored when `paidByUserId` is set: the manager's name is snapshotted. */

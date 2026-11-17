@@ -35,3 +35,20 @@ export async function streamZip(
   failed.catch(() => undefined);
   await Promise.race([work, failed]);
 }
+
+/**
+ * A name usable as one folder or file name on every OS: no path separators,
+ * reserved characters or trailing dots, which Windows can't extract.
+ */
+export function zipPathSegment(name: string, fallback: string): string {
+  const safe = name
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f<>:"/\\|?*]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, 100)
+    // Windows drops a trailing dot or space, also one the cut left behind.
+    .replace(/[. ]+$/, '')
+    .trim();
+
+  return safe === '' ? fallback : safe;
+}

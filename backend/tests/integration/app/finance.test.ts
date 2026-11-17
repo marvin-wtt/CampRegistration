@@ -136,6 +136,26 @@ describe('finances', () => {
       ]);
     });
 
+    it('keeps who was paid, and clears it when left blank', async () => {
+      const { event, token } = await setup();
+      const created = await createExpense(event, token, {
+        vendor: '  Bäckerei Schulz ',
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/expenses/${created.id}`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data.vendor).toBe('Bäckerei Schulz');
+
+      const { body: cleared } = await request()
+        .patch(`/api/v1/events/${event.id}/expenses/${created.id}`)
+        .send({ vendor: '' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(cleared.data.vendor).toBeNull();
+    });
+
     it('takes an expense whose receipt is still to come', async () => {
       const { event, token } = await setup();
 
@@ -549,6 +569,14 @@ describe('finances', () => {
         expect(body.data.signature).toBe(SIGNATURE);
         expect(body.data.signedAt).not.toBeNull();
 
+        // Signing again takes removing the signature first.
+        const { body: again } = await request()
+          .put(url)
+          .send({ signature: SIGNATURE })
+          .auth(token, { type: 'bearer' })
+          .expect(409);
+        expect(again.errorCode).toBe('PAYOUT_ALREADY_SIGNED');
+        await request().delete(url).auth(token, { type: 'bearer' }).expect(200);
         await request()
           .put(url)
           .send({ signature: SIGNATURE })
@@ -591,30 +619,215 @@ describe('finances', () => {
           .expect(400);
       });
 
-      it('is cleared when the amount changes, kept for a note', async () => {
+      it('stays on a note, but not on an outdated statement', async () => {
         const { event, user, token } = await setup();
+        const expense = await createExpense(event, token, {
+          paidByUserId: user.id,
+        });
         const payout = await createPayout(event, token, user.id);
         const url = `/api/v1/events/${event.id}/payouts/${payout.id}`;
-        await request()
-          .put(`${url}/signature`)
-          .send({ signature: SIGNATURE })
-          .auth(token, { type: 'bearer' })
-          .expect(200);
 
         const { body: noted } = await request()
           .patch(url)
           .send({ note: 'Cash' })
           .auth(token, { type: 'bearer' })
           .expect(200);
-        expect(noted.data.signature).toBe(SIGNATURE);
+        expect(noted.data.outdated).toBe(false);
 
-        const { body: changed } = await request()
-          .patch(url)
-          .send({ amount: 9000 })
+        await request()
+          .patch(`/api/v1/events/${event.id}/expenses/${expense.id}`)
+          .send({ amount: 100 })
           .auth(token, { type: 'bearer' })
           .expect(200);
-        expect(changed.data.signature).toBeNull();
-        expect(changed.data.signedAt).toBeNull();
+
+        const { body } = await request()
+          .put(`${url}/signature`)
+          .send({ signature: SIGNATURE })
+          .auth(token, { type: 'bearer' })
+          .expect(409);
+        expect(body.errorCode).toBe('PAYOUT_STATEMENT_OUTDATED');
+      });
+    });
+
+    describe('frozen statement', () => {
+      const createPayout = async (
+        event: Event,
+        token: string,
+        recipientUserId: string,
+      ) => {
+        const { body } = await request()
+          .post(`/api/v1/events/${event.id}/payouts`)
+          .set('Accept-Language', 'en-US')
+          .send({ recipientUserId, direction: 'OUT', amount: 4780 })
+          .auth(token, { type: 'bearer' })
+          .expect(201);
+        return body.data as {
+          id: string;
+          outdated: boolean;
+          statementExpenseIds: string[];
+          statement: {
+            expenses: { number: string; amount: string }[];
+            totals: { label: string; amount: string }[];
+            declaration: string;
+          };
+        };
+      };
+
+      const fetchPayout = async (event: Event, token: string, id: string) => {
+        const { body } = await request()
+          .get(`/api/v1/events/${event.id}/payouts?view=all`)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        return (body.data as { id: string; outdated: boolean }[]).find(
+          (p) => p.id === id,
+        );
+      };
+
+      it('is written as text in the creator’s language', async () => {
+        const { event, user, token } = await setup();
+        const expense = await createExpense(event, token, {
+          paidByUserId: user.id,
+        });
+
+        const payout = await createPayout(event, token, user.id);
+
+        expect(payout.outdated).toBe(false);
+        expect(payout.statementExpenseIds).toEqual([expense.id]);
+        expect(payout.statement.expenses).toEqual([
+          expect.objectContaining({ number: '#1', amount: '€47.80' }),
+        ]);
+        expect(payout.statement.totals.at(-1)).toEqual(
+          expect.objectContaining({ label: 'P1 · Payout', amount: '−€47.80' }),
+        );
+        expect(payout.statement.declaration).toContain(
+          'not claimed them anywhere else',
+        );
+      });
+
+      it('goes outdated only when its figures change', async () => {
+        const { event, user, token } = await setup();
+        const expense = await createExpense(event, token, {
+          paidByUserId: user.id,
+        });
+        const payout = await createPayout(event, token, user.id);
+
+        // A later receipt belongs to a later statement.
+        await createExpense(event, token, { paidByUserId: user.id });
+        expect((await fetchPayout(event, token, payout.id))?.outdated).toBe(
+          false,
+        );
+
+        await request()
+          .patch(`/api/v1/events/${event.id}/expenses/${expense.id}`)
+          .send({ description: 'Ice cream and drinks', date: '2026-07-21' })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect((await fetchPayout(event, token, payout.id))?.outdated).toBe(
+          false,
+        );
+
+        await request()
+          .patch(`/api/v1/events/${event.id}/expenses/${expense.id}`)
+          .send({ amount: 999 })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect((await fetchPayout(event, token, payout.id))?.outdated).toBe(
+          true,
+        );
+      });
+
+      it('stays current when the recipient’s account is deleted', async () => {
+        const { event, token } = await setup();
+        const lena = await addManager(event, 'COUNSELOR');
+        await createExpense(event, token, { paidByUserId: lena.user.id });
+        // Renamed in between: the two records hold different snapshots.
+        await prisma.user.update({
+          where: { id: lena.user.id },
+          data: { name: 'Lena Renamed' },
+        });
+        const payout = await createPayout(event, token, lena.user.id);
+
+        const admin = await UserFactory.create({ role: 'ADMIN' });
+        await request()
+          .delete(`/api/v1/users/${lena.user.id}`)
+          .auth(generateAccessToken(admin), { type: 'bearer' })
+          .expect(204);
+
+        expect((await fetchPayout(event, token, payout.id))?.outdated).toBe(
+          false,
+        );
+        const { body } = await request()
+          .get(`/api/v1/events/${event.id}/finances/balances?view=all`)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect(body.data).toEqual([
+          expect.objectContaining({ userId: null, name: 'Lena Renamed' }),
+        ]);
+      });
+
+      it('refuses changes to amount, direction and recipient', async () => {
+        const { event, user, token } = await setup();
+        const payout = await createPayout(event, token, user.id);
+        const url = `/api/v1/events/${event.id}/payouts/${payout.id}`;
+
+        for (const change of [
+          { amount: 9000 },
+          { direction: 'IN' },
+          { recipientName: 'Tomasz' },
+        ]) {
+          await request()
+            .patch(url)
+            .send(change)
+            .auth(token, { type: 'bearer' })
+            .expect(400);
+        }
+        await request()
+          .patch(url)
+          .send({ paidOn: '2026-07-30', note: 'Transfer' })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+      });
+
+      it('takes a scan of the slip signed on paper', async () => {
+        const { event, user, token } = await setup();
+        const payout = await createPayout(event, token, user.id);
+        const sessionId = crypto.randomUUID();
+        const scan = await FileFactory.create({ field: sessionId });
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}/payouts/${payout.id}`)
+          .send({ fileIds: [scan.id] })
+          .setSessionId(sessionId)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect(body.data.files.map((f: { id: string }) => f.id)).toEqual([
+          scan.id,
+        ]);
+
+        // Removing the signature detaches the scan, so it can be signed anew.
+        const { body: unsigned } = await request()
+          .delete(`/api/v1/events/${event.id}/payouts/${payout.id}/signature`)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect(unsigned.data.files).toEqual([]);
+
+        // Both are logged, the scans with them: the unsigned one is gone.
+        const logs = await prisma.auditLog.findMany({
+          where: { entityType: 'payout', entityId: payout.id },
+        });
+        expect(
+          logs.map((log) => [
+            log.action,
+            (log.details as { values?: { scans?: number } } | null)?.values
+              ?.scans,
+          ]),
+        ).toEqual(
+          expect.arrayContaining([
+            ['created', undefined],
+            ['signed', 1],
+            ['unsigned', 1],
+          ]),
+        );
       });
     });
 
@@ -743,6 +956,7 @@ describe('finances', () => {
       await createExpense(event, token, {
         amount: 4780,
         description: 'Pizza, drinks',
+        vendor: 'Pizzeria Roma',
       });
       await createExpense(event, token, { type: 'REFUND', amount: 1240 });
 
@@ -756,8 +970,9 @@ describe('finances', () => {
       expect(headers['content-disposition']).toContain('finanzen-');
       const lines = text.replace('﻿', '').trim().split('\r\n');
       expect(lines[0]).toContain('Beleg-Nr.');
+      expect(lines[0]).toContain('Bezahlt an');
       expect(lines).toHaveLength(3);
-      expect(lines[1]).toContain('"Pizza, drinks"');
+      expect(lines[1]).toContain('"Pizza, drinks",Pizzeria Roma');
       expect(lines[2]).toContain('Erstattung');
       expect(lines[2]).toContain('-12.4');
     });
@@ -796,6 +1011,24 @@ describe('finances', () => {
         .expect(200);
 
       expect(headers['content-type']).toContain('application/zip');
+    });
+
+    it('accepts group folders and rejects unknown layouts', async () => {
+      const { event, token } = await setup();
+      await createExpense(event, token);
+
+      const { headers } = await request()
+        .get(`/api/v1/events/${event.id}/finances/receipts?folders=group`)
+        .auth(token, { type: 'bearer' })
+        .buffer(true)
+        .parse(binary as Parameters<ReturnType<typeof request>['parse']>[0])
+        .expect(200);
+      expect(headers['content-type']).toContain('application/zip');
+
+      await request()
+        .get(`/api/v1/events/${event.id}/finances/receipts?folders=category`)
+        .auth(token, { type: 'bearer' })
+        .expect(400);
     });
 
     it.each(['COUNSELOR', 'VIEWER'])(

@@ -89,7 +89,7 @@
           <template #avatar>
             <q-icon name="photo_camera" />
           </template>
-          {{ t('finance.capture.noPhoto') }}
+          {{ t('finance.capture.noFile') }}
         </q-banner>
       </div>
 
@@ -170,8 +170,11 @@
                 :label="t('finance.field.originalCurrency')"
                 class="original-currency"
                 use-input
+                fill-input
+                hide-selected
                 new-value-mode="add-unique"
                 :input-debounce="0"
+                clearable
                 dense
                 outlined
                 rounded
@@ -195,94 +198,22 @@
             </div>
           </q-slide-transition>
 
-          <!-- Receipt photos -->
-          <div class="column q-gutter-y-sm">
-            <div class="row q-gutter-sm">
-              <div
-                v-for="file in files"
-                :key="file.key"
-                class="photo-entry column"
-              >
-                <div class="photo-tile rounded-md">
-                  <button
-                    type="button"
-                    class="photo-open column items-center justify-center"
-                    :disabled="!file.url"
-                    :aria-label="
-                      t('finance.action.openFile', { name: file.name })
-                    "
-                    @click="openFile(file)"
-                  >
-                    <img
-                      v-if="file.preview"
-                      :src="file.preview"
-                      :alt="file.name"
-                      class="photo-thumb"
-                    />
-                    <q-icon
-                      v-else
-                      name="description"
-                      size="32px"
-                    />
-                    <q-spinner
-                      v-if="file.uploading"
-                      class="photo-state"
-                      color="primary"
-                    />
-                  </button>
-                  <q-btn
-                    class="photo-remove"
-                    icon="close"
-                    size="sm"
-                    round
-                    unelevated
-                    color="surface-container-highest"
-                    text-color="on-surface"
-                    :aria-label="t('finance.action.removePhoto')"
-                    @click="removeFile(file.key)"
-                  />
-                </div>
-                <div
-                  class="photo-name ellipsis text-caption text-on-surface-variant"
-                >
-                  {{ file.name }}
-                  <q-tooltip>{{ file.name }}</q-tooltip>
-                </div>
-              </div>
-            </div>
-            <m-btn
-              :label="
-                files.length
-                  ? t('finance.action.addPhoto')
-                  : t('finance.action.takePhoto')
-              "
-              icon="photo_camera"
-              color="primary"
-              tonal
-              class="self-start"
-              data-test="expense-photo"
-              @click="pickFile"
-            />
-            <!-- A scan is a copy: the paper stays the record. -->
-            <div
-              class="row items-center no-wrap q-gutter-x-xs text-caption text-on-surface-variant"
-            >
-              <q-icon
-                name="info"
-                size="16px"
-              />
-              <span>{{ t('finance.capture.keepOriginal') }}</span>
-            </div>
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*,application/pdf"
-              capture="environment"
-              multiple
-              hidden
-              @change="onFilesPicked"
-            />
-          </div>
+          <!-- Read off the receipt with the amount: often yesterday's, never
+               a day ahead. -->
+          <chore-date-input
+            v-model="form.date"
+            :label="t('finance.field.receiptDate')"
+            :hint="form.date ? undefined : t('finance.field.receiptPending')"
+            :max="formatLocalDate(new Date())"
+            open-on-today
+            clearable
+          />
+
+          <receipt-file-strip
+            :files
+            @add="addFiles"
+            @remove="removeFile"
+          />
 
           <q-input
             v-model="form.description"
@@ -299,12 +230,39 @@
             data-test="expense-description"
           />
 
-          <category-chips
+          <category-picker
             v-if="categories.length > 0"
             v-model="form.categoryId"
             :categories
             :keep="expense?.categoryId ?? null"
           />
+
+          <!-- Optional: who was paid. Names used before are suggested. -->
+          <q-input
+            v-model="form.vendor"
+            :label="
+              form.type === 'REFUND'
+                ? t('finance.field.vendorRefund')
+                : t('finance.field.vendor')
+            "
+            :hint="t('finance.field.vendorHint')"
+            maxlength="255"
+            list="expense-vendors"
+            autocomplete="off"
+            enterkeyhint="done"
+            hide-bottom-space
+            outlined
+            rounded
+            clearable
+            data-test="expense-vendor"
+          />
+          <datalist id="expense-vendors">
+            <option
+              v-for="vendor in vendors"
+              :key="vendor"
+              :value="vendor"
+            />
+          </datalist>
 
           <party-select
             v-model="form.payer"
@@ -315,13 +273,6 @@
                 : t('finance.field.paidBy')
             "
             data-test="expense-payer"
-          />
-
-          <chore-date-input
-            v-model="form.date"
-            :label="t('finance.field.receiptDate')"
-            :hint="form.date ? undefined : t('finance.field.receiptPending')"
-            clearable
           />
         </div>
       </q-form>
@@ -342,17 +293,6 @@
           />
         </template>
         <template v-else>
-          <q-btn
-            v-if="expense && canDelete"
-            icon="delete"
-            flat
-            round
-            color="negative"
-            class="q-mr-auto"
-            :aria-label="t('finance.action.delete')"
-            data-test="expense-delete"
-            @click="confirmDelete"
-          />
           <m-btn
             v-if="!quasar.screen.lt.sm"
             :label="t('finance.action.cancel')"
@@ -374,48 +314,32 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, reactive, ref, useTemplateRef } from 'vue';
+import { computed, reactive, ref, useTemplateRef } from 'vue';
 import { storeToRefs } from 'pinia';
-import {
-  openURL,
-  type QForm,
-  useDialogPluginComponent,
-  useQuasar,
-} from 'quasar';
+import { type QForm, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type {
-  Expense,
-  ExpenseType,
-  ServiceFile,
-} from '@camp-registration/common/entities';
-import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
+import type { Expense, ExpenseType } from '@camp-registration/common/entities';
+import { useConfirmStatementChange } from '@/composables/payoutStatements';
+import {
+  type ReceiptFile,
+  useReceiptUploads,
+} from '@/composables/receiptUploads';
+import ReceiptFileStrip from '@/components/event/finances/ReceiptFileStrip.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
-import CategoryChips from '@/components/event/finances/CategoryChips.vue';
+import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import PartySelect, {
   type PartyValue,
 } from '@/components/event/finances/PartySelect.vue';
 import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { useAPIService } from '@/services/APIService';
 import { formatLocalDate, parseLocalDate } from '@/utils/date';
 import { useRouteKey } from '@/composables/routeKey';
 
 const FOREIGN_CURRENCIES = ['PLN', 'CZK', 'GBP', 'CHF', 'USD', 'DKK', 'HUF'];
-
-interface CaptureFile {
-  key: string;
-  /** Set once the upload finished; what the expense is saved with. */
-  id: string | null;
-  name: string;
-  /** Where to open it: the stored file, or a blob of a fresh upload. */
-  url: string | null;
-  preview: string | null;
-  uploading: boolean;
-}
 
 interface CaptureForm {
   type: ExpenseType;
@@ -423,15 +347,15 @@ interface CaptureForm {
   originalAmount: number | null;
   originalCurrency: string | null;
   description: string;
+  vendor: string | null;
   categoryId: string | null;
   payer: PartyValue;
   date: string | null;
 }
 
-const { expense = undefined, canDelete = false } = defineProps<{
+const { expense = undefined } = defineProps<{
   /** Edits this expense instead of capturing a new one. */
   expense?: Expense | undefined;
-  canDelete?: boolean;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -440,15 +364,23 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 const quasar = useQuasar();
+const confirmStatementChange = useConfirmStatementChange();
 const { t, d } = useI18n();
-const api = useAPIService();
 const financeStore = useFinanceStore();
 const { categories: storeCategories, parties } = storeToRefs(financeStore);
+const vendors = computed(() =>
+  [
+    ...new Set(
+      (financeStore.expenses ?? []).flatMap((e) =>
+        e.vendor ? [e.vendor] : [],
+      ),
+    ),
+  ].sort((a, b) => a.localeCompare(b)),
+);
 const { currency, signedMoney, categoryName, payerName } = useFinanceFormat();
 const eventId = useRouteKey('eventId');
 
 const formRef = useTemplateRef<QForm>('formRef');
-const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
 
 const categories = computed(() => storeCategories.value ?? []);
 
@@ -485,6 +417,7 @@ function emptyForm(): CaptureForm {
     originalAmount: null,
     originalCurrency: null,
     description: '',
+    vendor: '',
     categoryId: null,
     payer: selfPayer(),
     date: formatLocalDate(new Date()),
@@ -498,6 +431,7 @@ function formOf(source: Expense): CaptureForm {
     originalAmount: source.originalAmount,
     originalCurrency: source.originalCurrency,
     description: source.description,
+    vendor: source.vendor ?? '',
     categoryId: source.categoryId,
     payer: { userId: source.paidByUserId, name: source.paidByName },
     date: source.date,
@@ -505,15 +439,18 @@ function formOf(source: Expense): CaptureForm {
 }
 
 const form = reactive<CaptureForm>(expense ? formOf(expense) : emptyForm());
-const files = ref<CaptureFile[]>(
-  (expense?.files ?? []).map((file) => existingFile(file)),
-);
+const {
+  files,
+  uploading,
+  uploadedIds,
+  add: addFiles,
+  remove: removeFile,
+  reset: resetFiles,
+} = useReceiptUploads(expense?.files ?? []);
 const showOriginal = ref(!!expense?.originalCurrency);
 const saving = ref(false);
 const saved = ref<Expense | null>(null);
 const restored = ref(false);
-
-const uploading = computed(() => files.value.some((f) => f.uploading));
 
 const savedMeta = computed(() =>
   saved.value
@@ -529,22 +466,11 @@ const savedMeta = computed(() =>
     : '',
 );
 
-function existingFile(file: ServiceFile): CaptureFile {
-  return {
-    key: file.id,
-    id: file.id,
-    name: file.name,
-    url: file.url,
-    preview: file.type.startsWith('image/') ? file.url : null,
-    uploading: false,
-  };
-}
-
 // --- Draft: a capture whose save failed survives a reload -----------------
 
 interface StoredDraft {
   form: CaptureForm;
-  files: Pick<CaptureFile, 'key' | 'id' | 'name'>[];
+  files: Pick<ReceiptFile, 'key' | 'id' | 'name'>[];
 }
 
 const draftKey = computed(() => `finance.captureDraft.${eventId() ?? ''}`);
@@ -580,12 +506,14 @@ function restoreDraft() {
     }
     const draft = JSON.parse(raw) as StoredDraft;
     Object.assign(form, draft.form);
-    files.value = draft.files.map((f) => ({
-      ...f,
-      url: null,
-      preview: null,
-      uploading: false,
-    }));
+    resetFiles(
+      draft.files.map((f) => ({
+        ...f,
+        url: null,
+        preview: null,
+        uploading: false,
+      })),
+    );
     showOriginal.value = !!draft.form.originalCurrency;
     restored.value = true;
   } catch {
@@ -597,77 +525,12 @@ function discardDraft() {
   clearDraft();
   restored.value = false;
   Object.assign(form, emptyForm());
-  files.value = [];
+  resetFiles();
 }
 
 if (!expense) {
   restoreDraft();
 }
-
-// --- Photos ---------------------------------------------------------------
-
-function pickFile() {
-  fileInput.value?.click();
-}
-
-function onFilesPicked(event: Event) {
-  const input = event.target as HTMLInputElement;
-  for (const file of Array.from(input.files ?? [])) {
-    void upload(file);
-  }
-  input.value = '';
-}
-
-async function upload(file: File) {
-  const key = `${Date.now().toString()}-${file.name}`;
-  const url = URL.createObjectURL(file);
-  files.value.push({
-    key,
-    id: null,
-    name: file.name,
-    url,
-    preview: file.type.startsWith('image/') ? url : null,
-    uploading: true,
-  });
-
-  const entry = () => files.value.find((f) => f.key === key);
-  try {
-    const uploaded = await api.createTemporaryFile({ file });
-    const current = entry();
-    if (current) {
-      current.id = uploaded.id;
-      current.uploading = false;
-    }
-  } catch {
-    removeFile(key);
-    quasar.notify({
-      type: 'negative',
-      message: t('finance.capture.uploadFailed'),
-    });
-  }
-}
-
-function openFile(file: CaptureFile) {
-  if (file.url) {
-    openURL(file.url);
-  }
-}
-
-function removeFile(key: string) {
-  const file = files.value.find((f) => f.key === key);
-  if (file?.url?.startsWith('blob:')) {
-    URL.revokeObjectURL(file.url);
-  }
-  files.value = files.value.filter((f) => f.key !== key);
-}
-
-onBeforeUnmount(() => {
-  for (const file of files.value) {
-    if (file.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(file.url);
-    }
-  }
-});
 
 function addCurrency(value: string, done: (item?: string) => void) {
   const code = value.trim().toUpperCase();
@@ -695,11 +558,16 @@ async function save() {
     ...original,
     date: form.date,
     description: form.description.trim(),
+    vendor: form.vendor?.trim() || null,
     categoryId: form.categoryId,
     paidByUserId: form.payer.userId,
     paidByName: form.payer.userId ? null : form.payer.name,
-    fileIds: files.value.flatMap((f) => (f.id ? [f.id] : [])),
+    fileIds: uploadedIds.value,
   };
+
+  if (expense && !(await confirmStatementChange(expense, data))) {
+    return;
+  }
 
   saving.value = true;
   try {
@@ -722,31 +590,12 @@ async function save() {
   }
 }
 
-function confirmDelete() {
-  if (!expense) {
-    return;
-  }
-  quasar
-    .dialog({
-      component: ConfirmDialog,
-      componentProps: {
-        title: t('finance.delete.title', { number: expense.receiptNumber }),
-        message: t('finance.delete.message'),
-        okLabel: t('finance.delete.ok'),
-        color: 'negative',
-      },
-    })
-    .onOk(() => {
-      void financeStore.deleteExpense(expense.id).then(() => onDialogOK());
-    });
-}
-
 // The payer and date usually stay the same across a stack of receipts.
 function startNext() {
   const { payer, date } = form;
   saved.value = null;
   Object.assign(form, emptyForm(), { payer, date });
-  files.value = [];
+  resetFiles();
   showOriginal.value = false;
 }
 </script>
@@ -775,56 +624,9 @@ function startNext() {
   white-space: nowrap;
 }
 
-.photo-entry {
-  width: 88px;
-  gap: 4px;
-}
-
-.photo-tile {
-  position: relative;
-  width: 88px;
-  height: 88px;
-  overflow: hidden;
-  background: var(--md3-surface-container-high);
-  color: var(--md3-on-surface-variant);
-}
-
-.photo-open {
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.photo-open:disabled {
-  cursor: default;
-}
-
-.photo-name {
-  max-width: 100%;
-}
-
-.photo-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-state {
-  position: absolute;
-}
-
-.photo-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-}
-
 .original-currency {
-  width: 112px;
+  /* Three letters, the clear icon and the arrow on one line. */
+  width: 136px;
   flex: 0 0 auto;
 }
 

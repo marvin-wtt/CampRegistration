@@ -2,6 +2,7 @@ import type {
   FinanceBalance,
   FinanceCategoryTotal,
 } from '@camp-registration/common/entities';
+import { partyKey } from '@camp-registration/common/utils';
 
 export interface BalanceExpense {
   type: 'EXPENSE' | 'REFUND';
@@ -18,14 +19,6 @@ export interface BalancePayout {
   paidOn: string | null;
   recipientUserId: string | null;
   recipientName: string;
-}
-
-/** People group by account, else by exact name. */
-function partyKey(userId: string | null, name: string | null): string | null {
-  if (userId) {
-    return `user:${userId}`;
-  }
-  return name ? `name:${name}` : null;
 }
 
 /**

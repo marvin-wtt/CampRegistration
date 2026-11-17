@@ -10,6 +10,12 @@ import {
 } from '@/composables/resource';
 import { removeById, replaceById, upsertById } from '@/utils/collection';
 import { usePermissions } from '@/composables/permissions';
+import { useProfileStore } from '@/stores/profile-store';
+import { useEventSettings } from '@/composables/eventSettings';
+import {
+  SETTING_KEYS,
+  type FinanceDisplaySettings,
+} from '@camp-registration/common/settings';
 import type {
   RecordView,
   ScopePermission,
@@ -32,6 +38,14 @@ import type {
   PayoutUpdateData,
 } from '@camp-registration/common/entities';
 
+/** Which categories the expenses use, as a key that changes when that does. */
+function categoryUse(list: readonly Expense[] | undefined): string {
+  return (list ?? [])
+    .map((expense) => `${expense.id}:${expense.categoryId ?? ''}`)
+    .sort()
+    .join(',');
+}
+
 /**
  * Expenses, payouts and categories stay live; balances and the summary are
  * derived by the server, so they reload whenever either list changes —
@@ -41,19 +55,29 @@ export const useFinanceStore = defineStore('finance', () => {
   const api = useAPIService();
   const key = useRouteKey('eventId');
   const { canFor } = usePermissions();
+  const profileStore = useProfileStore();
 
-  /** Everything with the full grant, otherwise what a `:own` grant reaches. */
-  const viewFor = (
+  /**
+   * Everything with the full grant, otherwise what a `:own` grant reaches.
+   * Waits for the profile: loaded beside the page, it would otherwise read as
+   * no grant at all and leave the list at `own` until something reloads it.
+   */
+  async function viewFor(
     eventId: string,
     permission: ScopePermission<'event'>,
-  ): RecordView => (canFor(eventId, permission) ? 'all' : 'own');
+  ): Promise<RecordView> {
+    if (profileStore.user === undefined) {
+      await profileStore.fetchProfile();
+    }
+    return canFor(eventId, permission) ? 'all' : 'own';
+  }
 
   const expenses = useCollection<Expense>({
     name: 'expense',
     key,
-    fetch: (eventId) =>
+    fetch: async (eventId) =>
       api.fetchExpenses(eventId, {
-        view: viewFor(eventId, 'event.expenses.view'),
+        view: await viewFor(eventId, 'event.expenses.view'),
       }),
     realtime: {
       resource: 'expense',
@@ -64,8 +88,8 @@ export const useFinanceStore = defineStore('finance', () => {
   const payouts = useCollection<Payout>({
     name: 'payout',
     key,
-    fetch: (eventId) =>
-      api.fetchPayouts(eventId, viewFor(eventId, 'event.payouts.view')),
+    fetch: async (eventId) =>
+      api.fetchPayouts(eventId, await viewFor(eventId, 'event.payouts.view')),
     realtime: { resource: 'payout' },
   });
 
@@ -79,10 +103,10 @@ export const useFinanceStore = defineStore('finance', () => {
   const balances = useResource<FinanceBalance[]>({
     name: 'finance',
     key,
-    fetch: (eventId) =>
+    fetch: async (eventId) =>
       api.fetchFinanceBalances(
         eventId,
-        viewFor(eventId, 'event.expenses.view'),
+        await viewFor(eventId, 'event.expenses.view'),
       ),
   });
 
@@ -98,6 +122,12 @@ export const useFinanceStore = defineStore('finance', () => {
     fetch: (eventId) => api.fetchFinanceParties(eventId),
   });
 
+  // One instance for the list and the settings dialog: own saves aren't echoed.
+  const { settings: display } = useEventSettings<FinanceDisplaySettings>(
+    SETTING_KEYS.FINANCES,
+    { flagMissingCategories: true },
+  );
+
   const settings = useResource<FinanceSettings>({
     name: 'finance',
     key,
@@ -106,12 +136,37 @@ export const useFinanceStore = defineStore('finance', () => {
 
   // Derived data follows every change of what it is derived from, including
   // realtime ones; a first load (nothing before) has nothing to refresh.
-  watch([expenses.data, payouts.data], (_next, [prevExpenses, prevPayouts]) => {
-    if (prevExpenses === undefined || prevPayouts === undefined) {
-      return;
-    }
+  // An expense change reloads the payouts first (their `outdated` depends on
+  // it), so balances and the summary reload once, after both.
+  let followingExpenses = false;
+
+  function reloadTotals() {
     void balances.reload();
     void summary.reload();
+  }
+
+  watch(expenses.data, async (next, prev) => {
+    if (prev === undefined) {
+      return;
+    }
+    if (categoryUse(next) !== categoryUse(prev)) {
+      void categories.reload();
+    }
+    if (payouts.data.value !== undefined) {
+      followingExpenses = true;
+      try {
+        await payouts.reload();
+      } finally {
+        followingExpenses = false;
+      }
+    }
+    reloadTotals();
+  });
+
+  watch(payouts.data, (_next, prev) => {
+    if (prev !== undefined && !followingExpenses) {
+      reloadTotals();
+    }
   });
 
   /** Everything the page shows except the summary, which needs its tab. */
@@ -198,6 +253,27 @@ export const useFinanceStore = defineStore('finance', () => {
     return payout;
   }
 
+  /** A scan of the slip signed on paper, kept beside the earlier ones. */
+  // One at a time, each from the payout as it is by then: two uploads in a
+  // row would otherwise each keep only their own page.
+  let scanQueue: Promise<unknown> = Promise.resolve();
+
+  function attachPayoutScan(payout: Payout, file: File): Promise<Payout> {
+    const attach = async () => {
+      const uploaded = await run('uploadScan', () =>
+        api.createTemporaryFile({ file }),
+      );
+      const current =
+        payouts.data.value?.find((p) => p.id === payout.id) ?? payout;
+      return updatePayout(payout.id, {
+        fileIds: [...current.files.map((f) => f.id), uploaded.id],
+      });
+    };
+    const result = scanQueue.then(attach, attach);
+    scanQueue = result.catch(() => undefined);
+    return result;
+  }
+
   /** The recipient's signature under the statement. */
   function signPayout(payoutId: string, signature: string): Promise<Payout> {
     return payouts.mutate(
@@ -273,22 +349,27 @@ export const useFinanceStore = defineStore('finance', () => {
 
   const { run } = useAction('finance');
 
-  /** Saves the export or the receipt ZIP; a running toast for the slow ZIP. */
-  async function download(kind: 'xlsx' | 'csv' | 'receipts'): Promise<void> {
+  /** Saves the export or a receipt ZIP; a running toast for the slow ZIPs. */
+  async function download(
+    kind: 'xlsx' | 'csv' | 'receipts' | 'receiptsByGroup',
+  ): Promise<void> {
     const eventId = key();
     if (!eventId) {
       return;
     }
+    const zip = kind === 'receipts' || kind === 'receiptsByGroup';
     const { blob, filename } = await run(
-      kind === 'receipts' ? 'downloadReceipts' : 'download',
+      zip ? 'downloadReceipts' : 'download',
       () =>
-        kind === 'receipts'
-          ? api.downloadFinanceReceipts(eventId)
+        zip
+          ? api.downloadFinanceReceipts(
+              eventId,
+              kind === 'receiptsByGroup' ? 'group' : 'none',
+            )
           : api.downloadFinanceExport(eventId, kind),
-      { feedback: kind === 'receipts' ? 'progress' : 'error' },
+      { feedback: zip ? 'progress' : 'error' },
     );
-    const extension = kind === 'receipts' ? 'zip' : kind;
-    exportFile(filename ?? `finances.${extension}`, blob, {
+    exportFile(filename ?? `finances.${zip ? 'zip' : kind}`, blob, {
       mimeType: blob.type,
     });
   }
@@ -313,6 +394,7 @@ export const useFinanceStore = defineStore('finance', () => {
     summaryError: summary.error,
     parties: parties.data,
     settings: settings.data,
+    display,
     isLoading: expenses.isLoading,
     error: expenses.error,
     fetchData,
@@ -323,6 +405,7 @@ export const useFinanceStore = defineStore('finance', () => {
     deleteExpense,
     createPayout,
     updatePayout,
+    attachPayoutScan,
     deletePayout,
     signPayout,
     unsignPayout,

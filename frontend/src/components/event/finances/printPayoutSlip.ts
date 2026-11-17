@@ -1,32 +1,22 @@
 import type {
   PayoutDirection,
-  Translatable,
+  PayoutStatementContent,
 } from '@camp-registration/common/entities';
 import { openPrintIframe } from '@/utils/printIframe';
 
-/** Everything on the slip, formatted by the opener in the reader's language. */
-export interface PrintPayoutSlipPayload {
-  eventName: Translatable;
-  organizer: Translatable;
+/**
+ * The frozen statement as is, plus what may change after it was made: when
+ * the money moved, the note and the signature.
+ */
+export interface PrintPayoutSlipPayload extends PayoutStatementContent {
   label: string;
   direction: PayoutDirection;
   /** Formatted; `null` while the transfer is still to be made. */
   paidOn: string | null;
-  /** Who recorded the payout, and when: the audit trail on paper. */
+  /** Who recorded the payout: the audit trail on paper. */
   createdByName: string | null;
-  createdOn: string;
   recipientName: string;
   note: string | null;
-  /** The recipient's receipts, each line ready to print. */
-  expenses: {
-    number: string;
-    date: string;
-    description: string;
-    amount: string;
-  }[];
-  totals: { label: string; amount: string; strong?: boolean }[];
-  /** What the recipient confirms; the same text they signed on screen. */
-  declaration: string;
   /** SVG path data, drawn in `SIGNATURE_VIEWBOX`. */
   signature: string | null;
   signedAt: string | null;

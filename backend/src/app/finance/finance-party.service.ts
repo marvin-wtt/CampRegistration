@@ -41,4 +41,22 @@ export class FinancePartyService extends BaseService {
 
     return { userId: null, name: name.length > 0 ? name : null };
   }
+
+  /**
+   * Before an account goes, its records fall back to their name snapshot:
+   * one name throughout, so a rename in between doesn't split the person
+   * (or make their statements look outdated).
+   */
+  async keepAccountName(account: { id: string; name: string }) {
+    await this.transaction(async (tx) => {
+      await tx.expense.updateMany({
+        where: { paidByUserId: account.id },
+        data: { paidByName: account.name },
+      });
+      await tx.payout.updateMany({
+        where: { recipientUserId: account.id },
+        data: { recipientName: account.name },
+      });
+    });
+  }
 }

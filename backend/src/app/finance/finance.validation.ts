@@ -14,7 +14,10 @@ const exportData = z.object({
   params: eventParams,
   query: z.object({ format: z.enum(['xlsx', 'csv']).default('xlsx') }),
 });
-const receipts = z.object({ params: eventParams });
+const receipts = z.object({
+  params: eventParams,
+  query: z.object({ folders: z.enum(['none', 'group']).default('none') }),
+});
 const showSettings = z.object({ params: eventParams });
 
 const updateSettings = z.object({

@@ -11,6 +11,7 @@ export default {
       paidOn: 'Zaplaceno',
       type: 'Druh',
       description: 'Popis',
+      vendor: 'Příjemce',
       group: 'Skupina',
       category: 'Kategorie',
       paidBy: 'Zaplatil(a) / přijal(a)',
@@ -39,5 +40,16 @@ export default {
       total: 'Celkem',
     },
     file: 'finance',
+  },
+  statement: {
+    receiptPending: 'Doklad chybí',
+    paid: 'Zaplaceno',
+    refunds: 'Přijaté vratky',
+    open: 'Otevřeno před touto výplatou',
+    OUT: 'Výplata',
+    IN: 'Vrácení',
+    balanceAfter: 'Zůstatek potom',
+    declaration:
+      'Potvrzuji, že výše uvedené výdaje skutečně vznikly pro „{{event}}“, že částky a doklady jsou správné a že jsem je nikde jinde neuplatnil(a) k proplacení.',
   },
 };

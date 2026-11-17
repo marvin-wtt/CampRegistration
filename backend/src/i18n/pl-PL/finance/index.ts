@@ -11,6 +11,7 @@ export default {
       paidOn: 'Zapłacono',
       type: 'Rodzaj',
       description: 'Opis',
+      vendor: 'Zapłacono dla',
       group: 'Grupa',
       category: 'Kategoria',
       paidBy: 'Zapłacone / otrzymane przez',
@@ -39,5 +40,16 @@ export default {
       total: 'Suma',
     },
     file: 'finanse',
+  },
+  statement: {
+    receiptPending: 'Paragon oczekiwany',
+    paid: 'Zapłacone',
+    refunds: 'Otrzymane zwroty',
+    open: 'Do rozliczenia przed tą wypłatą',
+    OUT: 'Wypłata',
+    IN: 'Zwrot',
+    balanceAfter: 'Saldo po',
+    declaration:
+      'Potwierdzam, że wymienione powyżej wydatki rzeczywiście poniesiono na „{{event}}”, że kwoty i paragony są prawidłowe oraz że nie zgłaszałem/-am ich nigdzie indziej do zwrotu.',
   },
 };

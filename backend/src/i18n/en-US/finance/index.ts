@@ -11,6 +11,7 @@ export default {
       paidOn: 'Paid on',
       type: 'Type',
       description: 'Description',
+      vendor: 'Paid to',
       group: 'Group',
       category: 'Category',
       paidBy: 'Paid / received by',
@@ -39,5 +40,16 @@ export default {
       total: 'Total',
     },
     file: 'finances',
+  },
+  statement: {
+    receiptPending: 'Receipt pending',
+    paid: 'Paid',
+    refunds: 'Refunds received',
+    open: 'Open before this payout',
+    OUT: 'Payout',
+    IN: 'Repayment',
+    balanceAfter: 'Balance after',
+    declaration:
+      'I confirm that the expenses listed above were actually incurred for "{{event}}", that the amounts and receipts are correct, and that I have not claimed them anywhere else.',
   },
 };

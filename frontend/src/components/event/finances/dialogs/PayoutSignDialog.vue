@@ -14,35 +14,46 @@
       @cancel="onDialogCancel"
     >
       <div class="column no-wrap q-gutter-y-md">
-        <payout-statement-view
-          :payout
-          :statement
-        />
+        <payout-statement-view :payout />
+
+        <q-banner
+          v-if="payout.outdated"
+          dense
+          rounded
+          class="bg-error-container text-on-error-container"
+        >
+          <template #avatar>
+            <q-icon name="error_outline" />
+          </template>
+          {{ t('finance.statement.outdatedNoSign') }}
+        </q-banner>
 
         <signature-pad
+          v-else
           v-model="signature"
           :label="
             t('finance.statement.signHere', { name: payout.recipientName })
           "
           :clear-label="t('finance.statement.clear')"
           data-test="payout-signature"
-        />
-
-        <q-banner
-          v-if="payout.signedAt"
-          dense
-          rounded
-          class="bg-surface-container-high"
         >
-          <template #avatar>
-            <q-icon name="history_edu" />
+          <!-- Phones: the whole screen, turned sideways where it can be. -->
+          <template
+            v-if="quasar.screen.lt.md"
+            #tools
+          >
+            <q-btn
+              :label="t('finance.statement.signLarge')"
+              icon="open_in_full"
+              flat
+              rounded
+              no-caps
+              size="sm"
+              data-test="payout-sign-large"
+              @click="signLarge"
+            />
           </template>
-          {{
-            t('finance.statement.signedBefore', {
-              date: d(new Date(payout.signedAt), 'dateTime'),
-            })
-          }}
-        </q-banner>
+        </signature-pad>
       </div>
 
       <template #actions>
@@ -55,7 +66,7 @@
           :label="t('finance.statement.sign')"
           icon="draw"
           color="primary"
-          :disable="!signature"
+          :disable="!signature || payout.outdated"
           :loading="saving"
           data-test="payout-sign"
           @click="sign"
@@ -66,18 +77,17 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useDialogPluginComponent } from 'quasar';
+import { ref } from 'vue';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { Payout } from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import SignaturePad from '@/components/common/inputs/SignaturePad.vue';
+import SignatureFullscreenDialog from '@/components/common/inputs/SignatureFullscreenDialog.vue';
 import PayoutStatementView from '@/components/event/finances/PayoutStatementView.vue';
 import { useFinanceStore } from '@/stores/finance-store';
-import { buildPayoutStatement } from '@/utils/payoutStatement';
 
 const { payout } = defineProps<{ payout: Payout }>();
 
@@ -86,16 +96,26 @@ defineEmits([...useDialogPluginComponent.emits]);
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const { t, d } = useI18n();
+const { t } = useI18n();
 const financeStore = useFinanceStore();
-const { expenses, payouts } = storeToRefs(financeStore);
 
-const statement = computed(() =>
-  buildPayoutStatement(payout, expenses.value ?? [], payouts.value ?? []),
-);
-
-// Always a fresh signature: signing again replaces the old one.
 const signature = ref<string | null>(null);
+const quasar = useQuasar();
+
+function signLarge() {
+  quasar
+    .dialog({
+      component: SignatureFullscreenDialog,
+      componentProps: {
+        initial: signature.value,
+        label: t('finance.statement.signHere', { name: payout.recipientName }),
+        clearLabel: t('finance.statement.clear'),
+      },
+    })
+    .onOk((drawn: string | null) => {
+      signature.value = drawn;
+    });
+}
 const saving = ref(false);
 
 async function sign() {

@@ -28,6 +28,7 @@ export interface ExpenseWriteData {
   originalCurrency?: string | null | undefined;
   date?: string | null | undefined;
   description?: string | undefined;
+  vendor?: string | null | undefined;
   categoryId?: string | null | undefined;
   paidByUserId?: string | null | undefined;
   paidByName?: string | null | undefined;
@@ -111,6 +112,7 @@ export class ExpenseService extends BaseService {
           originalCurrency: data.originalCurrency ?? null,
           date: data.date ?? null,
           description: data.description,
+          vendor: data.vendor ?? null,
           categoryId: data.categoryId ?? null,
           paidByUserId: payer.userId,
           paidByName: payer.name,
@@ -166,6 +168,7 @@ export class ExpenseService extends BaseService {
           originalCurrency: data.originalCurrency,
           date: data.date,
           description: data.description,
+          vendor: data.vendor,
           categoryId: data.categoryId,
           paidByUserId: payer?.userId,
           paidByName: payer?.name,

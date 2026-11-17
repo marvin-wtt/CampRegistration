@@ -130,6 +130,7 @@ export default {
         unsigned: 'Signature retirée',
       },
       fields: {
+        scans: 'Numérisations',
         recipientUserId: 'Bénéficiaire',
         recipientName: 'Bénéficiaire (nom)',
         direction: 'Sens',

@@ -42,6 +42,9 @@ export default {
       success: 'Belegdateien heruntergeladen',
       error: 'Fehler beim Herunterladen der Belegdateien',
     },
+    uploadScan: {
+      error: 'Fehler beim Hochladen der unterschriebenen Erklärung',
+    },
     fetch: { error: 'Fehler beim Abrufen der Finanzen' },
     updateSettings: {
       success: 'Einstellungen gespeichert',

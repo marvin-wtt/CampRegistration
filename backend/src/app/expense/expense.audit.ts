@@ -14,6 +14,7 @@ const FIELD_ALLOWLIST: (keyof Expense)[] = [
   'originalCurrency',
   'date',
   'description',
+  'vendor',
   'categoryId',
   'paidByUserId',
   'paidByName',

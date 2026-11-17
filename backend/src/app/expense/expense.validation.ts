@@ -24,6 +24,8 @@ const fields = {
   // Empty while the receipt is still to come.
   date: DateSchema.nullable(),
   description: z.string().trim().min(1).max(255),
+  // Blank means none, like a cleared input.
+  vendor: NAME.nullable().transform((value) => (value === '' ? null : value)),
   categoryId: z.ulid().nullable(),
   paidByUserId: z.ulid().nullable(),
   paidByName: NAME.nullable(),
@@ -73,6 +75,7 @@ const store = z.object({
       originalCurrency: fields.originalCurrency.optional(),
       date: fields.date.optional(),
       description: fields.description,
+      vendor: fields.vendor.optional(),
       categoryId: fields.categoryId.optional(),
       paidByUserId: fields.paidByUserId.optional(),
       paidByName: fields.paidByName.optional(),

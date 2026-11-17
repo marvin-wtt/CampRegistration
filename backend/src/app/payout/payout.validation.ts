@@ -38,9 +38,17 @@ const store = z.object({
   }) satisfies ZodType<PayoutCreateData>,
 });
 
+// Strict: amount, direction and recipient are frozen in the statement, and
+// silently dropping a change to them would look like it was saved.
 const update = z.object({
   params: payoutParams,
-  body: z.object(fields).partial() satisfies ZodType<PayoutUpdateData>,
+  body: z
+    .object({
+      paidOn: fields.paidOn.optional(),
+      note: fields.note.optional(),
+      fileIds: z.array(z.ulid()).max(10).optional(),
+    })
+    .strict() satisfies ZodType<PayoutUpdateData>,
 });
 
 const destroy = z.object({ params: payoutParams });

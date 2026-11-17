@@ -41,6 +41,36 @@
       </span>
     </div>
 
+    <!-- Narrow screens: the total leads too, with the phone's filter button -->
+    <div
+      v-else
+      class="totals-strip rounded-xl row items-center no-wrap q-pl-md q-pr-sm q-py-sm"
+      data-test="expense-totals"
+    >
+      <div class="column col">
+        <span class="text-caption text-on-surface-variant ellipsis">
+          {{ t('finance.summary.net') }} ·
+          {{ t('finance.receiptCount', filtered.length) }}
+        </span>
+        <span class="text-h6 amount">{{ money(net) }}</span>
+      </div>
+      <q-chip
+        v-if="quasar.screen.xs"
+        icon="filter_list"
+        clickable
+        class="filter-chip"
+        :class="{ 'filter-chip--active': activeChips.length }"
+        data-test="expense-filter-open"
+        @click="filterSheetOpen = true"
+      >
+        {{
+          activeChips.length
+            ? t('finance.filter.activeCount', { count: activeChips.length })
+            : t('finance.filter.title')
+        }}
+      </q-chip>
+    </div>
+
     <!-- Filters: chips where there is room, a sheet on phones -->
     <div
       v-if="!quasar.screen.xs"
@@ -116,6 +146,19 @@
         {{ t('finance.filter.missingFile', { count: missingCount }) }}
       </q-chip>
       <q-chip
+        v-if="categoryFilterShown"
+        icon="label_off"
+        clickable
+        class="filter-chip"
+        :class="{ 'filter-chip--active': missingCategoryOnly }"
+        data-test="expense-filter-no-category"
+        @click="missingCategoryOnly = !missingCategoryOnly"
+      >
+        {{
+          t('finance.filter.missingCategory', { count: missingCategoryCount })
+        }}
+      </q-chip>
+      <q-chip
         v-if="pendingCount > 0"
         icon="hourglass_empty"
         clickable
@@ -139,23 +182,9 @@
       />
     </div>
     <div
-      v-else
+      v-else-if="activeChips.length"
       class="row no-wrap items-center filter-scroll"
     >
-      <q-chip
-        icon="filter_list"
-        clickable
-        class="filter-chip"
-        :class="{ 'filter-chip--active': activeChips.length }"
-        data-test="expense-filter-open"
-        @click="filterSheetOpen = true"
-      >
-        {{
-          activeChips.length
-            ? t('finance.filter.activeCount', { count: activeChips.length })
-            : t('finance.filter.title')
-        }}
-      </q-chip>
       <q-chip
         v-for="chip in activeChips"
         :key="chip.key"
@@ -200,6 +229,25 @@
           </q-item-section>
           <q-item-section side>
             <q-toggle v-model="missingFileOnly" />
+          </q-item-section>
+        </q-item>
+        <q-item
+          v-if="categoryFilterShown"
+          tag="label"
+          class="q-px-none"
+        >
+          <q-item-section avatar>
+            <q-icon name="label_off" />
+          </q-item-section>
+          <q-item-section>
+            {{
+              t('finance.filter.missingCategory', {
+                count: missingCategoryCount,
+              })
+            }}
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle v-model="missingCategoryOnly" />
           </q-item-section>
         </q-item>
         <q-item
@@ -253,7 +301,7 @@
       <span>{{ t('finance.filter.noMatch') }}</span>
     </div>
 
-    <!-- Grouped by day: pending receipts first, then newest first -->
+    <!-- Grouped by day, newest first; receipts still to come last -->
     <template v-else>
       <div
         v-for="day in days"
@@ -298,17 +346,29 @@
           <q-item
             v-for="expense in day.expenses"
             :key="expense.id"
-            :clickable="canEdit(expense)"
+            clickable
             class="expense-item"
             data-test="expense-item"
             @click="
-              canEdit(expense) && dialogs.edit(expense, canDelete(expense))
+              dialogs.details(expense, canEdit(expense), canDelete(expense))
             "
           >
             <q-item-section avatar>
               <div
-                class="receipt-badge rounded-md row items-center justify-center"
+                class="receipt-badge rounded-md column items-center justify-center"
+                :class="
+                  expense.date
+                    ? ''
+                    : 'bg-warning-container text-on-warning-container'
+                "
               >
+                <q-icon
+                  v-if="!expense.date"
+                  name="hourglass_empty"
+                  size="14px"
+                >
+                  <q-tooltip>{{ t('finance.receiptPending') }}</q-tooltip>
+                </q-icon>
                 #{{ expense.receiptNumber }}
               </div>
             </q-item-section>
@@ -317,6 +377,12 @@
               <q-item-label class="row items-center no-wrap q-gutter-x-sm">
                 <span class="ellipsis text-weight-medium">
                   {{ expense.description }}
+                </span>
+                <span
+                  v-if="expense.vendor"
+                  class="ellipsis text-on-surface-variant"
+                >
+                  {{ expense.vendor }}
                 </span>
                 <q-badge
                   v-if="wide && expense.type === 'REFUND'"
@@ -330,7 +396,14 @@
                 caption
                 class="ellipsis"
               >
-                {{ categoryCaption(expense) }}
+                <q-badge
+                  v-if="missingCategory(expense)"
+                  color="warning-container"
+                  text-color="on-warning-container"
+                  :label="t('finance.noCategory')"
+                  data-test="expense-no-category"
+                />
+                <template v-else>{{ categoryCaption(expense) }}</template>
               </q-item-label>
               <q-item-label
                 v-else
@@ -338,6 +411,13 @@
                 class="row items-center q-gutter-x-xs no-wrap"
               >
                 <span class="ellipsis">{{ meta(expense) }}</span>
+                <q-badge
+                  v-if="missingCategory(expense)"
+                  color="warning-container"
+                  text-color="on-warning-container"
+                  :label="t('finance.noCategory')"
+                  data-test="expense-no-category"
+                />
                 <q-badge
                   v-if="expense.files.length === 0 && expense.date"
                   color="warning-container"
@@ -487,24 +567,6 @@
         </q-list>
       </div>
     </template>
-
-    <!-- Narrow screens: the net total sits under the list -->
-    <div
-      v-if="!wide && filtered.length > 0"
-      class="phone-total rounded-lg row items-center justify-between q-pa-md"
-    >
-      <div class="column">
-        <span class="text-caption text-on-surface-variant">
-          {{ t('finance.receiptCount', filtered.length) }}
-        </span>
-        <span class="text-body2 text-weight-medium">
-          {{ t('finance.summary.net') }}
-        </span>
-      </div>
-      <span class="text-h6 amount">
-        {{ money(net) }}
-      </span>
-    </div>
   </div>
 </template>
 
@@ -512,15 +574,18 @@
 import { computed, ref } from 'vue';
 import { openURL, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import type {
   Expense,
   ExpenseCategory,
 } from '@camp-registration/common/entities';
+import { payerKey } from '@camp-registration/common/utils';
 import { groupCategories, useFinanceFormat } from '@/composables/financeFormat';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
 import BottomSheet from '@/components/BottomSheet.vue';
+import { useFinanceStore } from '@/stores/finance-store';
 import { parseLocalDate } from '@/utils/date';
 
 const { expenses, categories } = defineProps<{
@@ -533,15 +598,37 @@ const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 const { canOn } = usePermissions();
 const dialogs = useFinanceDialogs();
+const financeStore = useFinanceStore();
 const { money, signedMoney, categoryName, categoryGroupName, payerName } =
   useFinanceFormat();
 
 // Payer, receipt and actions get their own columns once there is room.
 const wide = computed(() => quasar.screen.gt.sm);
 
-const categoryFilter = ref<string | null>(null);
-const payerFilter = ref<string | null>(null);
-const missingFileOnly = ref(false);
+// Filters live in the query, so the summary and the dashboard can link to
+// a filtered list and a reload keeps it.
+const { getStringQueryParam, getBooleanQueryParam, setQueryParams } =
+  useRouteQueryParams();
+
+function queryValue(field: string) {
+  return computed<string | null>({
+    get: () => getStringQueryParam(field) || null,
+    set: (value) => setQueryParams({ [field]: value }),
+  });
+}
+
+function queryFlag(field: string) {
+  return computed<boolean>({
+    get: () => getBooleanQueryParam(field) ?? false,
+    set: (value) => setQueryParams({ [field]: value || null }),
+  });
+}
+
+const categoryFilter = queryValue('category');
+const payerFilter = queryValue('payer');
+const missingFileOnly = queryFlag('noFile');
+const missingCategoryOnly = queryFlag('noCategory');
+const pendingOnly = queryFlag('pending');
 const filterSheetOpen = ref(false);
 
 interface FilterOption {
@@ -588,6 +675,12 @@ const activeChips = computed(() =>
       label: t('finance.noFile'),
       clear: () => (missingFileOnly.value = false),
     },
+    noCategoryFilter.value && {
+      key: 'no-category',
+      icon: 'label_off',
+      label: t('finance.noCategory'),
+      clear: () => (missingCategoryOnly.value = false),
+    },
     pendingOnly.value && {
       key: 'pending',
       icon: 'hourglass_empty',
@@ -598,19 +691,19 @@ const activeChips = computed(() =>
 );
 const activeFilterCount = computed(() => activeChips.value.length);
 
+// One navigation: separate writes would each start from the old query.
 function resetFilters() {
-  categoryFilter.value = null;
-  payerFilter.value = null;
-  missingFileOnly.value = false;
-  pendingOnly.value = false;
+  setQueryParams({
+    category: null,
+    payer: null,
+    noFile: null,
+    noCategory: null,
+    pending: null,
+  });
 }
 
-function payerKey(expense: Expense): string {
-  if (expense.paidByUserId) {
-    return `user:${expense.paidByUserId}`;
-  }
-  return expense.paidByName ? `name:${expense.paidByName}` : 'funds';
-}
+// Expenses from event funds have no payer: filtered as their own entry.
+const payerFilterKey = (expense: Expense) => payerKey(expense) ?? 'funds';
 
 const categoryOptions = computed<FilterOption[]>(() =>
   groupCategories(categories).flatMap((group) =>
@@ -626,17 +719,31 @@ const categoryOptions = computed<FilterOption[]>(() =>
 const payerOptions = computed<FilterOption[]>(() => {
   const seen = new Map<string, string>();
   for (const expense of expenses) {
-    seen.set(payerKey(expense), payerName(expense));
+    seen.set(payerFilterKey(expense), payerName(expense));
   }
   return [...seen].map(([value, label]) => ({ value, label }));
 });
 
+// A receipt still to come is expected to lack its file, as in the badge.
 const missingCount = computed(
-  () => expenses.filter((e) => e.files.length === 0).length,
+  () => expenses.filter((e) => e.files.length === 0 && e.date).length,
+);
+
+// Offered only where missing categories are marked, and while there are any.
+const missingCategoryCount = computed(
+  () => expenses.filter((e) => !e.categoryId).length,
+);
+const categoryFilterShown = computed(
+  () =>
+    financeStore.display.flagMissingCategories &&
+    (missingCategoryCount.value > 0 || missingCategoryOnly.value),
+);
+// Turning the mark off in the settings drops the filter with it.
+const noCategoryFilter = computed(
+  () => missingCategoryOnly.value && financeStore.display.flagMissingCategories,
 );
 
 // No date yet: the receipt is still to come.
-const pendingOnly = ref(false);
 const pendingCount = computed(
   () => expenses.filter((e) => e.date === null).length,
 );
@@ -645,8 +752,9 @@ const filtered = computed(() =>
   expenses.filter(
     (e) =>
       (!categoryFilter.value || e.categoryId === categoryFilter.value) &&
-      (!payerFilter.value || payerKey(e) === payerFilter.value) &&
-      (!missingFileOnly.value || e.files.length === 0) &&
+      (!payerFilter.value || payerFilterKey(e) === payerFilter.value) &&
+      (!missingFileOnly.value || (e.files.length === 0 && !!e.date)) &&
+      (!noCategoryFilter.value || !e.categoryId) &&
       (!pendingOnly.value || e.date === null),
   ),
 );
@@ -655,13 +763,14 @@ function signedAmount(expense: Expense): number {
   return expense.type === 'REFUND' ? -expense.amount : expense.amount;
 }
 
-// Pending receipts first, then newest first: the latest and the outstanding
-// matter most.
+// Newest first, as a log is read during the event. Receipts still to come
+// have no date and go last: they stay for weeks, and would otherwise push
+// today down every time. Their warning colour and the filter find them.
 const days = computed(() => {
   const byDate = new Map<string | null, Expense[]>();
   const sorted = [...filtered.value].sort(
     (a, b) =>
-      (b.date ?? '9999').localeCompare(a.date ?? '9999') ||
+      (b.date ?? '0000').localeCompare(a.date ?? '0000') ||
       b.receiptNumber - a.receiptNumber,
   );
   for (const expense of sorted) {
@@ -689,6 +798,11 @@ function meta(expense: Expense): string {
   return [categoryName(expense.categoryId), payerName(expense)]
     .filter(Boolean)
     .join(' · ');
+}
+
+/** Unless the event doesn't sort its expenses into categories. */
+function missingCategory(expense: Expense): boolean {
+  return financeStore.display.flagMissingCategories && !expense.categoryId;
 }
 
 function categoryCaption(expense: Expense): string {
@@ -766,7 +880,7 @@ function canDelete(expense: Expense): boolean {
 }
 
 .day-header--pending {
-  color: var(--md3-tertiary);
+  color: var(--md3-warning);
 }
 
 .expense-list {
@@ -776,7 +890,7 @@ function canDelete(expense: Expense): boolean {
 }
 
 .expense-list--pending {
-  border-color: color-mix(in srgb, var(--md3-tertiary) 40%, transparent);
+  border-color: color-mix(in srgb, var(--md3-warning) 40%, transparent);
 }
 
 .expense-item {
@@ -843,9 +957,5 @@ function canDelete(expense: Expense): boolean {
 
 .text-refund {
   color: var(--md3-tertiary);
-}
-
-.phone-total {
-  background: var(--md3-surface-container);
 }
 </style>

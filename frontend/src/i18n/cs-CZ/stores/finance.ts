@@ -39,6 +39,7 @@ export default {
       success: 'Soubory dokladů staženy',
       error: 'Stažení souborů dokladů se nezdařilo',
     },
+    uploadScan: { error: 'Nahrání podepsaného vyúčtování se nezdařilo' },
     fetch: { error: 'Načtení financí se nezdařilo' },
     updateSettings: {
       success: 'Nastavení uloženo',

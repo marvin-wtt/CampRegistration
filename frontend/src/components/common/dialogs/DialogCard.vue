@@ -18,15 +18,18 @@
         class="row items-start no-wrap"
         :class="sheet ? 'q-pt-none q-pb-sm' : 'q-pb-sm'"
       >
-        <div
-          v-if="icon"
-          class="dialog-icon row items-center justify-center q-mr-md"
-        >
-          <q-icon
-            :name="icon"
-            size="24px"
-          />
-        </div>
+        <!-- Replaceable whole, e.g. by a reference badge; it brings its margin. -->
+        <slot name="avatar">
+          <div
+            v-if="icon"
+            class="dialog-icon row items-center justify-center q-mr-md"
+          >
+            <q-icon
+              :name="icon"
+              size="24px"
+            />
+          </div>
+        </slot>
         <div class="col">
           <div :class="sheet ? 'text-h6' : 'text-h5'">{{ title }}</div>
           <div
@@ -38,7 +41,7 @@
         </div>
         <slot name="header-actions" />
         <q-btn
-          v-if="!$slots.actions"
+          v-if="!$slots.actions || (closable && !sheet)"
           icon="close"
           flat
           round
@@ -100,6 +103,8 @@ withDefaults(
     icon?: string | undefined;
     /** For content with forms of its own; `submit` is then never emitted. */
     noForm?: boolean;
+    /** Shows the close button beside actions too; a sheet is swiped away. */
+    closable?: boolean;
   }>(),
   { width: 560, subtitle: undefined, icon: undefined, noForm: false },
 );

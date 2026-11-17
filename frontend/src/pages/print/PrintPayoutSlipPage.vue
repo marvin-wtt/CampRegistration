@@ -16,56 +16,60 @@
       v-else-if="data"
       class="print-sheet slip"
     >
-      <!-- Header: what this is, and for which event -->
-      <header class="slip-header">
-        <div class="slip-heading">
-          <div class="slip-eyebrow">
-            {{ toAll(data.organizer) }} · {{ toAll(data.eventName) }}
+      <!-- Header and who it is for: never split across pages. -->
+      <div class="slip-opening">
+        <!-- Header: what this is, and for which event -->
+        <header class="slip-header">
+          <div class="slip-heading">
+            <div class="slip-eyebrow">
+              {{ toIn(data.organizer, data.locale) }} ·
+              {{ toIn(data.eventName, data.locale) }}
+            </div>
+            <h1 class="slip-title">
+              {{ data.direction === 'OUT' ? t('titleOut') : t('titleIn') }}
+            </h1>
           </div>
-          <h1 class="slip-title">
-            {{ data.direction === 'OUT' ? t('titleOut') : t('titleIn') }}
-          </h1>
-        </div>
-        <div class="slip-number-box">
-          <span class="slip-number-label">{{ t('number') }}</span>
-          <span class="slip-number">{{ data.label }}</span>
-          <!-- Usually signed before the transfer, so "open" would only go stale. -->
-          <span
-            v-if="data.paidOn"
-            class="slip-status"
-          >
-            {{ t('paidOn', { date: data.paidOn }) }}
-          </span>
-        </div>
-      </header>
+          <div class="slip-number-box">
+            <span class="slip-number-label">{{ t('number') }}</span>
+            <span class="slip-number">{{ data.label }}</span>
+            <!-- Usually signed before the transfer, so "open" would only go stale. -->
+            <span
+              v-if="data.paidOn"
+              class="slip-status"
+            >
+              {{ t('paidOn', { date: data.paidOn }) }}
+            </span>
+          </div>
+        </header>
 
-      <!-- Who, by whom, and what for -->
-      <section class="slip-meta">
-        <div class="slip-meta-item">
-          <span class="slip-meta-label">{{ t('person') }}</span>
-          <span class="slip-meta-value">{{ data.recipientName }}</span>
-        </div>
-        <div class="slip-meta-item">
-          <span class="slip-meta-label">{{ t('createdBy') }}</span>
-          <span class="slip-meta-value">
-            {{
-              data.createdByName
-                ? t('createdByValue', {
-                    name: data.createdByName,
-                    date: data.createdOn,
-                  })
-                : data.createdOn
-            }}
-          </span>
-        </div>
-        <div
-          v-if="data.note"
-          class="slip-meta-item"
-        >
-          <span class="slip-meta-label">{{ t('note') }}</span>
-          <span class="slip-meta-value">{{ data.note }}</span>
-        </div>
-      </section>
+        <!-- Who, by whom, and what for -->
+        <section class="slip-meta">
+          <div class="slip-meta-item">
+            <span class="slip-meta-label">{{ t('person') }}</span>
+            <span class="slip-meta-value">{{ data.recipientName }}</span>
+          </div>
+          <div class="slip-meta-item">
+            <span class="slip-meta-label">{{ t('createdBy') }}</span>
+            <span class="slip-meta-value">
+              {{
+                data.createdByName
+                  ? t('createdByValue', {
+                      name: data.createdByName,
+                      date: data.createdOn,
+                    })
+                  : data.createdOn
+              }}
+            </span>
+          </div>
+          <div
+            v-if="data.note"
+            class="slip-meta-item"
+          >
+            <span class="slip-meta-label">{{ t('note') }}</span>
+            <span class="slip-meta-value">{{ data.note }}</span>
+          </div>
+        </section>
+      </div>
 
       <!-- The receipts the person paid -->
       <section>
@@ -99,7 +103,11 @@
             </tr>
           </tbody>
         </table>
+      </section>
 
+      <!-- The amounts, what the person confirms and their signature: one
+           block, so the signature is always on the page with the amount. -->
+      <div class="slip-closing">
         <div class="slip-totals">
           <div
             v-for="total in data.totals"
@@ -111,40 +119,42 @@
             <span class="num">{{ total.amount }}</span>
           </div>
         </div>
-      </section>
-
-      <!-- What the person confirms, and their signature -->
-      <section class="slip-confirmation">
-        <h2 class="slip-section-title">{{ t('declaration') }}</h2>
-        <p class="slip-declaration">{{ data.declaration }}</p>
-
-        <div class="slip-signature">
-          <svg
-            v-if="data.signature"
-            :viewBox="`0 0 ${SIGNATURE_VIEWBOX.width} ${SIGNATURE_VIEWBOX.height}`"
-            class="slip-signature-image"
-            role="img"
-            :aria-label="t('signature', { name: data.recipientName })"
-          >
-            <path :d="data.signature" />
-          </svg>
-          <div
-            v-else
-            class="slip-signature-space"
-          />
-          <div class="slip-signature-line" />
-          <div class="slip-signature-caption">
-            {{
-              data.signedAt
-                ? t('signedOn', {
-                    name: data.recipientName,
-                    date: data.signedAt,
-                  })
-                : t('signRecipient', { name: data.recipientName })
-            }}
-          </div>
+        <div class="slip-balance-note">
+          <span>{{ data.balanceAfter.label }}</span>
+          <span class="num">{{ data.balanceAfter.amount }}</span>
         </div>
-      </section>
+        <section class="slip-confirmation">
+          <h2 class="slip-section-title">{{ t('declaration') }}</h2>
+          <p class="slip-declaration">{{ data.declaration }}</p>
+
+          <div class="slip-signature">
+            <svg
+              v-if="data.signature"
+              :viewBox="`0 0 ${SIGNATURE_VIEWBOX.width} ${SIGNATURE_VIEWBOX.height}`"
+              class="slip-signature-image"
+              role="img"
+              :aria-label="t('signature', { name: data.recipientName })"
+            >
+              <path :d="data.signature" />
+            </svg>
+            <div
+              v-else
+              class="slip-signature-space"
+            />
+            <div class="slip-signature-line" />
+            <div class="slip-signature-caption">
+              {{
+                data.signedAt
+                  ? t('signedOn', {
+                      name: data.recipientName,
+                      date: data.signedAt,
+                    })
+                  : t('signRecipient', { name: data.recipientName })
+              }}
+            </div>
+          </div>
+        </section>
+      </div>
     </article>
   </q-page>
 </template>
@@ -156,13 +166,20 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import type { PrintPayoutSlipPayload } from '@/components/event/finances/printPayoutSlip';
 
-const { t } = useI18n();
-const { toAll } = useObjectTranslation();
+const i18n = useI18n();
+const { toIn } = useObjectTranslation();
 
 const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   messagePrefix: 'PRINT_PAYOUT',
   prepare: () => waitForStableLayout(),
 });
+
+// The whole sheet speaks the frozen statement's language, not the reader's.
+function t(key: string, named: Record<string, unknown> = {}): string {
+  return data.value
+    ? i18n.t(key, named, { locale: data.value.locale })
+    : i18n.t(key, named);
+}
 </script>
 
 <style scoped>
@@ -176,13 +193,24 @@ const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   --slip-line: var(--md3-outline-variant--light);
   --slip-tint: var(--md3-surface-container--light);
 
-  display: flex;
-  flex-direction: column;
-  gap: 8mm;
   color: var(--slip-text);
   font-size: 10pt;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+}
+
+.slip > * + * {
+  margin-top: 8mm;
+}
+
+.slip-opening,
+.slip-closing {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.slip-confirmation {
+  margin-top: 8mm;
 }
 
 .slip-header {
@@ -241,6 +269,7 @@ const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
 }
 
 .slip-meta {
+  margin-top: 8mm;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4mm;
@@ -267,7 +296,10 @@ const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   font-weight: 500;
 }
 
+/* A heading never ends a page. */
 .slip-section-title {
+  break-after: avoid;
+  page-break-after: avoid;
   margin: 0 0 2.5mm;
   font-size: 11pt;
   font-weight: 500;
@@ -307,8 +339,14 @@ const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   background: var(--slip-tint);
 }
 
+/* Rows never split; the column headings repeat on each page. */
+.slip-table thead {
+  display: table-header-group;
+}
+
 .slip-table tr {
   break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .col-number {
@@ -330,7 +368,6 @@ const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   display: flex;
   flex-direction: column;
   gap: 1.5mm;
-  break-inside: avoid;
 }
 
 .slip-total {
@@ -354,8 +391,16 @@ const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   font-weight: 700;
 }
 
-.slip-confirmation {
-  break-inside: avoid;
+.slip-balance-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 4mm;
+  margin: 1.5mm 0 0 auto;
+  width: 82mm;
+  padding: 0 3mm;
+  box-sizing: border-box;
+  color: var(--slip-muted);
+  font-size: 0.9em;
 }
 
 .slip-declaration {

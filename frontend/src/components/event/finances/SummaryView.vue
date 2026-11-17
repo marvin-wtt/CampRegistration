@@ -1,11 +1,17 @@
 <template>
   <div class="column no-wrap summary-view">
-    <div class="row q-col-gutter-md">
-      <div class="col-12 col-sm-4">
-        <div class="stat-tile stat-tile--primary rounded-lg column q-pa-md">
-          <span class="text-body2">{{ t('finance.summary.total') }}</span>
+    <!-- The totals, then who paid them: one strip, as on the balances tab. -->
+    <div
+      class="totals-strip rounded-xl column q-px-lg q-py-md"
+      data-test="finance-summary-totals"
+    >
+      <div class="figures row items-end">
+        <div class="column">
+          <span class="text-caption text-on-surface-variant">
+            {{ t('finance.summary.total') }}
+          </span>
           <span class="text-h5 amount">{{ money(summary.total) }}</span>
-          <span class="text-caption">
+          <span class="text-caption text-on-surface-variant">
             {{
               t('finance.summary.totalCaption', {
                 expenses: money(summary.expenses),
@@ -14,19 +20,53 @@
             }}
           </span>
         </div>
-      </div>
-      <div class="col-12 col-sm-4">
-        <div class="stat-tile stat-tile--secondary rounded-lg column q-pa-md">
-          <span class="text-body2">{{
-            t('finance.balance.owedToPeople')
-          }}</span>
-          <span class="text-h5 amount">{{ money(summary.owedToPeople) }}</span>
+        <div class="column">
+          <span class="text-caption text-on-surface-variant">
+            {{ t('finance.balance.owedToPeople') }}
+          </span>
+          <span class="text-h6 amount">{{ money(summary.owedToPeople) }}</span>
+        </div>
+        <!-- Rare: only while someone owes the event. -->
+        <div
+          v-if="summary.owedToEvent > 0"
+          class="column"
+        >
+          <span class="text-caption text-on-surface-variant">
+            {{ t('finance.balance.owedToEvent') }}
+          </span>
+          <span class="text-h6 amount text-warning">
+            {{ money(summary.owedToEvent) }}
+          </span>
         </div>
       </div>
-      <div class="col-12 col-sm-4">
-        <div class="stat-tile stat-tile--warning rounded-lg column q-pa-md">
-          <span class="text-body2">{{ t('finance.balance.owedToEvent') }}</span>
-          <span class="text-h5 amount">{{ money(summary.owedToEvent) }}</span>
+
+      <q-separator class="q-my-md" />
+
+      <div class="column q-gutter-y-sm">
+        <span class="text-caption text-on-surface-variant">
+          {{ t('finance.summary.paidFrom') }} · {{ t('finance.summary.gross') }}
+        </span>
+        <div class="split-bar row no-wrap rounded-full">
+          <div
+            class="split-people"
+            :style="{ flexGrow: summary.paidByPeople }"
+          />
+          <div
+            class="split-funds"
+            :style="{ flexGrow: summary.paidByFunds }"
+          />
+        </div>
+        <div class="row q-gutter-x-lg text-body2">
+          <span class="row items-center no-wrap q-gutter-x-xs">
+            <span class="legend legend--people" />
+            <span>{{ t('finance.summary.people') }}</span>
+            <span class="amount">{{ money(summary.paidByPeople) }}</span>
+          </span>
+          <span class="row items-center no-wrap q-gutter-x-xs">
+            <span class="legend legend--funds" />
+            <span>{{ t('finance.eventFunds') }}</span>
+            <span class="amount">{{ money(summary.paidByFunds) }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -52,9 +92,10 @@
             money(group.total)
           }}</span>
         </div>
-        <div
+        <router-link
           v-for="row in group.rows"
           :key="row.key"
+          :to="row.to"
           class="category-row q-px-md q-py-sm"
           :class="{ 'category-row--nested': !!group.name }"
         >
@@ -82,7 +123,7 @@
             />
           </div>
           <span class="text-right amount">{{ money(row.total) }}</span>
-        </div>
+        </router-link>
       </template>
       <q-separator />
       <q-card-section class="row items-center justify-between">
@@ -95,104 +136,77 @@
       </q-card-section>
     </q-card>
 
-    <div class="row q-col-gutter-md">
-      <div class="col-12 col-md-6">
-        <q-card
-          flat
-          bordered
-          class="rounded-xl full-height"
+    <q-card
+      flat
+      bordered
+      class="rounded-xl"
+    >
+      <q-card-section class="column q-gutter-y-sm q-pb-sm">
+        <div class="row items-baseline justify-between no-wrap">
+          <span class="text-subtitle1 text-weight-medium">
+            {{ t('finance.summary.receiptFiles') }}
+          </span>
+          <span class="text-body2 text-on-surface-variant amount">
+            {{ withFile }} / {{ summary.receiptCount }}
+          </span>
+        </div>
+        <q-linear-progress
+          :value="summary.receiptCount ? withFile / summary.receiptCount : 0"
+          color="primary"
+          track-color="surface-container-highest"
+          rounded
+          size="6px"
+        />
+      </q-card-section>
+
+      <!-- Each open point leads to the expenses, filtered to it. -->
+      <q-list>
+        <q-item
+          v-for="item in openPoints"
+          :key="item.key"
+          :to="item.to"
+          active-class=""
+          exact-active-class=""
+          clickable
+          :data-test="`finance-summary-${item.key}`"
         >
-          <q-card-section class="column q-gutter-y-sm">
-            <span class="text-subtitle1 text-weight-medium">
-              {{ t('finance.summary.paidFrom') }}
-            </span>
-            <div class="split-bar row no-wrap rounded-full">
-              <div
-                class="split-people"
-                :style="{ flexGrow: summary.paidByPeople }"
-              />
-              <div
-                class="split-funds"
-                :style="{ flexGrow: summary.paidByFunds }"
-              />
-            </div>
-            <div class="row q-gutter-x-lg text-body2">
-              <span class="row items-center q-gutter-x-xs">
-                <span class="legend legend--people" />
-                <span
-                  >{{ t('finance.summary.people') }}
-                  {{ money(summary.paidByPeople) }}</span
-                >
-              </span>
-              <span class="row items-center q-gutter-x-xs">
-                <span class="legend legend--funds" />
-                <span
-                  >{{ t('finance.eventFunds') }}
-                  {{ money(summary.paidByFunds) }}</span
-                >
-              </span>
-            </div>
-            <span class="text-caption text-on-surface-variant">
-              {{ t('finance.summary.gross') }}
-            </span>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-12 col-md-6">
-        <q-card
-          flat
-          bordered
-          class="rounded-xl full-height"
-        >
-          <q-card-section class="column q-gutter-y-sm">
-            <span class="text-subtitle1 text-weight-medium">
-              {{ t('finance.summary.receiptFiles') }}
-            </span>
-            <span class="text-body2">
-              {{
-                t('finance.summary.filesCount', {
-                  withFile:
-                    summary.receiptCount - summary.receiptsWithoutFile.length,
-                  total: summary.receiptCount,
-                })
-              }}
-            </span>
-            <q-banner
-              v-if="summary.receiptsWithoutFile.length > 0"
-              dense
-              rounded
-              class="bg-warning-container text-on-warning-container"
+          <q-item-section avatar>
+            <q-icon
+              :name="item.icon"
+              color="warning"
+            />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ item.label }}</q-item-label>
+            <q-item-label
+              v-if="item.numbers"
+              caption
+              class="ellipsis"
             >
-              {{
-                t('finance.summary.missingFiles', {
-                  numbers: summary.receiptsWithoutFile
-                    .map((n) => `#${n}`)
-                    .join(', '),
-                })
-              }}
-            </q-banner>
-            <q-banner
-              v-if="summary.receiptsPending.length > 0"
-              dense
-              rounded
-              class="bg-tertiary-container text-on-tertiary-container"
-              data-test="finance-summary-pending"
-            >
-              {{
-                t('finance.summary.pending', {
-                  numbers: summary.receiptsPending
-                    .map((n) => `#${n}`)
-                    .join(', '),
-                })
-              }}
-            </q-banner>
-            <span class="text-caption text-on-surface-variant">
-              {{ t('finance.summary.recordsNote') }}
-            </span>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
+              {{ item.numbers }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-icon name="chevron_right" />
+          </q-item-section>
+        </q-item>
+        <q-item v-if="openPoints.length === 0">
+          <q-item-section avatar>
+            <q-icon
+              name="task_alt"
+              color="positive"
+            />
+          </q-item-section>
+          <q-item-section>{{ t('finance.summary.complete') }}</q-item-section>
+        </q-item>
+      </q-list>
+
+      <q-card-section class="q-pt-sm">
+        <span class="text-caption text-on-surface-variant">
+          {{ t('finance.summary.recordsNote') }}
+        </span>
+      </q-card-section>
+    </q-card>
 
     <q-card
       flat
@@ -230,13 +244,40 @@
           <m-btn
             :label="t('finance.export.receipts')"
             icon="folder_zip"
+            icon-right="arrow_drop_down"
             tonal
-            :disable="
-              summary.receiptCount === summary.receiptsWithoutFile.length
-            "
+            :disable="noReceiptFiles"
             data-test="finance-export-receipts"
-            @click="download('receipts')"
-          />
+          >
+            <q-menu auto-close>
+              <q-list>
+                <q-item
+                  clickable
+                  data-test="finance-export-receipts-flat"
+                  @click="download('receipts')"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="folder" />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('finance.export.receiptsFlat') }}
+                  </q-item-section>
+                </q-item>
+                <q-item
+                  clickable
+                  data-test="finance-export-receipts-by-group"
+                  @click="download('receiptsByGroup')"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="folder_copy" />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('finance.export.receiptsByGroup') }}
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </m-btn>
         </div>
       </q-card-section>
     </q-card>
@@ -245,6 +286,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import type { RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type {
   ExpenseCategory,
@@ -265,13 +307,69 @@ const { to } = useObjectTranslation();
 const { money } = useFinanceFormat();
 const financeStore = useFinanceStore();
 
-function download(kind: 'xlsx' | 'csv' | 'receipts') {
+const noReceiptFiles = computed(
+  () => summary.receiptCount === summary.receiptsWithoutFile.length,
+);
+
+/** The expenses tab with these filters, read by `ExpensesView`. */
+function expensesWith(filters: Record<string, string>): RouteLocationRaw {
+  return { query: { tab: 'expenses', ...filters } };
+}
+
+const numbers = (list: readonly number[]) =>
+  list.map((n) => `#${n.toString()}`).join(', ');
+
+// A receipt still to come is expected to lack its file: not missing yet.
+const missingFiles = computed(() =>
+  summary.receiptsWithoutFile.filter(
+    (n) => !summary.receiptsPending.includes(n),
+  ),
+);
+const withFile = computed(
+  () => summary.receiptCount - summary.receiptsWithoutFile.length,
+);
+
+const openPoints = computed(() => {
+  const uncategorized = financeStore.display.flagMissingCategories
+    ? (summary.byCategory.find((c) => c.categoryId === null)?.count ?? 0)
+    : 0;
+  return [
+    missingFiles.value.length > 0 && {
+      key: 'missing-files',
+      icon: 'no_photography',
+      label: t('finance.filter.missingFile', {
+        count: missingFiles.value.length,
+      }),
+      numbers: numbers(missingFiles.value),
+      to: expensesWith({ noFile: 'true' }),
+    },
+    summary.receiptsPending.length > 0 && {
+      key: 'pending',
+      icon: 'hourglass_empty',
+      label: t('finance.filter.pending', {
+        count: summary.receiptsPending.length,
+      }),
+      numbers: numbers(summary.receiptsPending),
+      to: expensesWith({ pending: 'true' }),
+    },
+    uncategorized > 0 && {
+      key: 'no-category',
+      icon: 'label_off',
+      label: t('finance.filter.missingCategory', { count: uncategorized }),
+      numbers: '',
+      to: expensesWith({ noCategory: 'true' }),
+    },
+  ].filter((item) => !!item);
+});
+
+function download(kind: 'xlsx' | 'csv' | 'receipts' | 'receiptsByGroup') {
   // Reported by the store.
   financeStore.download(kind).catch(() => undefined);
 }
 
 interface Row {
   key: string;
+  to: RouteLocationRaw;
   name: string;
   total: number;
   refunds: number;
@@ -286,6 +384,7 @@ const rows = computed(() => {
     return total
       ? {
           key: category.id,
+          to: expensesWith({ category: category.id }),
           name: to(category.name),
           total: total.total,
           refunds: total.refunds,
@@ -316,6 +415,7 @@ const rows = computed(() => {
       rows: [
         {
           key: 'none',
+          to: expensesWith({ noCategory: 'true' }),
           name: t('finance.summary.uncategorized'),
           total: uncategorized.total,
           refunds: uncategorized.refunds,
@@ -346,25 +446,12 @@ function barWidth(total: number): number {
   background: var(--md3-surface-container);
 }
 
-.stat-tile {
+.totals-strip {
   background: var(--md3-surface-container);
-  gap: 4px;
-  height: 100%;
 }
 
-.stat-tile--primary {
-  background: var(--md3-primary);
-  color: var(--md3-on-primary);
-}
-
-.stat-tile--secondary {
-  background: var(--md3-primary-container);
-  color: var(--md3-on-primary-container);
-}
-
-.stat-tile--warning {
-  background: var(--md3-warning-container);
-  color: var(--md3-on-warning-container);
+.figures {
+  gap: 8px 32px;
 }
 
 .amount {
@@ -378,11 +465,18 @@ function barWidth(total: number): number {
 }
 
 .category-row {
+  color: inherit;
+  text-decoration: none;
   display: grid;
   grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2fr) minmax(90px, auto);
   gap: 16px;
   align-items: center;
   border-top: 1px solid var(--md3-outline-variant);
+}
+
+.category-row:hover,
+.category-row:focus-visible {
+  background: var(--md3-surface-container);
 }
 
 .category-row--nested {

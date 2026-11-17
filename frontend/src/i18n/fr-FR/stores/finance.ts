@@ -42,6 +42,7 @@ export default {
       success: 'Justificatifs téléchargés',
       error: 'Échec du téléchargement des justificatifs',
     },
+    uploadScan: { error: 'Échec de l’import de la déclaration signée' },
     fetch: { error: 'Échec du chargement des finances' },
     updateSettings: {
       success: 'Paramètres enregistrés',

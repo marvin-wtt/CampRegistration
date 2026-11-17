@@ -4,6 +4,7 @@ export default {
   subtitle: 'Výdaje, výplaty a komu ještě dlužíme.',
   eventFunds: 'Společná pokladna',
   noFile: 'bez souboru',
+  noCategory: 'bez kategorie',
   receiptPending: 'Doklad chybí',
   files: 'Soubory: {n}',
   receiptCount: 'Doklady: {n}',
@@ -28,20 +29,23 @@ export default {
     message: 'Zaznamenej první doklad hned u pokladny — s fotkou, z mobilu.',
   },
   field: {
+    vendor: 'Příjemce platby',
+    vendorRefund: 'Vráceno od',
+    vendorHint: 'Nepovinné, např. obchod nebo firma',
+    noCategoryMatch: 'Žádná odpovídající kategorie',
     paidOn: 'Zaplaceno',
     receiptPending: 'Prázdné: doklad teprve přijde',
     receiptDate: 'Datum dokladu',
     amount: 'Částka',
     category: 'Kategorie',
     date: 'Datum',
-    description: 'Za co?',
+    description: 'Popis',
     note: 'Poznámka (nepovinné)',
     originalToggle: 'Placeno v jiné měně',
     originalCurrency: 'Měna',
     originalAmount: 'Částka na dokladu',
     paidBy: 'Zaplatil(a)',
     receivedBy: 'Přijal(a)',
-    recipient: 'Osoba',
     receipt: 'Doklad',
   },
   filter: {
@@ -50,6 +54,7 @@ export default {
     activeCount: 'Filtry ({count})',
     reset: 'Obnovit',
     missingFile: 'Chybí soubor dokladu ({count})',
+    missingCategory: 'Bez kategorie ({count})',
     noMatch: 'Těmto filtrům neodpovídá žádný výdaj.',
   },
   party: {
@@ -62,9 +67,9 @@ export default {
     add: 'Přidat',
     addExpense: 'Přidat výdaj',
     expense: 'Výdaj',
-    addPhoto: 'Přidat fotku',
-    takePhoto: 'Fotka dokladu',
-    removePhoto: 'Odebrat fotku',
+    addFile: 'Další soubor',
+    addReceipt: 'Přidat doklad',
+    removeFile: 'Odebrat soubor',
     openFile: 'Otevřít {name}',
     cancel: 'Zrušit',
     close: 'Zavřít',
@@ -79,6 +84,10 @@ export default {
     printSlip: 'Vytisknout doklad',
     undoPayout: 'Zrušit výplatu',
   },
+  expenseDetails: {
+    statements: 'Na výplatách',
+    edit: 'Upravit',
+  },
   capture: {
     keepOriginal: 'Papírový originál si ponech.',
     newExpense: 'Nový výdaj',
@@ -87,14 +96,22 @@ export default {
     savedTitle: 'Uloženo',
     savedAs: 'Uloženo jako doklad',
     writeNumber: 'Napiš toto číslo na papírový doklad.',
-    noPhoto: 'Zatím bez fotky — můžeš ji přidat později.',
+    noFile: 'Zatím bez souboru — můžeš ho přidat později.',
     restored:
       'Tvůj neuložený výdaj zůstal zachován. Ulož ho znovu, nebo ho zahoď.',
-    uploadFailed: 'Fotku se nepodařilo nahrát. Zkus to znovu.',
+    uploadFailed: 'Soubor se nepodařilo nahrát. Zkus to znovu.',
+    onStatement: {
+      title: 'Změnit doklad č. {number}?',
+      message:
+        'Tento doklad je na výplatě {labels}. Změnou přestane být aktuální.',
+      ok: 'Změnit',
+    },
   },
   delete: {
     title: 'Smazat doklad č. {number}?',
     message: 'Číslo dokladu se znovu nepoužije: v seznamu zůstane mezera.',
+    onStatement:
+      'Je uveden na výplatě {labels}, která tím přestane být aktuální.',
     ok: 'Smazat',
   },
   balance: {
@@ -105,7 +122,10 @@ export default {
     owedToEvent: 'Dlužno akci',
     settled: 'Vyrovnáno',
     pending: 'Platba sjednána',
-    settledCount: 'Vyrovnáno: {settled} z {total}',
+    stillOpen: 'Ještě otevřené',
+    agreedUnpaid: 'Domluveno, nezaplaceno',
+    toComeBack: 'K vrácení',
+    settledProgress: 'Vyrovnáno {settled} z {total}',
     eventOwes: 'Akce dluží: {name}',
     owesEvent: '{name}: dluh vůči akci',
     manager: 'Člen týmu',
@@ -124,8 +144,22 @@ export default {
       'Tohle je tvůj vlastní zůstatek. O výplatu požádej pokladnu nebo vedení.',
   },
   payout: {
+    details: {
+      created: 'Vytvořeno {date}',
+      outTo: 'Výplata pro {name}',
+      inFrom: 'Vrácení od {name}',
+      note: 'Poznámka',
+      paidOn: 'Zaplaceno {date}',
+      toPay: 'Zatím nezaplaceno',
+      signedOn: 'Podepsáno {date}',
+      signedScan: 'Podepsáno na papíře (sken)',
+      unsigned: 'Zatím nepodepsáno',
+    },
     markPaid: 'Označit jako zaplacené',
+    markUnpaid: 'Označit jako nezaplacené',
     toPayHint: 'Prázdné: převod teprve proběhne',
+    frozenHint:
+      'Pevně dáno vyúčtováním. Chcete-li to změnit, smažte výplatu a vytvořte novou.',
     toPay: 'K úhradě',
     out: 'Vyplatit',
     in: 'Přijmout',
@@ -144,11 +178,13 @@ export default {
       title: 'Zrušit výplatu {label}?',
       message:
         'Zůstatek se vrátí na původní hodnotu. Číslo se znovu nepoužije.',
+      messagePaid:
+        'Tato výplata byla provedena. Vraťte ji jen tehdy, pokud byla zaznamenána omylem; oprava je nová výplata. Pokud vyúčtování potřebujete, nejdřív ho vytiskněte.',
       ok: 'Zrušit výplatu',
     },
   },
   summary: {
-    pending: 'Doklad teprve přijde: {numbers}.',
+    complete: 'Všechny doklady jsou kompletní.',
     total: 'Celkem utraceno',
     totalCaption: 'Výdaje {expenses} − vratky {refunds}',
     expenses: 'Výdaje',
@@ -161,8 +197,6 @@ export default {
     people: 'Lidé',
     gross: 'Hrubě, před vratkami.',
     receiptFiles: 'Soubory dokladů',
-    filesCount: 'Doklady se souborem: {withFile} z {total}.',
-    missingFiles: 'Bez souboru: {numbers}.',
     recordsNote:
       'Doklady tvoří papírové účtenky a export; soubory jsou jen praktická kopie.',
   },
@@ -194,33 +228,43 @@ export default {
     xlsx: 'XLSX',
     csv: 'CSV',
     receipts: 'Soubory dokladů (ZIP)',
-    receiptsText: 'Všechny soubory dokladů, pojmenované podle čísla dokladu.',
+    receiptsText:
+      'Všechny soubory dokladů, pojmenované podle čísla dokladu, pohromadě nebo ve složce pro každou skupinu.',
+    receiptsFlat: 'Vše v jedné složce',
+    receiptsByGroup: 'Složka pro každou skupinu',
   },
   statement: {
-    title: 'Prohlášení {label}',
+    title: 'Výplata {label}',
+    showAll: 'Zobrazit všech {count} dokladů',
     expenses: 'Doklady zaplacené: {name}',
     noExpenses: 'Pro tuto osobu nejsou zaznamenány žádné doklady.',
-    open: 'Otevřeno před touto výplatou',
     signHere: 'Podepište zde: {name}',
     clear: 'Smazat',
+    signLarge: 'Podepsat na celou obrazovku',
     sign: 'Podepsat',
-    signAgain: 'Podepsat znovu',
     unsign: {
       action: 'Odebrat podpis',
       title: 'Odebrat podpis u {label}?',
       message:
-        'Výplata pak platí jako nepodepsaná. Záznam uchová, kdo a kdy podpis odebral.',
+        'Výplata pak platí jako nepodepsaná a nahraný sken se odebere také. Poté ji lze podepsat znovu. Záznam uchová, kdo a kdy podpis odebral.',
       ok: 'Odebrat',
     },
     signed: 'Podepsáno',
-    signedBefore: 'Podepsáno {date}. Nový podpis ho nahradí.',
-    declarationOut:
-      'Potvrzuji, že výše uvedené výdaje skutečně vznikly pro „{event}“, že částky a doklady jsou správné a že jsem je nikde jinde neuplatnil(a) k proplacení. Částku {amount} jsem obdržel(a).',
-    declarationIn:
-      'Potvrzuji, že výše uvedené výdaje skutečně vznikly pro „{event}“, že částky a doklady jsou správné a že jsem je nikde jinde neuplatnil(a) k proplacení. Částku {amount} jsem vrátil(a) do společné pokladny.',
+    outdatedHint:
+      'Doklad na tomto vyúčtování se mezitím změnil. Smažte výplatu a vytvořte novou.',
+    correctedLaterHint:
+      'Doklad se po této výplatě změnil. Výplata zůstává, jak je; rozdíl je v zůstatku a vyrovná se novou výplatou.',
+    outdatedNoSign:
+      'Doklad na tomto vyúčtování se od jeho vytvoření změnil, proto ho už nelze podepsat.',
+    uploadScan: 'Nahrát podepsané vyúčtování',
+    openScan: 'Otevřít podepsané vyúčtování',
   },
   settings: {
-    title: 'Čísla výplat',
+    title: 'Nastavení financí',
+    payoutNumbers: 'Čísla výplat',
+    flagMissingCategories: 'Označovat výdaje bez kategorie',
+    flagMissingCategoriesHint:
+      'Vypni, pokud se výdaje této akce neřadí do kategorií.',
     prefix: 'Předpona',
     prefixHint:
       'Výplaty mají vlastní číslování, oddělené od dokladů, aby seznam dokladů pro poskytovatele dotace neměl mezery. Předpona je na výdajovém dokladu.',

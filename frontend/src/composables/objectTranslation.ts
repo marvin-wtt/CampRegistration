@@ -56,6 +56,17 @@ export function useObjectTranslation() {
   function to(
     value: string | Record<string, string> | undefined | null,
   ): string {
+    return toIn(value, locale.value);
+  }
+
+  /**
+   * In a given language rather than the reader's, e.g. a document's own.
+   * Separate from `to`, which is passed to `.map()` and would get the index.
+   */
+  function toIn(
+    value: string | Record<string, string> | undefined | null,
+    inLocale: string,
+  ): string {
     if (value == null) {
       return '';
     }
@@ -67,7 +78,7 @@ export function useObjectTranslation() {
     const fallback =
       typeof fallbackLocale.value === 'string' ? fallbackLocale.value : 'en';
 
-    return pickTranslation(value, locale.value, fallback);
+    return pickTranslation(value, inLocale, fallback);
   }
 
   function toAll(
@@ -86,6 +97,7 @@ export function useObjectTranslation() {
 
   return {
     to,
+    toIn,
     toAll,
   };
 }

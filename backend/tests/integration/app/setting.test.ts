@@ -248,4 +248,45 @@ describe('/api/v1/events/:eventId/settings', () => {
       expect(settingCount).toBe(0);
     });
   });
+
+  describe('finances', () => {
+    const url = (eventId: string) =>
+      `/api/v1/events/${eventId}/settings/${SETTING_KEYS.FINANCES}`;
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'TREASURER', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+    ])(
+      'is changed by $role with `$expectedStatus`',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+
+        await request()
+          .put(url(event.id))
+          .send({ data: { flagMissingCategories: false } })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
+    it('is read by every manager, counselors included', async () => {
+      const { event, accessToken } =
+        await createEventWithManagerAndToken('COUNSELOR');
+      await EventSettingFactory.create({
+        event: { connect: { id: event.id } },
+        key: SETTING_KEYS.FINANCES,
+        data: { flagMissingCategories: false },
+      });
+
+      const response = await request()
+        .get(url(event.id))
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data.data).toEqual({ flagMissingCategories: false });
+    });
+  });
 });

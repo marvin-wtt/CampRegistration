@@ -130,6 +130,7 @@ export default {
         unsigned: 'Podpis odebrán',
       },
       fields: {
+        scans: 'Skeny',
         recipientUserId: 'Příjemce',
         recipientName: 'Příjemce (jméno)',
         direction: 'Směr',

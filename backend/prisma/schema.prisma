@@ -396,6 +396,7 @@ model File {
   messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
   newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
   expenseId           String?      @map("expense_id") @db.Char(26) // Prisma does not support morth
+  payoutId            String?      @map("payout_id") @db.Char(26) // Prisma does not support morth
   name                String
   originalName        String       @map("original_name")
   field               String?
@@ -417,8 +418,10 @@ model File {
   messageTemplate   MessageTemplate?   @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
   newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
   expense           Expense?           @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  payout            Payout?            @relation(fields: [payoutId], references: [id], onDelete: SetNull)
 
   @@index([expenseId], map: "files_expense_id_index")
+  @@index([payoutId], map: "files_payout_id_index")
   @@map("files")
 }
 
@@ -466,6 +469,8 @@ model Expense {
   // The date on the receipt; `null` while the receipt is still to come.
   date             String?     @db.Char(10)
   description      String      @db.VarChar(255)
+  // Who was paid: a shop, a bus company. Free text, for the bookkeeping.
+  vendor           String?     @db.VarChar(255)
   categoryId       String?     @map("category_id") @db.Char(26)
   paidByUserId     String?     @map("paid_by_user_id") @db.Char(26)
   // A snapshot for a manager, the only identity for anyone else.
@@ -506,17 +511,21 @@ model Payout {
   // statement is usually signed first, the transfer follows).
   paidOn          String?         @map("paid_on") @db.Char(10)
   note            String?         @db.VarChar(255)
-  // The recipient's signature under the statement, as SVG path data; cleared
-  // when what they signed (amount, direction, recipient) changes.
+  // The recipient's signature under the statement, as SVG path data. A scan
+  // of a slip signed on paper is one of `files` instead.
   signature       String?         @db.Text
   signedAt        DateTime?       @map("signed_at")
+  // `{ content, basis }`, frozen at creation and never written again: see
+  // "Frozen statements" in docs/finances.md.
+  statement       Json
   createdByUserId String?         @map("created_by_user_id") @db.Char(26)
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime?       @updatedAt @map("updated_at")
 
-  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
-  recipient User? @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_recipient_user_id_foreign")
-  createdBy User? @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_created_by_user_id_foreign")
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
+  recipient User?  @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_recipient_user_id_foreign")
+  createdBy User?  @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_created_by_user_id_foreign")
+  files     File[]
 
   @@unique([eventId, number], map: "payouts_event_id_number_unique")
   @@index([recipientUserId], map: "payouts_recipient_user_id_index")

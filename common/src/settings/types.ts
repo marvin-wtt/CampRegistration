@@ -97,3 +97,13 @@ export interface ProgramPublicSettings {
    */
   allowPastDates: boolean;
 }
+
+/** Stored under `SETTING_KEYS.FINANCES`. */
+export interface FinanceDisplaySettings {
+  /**
+   * Mark expenses without a category; off for events that don't sort them.
+   *
+   * @default true
+   */
+  flagMissingCategories: boolean;
+}

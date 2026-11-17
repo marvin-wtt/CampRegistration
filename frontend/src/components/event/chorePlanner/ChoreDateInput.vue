@@ -4,7 +4,6 @@
     :model-value="model"
     :label
     :clearable
-    stack-label
     outlined
     rounded
     hide-bottom-space
@@ -59,7 +58,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { parseLocalDate } from '@/utils/date';
+import { formatLocalDate, parseLocalDate } from '@/utils/date';
 
 const props = defineProps<{
   label: string;
@@ -67,6 +66,8 @@ const props = defineProps<{
   // Inclusive `YYYY-MM-DD` bounds.
   min?: string | undefined;
   max?: string | undefined;
+  /** Open an empty field on today's month, e.g. for when money moved. */
+  openOnToday?: boolean;
 }>();
 
 const model = defineModel<string | null>({ required: true });
@@ -99,7 +100,9 @@ function isEventDay(value: string): boolean {
 
 // An empty field opens on the event's month rather than today's.
 const defaultYearMonth = computed<string | undefined>(() =>
-  eventStart.value?.slice(0, 7).replace('-', '/'),
+  (props.openOnToday ? formatLocalDate(new Date()) : eventStart.value)
+    ?.slice(0, 7)
+    .replace('-', '/'),
 );
 </script>
 

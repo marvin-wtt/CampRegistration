@@ -1,122 +1,139 @@
 <template>
+  <!-- The frozen statement, shown as it will be printed. -->
   <div class="column no-wrap q-gutter-y-md">
-    <q-list
-      bordered
-      separator
-      class="rounded-lg"
-    >
-      <q-item-label header>
+    <div class="statement rounded-lg">
+      <div class="text-subtitle2 text-on-surface-variant q-px-md q-pt-md">
         {{ t('finance.statement.expenses', { name: payout.recipientName }) }}
-      </q-item-label>
-      <q-item
-        v-for="expense in statement.expenses"
-        :key="expense.id"
-        dense
-      >
-        <q-item-section avatar>
-          <span class="receipt-mono text-on-surface-variant">
-            #{{ expense.receiptNumber }}
-          </span>
-        </q-item-section>
-        <q-item-section>
-          <q-item-label class="ellipsis">{{
-            expense.description
-          }}</q-item-label>
-          <q-item-label caption>
-            {{
-              expense.date
-                ? d(parseLocalDate(expense.date), 'date')
-                : t('finance.receiptPending')
-            }}
-          </q-item-label>
-        </q-item-section>
-        <q-item-section
-          side
-          class="amount text-on-surface"
-          :class="{ 'text-refund': expense.type === 'REFUND' }"
+      </div>
+      <q-list dense>
+        <q-item
+          v-for="line in shownExpenses"
+          :key="line.number"
         >
-          {{ signedMoney(expense) }}
-        </q-item-section>
-      </q-item>
-      <q-item
-        v-if="statement.expenses.length === 0"
-        dense
-      >
-        <q-item-section class="text-on-surface-variant">
-          {{ t('finance.statement.noExpenses') }}
-        </q-item-section>
-      </q-item>
-    </q-list>
+          <q-item-section
+            avatar
+            class="number"
+          >
+            <span class="receipt-mono text-on-surface-variant">
+              {{ line.number }}
+            </span>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="ellipsis">{{ line.description }}</q-item-label>
+            <q-item-label caption>{{ line.date }}</q-item-label>
+          </q-item-section>
+          <q-item-section
+            side
+            class="amount text-on-surface"
+          >
+            {{ line.amount }}
+          </q-item-section>
+        </q-item>
+        <q-item
+          v-if="hiddenCount > 0"
+          clickable
+          class="text-primary"
+          data-test="statement-show-all"
+          @click="expanded = true"
+        >
+          <q-item-section
+            avatar
+            class="number"
+          >
+            <q-icon name="expand_more" />
+          </q-item-section>
+          <q-item-section>
+            {{
+              t('finance.statement.showAll', {
+                count: statement.expenses.length,
+              })
+            }}
+          </q-item-section>
+        </q-item>
+        <q-item v-if="statement.expenses.length === 0">
+          <q-item-section class="text-on-surface-variant">
+            {{ t('finance.statement.noExpenses') }}
+          </q-item-section>
+        </q-item>
+      </q-list>
 
-    <dl class="totals">
-      <dt>{{ t('finance.balance.paid') }}</dt>
-      <dd>{{ money(statement.paid) }}</dd>
-      <template v-if="statement.refunds > 0">
-        <dt>{{ t('finance.balance.refunds') }}</dt>
-        <dd>−{{ money(statement.refunds) }}</dd>
-      </template>
-      <template
-        v-for="earlier in statement.earlier"
-        :key="earlier.id"
-      >
-        <dt>
-          {{ earlier.label }} ·
-          {{
-            earlier.paidOn
-              ? d(parseLocalDate(earlier.paidOn), 'date')
-              : t('finance.payout.toPay')
-          }}
-        </dt>
-        <dd>
-          {{ earlier.direction === 'OUT' ? '−' : '+'
-          }}{{ money(earlier.amount) }}
+      <q-separator class="q-mx-md" />
+
+      <dl class="totals q-px-md q-pt-sm q-pb-md">
+        <template
+          v-for="line in statement.totals"
+          :key="line.label"
+        >
+          <dt :class="{ 'text-weight-medium text-on-surface': line.strong }">
+            {{ line.label }}
+          </dt>
+          <dd :class="{ 'text-weight-medium': line.strong }">
+            {{ line.amount }}
+          </dd>
+        </template>
+        <dt class="text-caption">{{ statement.balanceAfter.label }}</dt>
+        <dd class="text-caption text-on-surface-variant">
+          {{ statement.balanceAfter.amount }}
         </dd>
-      </template>
-      <dt class="text-weight-medium">{{ t('finance.statement.open') }}</dt>
-      <dd class="text-weight-medium">{{ money(statement.before) }}</dd>
-      <dt class="text-weight-medium">
-        {{ payout.label }} ·
-        {{
-          payout.direction === 'OUT'
-            ? t('finance.payout.out')
-            : t('finance.payout.in')
-        }}
-      </dt>
-      <dd class="text-weight-medium">
-        {{ payout.direction === 'OUT' ? '−' : '+' }}{{ money(payout.amount) }}
-      </dd>
-      <dt>{{ t('finance.payout.balanceAfter') }}</dt>
-      <dd>{{ money(statement.after) }}</dd>
-    </dl>
+      </dl>
+    </div>
 
-    <p class="declaration text-body2 q-mb-none">
-      {{ declaration }}
+    <p
+      v-if="declaration"
+      class="declaration text-body2 q-mb-none"
+    >
+      {{ statement.declaration }}
     </p>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Payout } from '@camp-registration/common/entities';
-import { useFinanceFormat } from '@/composables/financeFormat';
-import { usePayoutDeclaration } from '@/composables/payoutSlip';
-import type { PayoutStatement } from '@/utils/payoutStatement';
-import { parseLocalDate } from '@/utils/date';
 
-const { payout, statement } = defineProps<{
+const {
+  payout,
+  declaration = true,
+  preview = undefined,
+} = defineProps<{
   payout: Payout;
-  statement: PayoutStatement;
+  /** What the recipient confirms; only where they sign. */
+  declaration?: boolean;
+  /** Receipts listed before "show all"; all of them when unset. */
+  preview?: number | undefined;
 }>();
 
-const { t, d } = useI18n();
-const { money, signedMoney } = useFinanceFormat();
-const declare = usePayoutDeclaration();
+const { t } = useI18n();
 
-const declaration = computed(() => declare(payout));
+const statement = computed(() => payout.statement);
+
+const expanded = ref(false);
+// One more line costs no more than the button that would replace it.
+const limit = computed(() =>
+  expanded.value ||
+  preview === undefined ||
+  statement.value.expenses.length <= preview + 1
+    ? Infinity
+    : preview,
+);
+const shownExpenses = computed(() =>
+  statement.value.expenses.slice(0, limit.value),
+);
+const hiddenCount = computed(
+  () => statement.value.expenses.length - shownExpenses.value.length,
+);
 </script>
 
 <style scoped>
+.statement {
+  border: 1px solid var(--md3-outline-variant);
+}
+
+.number {
+  min-width: 40px;
+}
+
 .receipt-mono {
   font-family: 'Roboto Mono', ui-monospace, monospace;
 }
@@ -127,16 +144,11 @@ const declaration = computed(() => declare(payout));
   white-space: nowrap;
 }
 
-.text-refund {
-  color: var(--md3-tertiary);
-}
-
 .totals {
   display: grid;
   grid-template-columns: 1fr auto;
   row-gap: 4px;
   margin: 0;
-  padding: 0 4px;
 }
 
 .totals dt {

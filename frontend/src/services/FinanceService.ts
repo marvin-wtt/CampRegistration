@@ -229,8 +229,13 @@ export function useFinanceService() {
     );
   }
 
-  function downloadFinanceReceipts(eventId: string) {
-    return downloadFinanceFile(`events/${eventId}/finances/receipts/`);
+  function downloadFinanceReceipts(
+    eventId: string,
+    folders: 'none' | 'group' = 'none',
+  ) {
+    return downloadFinanceFile(
+      `events/${eventId}/finances/receipts/?folders=${folders}`,
+    );
   }
 
   async function fetchFinanceSettings(

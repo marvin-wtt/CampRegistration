@@ -11,6 +11,7 @@ export default {
       paidOn: 'Payé le',
       type: 'Type',
       description: 'Description',
+      vendor: 'Payé à',
       group: 'Groupe',
       category: 'Catégorie',
       paidBy: 'Payé / reçu par',
@@ -39,5 +40,16 @@ export default {
       total: 'Total',
     },
     file: 'finances',
+  },
+  statement: {
+    receiptPending: 'Justificatif attendu',
+    paid: 'Payé',
+    refunds: 'Remboursements reçus',
+    open: 'Solde avant ce versement',
+    OUT: 'Versement',
+    IN: 'Remboursement',
+    balanceAfter: 'Solde après',
+    declaration:
+      'Je confirme que les dépenses ci-dessus ont réellement été engagées pour « {{event}} », que les montants et justificatifs sont exacts et que je ne les ai pas présentées ailleurs pour remboursement.',
   },
 };

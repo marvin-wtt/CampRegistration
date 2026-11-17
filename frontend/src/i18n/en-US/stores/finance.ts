@@ -36,6 +36,7 @@ export default {
       success: 'Receipt files downloaded',
       error: 'Failed to download the receipt files',
     },
+    uploadScan: { error: 'Failed to upload the signed slip' },
     fetch: { error: 'Failed to fetch the finances' },
     updateSettings: {
       success: 'Settings saved',

@@ -11,6 +11,7 @@ export default {
       paidOn: 'Bezahlt am',
       type: 'Art',
       description: 'Beschreibung',
+      vendor: 'Bezahlt an',
       group: 'Gruppe',
       category: 'Kategorie',
       paidBy: 'Bezahlt / erhalten von',
@@ -39,5 +40,16 @@ export default {
       total: 'Summe',
     },
     file: 'finanzen',
+  },
+  statement: {
+    receiptPending: 'Beleg ausstehend',
+    paid: 'Bezahlt',
+    refunds: 'Erstattungen erhalten',
+    open: 'Offen vor dieser Auszahlung',
+    OUT: 'Auszahlung',
+    IN: 'Rückzahlung',
+    balanceAfter: 'Saldo danach',
+    declaration:
+      'Ich bestätige, dass die oben aufgeführten Ausgaben tatsächlich für „{{event}}“ entstanden sind, die Beträge und Belege korrekt sind und ich sie nirgends anders zur Erstattung eingereicht habe.',
   },
 };

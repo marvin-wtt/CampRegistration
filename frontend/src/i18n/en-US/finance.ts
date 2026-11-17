@@ -4,6 +4,7 @@ export default {
   subtitle: 'Expenses, payouts and who is still owed money.',
   eventFunds: 'Shared funds',
   noFile: 'no file',
+  noCategory: 'no category',
   receiptPending: 'Receipt pending',
   files: '{n} file | {n} files',
   receiptCount: '{n} receipt | {n} receipts',
@@ -29,20 +30,23 @@ export default {
       'Record the first receipt right at the till — with a photo, from your phone.',
   },
   field: {
+    vendor: 'Paid to',
+    vendorRefund: 'Refunded by',
+    vendorHint: 'Optional, e.g. the shop or company',
+    noCategoryMatch: 'No matching category',
     paidOn: 'Paid on',
     receiptPending: 'Empty: receipt still to come',
     receiptDate: 'Receipt date',
     amount: 'Amount',
     category: 'Category',
     date: 'Date',
-    description: 'What for?',
+    description: 'Description',
     note: 'Note (optional)',
     originalToggle: 'Paid in another currency',
     originalCurrency: 'Currency',
     originalAmount: 'Amount on the receipt',
     paidBy: 'Paid by',
     receivedBy: 'Received by',
-    recipient: 'Person',
     receipt: 'Receipt',
   },
   filter: {
@@ -51,6 +55,7 @@ export default {
     activeCount: 'Filters ({count})',
     reset: 'Reset',
     missingFile: 'Missing receipt file ({count})',
+    missingCategory: 'Without category ({count})',
     noMatch: 'No expenses match these filters.',
   },
   party: {
@@ -63,9 +68,9 @@ export default {
     add: 'Add',
     addExpense: 'Add expense',
     expense: 'Expense',
-    addPhoto: 'Add photo',
-    takePhoto: 'Photo of the receipt',
-    removePhoto: 'Remove photo',
+    addFile: 'Another file',
+    addReceipt: 'Add receipt',
+    removeFile: 'Remove file',
     openFile: 'Open {name}',
     cancel: 'Cancel',
     close: 'Close',
@@ -80,6 +85,10 @@ export default {
     printSlip: 'Print slip',
     undoPayout: 'Undo payout',
   },
+  expenseDetails: {
+    statements: 'On payouts',
+    edit: 'Edit',
+  },
   capture: {
     keepOriginal: 'Keep the paper original.',
     newExpense: 'New expense',
@@ -88,14 +97,21 @@ export default {
     savedTitle: 'Saved',
     savedAs: 'Saved as receipt',
     writeNumber: 'Write this number on the paper receipt.',
-    noPhoto: 'No photo yet — you can add it later.',
+    noFile: 'No receipt file yet — you can add it later.',
     restored: 'Your unsaved expense was kept. Save it again or discard it.',
-    uploadFailed: 'The photo could not be uploaded. Try again.',
+    uploadFailed: 'The file could not be uploaded. Try again.',
+    onStatement: {
+      title: 'Change receipt #{number}?',
+      message:
+        'This receipt is on payout {labels}. Changing it makes that payout outdated.',
+      ok: 'Change',
+    },
   },
   delete: {
     title: 'Delete receipt #{number}?',
     message:
       'The receipt number is not reused: the list will show a gap where it was.',
+    onStatement: 'It appears on payout {labels}, which then becomes outdated.',
     ok: 'Delete',
   },
   balance: {
@@ -106,7 +122,10 @@ export default {
     owedToEvent: 'Owed to the event',
     settled: 'Settled',
     pending: 'Payment arranged',
-    settledCount: '{settled} of {total} people',
+    stillOpen: 'Still open',
+    agreedUnpaid: 'Agreed, not paid',
+    toComeBack: 'To get back',
+    settledProgress: '{settled} of {total} settled',
     eventOwes: 'Event owes {name}',
     owesEvent: '{name} owes the event',
     manager: 'Team member',
@@ -125,8 +144,22 @@ export default {
       'This is your own balance. Ask the treasurer or director for a payout.',
   },
   payout: {
+    details: {
+      created: 'Created on {date}',
+      outTo: 'Payout to {name}',
+      inFrom: 'Repayment from {name}',
+      note: 'Note',
+      paidOn: 'Paid on {date}',
+      toPay: 'Not paid yet',
+      signedOn: 'Signed on {date}',
+      signedScan: 'Signed on paper (scan)',
+      unsigned: 'Not signed yet',
+    },
     markPaid: 'Mark as paid',
+    markUnpaid: 'Mark as unpaid',
     toPayHint: 'Empty: transfer still to be made',
+    frozenHint:
+      'Fixed in the statement. To change it, delete the payout and create a new one.',
     toPay: 'To pay',
     out: 'Pay out',
     in: 'Receive',
@@ -145,11 +178,13 @@ export default {
       title: 'Undo payout {label}?',
       message:
         'The balance goes back to what it was. The number is not reused.',
+      messagePaid:
+        'This payout was paid. Undo it only if it was recorded by mistake; a correction is a new payout. Print the slip first if you need it.',
       ok: 'Undo',
     },
   },
   summary: {
-    pending: 'Receipt still to come for {numbers}.',
+    complete: 'Every receipt is complete.',
     total: 'Total spent',
     totalCaption: '{expenses} expenses − {refunds} refunds',
     expenses: 'Expenses',
@@ -162,8 +197,6 @@ export default {
     people: 'People',
     gross: 'Gross, before refunds.',
     receiptFiles: 'Receipt files',
-    filesCount: '{withFile} of {total} receipts have a file.',
-    missingFiles: 'No file for {numbers}.',
     recordsNote:
       'The paper receipts and the export are the records; files are a convenience copy.',
   },
@@ -195,33 +228,43 @@ export default {
     xlsx: 'XLSX',
     csv: 'CSV',
     receipts: 'Receipt files (ZIP)',
-    receiptsText: 'Every receipt file, named by its receipt number.',
+    receiptsText:
+      'Every receipt file, named by its receipt number, all together or in a folder per group.',
+    receiptsFlat: 'All in one folder',
+    receiptsByGroup: 'One folder per group',
   },
   statement: {
-    title: 'Statement {label}',
+    title: 'Payout {label}',
+    showAll: 'Show all {count} receipts',
     expenses: 'Receipts paid by {name}',
     noExpenses: 'No receipts recorded for this person.',
-    open: 'Open before this payout',
     signHere: 'Sign here, {name}',
     clear: 'Clear',
+    signLarge: 'Sign full screen',
     sign: 'Sign',
-    signAgain: 'Sign again',
     unsign: {
       action: 'Remove signature',
       title: 'Remove the signature on {label}?',
       message:
-        'The payout then counts as unsigned. The audit log keeps who removed it and when.',
+        'The payout then counts as unsigned, and an uploaded scan is removed with it. It can be signed again afterwards. The audit log keeps who removed it and when.',
       ok: 'Remove',
     },
     signed: 'Signed',
-    signedBefore: 'Signed {date}. Signing again replaces it.',
-    declarationOut:
-      'I confirm that the expenses listed above were actually incurred for "{event}", that the amounts and receipts are correct, and that I have not claimed them anywhere else. I have received {amount}.',
-    declarationIn:
-      'I confirm that the expenses listed above were actually incurred for "{event}", that the amounts and receipts are correct, and that I have not claimed them anywhere else. I have returned {amount} to the shared funds.',
+    outdatedHint:
+      'A receipt on this statement changed since. Delete the payout and create a new one.',
+    correctedLaterHint:
+      'A receipt changed after this payout was made. The payout stays as it is; the difference is in the balance and is settled with a new payout.',
+    outdatedNoSign:
+      'A receipt on this statement changed since it was made, so it can no longer be signed.',
+    uploadScan: 'Upload signed slip',
+    openScan: 'Open signed slip',
   },
   settings: {
-    title: 'Payout numbers',
+    title: 'Finance settings',
+    payoutNumbers: 'Payout numbers',
+    flagMissingCategories: 'Mark expenses without a category',
+    flagMissingCategoriesHint:
+      'Turn it off if this event doesn’t sort its expenses into categories.',
     prefix: 'Prefix',
     prefixHint:
       'Payouts are numbered on their own, apart from receipts, so a funder’s receipt list has no gaps. The prefix is written on the slip.',

@@ -37,6 +37,12 @@ describe('useObjectTranslation', () => {
     it('falls back to the fallback locale for an unwritten language', () => {
       expect(to(name, 'fr-FR')).toBe('Summer Camp');
     });
+
+    it('resolves a given language over the reader’s, e.g. a document’s own', () => {
+      locale.value = 'en-US';
+
+      expect(useObjectTranslation().toIn(name, 'de-DE')).toBe('Sommerlager');
+    });
   });
 
   describe('country-keyed values', () => {

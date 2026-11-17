@@ -4,6 +4,8 @@ import { resolve } from '#core/ioc/container';
 import { PayoutService } from '#app/payout/payout.service';
 import { PayoutController } from '#app/payout/payout.controller';
 import { PayoutRouter } from '#app/payout/payout.routes';
+import { registerFileGuard } from '#app/file/file.guard';
+import { payoutFileGuard } from '#app/payout/payout.guard';
 
 export class PayoutModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -13,6 +15,9 @@ export class PayoutModule implements AppModule {
   }
 
   registerApiRoutes(router: AppRouter): void {
+    // Scans are attached and removed through the payout itself.
+    registerFileGuard('payout', { view: payoutFileGuard });
+
     router.useRouter('/events/:eventId/payouts', resolve(PayoutRouter));
   }
 

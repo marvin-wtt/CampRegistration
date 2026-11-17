@@ -5,11 +5,36 @@
   >
     <dialog-card
       :title="t('finance.settings.title')"
-      icon="tag"
+      icon="settings"
       @submit="save"
       @cancel="onDialogCancel"
     >
       <div class="column no-wrap q-gutter-y-md">
+        <q-item
+          tag="label"
+          class="q-px-none"
+        >
+          <q-item-section>
+            <q-item-label>
+              {{ t('finance.settings.flagMissingCategories') }}
+            </q-item-label>
+            <q-item-label caption>
+              {{ t('finance.settings.flagMissingCategoriesHint') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle
+              v-model="flagMissingCategories"
+              data-test="finance-flag-categories"
+            />
+          </q-item-section>
+        </q-item>
+
+        <q-separator />
+
+        <div class="text-subtitle2">
+          {{ t('finance.settings.payoutNumbers') }}
+        </div>
         <p class="text-body2 text-on-surface-variant q-mb-none">
           {{ t('finance.settings.prefixHint') }}
         </p>
@@ -55,7 +80,6 @@
         />
         <m-btn
           :label="t('finance.action.save')"
-          :disable="locked"
           :loading="saving"
           color="primary"
           type="submit"
@@ -82,20 +106,24 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const { t } = useI18n();
 const financeStore = useFinanceStore();
-const { settings } = storeToRefs(financeStore);
+const { settings, display } = storeToRefs(financeStore);
 
 const prefix = ref(settings.value?.payoutNumberPrefix ?? 'P');
 const locked = computed(
   () => settings.value?.payoutNumberPrefixLocked ?? false,
 );
+const flagMissingCategories = ref(display.value.flagMissingCategories);
 const saving = ref(false);
 
 async function save() {
   saving.value = true;
   try {
-    onDialogOK(
-      await financeStore.updateSettings({ payoutNumberPrefix: prefix.value }),
-    );
+    // Saved by the shared event setting as soon as it changes.
+    display.value.flagMissingCategories = flagMissingCategories.value;
+    if (!locked.value && prefix.value !== settings.value?.payoutNumberPrefix) {
+      await financeStore.updateSettings({ payoutNumberPrefix: prefix.value });
+    }
+    onDialogOK();
   } catch {
     // Reported by the store.
   } finally {

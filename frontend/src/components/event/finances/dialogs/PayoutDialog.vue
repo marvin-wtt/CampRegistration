@@ -15,26 +15,34 @@
       @cancel="onDialogCancel"
     >
       <div class="column no-wrap q-gutter-y-md">
-        <q-btn-toggle
-          v-model="direction"
-          :options="directionOptions"
-          spread
-          rounded
-          unelevated
-          no-caps
-          toggle-color="secondary-container"
-          toggle-text-color="on-secondary-container"
-          class="direction-toggle"
-        />
+        <!-- Frozen in the statement: shown, never edited. -->
+        <div
+          v-if="payout"
+          class="frozen rounded-md q-pa-md column q-gutter-y-xs"
+        >
+          <div class="row items-center justify-between no-wrap">
+            <span class="text-body1">
+              {{ payout.recipientName }} ·
+              {{
+                payout.direction === 'OUT'
+                  ? t('finance.payout.out')
+                  : t('finance.payout.in')
+              }}
+            </span>
+            <strong class="amount">
+              {{ payout.direction === 'OUT' ? '−' : '+'
+              }}{{ money(payout.amount) }}
+            </strong>
+          </div>
+          <div class="text-caption text-on-surface-variant">
+            {{ t('finance.payout.frozenHint') }}
+          </div>
+        </div>
 
-        <party-select
-          v-model="recipient"
-          :parties
-          :allow-funds="false"
-          :label="t('finance.field.recipient')"
-        />
-
-        <div class="column q-gutter-y-xs">
+        <div
+          v-if="!payout"
+          class="column q-gutter-y-xs"
+        >
           <amount-input
             v-model="amount"
             :currency
@@ -51,26 +59,26 @@
           </div>
         </div>
 
-        <div class="row q-col-gutter-sm">
-          <div class="col-12 col-sm-6">
-            <chore-date-input
-              v-model="paidOn"
-              :label="t('finance.field.paidOn')"
-              :hint="paidOn ? undefined : t('finance.payout.toPayHint')"
-              clearable
-            />
-          </div>
-          <div class="col-12 col-sm-6">
-            <q-input
-              v-model="note"
-              :label="t('finance.field.note')"
-              maxlength="255"
-              outlined
-              rounded
-              hide-bottom-space
-            />
-          </div>
-        </div>
+        <q-input
+          v-model="note"
+          :label="t('finance.field.note')"
+          maxlength="255"
+          autogrow
+          outlined
+          rounded
+          hide-bottom-space
+          data-test="payout-note"
+        />
+        <!-- Money has moved or it hasn't: never a date ahead. -->
+        <chore-date-input
+          v-model="paidOn"
+          :label="t('finance.field.paidOn')"
+          :hint="paidOn ? undefined : t('finance.payout.toPayHint')"
+          :max="today"
+          open-on-today
+          clearable
+          data-test="payout-paid-on"
+        />
 
         <div
           v-if="after !== null"
@@ -88,24 +96,6 @@
       </div>
 
       <template #actions>
-        <!-- An icon on phones, so the actions keep to one row. -->
-        <q-btn
-          v-if="payout && can('event.payouts.delete')"
-          :label="quasar.screen.xs ? undefined : t('finance.action.undoPayout')"
-          icon="delete"
-          flat
-          :round="quasar.screen.xs"
-          :rounded="!quasar.screen.xs"
-          no-caps
-          color="negative"
-          class="q-mr-auto"
-          :aria-label="t('finance.action.undoPayout')"
-          @click="remove"
-        >
-          <q-tooltip v-if="quasar.screen.xs">
-            {{ t('finance.action.undoPayout') }}
-          </q-tooltip>
-        </q-btn>
         <m-btn
           :label="t('finance.action.cancel')"
           text
@@ -125,8 +115,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useDialogPluginComponent, useQuasar } from 'quasar';
+import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
@@ -137,13 +126,9 @@ import type {
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
-import PartySelect, {
-  type PartyValue,
-} from '@/components/event/finances/PartySelect.vue';
 import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { usePermissions } from '@/composables/permissions';
 import { formatLocalDate } from '@/utils/date';
 
 const props = defineProps<{
@@ -159,17 +144,16 @@ defineEmits([...useDialogPluginComponent.emits]);
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const quasar = useQuasar();
 const { t } = useI18n();
-const { can } = usePermissions();
 const financeStore = useFinanceStore();
-const { parties } = storeToRefs(financeStore);
 const { currency, money } = useFinanceFormat();
 
-const direction = ref<PayoutDirection>(
-  props.payout?.direction ?? props.direction ?? 'OUT',
+// Chosen by the balance card's button (pay out or receive): never switched here.
+const direction = computed<PayoutDirection>(
+  () => props.payout?.direction ?? props.direction ?? 'OUT',
 );
-const recipient = ref<PartyValue>(
+// The card's person, like the direction: the balance after is theirs.
+const recipient = computed(() =>
   props.payout
     ? {
         userId: props.payout.recipientUserId,
@@ -197,12 +181,8 @@ const paidOn = ref<string | null>(
       : null,
 );
 const note = ref<string>(props.payout?.note ?? '');
+const today = formatLocalDate(new Date());
 const saving = ref(false);
-
-const directionOptions = computed(() => [
-  { value: 'OUT', label: t('finance.payout.out'), icon: 'north_east' },
-  { value: 'IN', label: t('finance.payout.in'), icon: 'south_west' },
-]);
 
 const title = computed(() => {
   const name = recipient.value.name ?? '';
@@ -232,6 +212,16 @@ const after = computed<number | null>(() => {
 });
 
 async function submit() {
+  const existing = props.payout;
+  if (existing) {
+    await save(() =>
+      financeStore.updatePayout(existing.id, {
+        paidOn: paidOn.value,
+        note: note.value.trim() || null,
+      }),
+    );
+    return;
+  }
   if (amount.value === null) {
     return;
   }
@@ -245,35 +235,29 @@ async function submit() {
     note: note.value.trim() || null,
   };
 
+  await save(() => financeStore.createPayout(data));
+}
+
+async function save(write: () => Promise<Payout>) {
   saving.value = true;
   try {
-    const result = props.payout
-      ? await financeStore.updatePayout(props.payout.id, data)
-      : await financeStore.createPayout(data);
-    onDialogOK(result);
+    onDialogOK(await write());
   } catch {
     // Reported by the store.
   } finally {
     saving.value = false;
   }
 }
-
-async function remove() {
-  if (!props.payout) {
-    return;
-  }
-  try {
-    await financeStore.deletePayout(props.payout.id);
-    onDialogOK();
-  } catch {
-    // Reported by the store.
-  }
-}
 </script>
 
 <style scoped>
-.direction-toggle :deep(.q-btn) {
-  min-height: 44px;
+.frozen {
+  background: var(--md3-surface-container-high);
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .after-row {

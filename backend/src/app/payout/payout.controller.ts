@@ -37,6 +37,7 @@ export class PayoutController extends BaseController {
       event.id,
       body,
       req.authUserId(),
+      req.preferredLocale(),
     );
 
     void this.realtimeService.emit(event.id, 'payout', payout.id, 'created');
@@ -48,7 +49,11 @@ export class PayoutController extends BaseController {
     const { body } = await req.validate(validator.update);
     const payout = req.modelOrFail('payout');
 
-    const updated = await this.payoutService.updatePayout(payout, body);
+    const updated = await this.payoutService.updatePayout(
+      payout,
+      body,
+      req.sessionId,
+    );
 
     void this.realtimeService.emit(
       updated.eventId,

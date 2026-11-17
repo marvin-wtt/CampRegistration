@@ -130,6 +130,7 @@ export default {
         unsigned: 'Unterschrift entfernt',
       },
       fields: {
+        scans: 'Scans',
         recipientUserId: 'Empfänger:in',
         recipientName: 'Empfänger:in (Name)',
         direction: 'Richtung',

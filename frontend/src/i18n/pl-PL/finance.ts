@@ -4,6 +4,7 @@ export default {
   subtitle: 'Wydatki, wypłaty i komu jeszcze należą się pieniądze.',
   eventFunds: 'Wspólna kasa',
   noFile: 'brak pliku',
+  noCategory: 'brak kategorii',
   receiptPending: 'Paragon oczekiwany',
   files: 'Pliki: {n}',
   receiptCount: 'Paragony: {n}',
@@ -29,20 +30,23 @@ export default {
       'Zapisz pierwszy paragon od razu przy kasie — ze zdjęciem, z telefonu.',
   },
   field: {
+    vendor: 'Zapłacono dla',
+    vendorRefund: 'Zwrócone przez',
+    vendorHint: 'Opcjonalnie, np. sklep lub firma',
+    noCategoryMatch: 'Brak pasującej kategorii',
     paidOn: 'Zapłacono',
     receiptPending: 'Puste: paragon dopiero będzie',
     receiptDate: 'Data paragonu',
     amount: 'Kwota',
     category: 'Kategoria',
     date: 'Data',
-    description: 'Na co?',
+    description: 'Opis',
     note: 'Notatka (opcjonalnie)',
     originalToggle: 'Zapłacono w innej walucie',
     originalCurrency: 'Waluta',
     originalAmount: 'Kwota na paragonie',
     paidBy: 'Zapłacone przez',
     receivedBy: 'Otrzymane przez',
-    recipient: 'Osoba',
     receipt: 'Paragon',
   },
   filter: {
@@ -51,6 +55,7 @@ export default {
     activeCount: 'Filtry ({count})',
     reset: 'Resetuj',
     missingFile: 'Brak pliku paragonu ({count})',
+    missingCategory: 'Bez kategorii ({count})',
     noMatch: 'Żaden wydatek nie pasuje do tych filtrów.',
   },
   party: {
@@ -63,9 +68,9 @@ export default {
     add: 'Dodaj',
     addExpense: 'Dodaj wydatek',
     expense: 'Wydatek',
-    addPhoto: 'Dodaj zdjęcie',
-    takePhoto: 'Zdjęcie paragonu',
-    removePhoto: 'Usuń zdjęcie',
+    addFile: 'Kolejny plik',
+    addReceipt: 'Dodaj paragon',
+    removeFile: 'Usuń plik',
     openFile: 'Otwórz {name}',
     cancel: 'Anuluj',
     close: 'Zamknij',
@@ -80,6 +85,10 @@ export default {
     printSlip: 'Drukuj dowód',
     undoPayout: 'Cofnij wypłatę',
   },
+  expenseDetails: {
+    statements: 'W wypłatach',
+    edit: 'Edytuj',
+  },
   capture: {
     keepOriginal: 'Zachowaj oryginał paragonu.',
     newExpense: 'Nowy wydatek',
@@ -88,14 +97,22 @@ export default {
     savedTitle: 'Zapisano',
     savedAs: 'Zapisano jako paragon',
     writeNumber: 'Zapisz ten numer na papierowym paragonie.',
-    noPhoto: 'Brak zdjęcia — możesz dodać je później.',
+    noFile: 'Brak pliku — możesz dodać go później.',
     restored:
       'Niezapisany wydatek został zachowany. Zapisz go ponownie lub odrzuć.',
-    uploadFailed: 'Nie udało się przesłać zdjęcia. Spróbuj ponownie.',
+    uploadFailed: 'Nie udało się przesłać pliku. Spróbuj ponownie.',
+    onStatement: {
+      title: 'Zmienić paragon #{number}?',
+      message:
+        'Ten paragon jest w wypłacie {labels}. Zmiana sprawi, że stanie się ona nieaktualna.',
+      ok: 'Zmień',
+    },
   },
   delete: {
     title: 'Usunąć paragon nr {number}?',
     message: 'Numer nie zostanie użyty ponownie: na liście pozostanie luka.',
+    onStatement:
+      'Znajduje się w wypłacie {labels}, która stanie się nieaktualna.',
     ok: 'Usuń',
   },
   balance: {
@@ -106,7 +123,10 @@ export default {
     owedToEvent: 'Należne wydarzeniu',
     settled: 'Rozliczone',
     pending: 'Płatność uzgodniona',
-    settledCount: 'Rozliczone osoby: {settled} z {total}',
+    stillOpen: 'Jeszcze otwarte',
+    agreedUnpaid: 'Uzgodnione, niezapłacone',
+    toComeBack: 'Do odzyskania',
+    settledProgress: 'Rozliczono {settled} z {total}',
     eventOwes: 'Wydarzenie jest winne: {name}',
     owesEvent: '{name}: dług wobec wydarzenia',
     manager: 'Członek zespołu',
@@ -125,8 +145,22 @@ export default {
       'To Twoje własne saldo. O wypłatę poproś skarbnika lub kierownictwo.',
   },
   payout: {
+    details: {
+      created: 'Utworzono {date}',
+      outTo: 'Wypłata dla {name}',
+      inFrom: 'Zwrot od {name}',
+      note: 'Notatka',
+      paidOn: 'Zapłacono {date}',
+      toPay: 'Jeszcze niezapłacone',
+      signedOn: 'Podpisano {date}',
+      signedScan: 'Podpisano na papierze (skan)',
+      unsigned: 'Jeszcze niepodpisane',
+    },
     markPaid: 'Oznacz jako zapłacone',
+    markUnpaid: 'Oznacz jako niezapłacone',
     toPayHint: 'Puste: przelew jeszcze do wykonania',
+    frozenHint:
+      'Utrwalone w rozliczeniu. Aby to zmienić, usuń wypłatę i utwórz nową.',
     toPay: 'Do zapłaty',
     out: 'Wypłać',
     in: 'Przyjmij',
@@ -145,11 +179,13 @@ export default {
       title: 'Cofnąć wypłatę {label}?',
       message:
         'Saldo wróci do poprzedniej wartości. Numer nie zostanie użyty ponownie.',
+      messagePaid:
+        'Ta wypłata została zrealizowana. Cofnij ją tylko, jeśli została zapisana omyłkowo; korekta to nowa wypłata. Jeśli potrzebujesz rozliczenia, najpierw je wydrukuj.',
       ok: 'Cofnij',
     },
   },
   summary: {
-    pending: 'Paragon jeszcze nie dotarł: {numbers}.',
+    complete: 'Wszystkie paragony są kompletne.',
     total: 'Łącznie wydano',
     totalCaption: 'Wydatki {expenses} − zwroty {refunds}',
     expenses: 'Wydatki',
@@ -162,8 +198,6 @@ export default {
     people: 'Osoby',
     gross: 'Brutto, przed zwrotami.',
     receiptFiles: 'Pliki paragonów',
-    filesCount: 'Paragony z plikiem: {withFile} z {total}.',
-    missingFiles: 'Brak pliku dla {numbers}.',
     recordsNote:
       'Dokumentami są papierowe paragony i eksport; pliki to wygodna kopia.',
   },
@@ -195,33 +229,43 @@ export default {
     xlsx: 'XLSX',
     csv: 'CSV',
     receipts: 'Pliki paragonów (ZIP)',
-    receiptsText: 'Wszystkie pliki paragonów, nazwane numerem paragonu.',
+    receiptsText:
+      'Wszystkie pliki paragonów, nazwane numerem paragonu, razem lub w folderze dla każdej grupy.',
+    receiptsFlat: 'Wszystko w jednym folderze',
+    receiptsByGroup: 'Folder dla każdej grupy',
   },
   statement: {
-    title: 'Oświadczenie {label}',
+    title: 'Wypłata {label}',
+    showAll: 'Pokaż wszystkie paragony ({count})',
     expenses: 'Paragony zapłacone przez: {name}',
     noExpenses: 'Brak paragonów zapisanych dla tej osoby.',
-    open: 'Do rozliczenia przed tą wypłatą',
     signHere: 'Podpisz tutaj: {name}',
     clear: 'Wyczyść',
+    signLarge: 'Podpisz na pełnym ekranie',
     sign: 'Podpisz',
-    signAgain: 'Podpisz ponownie',
     unsign: {
       action: 'Usuń podpis',
       title: 'Usunąć podpis pod {label}?',
       message:
-        'Wypłata będzie wtedy niepodpisana. Dziennik zachowa, kto i kiedy usunął podpis.',
+        'Wypłata będzie wtedy niepodpisana, a przesłany skan zostanie usunięty. Potem można ją podpisać ponownie. Dziennik zachowa, kto i kiedy usunął podpis.',
       ok: 'Usuń',
     },
     signed: 'Podpisano',
-    signedBefore: 'Podpisano {date}. Nowy podpis zastąpi poprzedni.',
-    declarationOut:
-      'Potwierdzam, że wymienione powyżej wydatki rzeczywiście poniesiono na „{event}”, że kwoty i paragony są prawidłowe oraz że nie zgłaszałem/-am ich nigdzie indziej do zwrotu. Otrzymałem/-am {amount}.',
-    declarationIn:
-      'Potwierdzam, że wymienione powyżej wydatki rzeczywiście poniesiono na „{event}”, że kwoty i paragony są prawidłowe oraz że nie zgłaszałem/-am ich nigdzie indziej do zwrotu. Zwróciłem/-am {amount} do wspólnej kasy.',
+    outdatedHint:
+      'Paragon z tego rozliczenia zmienił się od tego czasu. Usuń wypłatę i utwórz nową.',
+    correctedLaterHint:
+      'Paragon zmienił się po tej wypłacie. Wypłata zostaje bez zmian; różnica jest w saldzie i rozlicza się ją nową wypłatą.',
+    outdatedNoSign:
+      'Paragon z tego rozliczenia zmienił się od jego utworzenia, więc nie można go już podpisać.',
+    uploadScan: 'Prześlij podpisane rozliczenie',
+    openScan: 'Otwórz podpisane rozliczenie',
   },
   settings: {
-    title: 'Numery wypłat',
+    title: 'Ustawienia finansów',
+    payoutNumbers: 'Numery wypłat',
+    flagMissingCategories: 'Oznaczaj wydatki bez kategorii',
+    flagMissingCategoriesHint:
+      'Wyłącz, jeśli w tym wydarzeniu wydatki nie są dzielone na kategorie.',
     prefix: 'Prefiks',
     prefixHint:
       'Wypłaty mają własną numerację, oddzielną od paragonów, dzięki czemu lista paragonów dla grantodawcy nie ma luk. Prefiks jest drukowany na dowodzie wypłaty.',

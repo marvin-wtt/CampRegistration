@@ -66,8 +66,8 @@ string>`), limited to the event's locales. Only managers see them, so a
 
 ```
 Expense  id, eventId, receiptNumber, type (EXPENSE | REFUND), amount,
-         originalAmount?, originalCurrency?, date, description, categoryId?,
-         paidByUserId?, paidByName?, createdByUserId
+         originalAmount?, originalCurrency?, date, description, vendor?,
+         categoryId?, paidByUserId?, paidByName?, createdByUserId
 File     … expenseId?   (the receipt files)
 ```
 
@@ -78,6 +78,10 @@ File     … expenseId?   (the receipt files)
   (see [Payouts](#payouts-and-balances)), so a funder's receipt list has no
   holes other than deleted receipts.
 - **Category** is optional; the core is who paid how much.
+- **Vendor** ("paid to"; "refunded by" on a refund) is optional free text: the
+  shop or company on the receipt, for the bookkeeping and the export. It is not
+  a party: nobody's balance involves it. Vendors used before in the event are
+  suggested.
 - **Date** is the date on the receipt. Empty means the receipt is still to
   come — an invoice expected, a till slip not yet handed over. The amount
   counts all the same and the number is assigned now, to go on the paper once
@@ -127,7 +131,8 @@ transfer between event funds and a person.
 ```
 Payout  id, eventId, number, recipientUserId?, recipientName,
         direction (OUT | IN), amount, paidOn?, note?, signature?,
-        signedAt?, createdByUserId
+        signedAt?, statement (Json), createdByUserId
+File    … payoutId?   (a scan of the slip signed on paper)
 Event   … payoutNumberPrefix (default "P")
 ```
 
@@ -157,15 +162,88 @@ Positive: the event owes them. Negative: they owe the event. Zero: settled.
   matching. A payout is a document, not a cost: the summary never adds it,
   and the export lists payouts on their own sheet so no tool imports them as
   expenses.
-- **Statement and signature**: a payout comes with the recipient's statement
-  — every receipt they paid, refunds received, earlier payouts, this payout
-  and the balance after — and their declaration that the expenses really
-  occurred for the event, are correct, were not claimed elsewhere, and that
-  they received (or returned) the amount. They sign it on screen, on the
-  treasurer's device or their own (`PUT /payouts/:id/signature`, SVG path
-  data). Changing the amount, direction or recipient clears the signature:
-  they didn't sign that. Printed, the slip carries the signature, or empty
-  lines to sign on paper.
+- **Statement and signature**: a payout comes with the recipient's statement —
+  every receipt they paid, refunds received, earlier payouts, this payout and
+  the balance after — and their declaration that the expenses really occurred
+  for the event, are correct and were not claimed elsewhere. It says nothing
+  about the amount changing hands: the payout line already shows it, and a slip
+  may be signed before the cash or transfer arrives. They sign it on screen (on phones optionally full screen, turned
+  sideways where the browser allows), on the treasurer's device or their own (`PUT /payouts/:id/signature`, SVG path
+  data). Printed, the slip carries the signature, or empty lines to sign on
+  paper. Page breaks fall only between receipt rows (column headings repeat);
+  the totals, declaration and signature stay together on one page. The slip highlights this payout's amount; the balance after it is a
+  note below. It lists only what existed when the payout was created: receipts
+  and earlier payouts recorded later belong to later slips. An earlier payout
+  shows its paid date if it had one; one still to pay shows just its number,
+  since a frozen "to pay" would go stale.
+
+### Frozen statements
+
+The slip is a document: what was printed or signed must never change by itself —
+not through edited data, and not through a code update that formats or words it
+differently on the next print. The guard is against mistakes, not tampering: no
+hashes or certificates.
+
+- **Frozen at creation.** Creating a payout stores its statement once in
+  `Payout.statement`, and no endpoint writes it again:
+  - `content` — the finished slip (`PayoutStatementContent`): formatted amounts,
+    dates, receipt lines, totals and the full declaration, in the creator's
+    language. Screen and print render it as is; nothing is regenerated, so an
+    update can change the layout at most, never a word or a figure. The printed
+    sheet's own labels follow the same language. Only what may change afterwards
+    is added live: `paidOn`, the note and the signature.
+  - `basis` — the raw values the statement was built from: the event's last
+    receipt number at the time, receipt ids with amount and type, and earlier
+    payout ids with direction and amount. Only for the outdated check below.
+
+  The server builds both (`payout.statement.ts`): it alone sees every expense,
+  while a counselor's client sees only their own. Receipts recorded later are
+  told apart by number, not by time, so no clock can skew it.
+
+- **Locked from the start.** Amount, direction and recipient are part of the
+  frozen slip and can't be edited; note and `paidOn` can. Anything else is
+  corrected as described below.
+- **Signed** means one of two things: the on-screen signature
+  (`PUT /payouts/:id/signature`), or a scan or photo of the slip signed on
+  paper, attached as a file of the payout (`PATCH` with `fileIds`;
+  `File.payoutId`, like receipt files). The payout number and creation date on
+  the sheet match a scan to its payout. An outdated statement takes neither
+  (`409 PAYOUT_STATEMENT_OUTDATED`). A signature is replaced only by removing it
+  first (`409 PAYOUT_ALREADY_SIGNED`); removing it detaches any scan too. A scan
+  may still get further pages. Signing and attaching lock the payout row and
+  check inside the transaction, so two can't both pass. The audit log records a
+  scan as `signed` and its removal as `unsigned`, each with the number of scans.
+- **Deleted accounts.** Before an account goes, its expenses and payouts take
+  its current name, so after the account link is cleared they still name one
+  person and their statements stay current.
+- **Outdated** is computed: the statement rebuilt from current data differs from
+  `basis` — a listed expense's amount, type or payer changed, it was deleted, a
+  receipt moved onto the recipient, or an earlier payout changed. Only the
+  figures count: dating a pending receipt, rewording a description,
+  recategorizing or recording a new expense doesn't, and neither does an earlier
+  payout being marked paid; the slip keeps its frozen wording. If an update
+  changes how a figure is computed, the worst case is a visible false alarm,
+  never a silent change. Editing or deleting an expense that sits on a current
+  statement warns first ("This receipt is on payout P3"), as does moving one to
+  a payer whose current statement would list it.
+- **Resolving it depends on whether money moved:**
+
+  | Payout   | When outdated                                                                                                                                                                                                               |
+  | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Not paid | Nothing happened yet: delete it and create a new one on the current statement.                                                                                                                                              |
+  | Paid     | The transfer is a fact and stays as it is, marked "corrected later". The correction reopened the balance; it is settled by a new payout whose statement lists the current receipts and the earlier payout, so it shows why. |
+
+  Example: P3 paid Anna 120 €, then receipt #17 is corrected from 50 € to 40 €.
+  P3 stays; Anna's balance is −10 €, and P5 (`IN`, 10 €) settles it. A forgotten
+  receipt works the same way in the other direction.
+
+- **Deleting a paid payout** is only for recording errors (a duplicate, a
+  transfer that never happened); its confirmation says so and suggests printing
+  the slip first. The audit log keeps number, direction and amount as for every
+  payout, not the statement: it records no free text.
+- **Archiving** is the browser's "Save as PDF" of the print. A server-side PDF
+  can come later (with in-app invoices, say) and would render the same
+  `content`.
 
 ## Income
 
@@ -212,10 +290,12 @@ Event   … lastIncomeNumber, incomeNumberPrefix (default "I")
 
 ## Changes
 
-Nothing is locked: every record stays editable by whoever may edit it, also
-after a payout or an export, and every create, edit and delete goes to the
-audit log. A payout doesn't freeze the expenses before it; a changed expense
-simply reopens the balance.
+Records stay editable by whoever may edit them, also after a payout or an
+export, and every create, edit and delete goes to the audit log. A payout
+doesn't freeze the expenses before it; a changed expense simply reopens the
+balance and flags the payout statements it appears on as outdated (see
+[Frozen statements](#frozen-statements)). The only lock is a payout's amount,
+direction and recipient.
 
 ## UI
 
@@ -223,30 +303,63 @@ A **Finances** page (`management.event.finances`) with tabs **Expenses**,
 **Balances** and **Summary**, plus a toolbar menu for the category editor and
 the payout prefix.
 
-- **Capture (phone-first).** A floating button opens a full-height sheet,
-  fields in the order they are at hand at the till: amount (digits only,
-  cash-register style: `4780` reads `47,80`; focused), receipt photos (opens
-  the camera, several allowed), description, category as chips grouped under
-  their parents, paid by (defaults to me), receipt date (defaults to today,
-  `DateInput`, clearable). The original currency is a toggle inside the
-  amount field. Saving shows the receipt number to write on the paper, with
-  "Next receipt" for a stack of them. A **Refund** toggle switches the type,
-  so nobody types a minus; "Paid by" becomes "Received by".
+During **wrap-up**, the event dashboard's attention card lists receipts without
+a date for those who see every expense; it opens the Expenses tab filtered to
+them (`?tab=expenses&filter=pending`).
+
+- **Capture (phone-first).** A floating button opens a full-height sheet, fields
+  in the order they are at hand at the till: amount (digits only, cash-register
+  style: `4780` reads `47,80`; focused), receipt date (defaults to today,
+  `DateInput`, clearable; read off the receipt with the amount, since
+  yesterday's receipts are common), receipt photos (opens the camera, several
+  allowed), description, category (one compact select, grouped under their
+  parents and searchable, so a funder's long list doesn't fill the sheet),
+  vendor (optional), paid by (defaults to me). The original currency is a toggle
+  inside the amount field. Saving shows the receipt number to write on the
+  paper, with "Next receipt" for a stack of them. A **Refund** toggle switches
+  the type, so nobody types a minus; "Paid by" becomes "Received by".
 - **Online only.** Saving needs a connection, since the server assigns the
   receipt number. Photos upload as soon as they are taken, as temporary
   files of the session. A failed save keeps the draft in `localStorage` —
   the fields and the ids of the photos already uploaded — and offers to
   retry; it survives a reload. A photo whose upload failed is not kept. No
   offline queue.
-- **Expenses.** A list on phones, a table with a totals row on desktop.
-  Filters: category, payer, missing receipt file.
-- **Balances.** One card per person: paid, paid out, open balance, with
-  **Pay out** and **Receive** actions and their payouts by number, each
-  printable as a slip. Counselors see their own card.
-- **Summary.** Totals per category with group subtotals, total spent, total
-  still owed. Export: CSV/XLSX (expenses, payouts and category totals on
+- **Expenses.** A list on phones, a table with a totals row on desktop, grouped
+  by receipt date, newest first; receipts still to come go last, in the warning
+  colour with an hourglass on each row. The net total leads on every screen;
+  on phones the filter button sits beside it. Rows without a file or a
+  category are marked; the category mark can be turned off in the finance
+  settings (event setting `finances`, for events that don't sort expenses).
+  Filters: category, payer, missing receipt file, missing category (while
+  marked), still to come, kept in the query (`category`, `payer`, `noFile`,
+  `noCategory`, `pending`) so the summary and dashboard link to them. Tapping a receipt opens its details — amounts,
+  date, payer, vendor, category, the payout statements it is on and its files —
+  for everyone who sees it; **Edit** and **Delete** continue from there for
+  those allowed. The edit form itself has no delete.
+- **Balances.** A strip on top: still open (nothing arranged yet, by the
+  cards' own status rule), agreed but not paid, what is still to come back
+  (only when not zero), and how many people are settled. Then one card per
+  person: the balance, then paid, refunds received,
+  paid out and paid back — four figures kept apart, since each direction is its
+  own record; refunds and paid back only when not zero. **Pay out** and
+  **Receive** actions and their payouts by number. A payout row shows its state
+  as icons (paid or to pay, signed, outdated; the date in the tooltip); tapping
+  it opens its details: the amount, a row each for paid and signed with the step
+  that changes it (mark as paid, open scan), the note, and the frozen statement,
+  its receipts cut to five behind "show all". The next step (sign, mark as paid,
+  print) is the main button with Print beside it; edit, copy link, mark as
+  unpaid, upload scan, remove signature and undo are in the header menu, the payout's
+  only one. The dialog follows the payout live and stays open: changes apply
+  in place, signing and editing open on top and return to it, and it closes
+  only once the payout is undone. **Pay out** or **Receive** fixes the direction; the dialog doesn't
+  switch it. Counselors see their own card.
+- **Summary.** Totals per category with group subtotals, each row linking
+  to its expenses, total spent, total still owed, and the receipts still to
+  complete (missing file, still to come, no category), each linking to the
+  filtered list. Export: CSV/XLSX (expenses, payouts and category totals on
   separate sheets) plus a ZIP of receipt files named by receipt number
-  (`017.jpg`, `017-2.jpg`).
+  (`017.jpg`, `017-2.jpg`), either flat or with a folder per group
+  (`?folders=group`); receipts without a group stay in the root.
 - **Category editor.** Groups as headers, up/down arrows to reorder and a
   "move to" menu to regroup (the whole tree goes in one request), inline
   rename in the event's locales, delete or archive.
@@ -332,8 +445,8 @@ first; it does not block.
 
 ## Out of scope
 
-Funder-specific report templates
-(a later, generic "fill an uploaded .xlsx" export at most), budgets,
-cost-splitting between people, shared or organization-wide category lists,
-OCR, exchange-rate lookups, named funds (cash box vs. account), offline
-capture, linking payers to registrations, and locking or closing the books.
+Funder-specific report templates (a later, generic "fill an uploaded .xlsx"
+export at most), budgets, cost-splitting between people, shared or
+organization-wide category lists, OCR, exchange-rate lookups, named funds (cash
+box vs. account), offline capture, linking payers to registrations, and locking
+or closing the books (beyond a payout's frozen statement).
