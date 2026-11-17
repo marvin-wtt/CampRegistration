@@ -1,1 +1,4 @@
-npx lint-staged
+# lint-staged splits long file lists to fit Windows' 8191-character command
+# line, but counts only the paths: the .cmd shim around prettier and the
+# quotes around each path come on top. A lower limit leaves room for them.
+npx lint-staged --max-arg-length 4096
