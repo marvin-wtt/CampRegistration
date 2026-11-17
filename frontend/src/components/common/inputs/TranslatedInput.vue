@@ -216,6 +216,9 @@ interface Props extends Omit<
   // itself — for values that can differ per locale but aren't language text,
   // e.g. a number.
   noTranslation?: boolean | undefined;
+  // A native attribute, not a QInput prop — declared so it is forwarded to the
+  // inputs instead of falling through to the wrapper's root element.
+  placeholder?: string | undefined;
 }
 
 // Global scope for the `country.*` lookup in localeName() below — explicit
