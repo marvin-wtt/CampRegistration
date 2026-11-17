@@ -131,11 +131,11 @@ export function useExpenseFilters(
 
     return [
       flagFilter(
-        'noFile',
-        'no_photography',
-        t('finance.filter.missingFile', { count: count(isMissingFile) }),
-        t('finance.noFile'),
-        true,
+        'pending',
+        'hourglass_empty',
+        t('finance.filter.pending', { count: count(isPending) }),
+        t('finance.receiptPending'),
+        count(isPending) > 0 || flag('pending'),
       ),
       // Only where missing categories are marked, and while there are any.
       flagFilter(
@@ -147,11 +147,11 @@ export function useExpenseFilters(
           (noCategory > 0 || flag('noCategory')),
       ),
       flagFilter(
-        'pending',
-        'hourglass_empty',
-        t('finance.filter.pending', { count: count(isPending) }),
-        t('finance.receiptPending'),
-        count(isPending) > 0 || flag('pending'),
+        'noFile',
+        'no_photography',
+        t('finance.filter.missingFile', { count: count(isMissingFile) }),
+        t('finance.noFile'),
+        true,
       ),
     ];
   });

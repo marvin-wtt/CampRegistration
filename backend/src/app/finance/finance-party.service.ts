@@ -2,11 +2,29 @@ import { injectable } from 'inversify';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
-import { partyNameKey } from '@camp-registration/common/utils';
+import {
+  normalizePartyName,
+  partyNameKey,
+  pickSpelling,
+} from '@camp-registration/common/utils';
+import type { EventManagerRole } from '@camp-registration/common/entities';
 
 export interface FinanceParty {
   userId: string | null;
   name: string | null;
+}
+
+export interface KnownParties {
+  managers: { userId: string; name: string; role: EventManagerRole }[];
+  names: string[];
+}
+
+/** A manager record that still grants access, with an account. */
+function currentManager() {
+  return {
+    user: { isNot: null },
+    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+  };
 }
 
 /**
@@ -22,7 +40,7 @@ export class FinancePartyService extends BaseService {
   ): Promise<FinanceParty> {
     if (party.userId) {
       const manager = await this.db.eventManager.findFirst({
-        where: { eventId, userId: party.userId },
+        where: { eventId, userId: party.userId, ...currentManager() },
         select: { user: { select: { name: true } } },
       });
 
@@ -38,7 +56,7 @@ export class FinancePartyService extends BaseService {
     }
 
     // An empty name counts as none: event funds.
-    const name = party.name?.trim().replace(/\s+/g, ' ') ?? '';
+    const name = normalizePartyName(party.name ?? '');
     if (name.length === 0) {
       return { userId: null, name: null };
     }
@@ -47,23 +65,15 @@ export class FinancePartyService extends BaseService {
   }
 
   /**
-   * A typed name that is already someone: the manager of that name, else the
-   * name as typed before. Balances group by account or exact name, so a
-   * second spelling would split the person. Two managers of one name are
-   * ambiguous and left as typed.
+   * Who an event's money can be filed under: its current managers with an
+   * account, and every name typed before. `distinct` runs in Prisma, so
+   * spellings that differ in case stay apart, as they do in the balances.
    */
-  private async matchKnown(
-    eventId: string,
-    name: string,
-  ): Promise<FinanceParty | undefined> {
-    const key = partyNameKey(name);
+  async listKnown(eventId: string): Promise<KnownParties> {
     const [managers, expenses, payouts] = await Promise.all([
       this.db.eventManager.findMany({
-        where: {
-          eventId,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        select: { user: { select: { id: true, name: true } } },
+        where: { eventId, ...currentManager() },
+        select: { role: true, user: { select: { id: true, name: true } } },
       }),
       this.db.expense.findMany({
         where: { eventId, paidByUserId: null, paidByName: { not: null } },
@@ -77,21 +87,51 @@ export class FinancePartyService extends BaseService {
       }),
     ]);
 
-    const accounts = managers.flatMap((m) =>
-      m.user && partyNameKey(m.user.name) === key ? [m.user] : [],
-    );
-    if (accounts.length === 1 && accounts[0]) {
-      return { userId: accounts[0].id, name: accounts[0].name };
-    }
+    return {
+      managers: managers.flatMap(({ role, user }) =>
+        user
+          ? [
+              {
+                userId: user.id,
+                name: user.name,
+                role: role as EventManagerRole,
+              },
+            ]
+          : [],
+      ),
+      names: [
+        ...new Set([
+          ...expenses.flatMap((e) => e.paidByName ?? []),
+          ...payouts.map((p) => p.recipientName),
+        ]),
+      ],
+    };
+  }
+
+  /**
+   * A typed name that is already someone: the manager of that name, else the
+   * name as typed before. Balances group by account or exact name, so a
+   * second spelling would split the person. Two managers of one name are
+   * ambiguous and left as typed.
+   */
+  private async matchKnown(
+    eventId: string,
+    name: string,
+  ): Promise<FinanceParty | undefined> {
+    const key = partyNameKey(name);
+    const known = await this.listKnown(eventId);
+
+    const accounts = known.managers.filter((m) => partyNameKey(m.name) === key);
     if (accounts.length > 1) {
       return undefined;
     }
+    if (accounts[0]) {
+      return { userId: accounts[0].userId, name: accounts[0].name };
+    }
 
-    const typed = [
-      ...expenses.map((e) => e.paidByName),
-      ...payouts.map((p) => p.recipientName),
-    ].find((known) => known !== null && partyNameKey(known) === key);
-
+    const typed = pickSpelling(
+      known.names.filter((spelling) => partyNameKey(spelling) === key),
+    );
     return typed ? { userId: null, name: typed } : undefined;
   }
 

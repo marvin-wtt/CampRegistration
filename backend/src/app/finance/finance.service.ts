@@ -1,5 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { AuditService } from '#app/audit/audit.service';
+import { FinancePartyService } from '#app/finance/finance-party.service';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
@@ -8,7 +9,6 @@ import {
   computeCategoryTotals,
 } from '#app/finance/finance.balances';
 import type {
-  EventManagerRole,
   FinanceBalance,
   FinanceParties,
   FinanceSettings,
@@ -17,7 +17,11 @@ import type {
 
 @injectable()
 export class FinanceService extends BaseService {
-  constructor(@inject(AuditService) private readonly audit: AuditService) {
+  constructor(
+    @inject(AuditService) private readonly audit: AuditService,
+    @inject(FinancePartyService)
+    private readonly partyService: FinancePartyService,
+  ) {
     super();
   }
 
@@ -127,47 +131,11 @@ export class FinanceService extends BaseService {
     eventId: string,
     selfUserId: string,
   ): Promise<FinanceParties> {
-    const [managers, expenses, payouts] = await Promise.all([
-      this.prisma.eventManager.findMany({
-        where: {
-          eventId,
-          user: { isNot: null },
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        select: { role: true, user: { select: { id: true, name: true } } },
-      }),
-      this.prisma.expense.findMany({
-        where: { eventId, paidByUserId: null, paidByName: { not: null } },
-        select: { paidByName: true },
-        distinct: ['paidByName'],
-      }),
-      this.prisma.payout.findMany({
-        where: { eventId, recipientUserId: null },
-        select: { recipientName: true },
-        distinct: ['recipientName'],
-      }),
-    ]);
-
-    const names = new Set([
-      ...expenses.flatMap((e) => (e.paidByName ? [e.paidByName] : [])),
-      ...payouts.map((p) => p.recipientName),
-    ]);
+    const { managers, names } = await this.partyService.listKnown(eventId);
 
     return {
-      managers: managers
-        .flatMap((m) =>
-          m.user
-            ? [
-                {
-                  userId: m.user.id,
-                  name: m.user.name,
-                  role: m.role as EventManagerRole,
-                },
-              ]
-            : [],
-        )
-        .sort((a, b) => a.name.localeCompare(b.name)),
-      names: [...names].sort((a, b) => a.localeCompare(b)),
+      managers: managers.sort((a, b) => a.name.localeCompare(b.name)),
+      names: names.sort((a, b) => a.localeCompare(b)),
       selfUserId,
     };
   }

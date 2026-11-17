@@ -64,6 +64,7 @@
           :label="t('field.date.label')"
           :min="dateMin"
           :max="dateMax"
+          clearable
         />
 
         <q-toggle
@@ -254,10 +255,12 @@ const dateMax = computed(() =>
 );
 
 function onOKClick(): void {
+  // Without a date (the backlog) there is no slot, as the fields show.
+  const timed = !!data.date && !fullDay.value;
   onDialogOK({
     ...data,
-    time: fullDay.value ? null : data.time,
-    duration: fullDay.value ? null : data.duration,
+    time: timed ? data.time : null,
+    duration: timed ? data.duration : null,
   });
 }
 </script>
@@ -297,7 +300,6 @@ field:
 
 action:
   cancel: 'Cancel'
-  close: 'Close'
   ok: 'Save'
 </i18n>
 
@@ -334,7 +336,6 @@ field:
 
 action:
   cancel: 'Abbrechen'
-  close: 'Schließen'
   ok: 'Speichern'
 </i18n>
 
@@ -371,7 +372,6 @@ field:
 
 action:
   cancel: 'Annuler'
-  close: 'Fermer'
   ok: 'Enregistrer'
 </i18n>
 
@@ -408,7 +408,6 @@ field:
 
 action:
   cancel: 'Anuluj'
-  close: 'Zamknij'
   ok: 'Zapisz'
 </i18n>
 
@@ -445,7 +444,6 @@ field:
 
 action:
   cancel: 'Zrušit'
-  close: 'Zavřít'
   ok: 'Uložit'
 </i18n>
 

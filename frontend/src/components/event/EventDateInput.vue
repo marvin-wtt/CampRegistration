@@ -13,6 +13,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DateInput from '@/components/common/inputs/DateInput.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { isoToLocalDate } from '@/utils/date';
 
 const props = defineProps<{
   label: string;
@@ -28,10 +29,12 @@ const model = defineModel<string | null | undefined>();
 const { t } = useI18n();
 const eventDetailsStore = useEventDetailsStore();
 
+// Local days, like the planners' bounds: midnight in Berlin is the day
+// before in UTC.
 const highlight = computed(() => {
   const event = eventDetailsStore.data;
   return event
-    ? { start: event.startAt.slice(0, 10), end: event.endAt.slice(0, 10) }
+    ? { start: isoToLocalDate(event.startAt), end: isoToLocalDate(event.endAt) }
     : undefined;
 });
 </script>

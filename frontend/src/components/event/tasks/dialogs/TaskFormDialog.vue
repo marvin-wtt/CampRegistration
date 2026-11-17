@@ -162,7 +162,6 @@ field:
 
 action:
   cancel: 'Cancel'
-  close: 'Close'
   create: 'Create'
 </i18n>
 
@@ -186,7 +185,6 @@ field:
 
 action:
   cancel: 'Abbrechen'
-  close: 'Schließen'
   create: 'Erstellen'
 </i18n>
 
@@ -210,7 +208,6 @@ field:
 
 action:
   cancel: 'Annuler'
-  close: 'Fermer'
   create: 'Créer'
 </i18n>
 
@@ -234,7 +231,6 @@ field:
 
 action:
   cancel: 'Anuluj'
-  close: 'Zamknij'
   create: 'Utwórz'
 </i18n>
 
@@ -258,6 +254,5 @@ field:
 
 action:
   cancel: 'Zrušit'
-  close: 'Zavřít'
   create: 'Vytvořit'
 </i18n>

@@ -63,7 +63,9 @@
         <q-item-section class="text-on-surface-variant">
           {{
             needle.trim()
-              ? t('finance.party.enterToAdd', { name: needle.trim() })
+              ? t('finance.party.enterToAdd', {
+                  name: normalizePartyName(needle),
+                })
               : t('finance.party.typeName')
           }}
         </q-item-section>
@@ -76,7 +78,11 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { FinanceParties } from '@camp-registration/common/entities';
-import { partyNameKey } from '@camp-registration/common/utils';
+import {
+  normalizePartyName,
+  partyNameKey,
+  pickSpelling,
+} from '@camp-registration/common/utils';
 
 export interface PartyValue {
   userId: string | null;
@@ -140,10 +146,11 @@ const options = computed<PartyOption[]>(() => {
   return [...(allowFunds ? [fundsOption.value] : []), ...managers, ...names];
 });
 
+// Compared as the match is, so a typed person always shows in the list.
 const filtered = computed(() => {
-  const query = needle.value.trim().toLocaleLowerCase();
+  const query = partyNameKey(needle.value);
   return query
-    ? options.value.filter((o) => o.label.toLocaleLowerCase().includes(query))
+    ? options.value.filter((o) => partyNameKey(o.label).includes(query))
     : options.value;
 });
 
@@ -183,7 +190,11 @@ const match = computed<PartyOption | undefined>(() => {
   if (managers.length > 1) {
     return undefined;
   }
-  return managers[0] ?? same[0];
+  if (managers[0]) {
+    return managers[0];
+  }
+  const spelling = pickSpelling(same.flatMap((o) => o.name ?? []));
+  return same.find((o) => o.name === spelling);
 });
 
 function onFilter(value: string, update: (fn: () => void) => void) {
@@ -196,7 +207,7 @@ function onNewValue(
   value: string,
   done: (item?: PartyOption, mode?: 'add' | 'add-unique' | 'toggle') => void,
 ) {
-  const name = value.trim().replace(/\s+/g, ' ');
+  const name = normalizePartyName(value);
   if (!name) {
     done();
     return;

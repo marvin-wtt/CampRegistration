@@ -162,6 +162,42 @@ describe('finances', () => {
       ]);
     });
 
+    it('files a typed name under one fixed spelling of older ones', async () => {
+      const { event, token } = await setup();
+      // Spellings from before names were matched, written directly.
+      for (const [receiptNumber, paidByName] of [
+        [901, 'tomasz'],
+        [902, 'Tomasz'],
+        [903, 'tomasz'],
+      ] as const) {
+        await prisma.expense.create({
+          data: {
+            eventId: event.id,
+            receiptNumber,
+            amount: 100,
+            description: 'Older',
+            paidByName,
+          },
+        });
+      }
+
+      const created = await createExpense(event, token, {
+        paidByName: 'TOMASZ',
+      });
+
+      const row = await prisma.expense.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      expect(row.paidByName).toBe('Tomasz');
+
+      // Both stay offered: balances keep them apart.
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/finances/parties`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data.names).toEqual(['tomasz', 'Tomasz']);
+    });
+
     it('leaves a typed name alone when two managers share it', async () => {
       const { event, user, token } = await setup();
       const { user: other } = await addManager(event, 'COUNSELOR');

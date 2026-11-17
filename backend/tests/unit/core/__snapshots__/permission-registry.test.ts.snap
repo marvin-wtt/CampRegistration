@@ -194,7 +194,6 @@ exports[`the assembled permission policy > grants newsletter roles exactly these
     "newsletter.edit",
     "newsletter.managers.create",
     "newsletter.managers.delete",
-    "newsletter.managers.edit",
     "newsletter.managers.view",
     "newsletter.messages.create",
     "newsletter.messages.delete",

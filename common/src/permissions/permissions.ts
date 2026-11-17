@@ -91,7 +91,6 @@ export type NewsletterPermission =
   | 'newsletter.delete'
   | 'newsletter.managers.view'
   | 'newsletter.managers.create'
-  | 'newsletter.managers.edit'
   | 'newsletter.managers.delete'
   | 'newsletter.subscribers.view'
   | 'newsletter.subscribers.create'

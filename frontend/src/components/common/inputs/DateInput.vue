@@ -105,12 +105,20 @@ function isHighlighted(value: string): boolean {
   );
 }
 
-// An empty field opens on the marked days' month rather than today's.
-const defaultYearMonth = computed<string | undefined>(() =>
-  toYearMonth(
-    props.openOnToday ? formatLocalDate(new Date()) : props.highlight?.start,
-  ),
-);
+// An empty field opens on the marked days' month, else today's, kept within
+// the bounds: QDate would show a month with nothing to pick.
+const defaultYearMonth = computed<string>(() => {
+  let date =
+    (!props.openOnToday && props.highlight?.start) ||
+    formatLocalDate(new Date());
+  if (props.min && date < props.min) {
+    date = props.min;
+  }
+  if (props.max && date > props.max) {
+    date = props.max;
+  }
+  return date.slice(0, 7).replace('-', '/');
+});
 </script>
 
 <style scoped>

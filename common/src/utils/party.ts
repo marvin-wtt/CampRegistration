@@ -22,10 +22,27 @@ export const recipientKey = (p: {
   recipientName: string | null;
 }) => partyKey(p.recipientUserId, p.recipientName);
 
+/** A typed name as stored: trimmed, with single spaces. */
+export function normalizePartyName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
 /**
  * A typed name as compared against the known ones: case and spacing don't
- * make another person, so "anna " is the "Anna" already there.
+ * make another person, so "anna " is the "Anna" already there. Not
+ * locale-aware, so client and server agree.
  */
 export function partyNameKey(name: string): string {
-  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  return normalizePartyName(name).toLowerCase();
+}
+
+/**
+ * Of known spellings that are one person, the one a new record joins. By
+ * code unit, not locale, so client and server pick the same: "Tomasz" before
+ * "tomasz".
+ */
+export function pickSpelling<T extends string>(
+  spellings: readonly T[],
+): T | undefined {
+  return [...spellings].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
 }

@@ -46,7 +46,6 @@
       </registration-dialog-header>
 
       <q-tabs
-        v-if="canViewTimeline"
         v-model="activeTab"
         align="justify"
         no-caps
@@ -242,7 +241,6 @@
         </q-tab-panel>
 
         <q-tab-panel
-          v-if="canViewTimeline"
           name="timeline"
           class="q-pa-none"
           lazy-render
@@ -282,7 +280,6 @@ import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { usePermissions } from '@/composables/permissions';
 import { countryName } from '@/utils/countries';
 import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
@@ -314,14 +311,6 @@ const { registrationId } = defineProps<{
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
 const eventId = String(route.params.eventId);
-const { can } = usePermissions();
-
-// Hide the whole section rather than an empty one when neither source is
-// visible to the viewer; RegistrationTimeline itself notes a partial view.
-const canViewTimeline = computed(
-  () => can('event.audit.view') || can('event.messages.view'),
-);
-
 // The timeline panel is `lazy-render`, so switching to it is what mounts
 // RegistrationTimeline and fires its fetch — not every dialog open.
 const activeTab = ref<'details' | 'timeline'>('details');

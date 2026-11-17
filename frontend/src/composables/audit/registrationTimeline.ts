@@ -78,13 +78,11 @@ export function useRegistrationTimeline(
   const apiService = useAPIService();
   const { can } = usePermissions();
 
-  const canViewAudit = computed(() => can('event.audit.view'));
+  // The registration's own history comes with the registration, which the
+  // viewer has open; only the emails need a permission of their own. Without
+  // it, the viewer is told the timeline isn't the full picture.
   const canViewMessages = computed(() => can('event.messages.view'));
-  // True once at least one side is hidden by permissions, so the viewer knows
-  // the timeline isn't the full picture.
-  const restricted = computed(
-    () => !canViewAudit.value || !canViewMessages.value,
-  );
+  const restricted = computed(() => !canViewMessages.value);
 
   const auditEntries = ref<AuditLogEntry[]>([]);
   const deliveries = ref<MessageDelivery[]>([]);
@@ -96,12 +94,10 @@ export function useRegistrationTimeline(
       : Promise.resolve([]);
 
   onMounted(async () => {
-    // A side without permission is never requested; allSettled here only
-    // guards against a genuine failure on the side the viewer does have.
+    // Emails without permission are never requested; allSettled here only
+    // guards against a genuine failure of either request.
     const [audit, received] = await Promise.allSettled([
-      canViewAudit.value
-        ? apiService.fetchRegistrationAuditLog(eventId, registrationId)
-        : Promise.resolve([]),
+      apiService.fetchRegistrationAuditLog(eventId, registrationId),
       fetchDeliveries(),
     ]);
     auditEntries.value = audit.status === 'fulfilled' ? audit.value : [];
