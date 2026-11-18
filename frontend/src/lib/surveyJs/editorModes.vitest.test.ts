@@ -103,6 +103,32 @@ describe('editor modes', () => {
     }
   });
 
+  it('offers the privacy tags in simple mode', () => {
+    const creator = createCreator();
+    creator.JSON = {
+      elements: [
+        { type: 'comment', name: 'allergies' },
+        { type: 'boolean', name: 'consent_health' },
+      ],
+    };
+    const properties = trackPropertyGrid(creator);
+    applyEditorMode(creator, 'simple', context);
+
+    creator.selectElement(creator.survey.getQuestionByName('allergies'));
+    expect(properties()).toContain('privacyCategory');
+
+    // What a consent covers only matters once the question is one.
+    const consent = creator.survey.getQuestionByName('consent_health');
+    creator.selectElement(consent);
+    expect(properties()).toContain('consent');
+    expect(properties()).not.toContain('consentFor');
+
+    consent.setPropertyValue('consent', true);
+    creator.selectElement(null);
+    creator.selectElement(consent);
+    expect(properties()).toContain('consentFor');
+  });
+
   describe.each(['simple', 'standard', 'expert'] as const)(
     'prices in the %s mode',
     (mode) => {

@@ -27,6 +27,15 @@ export { formLintOptions } from './lint.js';
 export { extractEventData } from './eventData.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
+  REPEATED,
+  extractPrivacyTags,
+  uncoveredConsentCategories,
+  unconsentedAnswers,
+  type ConsentQuestion,
+  type FormPrivacyTags,
+  type PrivacyTaggedQuestion,
+} from './privacyTags.js';
+export {
   extractFormFields,
   extractEventDataTypes,
   getSelectOptions,
