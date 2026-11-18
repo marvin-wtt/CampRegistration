@@ -70,6 +70,13 @@ export const EVENT_NAVIGATION_ITEMS: EventNavigationItemDef[] = [
     hideable: true,
   },
   {
+    name: 'finances',
+    icon: 'receipt_long',
+    permission: { any: ['event.expenses.create', 'event.expenses.view'] },
+    routeName: 'management.event.finances',
+    hideable: true,
+  },
+  {
     name: 'settings',
     icon: 'settings',
     routeName: 'management.event.settings',

@@ -69,6 +69,8 @@ export class EventModule implements AppModule {
           'event.files.edit',
           'event.files.delete',
         ],
+        // Finances only; the event itself just so it can be opened.
+        TREASURER: ['event.view'],
         COUNSELOR: ['event.view', 'event.files.view'],
         VIEWER: ['event.view', 'event.files.view'],
       },

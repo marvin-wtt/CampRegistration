@@ -45,7 +45,7 @@ export class ProgramItemRouter extends ModuleRouter {
     );
     this.router.patch(
       '/:programItemId',
-      guard(hasEventPermission('event.program_items.update')),
+      guard(hasEventPermission('event.program_items.edit')),
       controller(this.programItemController, 'update'),
     );
     this.router.delete(

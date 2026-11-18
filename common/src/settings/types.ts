@@ -53,7 +53,12 @@ export interface ProgramPlannerSettings {
 
 /** Nav-rail items an event can hide via `SETTING_KEYS.NAVIGATION`. */
 export type HideableNavigationItem =
-  'contact' | 'program_planner' | 'room_planner' | 'tasks' | 'chore_planner';
+  | 'contact'
+  | 'program_planner'
+  | 'room_planner'
+  | 'tasks'
+  | 'chore_planner'
+  | 'finances';
 
 /**
  * Stored under `SETTING_KEYS.NAVIGATION`. Names are {@link HideableNavigationItem}s
@@ -91,4 +96,14 @@ export interface ProgramPublicSettings {
    * @default true
    */
   allowPastDates: boolean;
+}
+
+/** Stored under `SETTING_KEYS.FINANCES`. */
+export interface FinanceDisplaySettings {
+  /**
+   * Mark expenses without a category; off for events that don't sort them.
+   *
+   * @default true
+   */
+  flagMissingCategories: boolean;
 }

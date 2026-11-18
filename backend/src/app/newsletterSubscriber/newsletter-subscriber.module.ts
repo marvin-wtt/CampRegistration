@@ -35,7 +35,6 @@ export class NewsletterSubscriberModule implements AppModule {
           'newsletter.subscribers.create',
           'newsletter.subscribers.delete',
         ],
-        VIEWER: ['newsletter.subscribers.view'],
       },
     };
   }

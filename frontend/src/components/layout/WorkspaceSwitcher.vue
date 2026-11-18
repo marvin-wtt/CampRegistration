@@ -52,101 +52,103 @@
   </div>
 
   <!-- Bar: width-constrained toolbar control with a truncating label + caret. -->
-  <template v-else>
-    <m-btn
-      tonal
-      no-caps
-      no-morph
-      :aria-label="label"
-      class="workspace-switcher"
-      @click="openSheet"
+  <m-btn
+    v-else
+    tonal
+    no-caps
+    no-morph
+    :aria-label="label"
+    class="workspace-switcher"
+    @click="openSheet"
+  >
+    <q-icon
+      :name="icon"
+      size="20px"
+      class="on-left"
+    />
+    <span class="workspace-switcher__label">
+      {{ label }}
+    </span>
+    <q-icon
+      name="arrow_drop_down"
+      size="20px"
+      class="workspace-switcher__chevron on-right"
+    />
+
+    <!-- Touch has no hover, so a tooltip cannot be what discloses the
+         truncated name — on phones the sheet header carries it in full. -->
+    <q-tooltip v-if="!sheetMode">
+      {{ label }}
+    </q-tooltip>
+
+    <q-menu
+      v-if="!sheetMode"
+      anchor="bottom start"
+      self="top start"
     >
-      <q-icon
-        :name="icon"
-        size="20px"
-        class="on-left"
-      />
-      <span class="workspace-switcher__label">
-        {{ label }}
-      </span>
-      <q-icon
-        name="arrow_drop_down"
-        size="20px"
-        class="workspace-switcher__chevron on-right"
-      />
+      <workspace-switcher-menu />
+    </q-menu>
+  </m-btn>
 
-      <!-- Touch has no hover, so a tooltip cannot be what discloses the
-           truncated name — on phones the sheet header carries it in full. -->
-      <q-tooltip v-if="!sheetMode">
-        {{ label }}
-      </q-tooltip>
-
-      <q-menu
-        v-if="!sheetMode"
-        anchor="bottom start"
-        self="top start"
-      >
-        <workspace-switcher-menu />
-      </q-menu>
-    </m-btn>
-
-    <!-- Phones get a bottom sheet instead of an anchored menu: the menu opens
-         at the top edge, away from the thumb, and caps itself at a width the
-         nested lists cannot work in. -->
-    <q-dialog
-      v-if="sheetMode"
-      v-model="sheet"
-      position="bottom"
-      @hide="resetDrag"
+  <!-- Phones get a bottom sheet instead of an anchored menu: the menu opens
+       at the top edge, away from the thumb, and caps itself at a width the
+       nested lists cannot work in. Kept outside the loading switch: switching
+       events shows the skeleton before the deferred v-close-popup runs, and an
+       unmounted sheet would reopen with `sheet` still true. Mounted, it closes
+       itself on the route change. -->
+  <q-dialog
+    v-if="!rail && sheetMode"
+    v-model="sheet"
+    position="bottom"
+    @hide="resetDrag"
+  >
+    <q-card
+      class="workspace-switcher-sheet"
+      :class="{ 'workspace-switcher-sheet--dragging': dragging }"
+      :style="{ transform: `translateY(${dragOffset}px)` }"
     >
-      <q-card
-        class="workspace-switcher-sheet"
-        :class="{ 'workspace-switcher-sheet--dragging': dragging }"
-        :style="{ transform: `translateY(${dragOffset}px)` }"
-      >
-        <!-- The handle drags unconditionally: it is the part of a sheet that
+      <!-- The handle drags unconditionally: it is the part of a sheet that
              is not the content, so nothing else competes for the gesture. -->
-        <div
-          v-touch-pan.vertical.mouse.prevent="drag"
-          class="workspace-switcher-sheet__header"
-        >
-          <div class="workspace-switcher-sheet__grip" />
+      <div
+        v-touch-pan.vertical.mouse.prevent="drag"
+        class="workspace-switcher-sheet__header"
+      >
+        <div class="workspace-switcher-sheet__grip" />
 
-          <div class="row items-center no-wrap">
-            <q-icon
-              :name="icon"
-              size="24px"
-              class="q-mr-md"
-            />
-            <div class="col">
-              <div class="workspace-switcher-sheet__name">
-                {{ label }}
-              </div>
-              <div
-                v-if="sheetCaption"
-                class="workspace-switcher-sheet__area"
-              >
-                {{ sheetCaption }}
-              </div>
+        <div class="row items-center no-wrap">
+          <q-icon
+            :name="icon"
+            size="24px"
+            class="q-mr-md"
+          />
+          <div class="col">
+            <div class="workspace-switcher-sheet__name">
+              {{ label }}
+            </div>
+            <div
+              v-if="sheetCaption"
+              class="workspace-switcher-sheet__area"
+            >
+              {{ sheetCaption }}
             </div>
           </div>
         </div>
+      </div>
 
-        <q-separator />
+      <q-separator />
 
-        <!-- No `prevent` here: the list has to keep scrolling normally, and
+      <!-- No `prevent` here: the list has to keep scrolling normally, and
              `dragFromContent` only takes the gesture when there is nothing
              left to scroll. -->
-        <div
-          ref="scrollEl"
-          v-touch-pan.vertical.mouse="dragFromContent"
-          class="workspace-switcher-sheet__scroll"
-        >
-          <workspace-switcher-menu />
-        </div>
-      </q-card>
-    </q-dialog>
-  </template>
+      <div
+        ref="scrollEl"
+        v-touch-pan.vertical.mouse="dragFromContent"
+        class="workspace-switcher-sheet__scroll"
+      >
+        <workspace-switcher-menu />
+      </div>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script lang="ts" setup>

@@ -146,7 +146,7 @@ const { currentManagerId } = useCurrentManager();
 const { can } = usePermissions();
 const { showDetails } = useTaskDialogs();
 
-const canUpdate = computed<boolean>(() => can('event.tasks.update'));
+const canUpdate = computed<boolean>(() => can('event.tasks.edit'));
 
 const openTasks = computed<Task[]>(() =>
   (taskStore.data ?? []).filter((task) => !task.completed),

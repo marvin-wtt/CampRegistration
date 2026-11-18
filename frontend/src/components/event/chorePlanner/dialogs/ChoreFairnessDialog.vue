@@ -45,15 +45,14 @@
               { value: 'staff', label: t('group.staff') },
             ]"
           />
-          <q-chip
+          <filter-chip
             clickable
-            class="filter-chip"
-            :class="{ 'filter-chip--active': onlyUnassigned }"
             :icon="onlyUnassigned ? 'check' : undefined"
+            :active="onlyUnassigned"
             @click="onlyUnassigned = !onlyUnassigned"
           >
             {{ t('filter.unassigned', { count: unassignedCount }) }}
-          </q-chip>
+          </filter-chip>
         </div>
       </template>
 
@@ -176,6 +175,7 @@
 </template>
 
 <script lang="ts" setup>
+import FilterChip from '@/components/common/FilterChip.vue';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref, useTemplateRef, watch } from 'vue';
@@ -332,20 +332,6 @@ function removePerson(registrationId: string) {
 </script>
 
 <style scoped>
-.filter-chip {
-  margin: 0;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
-}
-
 .filters {
   gap: 8px;
 }

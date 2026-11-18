@@ -25,8 +25,9 @@ export class AuditModule implements AppModule {
   registerPermissions(): ScopedPermissions {
     return {
       event: {
+        // Not coordinators: the log shows every payout and expense change,
+        // which they see only for their own.
         DIRECTOR: ['event.audit.view'],
-        COORDINATOR: ['event.audit.view'],
       },
     };
   }

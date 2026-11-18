@@ -24,7 +24,7 @@ export class ProgramPublicModule implements AppModule {
     resolve(SettingsRegistry).register(SETTING_KEYS.PROGRAM_PUBLIC, {
       schema: ProgramPublicSettingsValidation,
       viewPermission: 'event.program_items.view',
-      editPermission: 'event.program_items.update',
+      editPermission: 'event.program_items.edit',
     });
   }
 

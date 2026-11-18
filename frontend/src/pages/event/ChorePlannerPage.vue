@@ -155,18 +155,15 @@
             class="col-12 col-sm"
           >
             <div class="chip-scroll row no-wrap">
-              <q-chip
+              <filter-chip
                 v-for="chore in chores"
                 :key="chore.id"
                 clickable
-                class="filter-chip"
-                :class="{
-                  'filter-chip--active': filterChoreIds.includes(chore.id),
-                }"
+                :active="filterChoreIds.includes(chore.id)"
                 @click="toggleChoreFilter(chore.id)"
               >
                 {{ to(chore.name) }}
-              </q-chip>
+              </filter-chip>
             </div>
           </div>
         </div>
@@ -462,6 +459,7 @@
 </template>
 
 <script lang="ts" setup>
+import FilterChip from '@/components/common/FilterChip.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { type QPopupProxy, useQuasar } from 'quasar';
@@ -1313,24 +1311,6 @@ function printPages({
 .empty-icon {
   color: var(--md3-on-surface-variant);
   opacity: 0.6;
-}
-
-.filter-chip {
-  height: 32px;
-  margin: 0;
-  padding: 0 12px;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
 }
 </style>
 

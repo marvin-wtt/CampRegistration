@@ -42,7 +42,9 @@ an organization string to a camp API must be a compile error, not a silent `fals
 
 ## What is _not_ a permission
 
-State and ownership rules stay plain `GuardFn`s composed with `or`/`and`, never
+Ownership of a record _is_ expressible: grant `'<permission>:own'` and declare
+`ownedBy` on the model's `bindModel` (see `backend/CLAUDE.md`, "Own records").
+Other state rules stay plain `GuardFn`s composed with `or`/`and`, never
 registry entries: `registrationOpen`, `campOrganizationVerified`,
 `campManagerSelf`, `organizationMemberSelf`, `buildCampWhere`, `file.guard.ts`.
 If the rule depends on the state of the row rather than on who the user is, it

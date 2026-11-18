@@ -38,8 +38,6 @@ export class MessageModule implements AppModule {
           'event.messages.create',
           'event.messages.delete',
         ],
-        COUNSELOR: [],
-        VIEWER: [],
       },
     };
   }

@@ -1,7 +1,8 @@
 import { z, type ZodType } from 'zod';
-import type {
-  EventManagerCreateData,
-  EventManagerUpdateData,
+import {
+  EVENT_MANAGER_ROLES,
+  type EventManagerCreateData,
+  type EventManagerUpdateData,
 } from '@camp-registration/common/entities';
 
 const index = z.object({
@@ -23,7 +24,7 @@ const store = z.object({
   }),
   body: z.object({
     email: z.email(),
-    role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
+    role: z.enum(EVENT_MANAGER_ROLES),
     expiresAt: z.iso.datetime().optional(),
   }) satisfies ZodType<EventManagerCreateData>,
 });
@@ -35,7 +36,7 @@ const update = z.object({
   }),
   body: z
     .object({
-      role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
+      role: z.enum(EVENT_MANAGER_ROLES),
       expiresAt: z.iso.datetime().nullable(),
     })
     .partial() satisfies ZodType<EventManagerUpdateData>,

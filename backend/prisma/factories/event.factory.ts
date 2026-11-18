@@ -56,6 +56,7 @@ export const EventFactory = {
         },
       },
       registrationOpensAt: faker.date.past(),
+      finance: { create: {} },
       ...data,
     };
   },

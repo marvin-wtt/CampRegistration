@@ -76,6 +76,7 @@
               :registrations="features.registrations"
               :files="features.files"
               :rooms="features.rooms"
+              :finances="features.finances"
               :style="card.style"
             />
             <tasks-card
@@ -141,6 +142,7 @@ import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
+import { useFinanceStore } from '@/stores/finance-store';
 import { useProgramPlannerStore } from '@/stores/program-planner-store';
 import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
 import { useChoreStore } from '@/stores/chore-store';
@@ -209,6 +211,7 @@ const profileStore = useProfileStore();
 const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
+const financeStore = useFinanceStore();
 const programStore = useProgramPlannerStore();
 const publishedDayStore = useProgramPublishedDayStore();
 const choreStore = useChoreStore();
@@ -258,6 +261,7 @@ const features = computed(() => ({
     isShown('chore_planner'),
   program: can('event.program_items.view') && isShown('program_planner'),
   rooms: can('event.rooms.view') && isShown('room_planner'),
+  finances: can('event.expenses.view') && isShown('finances'),
 }));
 
 // A store is only asked once its permission is known to be held, so a
@@ -304,13 +308,19 @@ fetchWhen(
 // Before the event has loaded the registration layout stands in.
 const phase = computed<EventPhase>(() => viewedPhase.value ?? 'registration');
 
+// Only wrap-up asks about receipts still to come.
+fetchWhen(
+  () => features.value.finances && phase.value === 'wrapUp',
+  () => financeStore.loadSummary(),
+);
+
 function isAvailable(key: CardKey): boolean {
   const registrations =
     features.value.registrations || permissionsLoading.value;
 
   switch (key) {
     case 'attention':
-      return registrations || features.value.files;
+      return registrations || features.value.files || features.value.finances;
     case 'registrations':
     case 'demographics':
       return registrations;

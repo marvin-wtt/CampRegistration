@@ -38,8 +38,6 @@ export class NewsletterManagerModule implements AppModule {
           'newsletter.managers.create',
           'newsletter.managers.delete',
         ],
-        EDITOR: ['newsletter.managers.view'],
-        VIEWER: [],
       },
     };
   }

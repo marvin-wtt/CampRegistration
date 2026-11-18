@@ -1,7 +1,10 @@
 import { BaseService } from '#core/base/BaseService';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type { Prisma } from '#generated/prisma/client.js';
-import type { EventScopedPermission } from '@camp-registration/common/permissions';
+import type {
+  EventScopedPermission,
+  ScopeGrant,
+} from '@camp-registration/common/permissions';
 import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
@@ -25,7 +28,7 @@ type ManagerUpdateData = Pick<
 
 export interface ManagerAuthorization {
   managerId: string;
-  permissions: Set<EventScopedPermission>;
+  permissions: Set<ScopeGrant<'event'>>;
   expiresAt: Date | null;
   revalidate?: boolean;
 }

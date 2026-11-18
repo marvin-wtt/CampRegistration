@@ -1,10 +1,12 @@
 import type { Request } from 'express';
 import type {
   PermissionScope,
+  ScopeGrant,
   ScopePermission,
 } from '@camp-registration/common/permissions';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
-import type { GuardFn } from '#core/guard';
+import { admin, type GuardFn } from '#core/guard';
+import { type ModelKey, ownsBoundModel } from '#core/permission/ownership';
 
 /**
  * How one scope turns a request into a permission set. Registered by the module
@@ -21,7 +23,7 @@ export interface ScopeResolver<S extends PermissionScope> {
   resolve(
     subjectId: string,
     userId: string,
-  ): Promise<ReadonlySet<ScopePermission<S>> | null>;
+  ): Promise<ReadonlySet<ScopeGrant<S>> | null>;
 }
 
 /** What a module returns from `registerScopeResolvers()`. */
@@ -67,24 +69,71 @@ export function clearScopeResolvers(): void {
   resolvers.clear();
 }
 
+/** How far a permission reaches: every record, the user's own, or none. */
+export type ScopeAccess = 'all' | 'own' | null;
+
+export async function scopeAccess<S extends PermissionScope>(
+  req: Request,
+  scope: S,
+  permission: ScopePermission<S>,
+): Promise<ScopeAccess> {
+  if (admin(req) === true) {
+    return 'all';
+  }
+
+  const resolver = resolvers.get(scope);
+  if (!resolver) {
+    throw new Error(`No permission resolver registered for scope '${scope}'`);
+  }
+
+  const subjectId = req.modelOrFail(resolver.model).id;
+  const grants = await resolver.resolve(subjectId, req.authUserId());
+
+  if (grants?.has(permission)) {
+    return 'all';
+  }
+
+  return grants?.has(`${permission}:own` as ScopeGrant<S>) ? 'own' : null;
+}
+
+interface ScopedOptions {
+  /** The bound model a `:own` grant is checked on; without it, `:own` never passes. */
+  own?: ModelKey;
+}
+
 /**
- * Guards a route on `permission` within `scope`. The three scope-specific
- * guards (`eventManager`, `newsletterManager`, `organizationMember`) are aliases
- * of this, so a new scope needs no new guard plumbing.
+ * Guards a route on `permission` within `scope`. The scope-specific guards
+ * (`hasEventPermission`, …) are aliases of this.
  */
 export const scoped = <S extends PermissionScope>(
   scope: S,
   permission: ScopePermission<S>,
+  options: ScopedOptions = {},
 ): GuardFn => {
   return async (req: Request) => {
-    const resolver = resolvers.get(scope);
-    if (!resolver) {
-      throw new Error(`No permission resolver registered for scope '${scope}'`);
-    }
+    const access = await scopeAccess(req, scope, permission);
 
-    const subjectId = req.modelOrFail(resolver.model).id;
-    const permissions = await resolver.resolve(subjectId, req.authUserId());
+    return (
+      access === 'all' ||
+      (access === 'own' &&
+        options.own !== undefined &&
+        ownsBoundModel(req, options.own))
+    );
+  };
+};
 
-    return permissions?.has(permission) ?? false;
+/**
+ * Guards a list on the view it requests: `?view=all` needs the full grant,
+ * `own` (the default) is also open to a `:own` grant. The handler filters on
+ * the validated view, like `GET /events?view=assigned`.
+ */
+export const scopedView = <S extends PermissionScope>(
+  scope: S,
+  permission: ScopePermission<S>,
+): GuardFn => {
+  return async (req: Request) => {
+    const access = await scopeAccess(req, scope, permission);
+
+    return req.query.view === 'all' ? access === 'all' : access !== null;
   };
 };

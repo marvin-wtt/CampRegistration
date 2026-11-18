@@ -7,13 +7,15 @@ import taskSeeder from './task.seeder';
 import choreSeeder from './chore.seeder';
 import newsletterSeeder from './newsletter.seeder';
 import auditSeeder from './audit.seeder';
+import financeSeeder from './finance.seeder';
 import organizationSeeder from './organization.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
 async function main() {
   // Order is a dependency order: events need their organization, managers need
   // both, tasks are assigned to manager records, and chores need the
-  // registrations and rooms the event seeder creates.
+  // registrations and rooms the event seeder creates. Finances need the
+  // managers who paid.
   const seeders: BaseSeeder[] = [
     userSeeder,
     organizationSeeder,
@@ -22,17 +24,24 @@ async function main() {
     eventManagerSeeder,
     taskSeeder,
     choreSeeder,
+    financeSeeder,
     newsletterSeeder,
     auditSeeder,
   ];
 
+  console.time('Seeding');
   console.log(`Start seeding ...`);
   for (const seeder of seeders) {
     console.log(`Starting to seed with ${seeder.name()} seeder.`);
     await seeder.run(prisma);
+    console.timeLog(
+      'Seeding',
+      `Finished seeding with ${seeder.name()} seeder.`,
+    );
   }
   console.log(`Seeding finished. See prisma/seeders/README.md for the`);
   console.log(`accounts and the scenario each seeded event covers.`);
+  console.timeEnd('Seeding');
 }
 
 main()

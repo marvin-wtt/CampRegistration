@@ -42,6 +42,9 @@ const MANAGERS: ManagerSeed[] = [
 
   { eventId: EVENT_IDS.spring, userId: USER_IDS.john, role: 'DIRECTOR' },
   { eventId: EVENT_IDS.spring, userId: USER_IDS.erika, role: 'COORDINATOR' },
+  // The finance roles: who settles the camp's money afterwards.
+  { eventId: EVENT_IDS.spring, userId: USER_IDS.maria, role: 'TREASURER' },
+  { eventId: EVENT_IDS.spring, userId: USER_IDS.peter, role: 'COUNSELOR' },
 
   { eventId: EVENT_IDS.winter, userId: USER_IDS.john, role: 'DIRECTOR' },
 

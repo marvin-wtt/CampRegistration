@@ -2,10 +2,7 @@ import type {
   Profile as ProfileResourceData,
   OrganizationRole,
 } from '@camp-registration/common/entities';
-import type {
-  EventScopedPermission,
-  NewsletterPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopeGrant } from '@camp-registration/common/permissions';
 import {
   ORGANIZATION_EVENT_ACCESS_ROLES,
   ORGANIZATION_EVENT_PERMISSIONS,
@@ -56,7 +53,7 @@ export class ProfileResource extends JsonResource<
       string,
       {
         role: string;
-        permissions: EventScopedPermission[];
+        permissions: ScopeGrant<'event'>[];
         managerId: string | null;
       }
     >();
@@ -109,7 +106,7 @@ export class ProfileResource extends JsonResource<
   private buildNewsletterAccess(): ProfileResourceData['newsletterAccess'] {
     const access = new Map<
       string,
-      { role: string; permissions: NewsletterPermission[] }
+      { role: string; permissions: ScopeGrant<'newsletter'>[] }
     >();
 
     for (const manager of this.data.newsletterManagers) {

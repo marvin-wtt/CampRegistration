@@ -21,7 +21,7 @@ export function useTaskDialogs() {
   // update a task also holds `event.managers.view`. Permissions resolve after
   // the page mounts, so it is fetched once the answer arrives.
   const canAssign = computed<boolean>(
-    () => can('event.tasks.create') || can('event.tasks.update'),
+    () => can('event.tasks.create') || can('event.tasks.edit'),
   );
   watch(
     canAssign,
@@ -40,7 +40,7 @@ export function useTaskDialogs() {
         componentProps: {
           task,
           managers: eventManagerStore.data ?? [],
-          canUpdate: can('event.tasks.update'),
+          canUpdate: can('event.tasks.edit'),
           canDelete: can('event.tasks.delete'),
         },
       })

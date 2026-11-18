@@ -6,6 +6,15 @@ import {
   registerRouteModelBinding,
   applyBinding,
 } from './router.js';
+import {
+  type OwnerFields,
+  registerOwnership,
+} from '#core/permission/ownership';
+
+interface BindModelOptions<T extends ModelKey> {
+  /** User-id fields that make a user the owner, for `:own` grants. */
+  ownedBy?: OwnerFields<T>;
+}
 
 export abstract class ModuleRouter {
   public readonly router: Router;
@@ -26,7 +35,15 @@ export abstract class ModuleRouter {
   /** Define all HTTP routes here */
   protected abstract defineRoutes(): void;
 
-  protected bindModel<T extends ModelKey>(name: T, handler: ModelHandler<T>) {
+  protected bindModel<T extends ModelKey>(
+    name: T,
+    handler: ModelHandler<T>,
+    options: BindModelOptions<T> = {},
+  ) {
+    if (options.ownedBy) {
+      registerOwnership(name, options.ownedBy);
+    }
+
     if (this.mergeParams) {
       registerRouteModelBinding(name, handler);
     } else {

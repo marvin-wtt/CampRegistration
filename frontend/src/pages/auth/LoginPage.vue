@@ -14,7 +14,63 @@
         />
       </div>
 
+      <div
+        v-if="currentUser"
+        class="column no-wrap"
+        data-test="already-logged-in"
+      >
+        <q-card-section
+          class="text-h5 text-weight-bold text-center q-pt-xl q-pb-none"
+        >
+          {{ t('authenticated.title') }}
+        </q-card-section>
+
+        <q-card-section class="text-center text-body1">
+          <i18n-t
+            keypath="authenticated.message"
+            tag="span"
+          >
+            <template #name>
+              <span class="text-weight-bold">{{ currentUser.name }}</span>
+            </template>
+            <template #email>
+              <span class="text-weight-bold">{{ currentUser.email }}</span>
+            </template>
+          </i18n-t>
+        </q-card-section>
+
+        <q-card-actions class="q-px-md q-pb-none">
+          <q-btn
+            :label="t('action.continue')"
+            :loading="continuing"
+            :disable="loggingOut"
+            color="primary"
+            size="lg"
+            class="full-width"
+            data-test="continue"
+            rounded
+            @click="continueToOrigin"
+          />
+        </q-card-actions>
+
+        <q-card-section class="text-center q-pt-sm q-pb-lg">
+          <q-btn
+            :label="t('action.logout')"
+            :loading="loggingOut"
+            :disable="continuing"
+            color="primary"
+            size="lg"
+            class="full-width"
+            data-test="logout"
+            rounded
+            outline
+            @click="logout"
+          />
+        </q-card-section>
+      </div>
+
       <q-form
+        v-else
         class="column no-wrap"
         data-test="login-form"
         @submit="login"
@@ -124,6 +180,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -143,6 +200,37 @@ const error = computed(() => {
   return authStore.error;
 });
 
+const profileStore = useProfileStore();
+const continuing = ref(false);
+const loggingOut = ref(false);
+// Set while this form logs in, so the panel doesn't flash before navigating away
+const submitting = ref(false);
+
+const currentUser = computed(() =>
+  !submitting.value && authStore.status === 'authenticated'
+    ? profileStore.user
+    : undefined,
+);
+
+async function continueToOrigin() {
+  continuing.value = true;
+  try {
+    await authStore.continueToOrigin();
+  } finally {
+    continuing.value = false;
+  }
+}
+
+async function logout() {
+  loggingOut.value = true;
+  try {
+    // Stay here, keeping the origin, so another account can log in
+    await authStore.logout({ name: 'login', query: route.query });
+  } finally {
+    loggingOut.value = false;
+  }
+}
+
 onMounted(async () => {
   // Suppress any previous errors
   authStore.reset();
@@ -161,13 +249,24 @@ onMounted(async () => {
   }
 });
 
-function login() {
-  void authStore.login(email.value, password.value, remember.value);
+async function login() {
+  submitting.value = true;
+  try {
+    await authStore.login(email.value, password.value, remember.value);
+  } finally {
+    if (authStore.status !== 'authenticated') {
+      submitting.value = false;
+    }
+  }
 }
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Login'
+
+authenticated:
+  title: 'Already logged in'
+  message: 'You are logged in as {name} ({email}).'
 
 fields:
   email:
@@ -184,10 +283,16 @@ action:
   login: 'Login'
   register: 'Register'
   forgot_password: 'Forgot password ?'
+  continue: 'Continue'
+  logout: 'Log out'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Anmelden'
+
+authenticated:
+  title: 'Bereits angemeldet'
+  message: 'Du bist als {name} ({email}) angemeldet.'
 
 fields:
   email:
@@ -204,10 +309,16 @@ action:
   login: 'Anmelden'
   register: 'Registrieren'
   forgot_password: 'Passwort vergessen?'
+  continue: 'Weiter'
+  logout: 'Abmelden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Connexion'
+
+authenticated:
+  title: 'Déjà connecté'
+  message: 'Vous êtes connecté en tant que {name} ({email}).'
 
 fields:
   email:
@@ -224,10 +335,16 @@ action:
   login: 'Connexion'
   register: "S'inscrire"
   forgot_password: 'Mot de passe oublié ?'
+  continue: 'Continuer'
+  logout: 'Se déconnecter'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Zaloguj się'
+
+authenticated:
+  title: 'Już zalogowano'
+  message: 'Jesteś zalogowany jako {name} ({email}).'
 
 fields:
   email:
@@ -244,10 +361,16 @@ action:
   login: 'Zaloguj się'
   register: 'Zarejestruj się'
   forgot_password: 'Zapomniałeś hasła?'
+  continue: 'Kontynuuj'
+  logout: 'Wyloguj się'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Přihlásit se'
+
+authenticated:
+  title: 'Již přihlášen'
+  message: 'Jste přihlášen jako {name} ({email}).'
 
 fields:
   email:
@@ -264,4 +387,6 @@ action:
   login: 'Přihlásit se'
   register: 'Registrovat se'
   forgot_password: 'Zapomněli jste heslo?'
+  continue: 'Pokračovat'
+  logout: 'Odhlásit se'
 </i18n>

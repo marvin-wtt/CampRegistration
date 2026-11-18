@@ -26,51 +26,12 @@
           </template>
         </q-input>
 
-        <q-input
+        <event-date-input
           v-model="data.dueDate"
           :label="t('field.dueDate.label')"
           :hint="t('field.dueDate.hint')"
-          outlined
-          rounded
-        >
-          <template #prepend>
-            <q-icon name="calendar_month" />
-          </template>
-          <template #append>
-            <q-icon
-              v-if="data.dueDate"
-              name="close"
-              class="cursor-pointer"
-              @click="data.dueDate = null"
-            />
-            <q-icon
-              name="event"
-              class="cursor-pointer"
-            >
-              <q-popup-proxy
-                cover
-                transition-show="scale"
-                transition-hide="scale"
-              >
-                <q-date
-                  v-model="data.dueDate"
-                  mask="YYYY-MM-DD"
-                  minimal
-                >
-                  <div class="row items-center justify-end">
-                    <q-btn
-                      v-close-popup
-                      :label="t('action.close')"
-                      color="primary"
-                      flat
-                      rounded
-                    />
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-icon>
-          </template>
-        </q-input>
+          clearable
+        />
 
         <q-select
           v-model="data.assigneeId"
@@ -126,6 +87,7 @@ import type {
   EventManager,
   TaskCreateData,
 } from '@camp-registration/common/entities';
+import EventDateInput from '@/components/event/EventDateInput.vue';
 
 // Creates a task. Existing tasks are edited in place in TaskDetailsDialog.
 const { t } = useI18n();
@@ -200,7 +162,6 @@ field:
 
 action:
   cancel: 'Cancel'
-  close: 'Close'
   create: 'Create'
 </i18n>
 
@@ -224,7 +185,6 @@ field:
 
 action:
   cancel: 'Abbrechen'
-  close: 'Schließen'
   create: 'Erstellen'
 </i18n>
 
@@ -248,7 +208,6 @@ field:
 
 action:
   cancel: 'Annuler'
-  close: 'Fermer'
   create: 'Créer'
 </i18n>
 
@@ -272,7 +231,6 @@ field:
 
 action:
   cancel: 'Anuluj'
-  close: 'Zamknij'
   create: 'Utwórz'
 </i18n>
 
@@ -296,6 +254,5 @@ field:
 
 action:
   cancel: 'Zrušit'
-  close: 'Zavřít'
   create: 'Vytvořit'
 </i18n>

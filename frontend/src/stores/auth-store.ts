@@ -6,6 +6,7 @@ import type {
   Profile,
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useAuthBus } from '@/composables/bus';
 import { useFormSubmission } from '@/composables/formSubmission';
 import { useAction } from '@/composables/action';
@@ -212,15 +213,19 @@ export const useAuthStore = defineStore('auth', () => {
 
     scheduleProactiveRefresh(auth.tokens);
 
-    // Redirect to origin or home route
+    await continueToOrigin();
+
+    maybeSuggestTwoFactor(auth.profile);
+  }
+
+  // The route passed to the login page, or the home route
+  async function continueToOrigin() {
     const destination =
-      'origin' in route.query && typeof route.query.origin === 'string'
+      typeof route.query.origin === 'string'
         ? decodeURIComponent(route.query.origin)
         : { name: 'management.events' };
 
     await router.push(destination);
-
-    maybeSuggestTwoFactor(auth.profile);
   }
 
   function maybeSuggestTwoFactor(profile: Profile) {
@@ -311,10 +316,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   // A failed request rejects and leaves the session (cookies, status,
   // timers) as-is — nothing navigates away as if it had logged out.
-  async function logout(): Promise<void> {
+  async function logout(destination: RouteLocationRaw = '/'): Promise<void> {
     await run('logout', () => apiService.logout());
     bus.emit('logout');
-    await router.push('/');
+    await router.push(destination);
   }
 
   async function register(name: string, email: string, password: string) {
@@ -407,6 +412,7 @@ export const useAuthStore = defineStore('auth', () => {
     reset,
     refreshTokens,
     login,
+    continueToOrigin,
     logout,
     register,
     setup,

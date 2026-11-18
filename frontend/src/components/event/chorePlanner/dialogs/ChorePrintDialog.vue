@@ -28,16 +28,15 @@
             {{ t('field.chores') }}
           </div>
           <div class="chip-row row">
-            <q-chip
+            <filter-chip
               v-for="chore in chores"
               :key="chore.id"
               clickable
-              class="filter-chip"
-              :class="{ 'filter-chip--active': choreIds.includes(chore.id) }"
+              :active="choreIds.includes(chore.id)"
               @click="toggleChore(chore.id)"
             >
               {{ translate(chore.name) }}
-            </q-chip>
+            </filter-chip>
           </div>
         </div>
 
@@ -71,6 +70,7 @@
 </template>
 
 <script lang="ts" setup>
+import FilterChip from '@/components/common/FilterChip.vue';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDialogPluginComponent } from 'quasar';
@@ -123,20 +123,6 @@ const summary = computed<string>(() => {
 <style scoped>
 .chip-row {
   gap: 8px;
-}
-
-.filter-chip {
-  margin: 0;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
 }
 </style>
 

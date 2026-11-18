@@ -13,6 +13,7 @@
         <translated-input
           v-model="data.name"
           :label="t('field.name.label')"
+          :placeholder="t('field.name.placeholder')"
           :rules="[
             (val: string | Record<string, string> | undefined) =>
               !!val || t('field.name.rule.required'),
@@ -128,6 +129,7 @@
             <translated-input
               v-model="slot.name"
               :label="t('field.slotName.label')"
+              :placeholder="t('field.slotName.placeholder')"
               :rules="[
                 (val: string | Record<string, string> | undefined) =>
                   !!val || t('field.slotName.rule.required'),
@@ -412,6 +414,7 @@ title:
 field:
   name:
     label: 'Name'
+    placeholder: 'E.g. Kitchen duty'
     rule:
       required: 'The name is required'
   eligibility:
@@ -427,6 +430,7 @@ field:
   slotNumber: 'Slot {number}'
   slotName:
     label: 'Name'
+    placeholder: 'E.g. Breakfast'
     rule:
       required: 'The name is required'
   balanceGroups:
@@ -459,6 +463,7 @@ title:
 field:
   name:
     label: 'Name'
+    placeholder: 'Z. B. Küchendienst'
     rule:
       required: 'Der Name ist erforderlich'
   eligibility:
@@ -474,6 +479,7 @@ field:
   slotNumber: 'Zeitfenster {number}'
   slotName:
     label: 'Name'
+    placeholder: 'Z. B. Frühstück'
     rule:
       required: 'Der Name ist erforderlich'
   balanceGroups:
@@ -506,6 +512,7 @@ title:
 field:
   name:
     label: 'Nom'
+    placeholder: 'Par ex. Vaisselle'
     rule:
       required: 'Le nom est requis'
   eligibility:
@@ -521,6 +528,7 @@ field:
   slotNumber: 'Créneau {number}'
   slotName:
     label: 'Nom'
+    placeholder: 'Par ex. Petit-déjeuner'
     rule:
       required: 'Le nom est requis'
   balanceGroups:
@@ -553,6 +561,7 @@ title:
 field:
   name:
     label: 'Nazwa'
+    placeholder: 'Np. Dyżur w kuchni'
     rule:
       required: 'Nazwa jest wymagana'
   eligibility:
@@ -568,6 +577,7 @@ field:
   slotNumber: 'Przedział {number}'
   slotName:
     label: 'Nazwa'
+    placeholder: 'Np. Śniadanie'
     rule:
       required: 'Nazwa jest wymagana'
   balanceGroups:
@@ -600,6 +610,7 @@ title:
 field:
   name:
     label: 'Název'
+    placeholder: 'Např. Služba v kuchyni'
     rule:
       required: 'Název je povinný'
   eligibility:
@@ -615,6 +626,7 @@ field:
   slotNumber: 'Blok {number}'
   slotName:
     label: 'Název'
+    placeholder: 'Např. Snídaně'
     rule:
       required: 'Název je povinný'
   balanceGroups:

@@ -8,6 +8,7 @@ import {
   defaultMessageTemplatesForCountries,
   defaultSettingsForPreset,
   getEventPreset,
+  presetSeed,
 } from '#app/event/presets/index';
 import tableTemplateValidation from '#app/tableTemplate/table-template.validation';
 
@@ -266,5 +267,30 @@ describe('defaultSettingsForPreset', () => {
     expect(getEventPreset('seminar', ['de']).settings).toEqual(
       EVENT_PRESETS.seminar.settings,
     );
+  });
+});
+
+describe('presetSeed', () => {
+  it.each(PRESETS)(
+    'builds the preset in the event languages (%s)',
+    (preset) => {
+      const seed = presetSeed(preset, ['de', 'fr']);
+      const filtered = getEventPreset(preset, ['de', 'fr']);
+
+      expect(seed).toEqual({
+        form: filtered.form,
+        themes: filtered.themes,
+        tableTemplates: filtered.tableTemplates.map((data) => ({ data })),
+        messageTemplates: defaultMessageTemplatesForCountries(
+          ['de', 'fr'],
+          preset,
+        ),
+        settings: defaultSettingsForPreset(filtered),
+      });
+    },
+  );
+
+  it('defaults to the camp preset', () => {
+    expect(presetSeed(null, ['de'])).toEqual(presetSeed('camp', ['de']));
   });
 });

@@ -2,7 +2,10 @@ import camp from './camp/index.js';
 import seminar from './seminar/index.js';
 import general from './general/index.js';
 import type { EventPreset } from './types.js';
-import { localeForCountry } from '@camp-registration/common/locales';
+import {
+  localeForCountry,
+  localesForCountries,
+} from '@camp-registration/common/locales';
 import { SurveyModel } from 'survey-core';
 import type { EventPresetName } from '@camp-registration/common/entities';
 
@@ -86,8 +89,16 @@ export function defaultMessageTemplatesForCountries(
   countries: string[],
   presetName?: EventPresetName | null,
 ) {
-  const templates = getEventPreset(presetName).messageTemplates;
+  return messageTemplatesForCountries(
+    getEventPreset(presetName).messageTemplates,
+    countries,
+  );
+}
 
+function messageTemplatesForCountries(
+  templates: EventPreset['messageTemplates'],
+  countries: string[],
+) {
   return countries.flatMap((group) => {
     const code = localeForCountry(group);
 
@@ -105,4 +116,23 @@ export function defaultSettingsForPreset(preset: EventPreset) {
     key,
     data,
   }));
+}
+
+/** Everything a preset contributes to a new event, in the event's languages. */
+export function presetSeed(
+  name: EventPresetName | null | undefined,
+  countries: string[],
+) {
+  const preset = getEventPreset(name, localesForCountries(countries));
+
+  return {
+    form: preset.form,
+    themes: preset.themes,
+    tableTemplates: preset.tableTemplates.map((data) => ({ data })),
+    messageTemplates: messageTemplatesForCountries(
+      preset.messageTemplates,
+      countries,
+    ),
+    settings: defaultSettingsForPreset(preset),
+  };
 }

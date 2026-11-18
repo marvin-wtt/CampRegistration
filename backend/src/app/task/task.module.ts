@@ -38,19 +38,19 @@ export class TaskModule implements AppModule {
         DIRECTOR: [
           'event.tasks.view',
           'event.tasks.create',
-          'event.tasks.update',
+          'event.tasks.edit',
           'event.tasks.delete',
         ],
         COORDINATOR: [
           'event.tasks.view',
           'event.tasks.create',
-          'event.tasks.update',
+          'event.tasks.edit',
           'event.tasks.delete',
         ],
         COUNSELOR: [
           'event.tasks.view',
           'event.tasks.create',
-          'event.tasks.update',
+          'event.tasks.edit',
           'event.tasks.delete',
         ],
         VIEWER: ['event.tasks.view'],

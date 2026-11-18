@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { ScopeGrant } from '@camp-registration/common/permissions';
 import * as container from '#core/ioc/container';
 import {
   realtimeStream,
@@ -59,7 +59,7 @@ const subscriber = (
   overrides: Partial<RealtimeSubscriber> = {},
 ): RealtimeSubscriber => ({
   managerId: 'manager-1',
-  permissions: new Set<Permission>(['event.view']),
+  permissions: new Set<ScopeGrant<'event'>>(['event.view']),
   expiresAt: null,
   ...overrides,
 });

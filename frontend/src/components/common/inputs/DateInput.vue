@@ -1,10 +1,11 @@
 <template>
-  <!-- A field, not a readonly input: that would render a dashed border. -->
+  <!-- The shared date field, a q-date popup with numeric dates. A field, not a
+       readonly input: that would render a dashed border. -->
   <q-field
     :model-value="model"
     :label
+    :hint
     :clearable
-    stack-label
     outlined
     rounded
     hide-bottom-space
@@ -24,22 +25,24 @@
       transition-show="scale"
       transition-hide="scale"
     >
-      <!-- The event's days carry a dot; other days stay selectable. -->
+      <!-- Highlighted days carry a dot; other days stay selectable. -->
       <q-date
         v-model="model"
         mask="YYYY-MM-DD"
         :options="dateOptions"
-        :events="isEventDay"
+        :events="isHighlighted"
         event-color="primary"
         :default-year-month="defaultYearMonth"
+        :navigation-min-year-month="toYearMonth(min)"
+        :navigation-max-year-month="toYearMonth(max)"
       >
         <div class="row items-center justify-between no-wrap">
           <div
-            v-if="eventStart"
+            v-if="highlight && highlightLabel"
             class="legend row items-center no-wrap text-caption"
           >
             <span class="legend-dot" />
-            {{ t('eventDays') }}
+            {{ highlightLabel }}
           </div>
           <q-space />
           <q-btn
@@ -58,24 +61,30 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useEventDetailsStore } from '@/stores/event-details-store';
-import { parseLocalDate } from '@/utils/date';
+import { formatLocalDate, parseLocalDate } from '@/utils/date';
 
 const props = defineProps<{
   label: string;
+  hint?: string | undefined;
   clearable?: boolean;
   // Inclusive `YYYY-MM-DD` bounds.
   min?: string | undefined;
   max?: string | undefined;
+  /** Open an empty field on today's month, e.g. for when money moved. */
+  openOnToday?: boolean;
+  /** Inclusive `YYYY-MM-DD` days marked with a dot, e.g. an event's. */
+  highlight?: { start: string; end: string } | undefined;
+  /** Names the marked days below the calendar. */
+  highlightLabel?: string | undefined;
 }>();
 
-const model = defineModel<string | null>({ required: true });
+const model = defineModel<string | null | undefined>();
 
 const { t, d } = useI18n();
-const eventDetailsStore = useEventDetailsStore();
 
-const eventStart = computed(() => eventDetailsStore.data?.startAt.slice(0, 10));
-const eventEnd = computed(() => eventDetailsStore.data?.endAt.slice(0, 10));
+function toYearMonth(date: string | undefined): string | undefined {
+  return date?.slice(0, 7).replace('-', '/');
+}
 
 // QDate passes dates as `YYYY/MM/DD`.
 function toIso(value: string): string {
@@ -87,20 +96,29 @@ function dateOptions(value: string): boolean {
   return (!props.min || date >= props.min) && (!props.max || date <= props.max);
 }
 
-function isEventDay(value: string): boolean {
+function isHighlighted(value: string): boolean {
   const date = toIso(value);
   return (
-    !!eventStart.value &&
-    !!eventEnd.value &&
-    date >= eventStart.value &&
-    date <= eventEnd.value
+    !!props.highlight &&
+    date >= props.highlight.start &&
+    date <= props.highlight.end
   );
 }
 
-// An empty field opens on the event's month rather than today's.
-const defaultYearMonth = computed<string | undefined>(() =>
-  eventStart.value?.slice(0, 7).replace('-', '/'),
-);
+// An empty field opens on the marked days' month, else today's, kept within
+// the bounds: QDate would show a month with nothing to pick.
+const defaultYearMonth = computed<string>(() => {
+  let date =
+    (!props.openOnToday && props.highlight?.start) ||
+    formatLocalDate(new Date());
+  if (props.min && date < props.min) {
+    date = props.min;
+  }
+  if (props.max && date > props.max) {
+    date = props.max;
+  }
+  return date.slice(0, 7).replace('-', '/');
+});
 </script>
 
 <style scoped>
@@ -119,25 +137,20 @@ const defaultYearMonth = computed<string | undefined>(() =>
 
 <i18n lang="yaml" locale="en">
 close: 'Close'
-eventDays: 'Event days'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 close: 'Schließen'
-eventDays: 'Veranstaltungstage'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 close: 'Fermer'
-eventDays: 'Jours de l’événement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 close: 'Zamknij'
-eventDays: 'Dni wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 close: 'Zavřít'
-eventDays: 'Dny akce'
 </i18n>

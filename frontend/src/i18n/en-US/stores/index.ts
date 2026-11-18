@@ -23,6 +23,7 @@ import organizationNewsletters from './organization-newsletters';
 import translation from './translation';
 import setting from './setting';
 import user from './user';
+import finance from './finance';
 
 export default {
   event,
@@ -50,4 +51,5 @@ export default {
   translation,
   setting,
   user,
+  ...finance,
 };

@@ -45,7 +45,7 @@ export class TaskRouter extends ModuleRouter {
     );
     this.router.patch(
       '/:taskId',
-      guard(hasEventPermission('event.tasks.update')),
+      guard(hasEventPermission('event.tasks.edit')),
       controller(this.taskController, 'update'),
     );
     this.router.delete(

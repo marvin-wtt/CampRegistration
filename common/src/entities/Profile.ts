@@ -1,8 +1,4 @@
-import type {
-  EventScopedPermission,
-  NewsletterPermission,
-  OrganizationPermission,
-} from '#permissions';
+import type { ScopeGrant } from '#permissions';
 import type { OrganizationRole } from './OrganizationMember.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
 import type { Translatable } from './Translatable.js';
@@ -14,7 +10,8 @@ interface EventAccess {
    * derived purely from an organization OWNER/ADMIN membership.
    */
   role: string;
-  permissions: EventScopedPermission[];
+  /** Includes `:own` grants, which reach only the user's own records. */
+  permissions: ScopeGrant<'event'>[];
   /**
    * The user's own `EventManager` id, so a client can recognise records assigned
    * to them (tasks, for one) without loading the roster. `null` when the access
@@ -30,13 +27,13 @@ interface NewsletterAccess {
    * access is derived purely from an organization ADMIN membership.
    */
   role: string;
-  permissions: NewsletterPermission[];
+  permissions: ScopeGrant<'newsletter'>[];
 }
 
 interface OrganizationAccess {
   organizationId: string;
   role: OrganizationRole;
-  permissions: OrganizationPermission[];
+  permissions: ScopeGrant<'organization'>[];
   /**
    * Carried so the UI can distinguish "you may create an event here" from "this
    * organization is still awaiting moderation" without a second request.

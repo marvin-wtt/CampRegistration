@@ -924,7 +924,7 @@ step:
       text: 'Registrations arrive in your list, and the confirmation email goes out by itself.'
     three:
       title: 'Run the event'
-      text: 'Assign rooms, plan the program and duties, and keep everyone informed.'
+      text: 'Assign rooms, plan the program and duties, keep everyone informed and settle the expenses.'
   participant:
     title: 'If you sign up'
     one:
@@ -991,7 +991,7 @@ step:
       text: 'Die Anmeldungen landen in deiner Liste, und die Bestätigungsmail geht von selbst raus.'
     three:
       title: 'Veranstaltung durchführen'
-      text: 'Zimmer verteilen, Programm und Dienste planen und alle auf dem Laufenden halten.'
+      text: 'Zimmer verteilen, Programm und Dienste planen, alle auf dem Laufenden halten und die Ausgaben abrechnen.'
   participant:
     title: 'Wenn du dich anmeldest'
     one:
@@ -1058,7 +1058,7 @@ step:
       text: "Les inscriptions arrivent dans votre liste et l'e-mail de confirmation part tout seul."
     three:
       title: "Menez l'événement"
-      text: 'Répartissez les chambres, planifiez le programme et les services, informez tout le monde.'
+      text: 'Répartissez les chambres, planifiez le programme et les services, informez tout le monde et réglez les dépenses.'
   participant:
     title: 'Si vous vous inscrivez'
     one:
@@ -1125,7 +1125,7 @@ step:
       text: 'Zgłoszenia trafiają na Twoją listę, a e-mail z potwierdzeniem wychodzi sam.'
     three:
       title: 'Poprowadź wydarzenie'
-      text: 'Przydziel pokoje, zaplanuj program i dyżury, informuj wszystkich na bieżąco.'
+      text: 'Przydziel pokoje, zaplanuj program i dyżury, informuj wszystkich na bieżąco i rozlicz wydatki.'
   participant:
     title: 'Jeśli się zapisujesz'
     one:
@@ -1192,7 +1192,7 @@ step:
       text: 'Registrace přistávají ve vašem seznamu a potvrzovací e-mail odejde sám.'
     three:
       title: 'Veďte akci'
-      text: 'Rozdělte pokoje, naplánujte program i služby a udržujte všechny v obraze.'
+      text: 'Rozdělte pokoje, naplánujte program i služby, udržujte všechny v obraze a vyúčtujte výdaje.'
   participant:
     title: 'Když se hlásíte'
     one:

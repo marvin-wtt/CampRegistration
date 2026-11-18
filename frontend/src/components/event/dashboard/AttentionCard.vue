@@ -78,6 +78,7 @@ import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeade
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
+import { useFinanceStore } from '@/stores/finance-store';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import type { EventPhase } from '@/composables/eventPhase';
 import {
@@ -95,18 +96,22 @@ const {
   registrations = false,
   files = false,
   rooms = false,
+  finances = false,
 } = defineProps<{
   phase: EventPhase;
   loading?: boolean;
   registrations?: boolean;
   files?: boolean;
   rooms?: boolean;
+  /** Sees every expense; the summary is loaded during wrap-up only. */
+  finances?: boolean;
 }>();
 
 const { t } = useI18n();
 const router = useRouter();
 const eventDetailsStore = useEventDetailsStore();
 const eventFilesStore = useEventFilesStore();
+const financeStore = useFinanceStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 
@@ -119,6 +124,7 @@ interface AttentionItem {
   template?: string;
   // …or navigates to another management route…
   route?: string;
+  query?: Record<string, string>;
   // …or scrolls to a section of this page.
   anchor?: string;
 }
@@ -200,6 +206,16 @@ const items = computed<AttentionItem[]>(() => {
       route: 'management.event.settings.files',
       shown: files && phase !== 'setup',
     },
+    {
+      // Their amounts count already; the bookkeeping needs the paper.
+      key: 'receipts',
+      label: t('item.receipts'),
+      count: financeStore.summary?.receiptsPending.length ?? 0,
+      icon: 'receipt_long',
+      route: 'management.event.finances',
+      query: { tab: 'expenses', pending: 'true' },
+      shown: finances && phase === 'wrapUp',
+    },
   ];
 
   return items.filter((item) => item.shown && item.count > 0);
@@ -214,7 +230,10 @@ function goToItem(item: AttentionItem) {
     return;
   }
   if (item.route) {
-    void router.push({ name: item.route });
+    void router.push({
+      name: item.route,
+      ...(item.query ? { query: item.query } : {}),
+    });
     return;
   }
   if (item.anchor) {
@@ -307,6 +326,7 @@ item:
   missing: 'Missing contact details'
   age: 'Age outside event range'
   files: 'Missing files'
+  receipts: 'Receipts without a date'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -320,6 +340,7 @@ item:
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
   files: 'Fehlende Dateien'
+  receipts: 'Belege ohne Datum'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -333,6 +354,7 @@ item:
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
   files: 'Fichiers manquants'
+  receipts: 'Justificatifs sans date'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -346,6 +368,7 @@ item:
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
   files: 'Brakujące pliki'
+  receipts: 'Paragony bez daty'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -359,4 +382,5 @@ item:
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
   files: 'Chybějící soubory'
+  receipts: 'Doklady bez data'
 </i18n>

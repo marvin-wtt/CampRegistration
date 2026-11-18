@@ -1,4 +1,5 @@
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
+import type { FinanceCategoryCreateManyData } from '#app/financeCategory/finance-category.service';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#core/database/json';
 import type { OptionalByKeys } from '#types/utils';
@@ -27,6 +28,15 @@ type EventSettingCreateData = OptionalByKeys<
   'id'
 >[];
 
+// The child records a new event starts with, cloned or from a preset.
+export interface EventSeed {
+  tableTemplates?: TableTemplateCreateData;
+  messageTemplates?: MessageTemplateCreateData;
+  files?: FileCreateData;
+  settings?: EventSettingCreateData;
+  financeCategories?: FinanceCategoryCreateManyData;
+}
+
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
@@ -35,6 +45,13 @@ export type EventCreateData = Omit<
   Event,
   'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
 >;
+export interface EventCreateInput {
+  event: EventCreateData;
+  /** The creating user, who becomes the event's director. */
+  userId: string;
+  seed?: EventSeed;
+}
+
 // Ownership moves through `moveEventToOrganization`, never a field update.
 export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;
 
@@ -352,14 +369,14 @@ export class EventService extends BaseService {
     return { total, open, upcoming, closed };
   }
 
-  async createEvent(
-    userId: string,
-    data: EventCreateData,
-    tableTemplates: TableTemplateCreateData = [],
-    messageTemplates: MessageTemplateCreateData = [],
-    files: FileCreateData = [],
-    settings: EventSettingCreateData = [],
-  ) {
+  async createEvent({ event: data, userId, seed = {} }: EventCreateInput) {
+    const {
+      tableTemplates = [],
+      messageTemplates = [],
+      files = [],
+      settings = [],
+      financeCategories = [],
+    } = seed;
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
     const form = this.replaceFormFileUrls(data.form, fileIds, fileIdMap);
@@ -404,6 +421,10 @@ export class EventService extends BaseService {
           eventSettings: {
             createMany: { data: this.stripIds(settings) },
           },
+          // Not stripped: the ids are new ones, generated up front so a
+          // category can name its group's new id in this same insert.
+          financeCategories: { createMany: { data: financeCategories } },
+          finance: { create: {} },
         },
         include: { ...this.eventResourceInclude() },
       });
