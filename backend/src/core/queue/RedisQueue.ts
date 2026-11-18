@@ -3,6 +3,7 @@ import {
   type QueueOptions,
   type JobOptions,
   type JobStatus,
+  type PrunedJobs,
   type QueueJobCounts,
   type QueuedJob,
 } from '#core/queue/Queue';
@@ -46,6 +47,9 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
           type: this.options.retryDelayType,
           delay: this.options.retryDelay,
         },
+        // Without these BullMQ keeps finished jobs, payloads included, forever.
+        removeOnComplete: removalAfter(this.options.retention.completed),
+        removeOnFail: removalAfter(this.options.retention.failed),
       },
     });
 
@@ -201,6 +205,16 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     await this.bull.clean(0, 0, 'failed');
   }
 
+  // BullMQ only applies `age` when another job finishes; this sweeps the rest.
+  public async prune(): Promise<PrunedJobs> {
+    const { completed, failed } = this.options.retention;
+
+    return {
+      completed: (await this.bull.clean(completed, 0, 'completed')).length,
+      failed: (await this.bull.clean(failed, 0, 'failed')).length,
+    };
+  }
+
   public async close(): Promise<void> {
     await this.worker?.close();
     await this.events.close();
@@ -214,4 +228,8 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
   public async resume(): Promise<void> {
     await this.bull.resume();
   }
+}
+
+function removalAfter(ms: number): true | { age: number } {
+  return ms === 0 ? true : { age: Math.ceil(ms / 1000) };
 }

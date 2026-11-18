@@ -4,6 +4,7 @@ import {
   Queue,
   type Job,
   type JobStatus,
+  type PrunedJobs,
   type QueueJobCounts,
   type QueueOptions,
   type QueuedJob,
@@ -271,6 +272,30 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
   }
 
+  public async prune(): Promise<PrunedJobs> {
+    const deleteOlder = async (
+      status: 'COMPLETED' | 'FAILED',
+      retention: number,
+    ) => {
+      const { count } = await prisma.job.deleteMany({
+        where: {
+          queue: this.queue,
+          status,
+          finishedAt: { lt: new Date(Date.now() - retention) },
+        },
+      });
+      return count;
+    };
+
+    return {
+      completed: await deleteOlder(
+        'COMPLETED',
+        this.options.retention.completed,
+      ),
+      failed: await deleteOlder('FAILED', this.options.retention.failed),
+    };
+  }
+
   public async jobCounts(): Promise<QueueJobCounts> {
     const now = new Date();
     const [active, failed, pending, delayed] = await Promise.all([
@@ -330,6 +355,13 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   async complete(id: string): Promise<void> {
+    if (this.options.retention.completed === 0) {
+      await prisma.job.delete({
+        where: { id, status: 'RUNNING', queue: this.queue },
+      });
+      return;
+    }
+
     await prisma.job.update({
       where: {
         id,
