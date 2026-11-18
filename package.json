@@ -1,6 +1,6 @@
 {
   "name": "camp-registration",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "scripts": {
     "prepare": "patch-package && husky",
     "build": "npm run build --workspaces --if-present",

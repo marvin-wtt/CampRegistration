@@ -1,6 +1,6 @@
 {
   "name": "@camp-registration/e2e",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "End to end testing",
   "productName": "Camp Registration E2E",
   "type": "module",

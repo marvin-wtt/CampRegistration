@@ -1,0 +1,102 @@
+name: Release Notes
+
+# Has Claude rewrite a GitHub Release's notes from the pull requests in it.
+# Runs when release-please publishes a release, or manually to regenerate the
+# notes of an existing release. Uses the Claude Code CLI directly:
+# claude-code-action doesn't support push or release events.
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, e.g. v1.0.0
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: release-notes-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: true
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Collect pull requests
+        id: range
+        run: |
+          git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null
+          prev=$(git tag --list 'v*' --sort=-v:refname --merged "$TAG" | { grep -vx "$TAG" || true; } | head -n1)
+          base=${prev:-$(jq -r '."bootstrap-sha"' release-please-config.json)}
+          # Merge commits ("Merge pull request #12") and squash commits ("… (#12)")
+          prs=$(git log --first-parent --format='%s' "$base..$TAG" \
+            | { grep -oE '(^Merge pull request #[0-9]+|\(#[0-9]+\)$)' || true; } \
+            | grep -oE '[0-9]+' | sort -un | paste -sd' ' - || true)
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "prs=$prs" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Claude Code
+        run: npm install --global @anthropic-ai/claude-code
+
+      - name: Write release notes
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          PROMPT: |
+            REPO: ${{ github.repository }}
+            RELEASE: ${{ env.TAG }}
+            PREVIOUS RELEASE: ${{ steps.range.outputs.base }}
+            PULL REQUESTS: ${{ steps.range.outputs.prs }}
+
+            Write the release notes for RELEASE of CampRegistration, an event
+            registration app (camps, seminars, workshops) for event organizers.
+
+            Read each pull request with `gh pr view <n> --json title,body,labels,files`.
+            Use `git log PREVIOUS..RELEASE --first-parent` to catch commits pushed
+            to main without a pull request. Look at diffs only where a title and
+            description leave the user-facing effect unclear.
+
+            Write Markdown to `release-notes.md` in the working directory:
+            - Sections, omitting empty ones: "⚠️ Breaking changes", "✨ Features",
+              "🐛 Fixes", "🔧 Maintenance" (dependencies, CI, refactors — one short
+              list, no detail).
+            - One bullet per user-visible change, in plain language for event
+              organizers, not developers. Merge related PRs into one bullet.
+            - End each bullet with the PR reference(s), e.g. (#123).
+            - Breaking changes must say what operators or users have to do.
+            - No heading with the version and no intro or closing text.
+
+            Leave out:
+            - Fixes for bugs introduced within this release; they never shipped.
+              Describe the feature in its final state instead.
+            - Changes reverted within this release.
+            - Test-only, docs-only and formatting changes.
+            - Release PRs (chore(main): release …) and merge commits.
+
+            Only write the file. Don't create comments, edit releases or push.
+        run: |
+          claude -p "$PROMPT" \
+            --max-turns 40 \
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git log:*),Bash(git show:*),Bash(git diff:*),Read,Write"
+
+      - name: Update GitHub Release
+        run: |
+          test -s release-notes.md
+          gh release edit "$TAG" --notes-file release-notes.md
