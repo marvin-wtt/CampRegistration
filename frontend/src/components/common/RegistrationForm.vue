@@ -88,7 +88,9 @@
         </q-card-actions>
 
         <q-card-actions
-          v-else-if="submitState === 'priceChanged'"
+          v-else-if="
+            submitState === 'priceChanged' || submitState === 'consentChanged'
+          "
           align="center"
           class="q-pb-md"
         >
@@ -167,7 +169,11 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
-import { isPriceChangedError } from '@/services/RegistrationService';
+import {
+  isConsentChangedError,
+  isPriceChangedError,
+} from '@/services/RegistrationService';
+import { consentTexts } from '@camp-registration/common/form';
 import { useErrorExtractor } from '@/composables/errorText';
 
 const { locale, t } = useI18n();
@@ -185,6 +191,8 @@ interface Props {
     locale: string,
     // What the form displayed, for the server to compare — never an amount.
     displayedTotal?: number,
+    // The consent texts the form displayed, compared the same way.
+    displayedConsents?: Record<string, string>,
   ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
@@ -206,9 +214,9 @@ const emit = defineEmits<{
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
-const submitState = ref<'saving' | 'success' | 'error' | 'priceChanged' | null>(
-  null,
-);
+const submitState = ref<
+  'saving' | 'success' | 'error' | 'priceChanged' | 'consentChanged' | null
+>(null);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
@@ -241,6 +249,8 @@ const statusTitle = computed(() => {
       return t('submit.error.title');
     case 'priceChanged':
       return t('submit.priceChanged.title');
+    case 'consentChanged':
+      return t('submit.consentChanged.title');
     default:
       return '';
   }
@@ -263,6 +273,8 @@ const statusText = computed(() => {
       return t('submit.error.text');
     case 'priceChanged':
       return t('submit.priceChanged.text');
+    case 'consentChanged':
+      return t('submit.consentChanged.text');
     default:
       return '';
   }
@@ -282,6 +294,7 @@ const badgeColor = computed(() => {
     case 'error':
       return 'error-container';
     case 'priceChanged':
+    case 'consentChanged':
       return 'warning-container';
     default:
       return 'primary-container';
@@ -302,6 +315,7 @@ const badgeTextColor = computed(() => {
     case 'error':
       return 'on-error-container';
     case 'priceChanged':
+    case 'consentChanged':
       return 'on-warning-container';
     default:
       return 'on-primary-container';
@@ -311,6 +325,9 @@ const badgeTextColor = computed(() => {
 const badgeIcon = computed(() => {
   if (submitState.value === 'priceChanged') {
     return 'price_change';
+  }
+  if (submitState.value === 'consentChanged') {
+    return 'edit_note';
   }
   if (submitState.value !== 'success') {
     return 'error';
@@ -469,6 +486,7 @@ function createModel(eventId: string, form: object): SurveyModel {
         sender.data ?? {},
         sender.locale,
         displayedTotal,
+        consentTexts(sender),
       );
       submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
@@ -489,6 +507,10 @@ function createModel(eventId: string, form: object): SurveyModel {
       // outdated page), so the person starts over on a freshly loaded page.
       if (isPriceChangedError(e)) {
         submitState.value = 'priceChanged';
+        return;
+      }
+      if (isConsentChangedError(e)) {
+        submitState.value = 'consentChanged';
         return;
       }
       submitError.value = extractErrorText(e);
@@ -604,6 +626,9 @@ submit:
     title: 'The price has changed'
     text: 'The price changed while you were filling in the form. Please reload the page and register again.'
     reload: 'Reload page'
+  consentChanged:
+    title: 'The consent text has changed'
+    text: 'A consent question changed while you were filling in the form. Please reload the page, read it again and register again.'
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
@@ -632,6 +657,9 @@ submit:
     title: 'Der Preis hat sich geändert'
     text: 'Der Preis hat sich geändert, während du das Formular ausgefüllt hast. Bitte lade die Seite neu und melde dich erneut an.'
     reload: 'Seite neu laden'
+  consentChanged:
+    title: 'Der Einwilligungstext hat sich geändert'
+    text: 'Eine Einwilligungsfrage hat sich geändert, während du das Formular ausgefüllt hast. Bitte lade die Seite neu, lies sie erneut und melde dich noch einmal an.'
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
@@ -660,6 +688,9 @@ submit:
     title: 'Le prix a changé'
     text: 'Le prix a changé pendant que tu remplissais le formulaire. Recharge la page et inscris-toi à nouveau.'
     reload: 'Recharger la page'
+  consentChanged:
+    title: 'Le texte du consentement a changé'
+    text: 'Une question de consentement a changé pendant que tu remplissais le formulaire. Recharge la page, relis-la et inscris-toi à nouveau.'
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
@@ -688,6 +719,9 @@ submit:
     title: 'Cena się zmieniła'
     text: 'Cena zmieniła się podczas wypełniania formularza. Odśwież stronę i zarejestruj się ponownie.'
     reload: 'Odśwież stronę'
+  consentChanged:
+    title: 'Treść zgody się zmieniła'
+    text: 'Pytanie o zgodę zmieniło się podczas wypełniania formularza. Odśwież stronę, przeczytaj je ponownie i zarejestruj się jeszcze raz.'
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
@@ -716,6 +750,9 @@ submit:
     title: 'Cena se změnila'
     text: 'Cena se změnila během vyplňování formuláře. Načti stránku znovu a zaregistruj se znovu.'
     reload: 'Načíst stránku znovu'
+  consentChanged:
+    title: 'Text souhlasu se změnil'
+    text: 'Otázka na souhlas se změnila během vyplňování formuláře. Načti stránku znovu, přečti si ji znovu a zaregistruj se znovu.'
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'

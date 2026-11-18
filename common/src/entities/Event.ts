@@ -47,6 +47,8 @@ export interface Event extends Identifiable {
   freePlaces: PerGroup<number> | null;
   freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
+  /** Whether the consent rules hold for its registrations (`isPrivacyEnforced`). */
+  privacyEnforced: boolean;
   logo: string | null;
   banner: string | null;
 }
@@ -65,6 +67,7 @@ type EventServerFields =
   | 'freePlaces'
   | 'freePlacesTotal'
   | 'registrationStatus'
+  | 'privacyEnforced'
   | 'logo'
   | 'banner';
 

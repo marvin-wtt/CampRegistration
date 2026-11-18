@@ -28,7 +28,13 @@ import type {
   SurveyJSEventData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { formLintOptions, setVariables } from '@camp-registration/common/form';
+import {
+  formLintOptions,
+  formPrivacyIssues,
+  setVariables,
+} from '@camp-registration/common/form';
+import type { ComposedPrivacyNotice } from '@camp-registration/common/privacy';
+import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
   addDesignerFileSlotResolver,
@@ -66,6 +72,7 @@ const props = defineProps<{
 
 const quasar = useQuasar();
 const { t, locale } = useI18n();
+const { t: gt } = useI18n({ useScope: 'global' });
 const api = useAPIService();
 
 // Tabs and survey locales come from the mode preset (see `applyMode`).
@@ -297,6 +304,56 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
   }
 });
 
+/*
+ * The registration gate (docs/privacy.md, 5): while the form asks for data its
+ * privacy information does not cover, the event refuses registrations. Told
+ * once per change of what is missing, not on every autosave.
+ */
+const publishedNotice = ref<ComposedPrivacyNotice | null>();
+let reportedPrivacyIssues = '';
+
+if (props.event.privacyEnforced) {
+  usePrivacyNoticeService()
+    .fetchEventNotice(props.event.id)
+    .then((published) => {
+      publishedNotice.value = published.notice;
+      reportPrivacyIssues();
+    })
+    .catch(() => {
+      // Without the notice there is nothing to compare; the server still gates.
+    });
+}
+
+function categoryNames(keys: string[]): string {
+  return keys.map((key) => gt(`privacy.dataCategory.${key}`)).join(', ');
+}
+
+function reportPrivacyIssues() {
+  if (publishedNotice.value === undefined) {
+    return;
+  }
+
+  const issues = formPrivacyIssues(creator.JSON, publishedNotice.value);
+  const parts = [
+    issues.undeclared.length
+      ? t('privacy.undeclared', {
+          categories: categoryNames(issues.undeclared),
+        })
+      : null,
+    issues.uncovered.length
+      ? t('privacy.uncovered', { categories: categoryNames(issues.uncovered) })
+      : null,
+  ].filter((part): part is string => part !== null);
+  const message = parts.length
+    ? [t('privacy.blocked'), ...parts].join(' ')
+    : '';
+
+  if (message && message !== reportedPrivacyIssues) {
+    creator.notify(message, 'error');
+  }
+  reportedPrivacyIssues = message;
+}
+
 creator.saveSurveyFunc = (
   saveNo: number,
   callback: (saveNo: number, success: boolean) => void,
@@ -305,6 +362,7 @@ creator.saveSurveyFunc = (
     .saveFormFunc(creator.JSON)
     .then(() => {
       callback(saveNo, true);
+      reportPrivacyIssues();
     })
     .catch(() => {
       callback(saveNo, false);
@@ -516,6 +574,10 @@ mode:
   standard: 'Standard'
   expert: 'Expert'
   condition: 'Has conditions — edit them in Standard mode'
+privacy:
+  blocked: 'Registrations are blocked.'
+  undeclared: 'The form asks for {categories}, which the privacy information does not declare.'
+  uncovered: 'No consent question covers {categories}: mark a yes/no question as a consent for it.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -527,6 +589,10 @@ mode:
   standard: 'Standard'
   expert: 'Experte'
   condition: 'Hat Bedingungen – im Standardmodus bearbeiten'
+privacy:
+  blocked: 'Anmeldungen sind gesperrt.'
+  undeclared: 'Das Formular fragt nach {categories}, die in den Datenschutzinformationen nicht angegeben sind.'
+  uncovered: 'Keine Einwilligungsfrage deckt {categories} ab: Markiere eine Ja/Nein-Frage als Einwilligung dafür.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -538,6 +604,10 @@ mode:
   standard: 'Standard'
   expert: 'Expert'
   condition: 'Contient des conditions – modifiables en mode standard'
+privacy:
+  blocked: 'Les inscriptions sont bloquées.'
+  undeclared: 'Le formulaire demande {categories}, que les informations sur la protection des données ne mentionnent pas.'
+  uncovered: 'Aucune question de consentement ne couvre {categories} : marquez une question oui/non comme consentement.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -549,6 +619,10 @@ mode:
   standard: 'Standardowy'
   expert: 'Ekspert'
   condition: 'Ma warunki – edytuj je w trybie standardowym'
+privacy:
+  blocked: 'Rejestracje są zablokowane.'
+  undeclared: 'Formularz pyta o {categories}, których nie wymieniono w informacjach o ochronie danych.'
+  uncovered: 'Żadne pytanie o zgodę nie obejmuje {categories}: oznacz pytanie tak/nie jako zgodę.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -560,4 +634,8 @@ mode:
   standard: 'Standardní'
   expert: 'Expert'
   condition: 'Obsahuje podmínky – upravte je ve standardním režimu'
+privacy:
+  blocked: 'Registrace jsou zablokované.'
+  undeclared: 'Formulář se ptá na {categories}, které informace o ochraně údajů neuvádějí.'
+  uncovered: 'Žádná otázka na souhlas nepokrývá {categories}: označte otázku ano/ne jako souhlas.'
 </i18n>

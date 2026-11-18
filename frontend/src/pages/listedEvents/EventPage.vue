@@ -231,6 +231,12 @@ import {
 } from '@camp-registration/common/entities';
 import { forGroup } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
+import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
+import {
+  formPrivacyIssues,
+  hasPrivacyIssues,
+} from '@camp-registration/common/form';
+import type { PublishedPrivacyNotice } from '@camp-registration/common/privacy';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from '@/composables/errorText';
@@ -241,6 +247,7 @@ import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
+const { fetchEventNotice } = usePrivacyNoticeService();
 const route = useRoute();
 const router = useRouter();
 const quasar = useQuasar();
@@ -395,7 +402,8 @@ async function loadEvent() {
   }
 }
 
-type RegistrationStatus = EventRegistrationStatus | 'unavailable' | 'not_found';
+type RegistrationStatus =
+  EventRegistrationStatus | 'unavailable' | 'not_found' | 'privacy';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
   if (knownError.value) {
@@ -406,7 +414,41 @@ const registrationStatus = computed<RegistrationStatus>(() => {
     return 'not_found';
   }
 
+  // Open, but the server would refuse it: say so before the form is filled.
+  if (event.value.registrationStatus === 'open' && privacyBlocked.value) {
+    return 'privacy';
+  }
+
   return event.value.registrationStatus;
+});
+
+// The same check the server's registration gate runs (docs/privacy.md, 5).
+const publishedNotice = ref<PublishedPrivacyNotice | null>(null);
+
+watch(
+  () => event.value?.id,
+  async (id) => {
+    publishedNotice.value = null;
+    if (!id || !event.value?.privacyEnforced) {
+      return;
+    }
+    try {
+      publishedNotice.value = await fetchEventNotice(id);
+    } catch {
+      // Without the notice nothing can be checked; the server still gates.
+    }
+  },
+  { immediate: true },
+);
+
+const privacyBlocked = computed<boolean>(() => {
+  if (!event.value?.privacyEnforced || !publishedNotice.value) {
+    return false;
+  }
+
+  return hasPrivacyIssues(
+    formPrivacyIssues(event.value.form, publishedNotice.value.notice),
+  );
 });
 
 interface EventContact {
@@ -477,6 +519,8 @@ const statusText = computed<string>(() => {
       return t('error.upcoming');
     case 'closed':
       return t('error.closed');
+    case 'privacy':
+      return t('error.privacy');
     case 'not_found':
       return t('error.not_found');
     default:
@@ -489,12 +533,14 @@ async function submit(
   formData: Record<string, unknown>,
   locale: string,
   displayedTotal?: number,
+  displayedConsents?: Record<string, string>,
 ) {
   return api.createRegistration(eventId, {
     data: formData,
     locale,
     group: group.value ?? null,
     displayedTotal,
+    displayedConsents,
   });
 }
 
@@ -643,6 +689,7 @@ date:
 error:
   upcoming: 'Registration for this event has not opened yet.'
   closed: 'Registration for this event is already closed.'
+  privacy: 'Registration is not possible at the moment because the form is not complete yet. Please contact the organizer.'
   unavailable: 'This event is not available.'
   not_found: 'The event you are looking for could not be found. Please check the URL.'
 </i18n>
@@ -668,6 +715,7 @@ date:
 error:
   upcoming: 'Die Anmeldung für diese Veranstaltung hat noch nicht begonnen.'
   closed: 'Die Anmeldung für diese Veranstaltung ist bereits geschlossen.'
+  privacy: 'Eine Anmeldung ist gerade nicht möglich, weil das Formular noch nicht vollständig ist. Bitte wende dich an den Veranstalter.'
   unavailable: 'Diese Veranstaltung ist nicht verfügbar.'
   not_found: 'Die gesuchte Veranstaltung konnte nicht gefunden werden. Bitte überprüfe die URL.'
 </i18n>
@@ -693,6 +741,7 @@ date:
 error:
   upcoming: "L'inscription à cet événement n'a pas encore commencé."
   closed: "L'inscription à cet événement est déjà terminée."
+  privacy: "L'inscription n'est pas possible pour le moment, car le formulaire n'est pas encore complet. Contacte l'organisateur."
   unavailable: "Cet événement n'est pas disponible."
   not_found: "L'événement que vous recherchez est introuvable. Veuillez vérifier l'URL."
 </i18n>
@@ -718,6 +767,7 @@ date:
 error:
   upcoming: 'Rejestracja na ten wydarzenie jeszcze się nie rozpoczęła.'
   closed: 'Rejestracja na ten wydarzenie jest już zamknięta.'
+  privacy: 'Rejestracja nie jest obecnie możliwa, ponieważ formularz nie jest jeszcze kompletny. Skontaktuj się z organizatorem.'
   unavailable: 'Ten wydarzenie jest niedostępny.'
   not_found: 'Nie znaleziono szukanego wydarzenia. Sprawdź adres URL.'
 </i18n>
@@ -743,6 +793,7 @@ date:
 error:
   upcoming: 'Registrace na tuto akci ještě nezačala.'
   closed: 'Registrace na tuto akci je již uzavřena.'
+  privacy: 'Registrace teď není možná, protože formulář ještě není úplný. Obrať se prosím na pořadatele.'
   unavailable: 'Tato akce není dostupná.'
   not_found: 'Požadovaná akce nebyla nalezena. Zkontrolujte prosím URL adresu.'
 </i18n>

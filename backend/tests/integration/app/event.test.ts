@@ -17,6 +17,7 @@ import {
 import { Event, Prisma } from '#generated/prisma/client.js';
 import { eventRegistrationStatus } from '#app/event/event.util';
 import { localesForCountries } from '@camp-registration/common/locales';
+import { isPrivacyEnforced } from '@camp-registration/common/form';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -129,6 +130,8 @@ const assertEventResponseBody = (
     location: data.location,
     freePlaces: data.maxParticipants,
     freePlacesTotal: sumParticipants(data.maxParticipants),
+    // Events created or edited by these tests may fall on either side of the cutoff.
+    privacyEnforced: expect.any(Boolean),
     registrationStatus: eventRegistrationStatus({
       ...data,
       startAt:
@@ -863,6 +866,7 @@ describe('/api/v1/events', () => {
         freePlaces: expect.anything(),
         freePlacesTotal: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
+        privacyEnforced: isPrivacyEnforced(event),
         logo: null,
         banner: null,
       });

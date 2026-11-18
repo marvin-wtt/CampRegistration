@@ -11,6 +11,7 @@ import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
 import {
+  consentTexts,
   extractEventData,
   extractPaymentAmounts,
   setVariables,
@@ -245,6 +246,14 @@ export class RegistrationForm {
   /** The answers of the questions tagged with an `eventDataType`, by tag. */
   extractEventData(): Record<string, unknown[]> {
     return extractEventData(this.survey);
+  }
+
+  /**
+   * The wording of the consents this response gives, as the survey shows it in
+   * the response's locale — what is stored as proof (Art. 7(1)).
+   */
+  givenConsentTexts(): Record<string, string> {
+    return consentTexts(this.survey, { givenOnly: true });
   }
 
   /** What the answers add to the event price, for `computeAmountDue`. */

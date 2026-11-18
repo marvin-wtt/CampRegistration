@@ -10,6 +10,7 @@ function event(overrides: Partial<Event> = {}): Event {
     endAt: '2026-08-15T11:00:00',
     timezone: 'Europe/Berlin',
     registrationStatus: 'closed',
+    privacyEnforced: false,
     registrationOpensAt: '2026-03-01T00:00:00',
     registrationClosesAt: '2026-07-01T00:00:00',
     ...overrides,

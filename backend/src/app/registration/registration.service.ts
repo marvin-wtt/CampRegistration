@@ -24,6 +24,31 @@ import {
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import { isPrivacyEnforced } from '@camp-registration/common/form';
+import {
+  assertConsentsGiven,
+  assertConsentTextsUnchanged,
+} from './registration.privacy.js';
+
+/**
+ * The stored consent texts plus those of consents given since: a consent a
+ * manager records later (on paper) is copied as the form shows it now, and a
+ * text already stored is never replaced. Undefined when nothing changes.
+ */
+function newlyGivenConsentTexts(
+  before: Pick<Registration, 'data' | 'consentTexts'>,
+  given: Record<string, string>,
+): Record<string, string> | undefined {
+  const previousData = before.data;
+  const stored = before.consentTexts ?? {};
+  const added = Object.entries(given).filter(
+    ([name]) => previousData[name] !== true && !(name in stored),
+  );
+
+  return added.length > 0
+    ? { ...stored, ...Object.fromEntries(added) }
+    : undefined;
+}
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -98,12 +123,14 @@ export class RegistrationService extends BaseService {
   /**
    * `displayedTotal` is what the form showed: a submission whose price changed
    * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
+   * `displayedConsents` does the same for the consent wording.
    */
   async createRegistration(
     event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
     displayedTotal?: number,
+    displayedConsents?: Record<string, string>,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
@@ -124,6 +151,20 @@ export class RegistrationService extends BaseService {
     const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
     assertAmountWithinLimit(quotedAmount);
     assertPriceUnchanged(quotedAmount, displayedTotal);
+
+    // Sensitive answers need the consent they rest on (docs/privacy.md, 5).
+    if (isPrivacyEnforced(event)) {
+      assertConsentsGiven(
+        event.form,
+        await this.privacyNoticeService.getComposedNotice(
+          event.id,
+          event.organizationId,
+        ),
+        formData,
+      );
+    }
+    const consentTexts = form.givenConsentTexts();
+    assertConsentTextsUnchanged(consentTexts, displayedConsents);
 
     const fileIds = form.getFileIds();
 
@@ -191,6 +232,8 @@ export class RegistrationService extends BaseService {
             status,
             quotedAmount,
             currency: event.currency,
+            consentTexts:
+              Object.keys(consentTexts).length > 0 ? consentTexts : undefined,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -261,6 +304,7 @@ export class RegistrationService extends BaseService {
 
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
       let formFileIds: string[] | undefined;
+      let consentTexts: Record<string, string> | undefined;
 
       if (data.data) {
         // Read as the form it was answered in: the group's `{event.*}` values
@@ -271,6 +315,18 @@ export class RegistrationService extends BaseService {
         }).load(data.data);
         computedData = computedRegistrationData(form.extractEventData());
         formFileIds = form.getFileIds();
+
+        if (isPrivacyEnforced(event)) {
+          assertConsentsGiven(
+            event.form,
+            await this.privacyNoticeService.getComposedNotice(
+              event.id,
+              event.organizationId,
+            ),
+            data.data,
+          );
+        }
+        consentTexts = newlyGivenConsentTexts(before, form.givenConsentTexts());
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
@@ -311,6 +367,7 @@ export class RegistrationService extends BaseService {
         data: {
           ...computedData,
           data: data.data,
+          consentTexts,
           customData: data.customData,
           status: data.status,
           group: data.group,

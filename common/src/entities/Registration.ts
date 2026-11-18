@@ -27,6 +27,8 @@ export interface Registration extends Identifiable, Timestamps {
   locale: string;
   room?: Translatable | null;
   customFiles?: Record<string, string>;
+  /** The wording of each consent given, as shown, by question name. */
+  consentTexts?: Record<string, string> | null;
 }
 
 export type RegistrationCreateData = Pick<Registration, 'data'> & {
@@ -39,9 +41,18 @@ export type RegistrationCreateData = Pick<Registration, 'data'> & {
    * refuses with `REGISTRATION_PRICE_CHANGED` and its own amount.
    */
   displayedTotal?: number | undefined;
+  /**
+   * The consent texts the form showed, by question name. Untrusted: only
+   * compared with the server's own rendering, which is what is stored.
+   */
+  displayedConsents?: Record<string, string> | undefined;
 };
 
 export const REGISTRATION_PRICE_CHANGED = 'REGISTRATION_PRICE_CHANGED';
+/** A consent text changed while the form was open. */
+export const REGISTRATION_CONSENT_CHANGED = 'REGISTRATION_CONSENT_CHANGED';
+/** Sensitive data was answered without the consent it needs. */
+export const REGISTRATION_CONSENT_MISSING = 'REGISTRATION_CONSENT_MISSING';
 
 export type RegistrationUpdateData = Partial<
   Pick<Registration, 'data' | 'customData' | 'status' | 'group'>

@@ -304,6 +304,10 @@ model Registration {
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
   eventPrivacyNoticeVersionId        String?            @map("event_privacy_notice_version_id") @db.Char(26)
   platformPrivacyPolicyUpdatedAt     DateTime?          @map("platform_privacy_policy_updated_at")
+  // The wording of each consent given, as shown, by question name — proof
+  // under Art. 7(1). Null on registrations predating it; do not backfill.
+  /// ![Record<string, string>]
+  consentTexts                       Json?              @map("consent_texts")
   createdAt                          DateTime           @default(now()) @map("created_at")
   updatedAt                          DateTime?          @updatedAt @map("updated_at")
 

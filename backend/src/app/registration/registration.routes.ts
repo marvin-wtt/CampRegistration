@@ -12,6 +12,7 @@ import {
   registrationOpen,
   eventOrganizationVerified,
 } from '#app/event/event.guard';
+import { eventPrivacyCompliant } from '#app/registration/registration.guard';
 
 export class RegistrationRouter extends ModuleRouter {
   protected registerBindings() {
@@ -46,7 +47,11 @@ export class RegistrationRouter extends ModuleRouter {
       '/',
       guard(
         or(
-          and(registrationOpen, eventOrganizationVerified),
+          and(
+            registrationOpen,
+            eventOrganizationVerified,
+            eventPrivacyCompliant,
+          ),
           hasEventPermission('event.registrations.create'),
         ),
       ),

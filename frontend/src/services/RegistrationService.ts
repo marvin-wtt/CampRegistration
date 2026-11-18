@@ -1,4 +1,5 @@
 import {
+  REGISTRATION_CONSENT_CHANGED,
   REGISTRATION_PRICE_CHANGED,
   type Registration,
   type RegistrationCreateData,
@@ -82,4 +83,14 @@ export function isPriceChangedError(error: unknown): boolean {
   const body = error.response?.data as { errorCode?: unknown } | undefined;
 
   return body?.errorCode === REGISTRATION_PRICE_CHANGED;
+}
+
+/** Whether the server refused consent texts the form showed as outdated. */
+export function isConsentChangedError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+  const body = error.response?.data as { errorCode?: unknown } | undefined;
+
+  return body?.errorCode === REGISTRATION_CONSENT_CHANGED;
 }

@@ -57,6 +57,12 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .optional() satisfies ZodType<
           RegistrationCreateData['displayedTotal']
         >,
+        // Untrusted, never stored: compared with the server's rendering only
+        displayedConsents: z
+          .record(z.string().max(255), z.string().max(20_000))
+          .optional() satisfies ZodType<
+          RegistrationCreateData['displayedConsents']
+        >,
       })
       .superRefine(async ({ data, locale, group }, ctx) => {
         if (event.countries.length > 1 && !group) {

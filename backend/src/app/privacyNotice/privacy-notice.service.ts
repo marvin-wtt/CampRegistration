@@ -16,6 +16,7 @@ import {
   retentionExceptions,
   supervisoryAuthorityFor,
   withoutRefused,
+  type ComposedPrivacyNotice,
   type EventPrivacyNotice,
   type OrganizationPrivacyNotice,
   type PrivacyDataCategoryEntry,
@@ -303,6 +304,24 @@ export class PrivacyNoticeService extends BaseService {
       toEventId,
       this.sanitizeAddendum(content),
     );
+  }
+
+  /** The notice registrants currently read, or null before any is published. */
+  async getComposedNotice(
+    eventId: string,
+    organizationId: string,
+  ): Promise<ComposedPrivacyNotice | null> {
+    const [organizationVersion, eventVersion] = await Promise.all([
+      this.latestVersion('ORGANIZATION', organizationId),
+      this.latestVersion('EVENT', eventId),
+    ]);
+
+    return organizationVersion
+      ? composePrivacyNotice(
+          organizationVersion.content as PrivacyNoticeContent,
+          eventVersion?.content as PrivacyNoticeAddendum | undefined,
+        )
+      : null;
   }
 
   /** Resolved once per registration, at submission, and then never recomputed. */

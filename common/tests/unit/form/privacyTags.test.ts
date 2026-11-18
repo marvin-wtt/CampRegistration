@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { Serializer, SurveyModel } from 'survey-core';
 import {
+  PRIVACY_ENFORCED_SINCE,
   REPEATED,
+  consentTexts,
   extractPrivacyTags,
+  formPrivacyIssues,
+  hasPrivacyIssues,
+  isPrivacyEnforced,
   uncoveredConsentCategories,
   unconsentedAnswers,
 } from '../../../src/form/index.js';
+import { composePrivacyNotice } from '../../../src/privacy/index.js';
 
 const allergies = {
   type: 'comment',
@@ -166,5 +172,99 @@ describe('unconsentedAnswers', () => {
         children: [{ allergies: '' }, { allergies: 'Nuts' }],
       }),
     ).toHaveLength(1);
+  });
+});
+
+describe('consentTexts', () => {
+  const survey = () =>
+    new SurveyModel({
+      elements: [
+        { type: 'text', name: 'first_name' },
+        {
+          ...healthConsent,
+          title: 'I agree for {first_name}.',
+          description: 'Voluntary.',
+        },
+        { ...photoConsent, title: 'Photos of {first_name}.' },
+      ],
+    });
+
+  it('renders title and description with placeholders filled', () => {
+    const model = survey();
+    model.data = { first_name: 'Jane', consent_health: true };
+
+    expect(consentTexts(model)).toEqual({
+      consent_health: 'I agree for Jane.\n\nVoluntary.',
+      consent_photos: 'Photos of Jane.',
+    });
+  });
+
+  it('keeps only the consents given when asked to', () => {
+    const model = survey();
+    model.data = { first_name: 'Jane', consent_health: true };
+
+    expect(Object.keys(consentTexts(model, { givenOnly: true }))).toEqual([
+      'consent_health',
+    ]);
+  });
+});
+
+describe('formPrivacyIssues', () => {
+  const notice = (
+    dataCategories: { key: string; specialCategoryBasis?: string }[],
+  ) =>
+    ({
+      ...composePrivacyNotice(null),
+      dataCategories,
+    }) as ReturnType<typeof composePrivacyNotice>;
+
+  const form = { elements: [allergies, healthConsent] };
+
+  it('passes a tagged category declared and covered', () => {
+    expect(
+      formPrivacyIssues(
+        form,
+        notice([
+          { key: 'allergies', specialCategoryBasis: 'explicit_consent' },
+        ]),
+      ),
+    ).toEqual({ undeclared: [], uncovered: [] });
+  });
+
+  it('reports a tagged category the notice does not declare', () => {
+    expect(formPrivacyIssues(form, notice([])).undeclared).toEqual([
+      'allergies',
+    ]);
+  });
+
+  it('needs no consent for a category on another Art. 9 basis', () => {
+    const issues = formPrivacyIssues(
+      { elements: [allergies] },
+      notice([{ key: 'allergies', specialCategoryBasis: 'vital_interests' }]),
+    );
+
+    expect(hasPrivacyIssues(issues)).toBe(false);
+  });
+
+  it('relies on consent throughout under a free-text notice', () => {
+    const freeText = {
+      ...composePrivacyNotice(null),
+      mode: 'free_text' as const,
+    };
+
+    expect(formPrivacyIssues({ elements: [allergies] }, freeText)).toEqual({
+      undeclared: [],
+      uncovered: ['allergies'],
+    });
+  });
+});
+
+describe('isPrivacyEnforced', () => {
+  it('holds for events created since the rules took effect', () => {
+    expect(isPrivacyEnforced({ createdAt: PRIVACY_ENFORCED_SINCE })).toBe(true);
+    expect(isPrivacyEnforced({ createdAt: '2026-01-01T00:00:00Z' })).toBe(
+      false,
+    );
+    expect(isPrivacyEnforced({ createdAt: null })).toBe(false);
   });
 });

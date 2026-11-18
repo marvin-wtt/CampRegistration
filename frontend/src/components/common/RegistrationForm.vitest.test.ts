@@ -47,6 +47,7 @@ describe('RegistrationForm', () => {
     freePlaces: 0,
     freePlacesTotal: 0,
     registrationStatus: 'closed' as const,
+    privacyEnforced: false,
     logo: null,
     banner: null,
     form: {
@@ -543,6 +544,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         12000,
+        expect.anything(),
       );
     });
 
@@ -603,6 +605,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         undefined,
+        expect.anything(),
       );
     });
 
@@ -635,6 +638,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         12000,
+        expect.anything(),
       );
     });
   });

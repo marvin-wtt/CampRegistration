@@ -1,3 +1,5 @@
+import type { SurveyModel } from 'survey-core';
+
 /**
  * Reads the privacy tags of a form (docs/privacy.md, section 5): which
  * questions collect which data category, and which consent question covers
@@ -190,4 +192,33 @@ export function unconsentedAnswers(
           isGiven(consent, data),
       ),
   );
+}
+
+/**
+ * The wording of the form's consent questions as the survey shows them:
+ * title and description with placeholders filled, before Markdown. Client and
+ * server render the same way, so the two can be compared.
+ */
+export function consentTexts(
+  survey: SurveyModel,
+  options: { givenOnly?: boolean } = {},
+): Record<string, string> {
+  const texts: Record<string, string> = {};
+
+  for (const question of survey.getAllQuestions()) {
+    if (
+      question.getType() !== 'boolean' ||
+      question.getPropertyValue('consent') !== true ||
+      (options.givenOnly && question.value !== true)
+    ) {
+      continue;
+    }
+
+    texts[question.getValueName()] = [question.title, question.description]
+      .filter((part): part is string => !!part)
+      .map((part) => survey.processText(part, true))
+      .join('\n\n');
+  }
+
+  return texts;
 }
