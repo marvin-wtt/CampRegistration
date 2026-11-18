@@ -15,16 +15,17 @@ const categoryParams = z.object({
   financeCategoryId: z.ulid(),
 });
 
+const KIND = z.enum(['EXPENSE', 'INCOME']);
+
 // One kind's list at a time; the expense screens never see income ones.
-const kindQuery = z.object({
-  kind: z.enum(['EXPENSE', 'INCOME']).default('EXPENSE'),
-});
+const kindQuery = z.object({ kind: KIND.default('EXPENSE') });
 
 const index = z.object({ params: eventParams, query: kindQuery });
 
 const store = z.object({
   params: eventParams,
   body: z.object({
+    kind: KIND.optional(),
     parentId: z.ulid().nullable().optional(),
     name: NAME,
     position: POSITION.optional(),

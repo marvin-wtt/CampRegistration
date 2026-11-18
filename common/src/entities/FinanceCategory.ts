@@ -19,6 +19,7 @@ export interface FinanceCategory extends Identifiable {
 }
 
 export interface FinanceCategoryCreateData {
+  kind?: FinanceCategoryKind | undefined;
   parentId?: string | null | undefined;
   name: Translatable;
   position?: number | undefined;

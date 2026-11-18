@@ -454,7 +454,7 @@ describe('finances', () => {
         .auth(token, { type: 'bearer' })
         .expect(status);
 
-      return body.data as { id: string };
+      return body.data as { id: string; kind: string };
     };
 
     it('lets only directors and treasurers configure them', async () => {
@@ -494,10 +494,11 @@ describe('finances', () => {
     it('keeps expense and income categories apart', async () => {
       const { event, token } = await setup();
       const created = await createCategory(event, token, { name: 'Food' });
-      // No route makes income categories yet.
-      const grants = await prisma.financeCategory.create({
-        data: { eventId: event.id, kind: 'INCOME', name: 'Grants' },
+      const grants = await createCategory(event, token, {
+        name: 'Grants',
+        kind: 'INCOME',
       });
+      expect(grants.kind).toBe('INCOME');
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/finance-categories`)

@@ -274,7 +274,7 @@ Event   … lastIncomeNumber, incomeNumberPrefix (default "I")
   funder's breakdown — FGYO's own funds and third-party funds, say — is a
   list typed in once. They are `FinanceCategory` rows of kind `INCOME`, not a
   second table; the editor shows one kind at a time (`?kind=INCOME` on the
-  list and reorder routes). The in-use guards still count expenses only:
+  list and reorder routes, `kind` in the body on create). The in-use guards still count expenses only:
   deleting (archive instead), regrouping and becoming a group must count
   income records too once they exist, or a used income category could be
   deleted or turned into a group.
