@@ -352,12 +352,10 @@ Findings, most important first:
   `confirmation_guardian` (`backend/src/app/event/presets/camp/form.ts`).
 - **[implemented]** Newsletter consent is the only consent mapped to a column:
   `eventDataType: 'newsletter_consent'` → `Registration.newsletterConsent`.
-- **[gap]** The camp preset's `p_health` panel (`medical_restrictions`,
-  `food_intolerance`) and the seminar preset's `dietary_requirements` ask for health
-  data without any consent question.
-- **[gap]** Nothing enforces consent. The platform does not know which questions
-  collect special-category data and accepts health answers whether or not any box
-  was ticked.
+- **[implemented]** The presets tag their questions and ask for consent before
+  health data (Phase 2, below). Events created earlier keep their saved forms.
+- **[gap]** Nothing enforces consent yet. Questions can be tagged, but the server
+  accepts health answers whether or not any box was ticked (Phase 3).
 - **[gap]** The wording of any consent question — photos, carpool list, newsletter —
   cannot be proven: the form editor autosaves into the live `Event.form`, so the text
   a registrant saw is overwritten by the next edit.
@@ -370,6 +368,16 @@ demonstrate consent).
 
 **Tagging — two question properties, both set by the organizer**
 
+**[implemented]** `common/src/form/properties/privacy.ts` registers the properties;
+`common/src/form/privacyTags.ts` reads them from the saved form JSON
+(`extractPrivacyTags`) and answers the two coverage questions Phase 3 builds on:
+which consent-based categories no consent question covers
+(`uncoveredConsentCategories`), and which answers were given without their consent
+(`unconsentedAnswers`). The form editor shows the tags in every mode, with the
+catalogue's labels; "consent covers" appears once a question is marked as consent.
+Tags sit on questions, including those inside dynamic panels; matrix columns cannot
+be tagged, and only boolean questions can be consents.
+
 - `privacyCategory` on a data question: the catalogue key it collects (`health`,
   `allergies`, …).
 - `consent: true` on a consent question: its wording is copied into the registration
@@ -381,7 +389,18 @@ demonstrate consent).
 - `consent` and `consentFor` stay separate so a consent that is not about a special
   category (the carpool list shares contact data) does not gate every contact
   question.
-- The presets tag their own data and consent questions.
+- **[implemented]** The presets tag their own data and consent questions:
+  - camp: a consent `consent_health` (health, allergies) before
+    `medical_restrictions`, which is shown only once consent is given;
+    `food_intolerance` now asks for preferences only and sends allergies to the
+    medical question;
+  - seminar: `dietary_requirements` asks for preferences only; a new `allergies`
+    question follows a consent `consent_allergies`;
+  - every preset: photo consent tagged `consent`, and the camp's carpool-list and
+    newsletter consents too. Terms and conditions are agreements, not consents, and
+    stay untagged.
+  - **[review]** A preference field can still receive a religious diet (halal,
+    kosher). The descriptions only suggest vegetarian or vegan.
 
 **Classification — organizer-controlled**
 
@@ -400,9 +419,10 @@ demonstrate consent).
 
 - The organizer writes the consent question in the form editor and decides where
   it goes. Wording, placement and translations stay with the organizer.
-- When tagging a special category, the editor can offer a default consent question
-  generated from the notice (what, for which purpose, who receives it, how to
-  withdraw), freely editable.
+- **[planned]** When tagging a special category, the editor can offer a default
+  consent question generated from the notice (what, for which purpose, who receives
+  it, how to withdraw), freely editable. Not part of Phase 2; the presets carry
+  written defaults instead.
 
 **Scope of one consent**
 
@@ -683,7 +703,7 @@ reads tags after the tagging itself.
    three states (section 2). Builds on item 1 for the free-text rule; the form
    check arrives with item 7.
 
-**Phase 2 — tagging, the foundation**
+**Phase 2 — tagging, the foundation** (done)
 
 5. `privacyCategory`, `consent`, `consentFor` question properties and the shared
    coverage helper (`common/src/form/`).
