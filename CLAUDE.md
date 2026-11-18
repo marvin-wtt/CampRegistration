@@ -99,7 +99,7 @@ is opened. Read the relevant one before changing that workspace:
   scopes, email, queues & scheduler, organizations, realtime (SSE), the `#*` alias
 - **`frontend/CLAUDE.md`** — Pinia/API conventions, i18n, MD3 styling and tokens
 - **`docs/organizations.md`**, **`docs/live-updates-plan.md`**,
-  **`docs/country-groups.md`** and **`docs/pricing.md`** — the full designs
+  **`docs/country-groups.md`**, **`docs/pricing.md`** and **`docs/privacy.md`** — the full designs
 - **`backend/prisma/data-migrations/README.md`** — the data migration runner
 
 ### Skills
