@@ -45,6 +45,10 @@ export default {
     funding_body: 'Der Zuwendungsgeber',
     medical_provider: 'Ärztinnen, Ärzte und Rettungsdienste',
     public_authority: 'Behörden',
+    partner_organization: 'Partner- oder mitveranstaltende Organisationen',
+    participants: 'Andere Teilnehmende',
+    it_service_provider:
+      'IT-Dienstleister (z. B. E-Mail, Cloud-Speicher, Buchhaltung)',
     payment_provider: 'Der Zahlungsdienstleister',
     platform_operator: 'Der Betreiber dieser Anmeldeplattform',
   },
@@ -157,6 +161,8 @@ export default {
       'Für besondere Kategorien personenbezogener Daten fehlt eine Rechtsgrundlage nach Art. 9',
     custom_category_label:
       'Eine selbst hinzugefügte Kategorie hat keinen Namen',
+    custom_recipient_label:
+      'Ein von dir hinzugefügter Empfänger hat keinen Namen',
     automated_details:
       'Automatisierte Entscheidungsfindung ist angegeben, aber die Logik wird nicht erläutert',
     recipients: 'Es wurden keine Empfänger angegeben',

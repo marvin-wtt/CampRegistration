@@ -4,7 +4,7 @@ import type {
   LegalBasisKey,
   PrivacyDataCategoryRef,
   PrivacyPurposeRef,
-  PrivacyRecipientKey,
+  PrivacyRecipientRef,
   SpecialCategoryBasisKey,
 } from './catalogue.js';
 import type { PrivacyNoticeExclusions } from './exclusions.js';
@@ -57,7 +57,9 @@ export interface PrivacyDataCategoryEntry {
  * expresses; naming the actual caterer is better practice and stays available.
  */
 export interface PrivacyRecipientEntry {
-  key: PrivacyRecipientKey;
+  key: PrivacyRecipientRef;
+  /** What to call it. Set only on `custom:` entries. */
+  label?: Translatable | null;
   name?: string | null;
   /** ISO 3166-1 alpha-2. Drives the third-country transfer disclosure. */
   country?: string | null;

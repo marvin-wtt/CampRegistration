@@ -2,7 +2,7 @@ import {
   isAlwaysRecipient,
   type PrivacyDataCategoryRef,
   type PrivacyPurposeRef,
-  type PrivacyRecipientKey,
+  type PrivacyRecipientRef,
 } from './catalogue.js';
 import type {
   PrivacyNoticeAddendum,
@@ -17,7 +17,7 @@ import type {
 export interface PrivacyNoticeExclusions {
   purposes?: PrivacyPurposeRef[];
   dataCategories?: PrivacyDataCategoryRef[];
-  recipients?: PrivacyRecipientKey[];
+  recipients?: PrivacyRecipientRef[];
   transferCountries?: string[];
 }
 
@@ -264,7 +264,7 @@ export function normalizeExclusions(
       excluded.recipients,
       keysOf(organization.recipients),
       keysOf(addendum.recipients),
-    ) as PrivacyRecipientKey[],
+    ) as PrivacyRecipientRef[],
     transferCountries: keep(
       excluded.transferCountries,
       new Set(organization.thirdCountryTransfers.countries),
@@ -302,7 +302,7 @@ export function withoutRefused(
       recipients: drop(
         'recipients',
         excluded.recipients,
-      ) as PrivacyRecipientKey[],
+      ) as PrivacyRecipientRef[],
       transferCountries: drop('transferCountries', excluded.transferCountries),
     }),
   };

@@ -13,6 +13,7 @@ import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
 import {
+  Action,
   Base,
   type ITheme,
   type PageModel,
@@ -35,6 +36,8 @@ import {
 } from '@camp-registration/common/form';
 import type { ComposedPrivacyNotice } from '@camp-registration/common/privacy';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
+import { consentQuestionJson } from '@/lib/surveyJs/consentQuestion';
+import { APP_LOCALES } from '@/i18n/locales';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
   addDesignerFileSlotResolver,
@@ -324,6 +327,71 @@ if (props.event.privacyEnforced) {
     });
 }
 
+/*
+ * "Add consent question": while a tagged category has no consent covering it,
+ * the toolbar offers to append one, asked the way the presets ask it and
+ * worded in every form locale. A start the organizer edits, not a verdict.
+ */
+const consentActions = [creator.toolbar, creator.footerToolbar].map(
+  (toolbar) => {
+    const action = new Action({
+      id: 'privacy-add-consent',
+      title: t('privacy.addConsent'),
+      showTitle: true,
+      visible: false,
+      action: addConsentQuestion,
+    });
+    toolbar.actions.push(action);
+    return action;
+  },
+);
+
+function uncoveredCategories(): string[] {
+  return publishedNotice.value === undefined
+    ? []
+    : formPrivacyIssues(creator.JSON, publishedNotice.value).uncovered;
+}
+
+function categoryNamesIn(keys: string[], locale: string): string {
+  const names = keys.map((key) =>
+    gt(`privacy.dataCategory.${key}`, {}, { locale }),
+  );
+  // Mid-sentence, except where nouns are capitalised anyway.
+  return (
+    locale === 'de'
+      ? names
+      : names.map((name) => name.charAt(0).toLowerCase() + name.slice(1))
+  ).join(', ');
+}
+
+function addConsentQuestion() {
+  const categories = uncoveredCategories();
+  const page = creator.survey.pages.at(-1);
+  if (!categories.length || !page) {
+    return;
+  }
+
+  const texts = { title: {}, description: {}, error: {} } as Record<
+    'title' | 'description' | 'error',
+    Record<string, string>
+  >;
+  for (const locale of APP_LOCALES) {
+    const named = { categories: categoryNamesIn(categories, locale) };
+    texts.title[locale] = t('privacy.consent.title', named, { locale });
+    texts.description[locale] = t(
+      'privacy.consent.description',
+      {},
+      { locale },
+    );
+    texts.error[locale] = t('privacy.consent.error', {}, { locale });
+  }
+
+  const json = consentQuestionJson(creator.survey, categories, texts);
+  const question = page.addNewQuestion('boolean', json.name as string);
+  question.fromJSON(json);
+  creator.selectElement(question);
+}
+
 function categoryNames(keys: string[]): string {
   return keys.map((key) => gt(`privacy.dataCategory.${key}`)).join(', ');
 }
@@ -352,6 +420,9 @@ function reportPrivacyIssues() {
     creator.notify(message, 'error');
   }
   reportedPrivacyIssues = message;
+  for (const action of consentActions) {
+    action.visible = issues.uncovered.length > 0;
+  }
 }
 
 creator.saveSurveyFunc = (
@@ -577,7 +648,12 @@ mode:
 privacy:
   blocked: 'Registrations are blocked.'
   undeclared: 'The form asks for {categories}, which the privacy information does not declare.'
-  uncovered: 'No consent question covers {categories}: mark a yes/no question as a consent for it.'
+  uncovered: 'No consent question covers {categories}: use “Add consent question” in the toolbar.'
+  addConsent: 'Add consent question'
+  consent:
+    title: 'I agree that the information on {categories} given in this form is used to look after the participant during the event and shared with the event team.'
+    description: 'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.'
+    error: 'Please agree, or leave those fields empty.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -592,7 +668,12 @@ mode:
 privacy:
   blocked: 'Anmeldungen sind gesperrt.'
   undeclared: 'Das Formular fragt nach {categories}, die in den Datenschutzinformationen nicht angegeben sind.'
-  uncovered: 'Keine Einwilligungsfrage deckt {categories} ab: Markiere eine Ja/Nein-Frage als Einwilligung dafür.'
+  uncovered: 'Keine Einwilligungsfrage deckt {categories} ab: Nutze „Einwilligungsfrage hinzufügen“ in der Werkzeugleiste.'
+  addConsent: 'Einwilligungsfrage hinzufügen'
+  consent:
+    title: 'Ich willige ein, dass die Angaben zu {categories} aus diesem Formular zur Betreuung während der Veranstaltung genutzt und an das Veranstaltungsteam weitergegeben werden.'
+    description: 'Freiwillig – sonst lass diese Felder leer. Jederzeit beim Veranstalter widerrufbar.'
+    error: 'Bitte willige ein oder lass diese Felder leer.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -607,7 +688,12 @@ mode:
 privacy:
   blocked: 'Les inscriptions sont bloquées.'
   undeclared: 'Le formulaire demande {categories}, que les informations sur la protection des données ne mentionnent pas.'
-  uncovered: 'Aucune question de consentement ne couvre {categories} : marquez une question oui/non comme consentement.'
+  uncovered: 'Aucune question de consentement ne couvre {categories} : utilise « Ajouter une question de consentement » dans la barre d’outils.'
+  addConsent: 'Ajouter une question de consentement'
+  consent:
+    title: 'J’accepte que les informations sur {categories} données dans ce formulaire servent à la prise en charge du participant pendant l’événement et soient transmises à l’équipe.'
+    description: 'Facultatif – sinon laisse ces champs vides. Révocable à tout moment auprès de l’organisateur.'
+    error: 'Donne ton accord ou laisse ces champs vides.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -622,7 +708,12 @@ mode:
 privacy:
   blocked: 'Rejestracje są zablokowane.'
   undeclared: 'Formularz pyta o {categories}, których nie wymieniono w informacjach o ochronie danych.'
-  uncovered: 'Żadne pytanie o zgodę nie obejmuje {categories}: oznacz pytanie tak/nie jako zgodę.'
+  uncovered: 'Żadne pytanie o zgodę nie obejmuje {categories}: użyj „Dodaj pytanie o zgodę” na pasku narzędzi.'
+  addConsent: 'Dodaj pytanie o zgodę'
+  consent:
+    title: 'Zgadzam się na wykorzystanie podanych w tym formularzu informacji ({categories}) do opieki nad uczestnikiem podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia.'
+    description: 'Dobrowolne – w przeciwnym razie pozostaw te pola puste. Zgodę można w każdej chwili wycofać u organizatora.'
+    error: 'Wyraź zgodę lub pozostaw te pola puste.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -637,5 +728,10 @@ mode:
 privacy:
   blocked: 'Registrace jsou zablokované.'
   undeclared: 'Formulář se ptá na {categories}, které informace o ochraně údajů neuvádějí.'
-  uncovered: 'Žádná otázka na souhlas nepokrývá {categories}: označte otázku ano/ne jako souhlas.'
+  uncovered: 'Žádná otázka na souhlas nepokrývá {categories}: použij „Přidat otázku na souhlas“ na panelu nástrojů.'
+  addConsent: 'Přidat otázku na souhlas'
+  consent:
+    title: 'Souhlasím, aby údaje ({categories}) z tohoto formuláře byly použity k péči o účastníka během akce a předány týmu akce.'
+    description: 'Dobrovolné – jinak nech tato pole prázdná. Souhlas lze kdykoli odvolat u pořadatele.'
+    error: 'Dej souhlas, nebo nech tato pole prázdná.'
 </i18n>

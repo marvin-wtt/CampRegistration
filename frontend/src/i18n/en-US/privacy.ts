@@ -56,6 +56,10 @@ export default {
     funding_body: 'The funding body',
     medical_provider: 'Doctors and emergency services',
     public_authority: 'Public authorities',
+    partner_organization: 'A partner or co-organizing organization',
+    participants: 'Other participants',
+    it_service_provider:
+      'IT service providers (e.g. email, cloud storage, accounting)',
     payment_provider: 'The payment provider',
     platform_operator: 'The operator of this registration platform',
   },
@@ -167,6 +171,7 @@ export default {
     special_category_basis:
       'Special category data has no legal basis under Art. 9',
     custom_category_label: 'A category you added has no name',
+    custom_recipient_label: 'A recipient you added has no name',
     automated_details:
       'Automated decision-making is declared but its logic is not explained',
     recipients: 'No recipients have been listed',

@@ -49,7 +49,8 @@ const DataCategorySchema = z.object({
 });
 
 const RecipientSchema = z.object({
-  key: z.enum(PRIVACY_RECIPIENT_KEYS),
+  key: refSchema(PRIVACY_RECIPIENT_KEYS),
+  label: TranslatableSchema.nullish(),
   name: z.string().max(255).nullish(),
   country: z.string().length(2).nullish(),
   allEvents: z.boolean().nullish(),
@@ -120,7 +121,9 @@ const ContentSchema = z.object({
   dataCategories: z
     .array(DataCategorySchema)
     .max(PRIVACY_DATA_CATEGORY_KEYS.length + MAX_CUSTOM_ENTRIES),
-  recipients: z.array(RecipientSchema).max(PRIVACY_RECIPIENT_KEYS.length),
+  recipients: z
+    .array(RecipientSchema)
+    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES),
   retention: RetentionSchema.nullable(),
   thirdCountryTransfers: ThirdCountryTransfersSchema,
   dpo: DpoSchema.nullable(),
@@ -140,8 +143,8 @@ const ExclusionsSchema = z.object({
     .max(PRIVACY_DATA_CATEGORY_KEYS.length + MAX_CUSTOM_ENTRIES)
     .optional(),
   recipients: z
-    .array(z.enum(PRIVACY_RECIPIENT_KEYS))
-    .max(PRIVACY_RECIPIENT_KEYS.length)
+    .array(refSchema(PRIVACY_RECIPIENT_KEYS))
+    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES)
     .optional(),
   transferCountries: z.array(z.string().length(2)).max(50).optional(),
 }) satisfies ZodType<PrivacyNoticeExclusions>;
@@ -158,7 +161,7 @@ const AddendumSchema = z.object({
     .optional(),
   recipients: z
     .array(RecipientSchema)
-    .max(PRIVACY_RECIPIENT_KEYS.length)
+    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES)
     .optional(),
   retention: RetentionSchema.nullish(),
   thirdCountryTransfers: ThirdCountryTransfersSchema.nullish(),

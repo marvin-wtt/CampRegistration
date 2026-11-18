@@ -42,7 +42,9 @@ export function usePrivacyLabels() {
   }
 
   function recipientLabel(entry: PrivacyRecipientEntry): string {
-    return t(`privacy.recipient.${entry.key}`);
+    return isCustomKey(entry.key)
+      ? to(entry.label ?? '')
+      : t(`privacy.recipient.${entry.key}`);
   }
 
   /** Not every country has a `country.*` key; fall back to the ISO code. */

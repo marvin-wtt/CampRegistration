@@ -214,6 +214,21 @@ describe('privacyNoticeCompleteness — custom entries', () => {
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
   });
 
+  it('requires a name for a custom recipient', () => {
+    const content = completeContent();
+    content.recipients.push({ key: customKey('abc') });
+
+    expect(privacyNoticeCompleteness(content).gaps).toContain(
+      'custom_recipient_label',
+    );
+
+    content.recipients[content.recipients.length - 1]!.label = {
+      en: 'Local sports club',
+    };
+
+    expect(privacyNoticeCompleteness(content).complete).toBe(true);
+  });
+
   it('requires an Art. 9 basis for a custom category flagged special', () => {
     const content = completeContent();
     content.dataCategories.push({

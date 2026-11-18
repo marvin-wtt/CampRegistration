@@ -159,6 +159,7 @@ describe('privacy notices', () => {
             recipients: [
               { key: 'event_staff' },
               { key: 'platform_operator', name: '<i>Acme</i>' },
+              { key: 'custom:1', label: { en: '<u>Sports club</u>' } },
             ],
           }),
         })
@@ -168,6 +169,7 @@ describe('privacy notices', () => {
       expect(body.data.content.purposes[0].label.en).toBe('Archery');
       expect(body.data.content.dataCategories[0].label.en).toBe('Skill');
       expect(body.data.content.recipients[1].name).toBe('Acme');
+      expect(body.data.content.recipients[2].label.en).toBe('Sports club');
     });
 
     it('should append a version and never overwrite the previous one', async () => {

@@ -21,6 +21,20 @@
         </div>
       </page-header>
 
+      <!-- Without it the page reads as a broken editor: every control greyed
+           out and nothing saying why. -->
+      <q-banner
+        v-if="!canEdit"
+        dense
+        rounded
+        class="bg-surface-container-high text-on-surface"
+      >
+        <template #avatar>
+          <q-icon name="visibility" />
+        </template>
+        {{ t('readOnly') }}
+      </q-banner>
+
       <!-- The builder is the default because it is the only path that produces
            a notice in every language a event runs in. Free text stays available
            for anyone whose processing it cannot express, or who already has
@@ -156,223 +170,78 @@
           </q-stepper-navigation>
         </q-step>
 
-        <!-- 2 -->
+        <!-- 2: purposes first — ticking one pre-selects its usual data and
+             recipients, which the next two steps then only adjust. -->
         <q-step
           :name="2"
-          :title="t('step.data.title')"
-          :caption="sectionCaption('data', t('step.data.caption'))"
-          icon="inventory_2"
-          header-nav
-          :error="hasVisitedBeyond(2) && sectionGaps('data').length > 0"
-          :done="step > 2 && sectionGaps('data').length === 0"
-        >
-          <p class="text-body2">{{ t('step.data.hint') }}</p>
-
-          <div
-            v-for="key in dataCategoryKeys"
-            :key="key"
-            class="q-mb-xs"
-          >
-            <q-checkbox
-              :model-value="hasDataCategory(key)"
-              :label="gt(`privacy.dataCategory.${key}`)"
-              :disable="!canEdit"
-              @update:model-value="(on) => toggleDataCategory(key, on)"
-            />
-            <special-category-basis-field
-              v-if="hasDataCategory(key) && isSpecialCategory(key)"
-              :model-value="dataCategory(key)?.specialCategoryBasis"
-              :can-edit="canEdit"
-              class="q-ml-lg q-mb-sm"
-              @update:model-value="(value) => setSpecialBasis(key, value)"
-            />
-
-            <!-- Not special in itself, but it can become so depending on what
-                 the form offers. -->
-            <privacy-category-notes
-              v-if="hasDataCategory(key)"
-              :category-key="key"
-              class="text-caption text-on-surface-variant q-ml-lg q-mb-sm"
-            />
-            <q-checkbox
-              v-if="dataCategory(key)"
-              :model-value="dataCategory(key)?.allEvents === true"
-              :label="t('field.allEvents')"
-              dense
-              :disable="!canEdit"
-              class="q-ml-lg q-mb-sm"
-              @update:model-value="(v) => setAllEvents(dataCategory(key), v)"
-            />
-          </div>
-
-          <!-- Anything the catalogue is deliberately too coarse for. Set apart
-               from the checkbox list above, because these are the entries the
-               organization is answerable for wording itself. -->
-          <div class="q-mt-lg">
-            <div class="text-body2 text-weight-medium">
-              {{ t('custom.category.title') }}
-            </div>
-            <div class="text-caption text-on-surface-variant q-mb-sm">
-              {{ t('custom.category.hint') }}
-            </div>
-
-            <q-card
-              v-for="entry in customCategories"
-              :key="entry.key"
-              flat
-              bordered
-              class="inset-card q-mb-sm"
-            >
-              <q-card-section class="q-pa-sm">
-                <div class="row items-center no-wrap q-gutter-sm">
-                  <!-- Starts as one field with a translate toggle rather than
-                       five stacked locales: most categories are named once and
-                       a plain string is a valid Translatable. -->
-                  <translated-input
-                    :model-value="entry.label"
-                    :label="t('field.customCategoryName')"
-                    :locales
-                    default-untranslated
-                    dense
-                    outlined
-                    hide-bottom-space
-                    :disable="!canEdit"
-                    class="col"
-                    @update:model-value="(v) => setEntryLabel(entry, v)"
-                  />
-                  <m-btn
-                    flat
-                    round
-                    dense
-                    icon="delete"
-                    :aria-label="t('action.remove')"
-                    :disable="!canEdit"
-                    @click="removeCategory(entry.key)"
-                  />
-                </div>
-
-                <q-checkbox
-                  :model-value="entry.special === true"
-                  :label="t('field.customCategorySpecial')"
-                  dense
-                  :disable="!canEdit"
-                  class="q-mt-sm"
-                  @update:model-value="(v) => setCustomSpecial(entry, v)"
-                />
-                <div
-                  class="text-caption text-on-surface-variant inset-card__hint"
-                >
-                  {{ t('field.customCategorySpecialHint') }}
-                </div>
-
-                <!-- Same treatment as a catalogue category: consent stated,
-                     alternatives behind the disclosure with their conditions. -->
-                <special-category-basis-field
-                  v-if="entry.special"
-                  v-model="entry.specialCategoryBasis"
-                  :can-edit="canEdit"
-                  class="inset-card__basis q-mt-xs"
-                />
-                <q-checkbox
-                  v-if="entry"
-                  :model-value="entry?.allEvents === true"
-                  :label="t('field.allEvents')"
-                  dense
-                  :disable="!canEdit"
-                  class="q-mt-sm"
-                  @update:model-value="(v) => setAllEvents(entry, v)"
-                />
-              </q-card-section>
-            </q-card>
-
-            <m-btn
-              :label="t('action.addCategory')"
-              icon="add"
-              outline
-              color="primary"
-              :disable="!canEdit"
-              @click="addCustomCategory"
-            />
-          </div>
-
-          <q-stepper-navigation>
-            <m-btn
-              :label="t('action.next')"
-              color="primary"
-              @click="step = 3"
-            />
-            <m-btn
-              :label="t('action.back')"
-              flat
-              @click="step = 1"
-            />
-          </q-stepper-navigation>
-        </q-step>
-
-        <!-- 3 -->
-        <q-step
-          :name="3"
           :title="t('step.purposes.title')"
           :caption="sectionCaption('purposes', t('step.purposes.caption'))"
           icon="checklist"
           header-nav
-          :error="hasVisitedBeyond(3) && sectionGaps('purposes').length > 0"
-          :done="step > 3 && sectionGaps('purposes').length === 0"
+          :error="hasVisitedBeyond(2) && sectionGaps('purposes').length > 0"
+          :done="step > 2 && sectionGaps('purposes').length === 0"
         >
           <p class="text-body2">{{ t('step.purposes.hint') }}</p>
-          <div
-            v-for="key in purposeKeys"
-            :key="key"
-            class="q-mb-xs"
+
+          <q-card
+            flat
+            bordered
+            class="entry-list"
           >
-            <q-checkbox
-              :model-value="hasPurpose(key)"
+            <privacy-entry-row
+              v-for="key in purposeKeys"
+              :key="key"
               :label="gt(`privacy.purpose.${key}`)"
+              :selected="hasPurpose(key)"
               :disable="!canEdit"
-              @update:model-value="(on) => togglePurpose(key, on)"
-            />
-            <template v-if="hasPurpose(key)">
-              <q-select
-                :model-value="purpose(key)?.legalBasis"
-                :options="legalBasisOptions"
-                :label="t('field.legalBasis')"
-                emit-value
-                map-options
-                dense
-                outlined
-                :disable="!canEdit"
-                class="q-ml-lg q-mt-xs"
-                @update:model-value="(v) => setLegalBasis(key, v)"
-              />
-              <translated-input
-                v-if="purpose(key)?.legalBasis === 'legitimate_interests'"
-                :model-value="purpose(key)?.legitimateInterest"
-                :label="t('field.legitimateInterest')"
-                :locales
-                always
-                dense
-                outlined
-                :disable="!canEdit"
-                class="q-ml-lg q-mt-xs"
-                @update:model-value="(v) => setLegitimateInterest(key, v)"
-              />
-              <div
-                v-if="purpose(key)?.legalBasis === 'consent'"
-                class="text-caption text-on-surface-variant q-ml-lg q-mt-xs"
-              >
-                {{ gt('privacy.editor.field.consentQuestion') }}
-              </div>
-              <q-checkbox
+              @update:selected="(on) => togglePurpose(key, on)"
+            >
+              <template
                 v-if="purpose(key)"
-                :model-value="purpose(key)?.allEvents === true"
-                :label="t('field.allEvents')"
-                dense
-                :disable="!canEdit"
-                class="q-ml-lg q-mt-xs"
-                @update:model-value="(v) => setAllEvents(purpose(key), v)"
-              />
-            </template>
-          </div>
+                #actions
+              >
+                <all-events-toggle
+                  :model-value="purpose(key)?.allEvents === true"
+                  :disable="!canEdit"
+                  @update:model-value="(v) => setAllEvents(purpose(key), v)"
+                />
+              </template>
+              <template
+                v-if="purpose(key)"
+                #default
+              >
+                <q-select
+                  :model-value="purpose(key)?.legalBasis"
+                  :options="legalBasisOptions"
+                  :label="t('field.legalBasis')"
+                  emit-value
+                  map-options
+                  dense
+                  outlined
+                  :disable="!canEdit"
+                  @update:model-value="(v) => setLegalBasis(key, v)"
+                />
+                <translated-input
+                  v-if="purpose(key)?.legalBasis === 'legitimate_interests'"
+                  :model-value="purpose(key)?.legitimateInterest"
+                  :label="t('field.legitimateInterest')"
+                  :locales
+                  always
+                  dense
+                  outlined
+                  :disable="!canEdit"
+                  class="q-mt-xs"
+                  @update:model-value="(v) => setLegitimateInterest(key, v)"
+                />
+                <div
+                  v-if="purpose(key)?.legalBasis === 'consent'"
+                  class="text-caption text-on-surface-variant q-mt-xs"
+                >
+                  {{ gt('privacy.editor.field.consentQuestion') }}
+                </div>
+              </template>
+            </privacy-entry-row>
+          </q-card>
 
           <div class="q-mt-lg">
             <div class="text-body2 text-weight-medium">
@@ -402,6 +271,11 @@
                     :disable="!canEdit"
                     class="col"
                     @update:model-value="(v) => setEntryLabel(entry, v)"
+                  />
+                  <all-events-toggle
+                    :model-value="entry.allEvents === true"
+                    :disable="!canEdit"
+                    @update:model-value="(v) => setAllEvents(entry, v)"
                   />
                   <m-btn
                     flat
@@ -442,15 +316,6 @@
                 >
                   {{ gt('privacy.editor.field.consentQuestion') }}
                 </div>
-                <q-checkbox
-                  v-if="entry"
-                  :model-value="entry?.allEvents === true"
-                  :label="t('field.allEvents')"
-                  dense
-                  :disable="!canEdit"
-                  class=""
-                  @update:model-value="(v) => setAllEvents(entry, v)"
-                />
               </q-card-section>
             </q-card>
 
@@ -461,6 +326,168 @@
               color="primary"
               :disable="!canEdit"
               @click="addCustomPurpose"
+            />
+          </div>
+
+          <q-stepper-navigation>
+            <m-btn
+              :label="t('action.next')"
+              color="primary"
+              @click="step = 3"
+            />
+            <m-btn
+              :label="t('action.back')"
+              flat
+              @click="step = 1"
+            />
+          </q-stepper-navigation>
+        </q-step>
+
+        <!-- 3 -->
+        <q-step
+          :name="3"
+          :title="t('step.data.title')"
+          :caption="sectionCaption('data', t('step.data.caption'))"
+          icon="inventory_2"
+          header-nav
+          :error="hasVisitedBeyond(3) && sectionGaps('data').length > 0"
+          :done="step > 3 && sectionGaps('data').length === 0"
+        >
+          <p class="text-body2">{{ t('step.data.hint') }}</p>
+
+          <div
+            v-for="group in categoryGroups"
+            :key="group.key"
+            class="q-mb-md"
+          >
+            <div class="text-body2 text-weight-medium">
+              {{ t(`group.${group.key}.title`) }}
+            </div>
+            <div class="text-caption text-on-surface-variant q-mb-sm">
+              {{ t(`group.${group.key}.hint`) }}
+            </div>
+            <q-card
+              flat
+              bordered
+              class="entry-list"
+            >
+              <privacy-entry-row
+                v-for="key in group.keys"
+                :key="key"
+                :label="gt(`privacy.dataCategory.${key}`)"
+                :selected="hasDataCategory(key)"
+                :disable="!canEdit"
+                @update:selected="(on) => toggleDataCategory(key, on)"
+              >
+                <template
+                  v-if="dataCategory(key)"
+                  #actions
+                >
+                  <all-events-toggle
+                    :model-value="dataCategory(key)?.allEvents === true"
+                    :disable="!canEdit"
+                    @update:model-value="
+                      (v) => setAllEvents(dataCategory(key), v)
+                    "
+                  />
+                </template>
+                <template
+                  v-if="hasDataCategory(key) && hasCategoryDetails(key)"
+                  #default
+                >
+                  <special-category-basis-field
+                    v-if="isSpecialCategory(key)"
+                    :model-value="dataCategory(key)?.specialCategoryBasis"
+                    :can-edit="canEdit"
+                    @update:model-value="(value) => setSpecialBasis(key, value)"
+                  />
+                  <privacy-category-notes
+                    :category-key="key"
+                    class="text-caption text-on-surface-variant q-mt-xs"
+                  />
+                </template>
+              </privacy-entry-row>
+            </q-card>
+          </div>
+
+          <!-- Anything the catalogue is deliberately too coarse for. Set apart
+               from the lists above, because these are the entries the
+               organization is answerable for wording itself. -->
+          <div class="q-mt-lg">
+            <div class="text-body2 text-weight-medium">
+              {{ t('custom.category.title') }}
+            </div>
+            <div class="text-caption text-on-surface-variant q-mb-sm">
+              {{ t('custom.category.hint') }}
+            </div>
+
+            <q-card
+              v-for="entry in customCategories"
+              :key="entry.key"
+              flat
+              bordered
+              class="inset-card q-mb-sm"
+            >
+              <q-card-section class="q-pa-sm">
+                <div class="row items-center no-wrap q-gutter-sm">
+                  <translated-input
+                    :model-value="entry.label"
+                    :label="t('field.customCategoryName')"
+                    :locales
+                    default-untranslated
+                    dense
+                    outlined
+                    hide-bottom-space
+                    :disable="!canEdit"
+                    class="col"
+                    @update:model-value="(v) => setEntryLabel(entry, v)"
+                  />
+                  <all-events-toggle
+                    :model-value="entry.allEvents === true"
+                    :disable="!canEdit"
+                    @update:model-value="(v) => setAllEvents(entry, v)"
+                  />
+                  <m-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    :aria-label="t('action.remove')"
+                    :disable="!canEdit"
+                    @click="removeCategory(entry.key)"
+                  />
+                </div>
+
+                <q-checkbox
+                  :model-value="entry.special === true"
+                  :label="t('field.customCategorySpecial')"
+                  dense
+                  :disable="!canEdit"
+                  class="q-mt-sm"
+                  @update:model-value="(v) => setCustomSpecial(entry, v)"
+                />
+                <div
+                  class="text-caption text-on-surface-variant inset-card__hint"
+                >
+                  {{ t('field.customCategorySpecialHint') }}
+                </div>
+
+                <special-category-basis-field
+                  v-if="entry.special"
+                  v-model="entry.specialCategoryBasis"
+                  :can-edit="canEdit"
+                  class="inset-card__basis q-mt-xs"
+                />
+              </q-card-section>
+            </q-card>
+
+            <m-btn
+              :label="t('action.addCategory')"
+              icon="add"
+              outline
+              color="primary"
+              :disable="!canEdit"
+              @click="addCustomCategory"
             />
           </div>
 
@@ -490,46 +517,111 @@
         >
           <p class="text-body2">{{ t('step.recipients.hint') }}</p>
 
-          <div
-            v-for="key in recipientKeys"
-            :key="key"
-            class="q-mb-xs"
+          <q-card
+            flat
+            bordered
+            class="entry-list"
           >
-            <q-checkbox
-              :model-value="hasRecipient(key)"
+            <privacy-entry-row
+              v-for="key in recipientKeys"
+              :key="key"
               :label="gt(`privacy.recipient.${key}`)"
-              :disable="!canEdit || isAlwaysRecipient(key)"
-              @update:model-value="(on) => toggleRecipient(key, on)"
-            />
-            <div
-              v-if="isAlwaysRecipient(key)"
-              class="text-caption text-on-surface-variant recipient-note"
+              :caption="
+                isAlwaysRecipient(key) ? t('field.recipientAlways') : null
+              "
+              :selected="hasRecipient(key)"
+              :locked="isAlwaysRecipient(key)"
+              :disable="!canEdit"
+              @update:selected="(on) => toggleRecipient(key, on)"
             >
-              {{ t('field.recipientAlways') }}
+              <template
+                v-if="recipient(key) && !isAlwaysRecipient(key)"
+                #actions
+              >
+                <all-events-toggle
+                  :model-value="recipient(key)?.allEvents === true"
+                  :disable="!canEdit"
+                  @update:model-value="(v) => setAllEvents(recipient(key), v)"
+                />
+              </template>
+              <!-- No name to ask for: the event team is the author's own, and
+                   the platform is this one, whose name we already know. -->
+              <template
+                v-if="hasRecipient(key) && !isAlwaysRecipient(key)"
+                #default
+              >
+                <q-input
+                  :model-value="recipient(key)?.name ?? ''"
+                  :label="gt('privacy.editor.field.recipientName')"
+                  :hint="gt('privacy.editor.field.recipientNameHint')"
+                  dense
+                  outlined
+                  :disable="!canEdit"
+                  @update:model-value="(v) => setRecipientName(key, String(v))"
+                />
+              </template>
+            </privacy-entry-row>
+          </q-card>
+
+          <!-- Anyone the catalogue has no word for: a school, a sports club, a
+               venue's security. Named per locale, like custom categories. -->
+          <div class="q-mt-lg">
+            <div class="text-body2 text-weight-medium">
+              {{ t('custom.recipient.title') }}
             </div>
-            <!-- No name to ask for: the event team is the author's own, and the
-                 platform is this one, whose name we already know. -->
-            <q-input
-              v-if="hasRecipient(key) && !isAlwaysRecipient(key)"
-              :model-value="recipient(key)?.name ?? ''"
-              :label="gt('privacy.editor.field.recipientName')"
-              :hint="gt('privacy.editor.field.recipientNameHint')"
-              dense
-              outlined
+            <div class="text-caption text-on-surface-variant q-mb-sm">
+              {{ t('custom.recipient.hint') }}
+            </div>
+
+            <q-card
+              v-for="entry in customRecipients"
+              :key="entry.key"
+              flat
+              bordered
+              class="inset-card q-mb-sm"
+            >
+              <q-card-section class="q-pa-sm">
+                <div class="row items-center no-wrap q-gutter-sm">
+                  <translated-input
+                    :model-value="entry.label"
+                    :label="t('field.customRecipientName')"
+                    :locales
+                    default-untranslated
+                    dense
+                    outlined
+                    hide-bottom-space
+                    :disable="!canEdit"
+                    class="col"
+                    @update:model-value="(v) => setEntryLabel(entry, v)"
+                  />
+                  <all-events-toggle
+                    :model-value="entry.allEvents === true"
+                    :disable="!canEdit"
+                    @update:model-value="(v) => setAllEvents(entry, v)"
+                  />
+                  <m-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    :aria-label="t('action.remove')"
+                    :disable="!canEdit"
+                    @click="removeRecipient(entry.key)"
+                  />
+                </div>
+              </q-card-section>
+            </q-card>
+
+            <m-btn
+              :label="t('action.addRecipient')"
+              icon="add"
+              outline
+              color="primary"
               :disable="!canEdit"
-              class="q-ml-lg q-mt-xs"
-              @update:model-value="(v) => setRecipientName(key, String(v))"
-            />
-            <q-checkbox
-              v-if="!isAlwaysRecipient(key) && recipient(key)"
-              :model-value="recipient(key)?.allEvents === true"
-              :label="t('field.allEvents')"
-              dense
-              :disable="!canEdit"
-              class="q-ml-lg q-mt-xs"
-              @update:model-value="(v) => setAllEvents(recipient(key), v)"
+              @click="addCustomRecipient"
             />
           </div>
+
           <q-stepper-navigation>
             <m-btn
               :label="t('action.next')"
@@ -543,7 +635,6 @@
             />
           </q-stepper-navigation>
         </q-step>
-
         <!-- 5 -->
         <q-step
           :name="5"
@@ -679,8 +770,10 @@ import {
   emptyPrivacyNoticeContent,
   gapsInSection,
   isCustomKey,
+  isAdvisorySpecialCategory,
   isAlwaysRecipient,
   isSpecialCategory,
+  requiresConsentQuestion,
   privacyNoticeCompleteness,
   supervisoryAuthorityFor,
   type LegalBasisKey,
@@ -692,7 +785,9 @@ import {
   type PrivacyPurposeEntry,
   type PrivacyPurposeKey,
   type PrivacyPurposeRef,
+  type PrivacyRecipientEntry,
   type PrivacyRecipientKey,
+  type PrivacyRecipientRef,
   type PublishedPrivacyNotice,
   type SpecialCategoryBasisKey,
 } from '@camp-registration/common/privacy';
@@ -701,7 +796,9 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
+import AllEventsToggle from '@/components/privacy/AllEventsToggle.vue';
 import PrivacyCategoryNotes from '@/components/privacy/PrivacyCategoryNotes.vue';
+import PrivacyEntryRow from '@/components/privacy/PrivacyEntryRow.vue';
 import PrivacyPreviewDialog from '@/components/privacy/PrivacyPreviewDialog.vue';
 import PrivacyPublishCard from '@/components/privacy/PrivacyPublishCard.vue';
 import SpecialCategoryBasisField from '@/components/privacy/SpecialCategoryBasisField.vue';
@@ -750,7 +847,25 @@ const hasUnpublishedChanges = computed(
   () => JSON.stringify(content.value) !== publishedSnapshot.value,
 );
 
-const dataCategoryKeys = PRIVACY_DATA_CATEGORY_KEYS;
+// Special categories apart: they are the ones that need an Art. 9 basis.
+const categoryGroups = [
+  {
+    key: 'general',
+    keys: PRIVACY_DATA_CATEGORY_KEYS.filter((key) => !isSpecialCategory(key)),
+  },
+  {
+    key: 'special',
+    keys: PRIVACY_DATA_CATEGORY_KEYS.filter((key) => isSpecialCategory(key)),
+  },
+] as const;
+
+function hasCategoryDetails(key: PrivacyDataCategoryKey): boolean {
+  return (
+    isSpecialCategory(key) ||
+    isAdvisorySpecialCategory(key) ||
+    requiresConsentQuestion(key)
+  );
+}
 const purposeKeys = PRIVACY_PURPOSE_KEYS;
 const recipientKeys = PRIVACY_RECIPIENT_KEYS;
 
@@ -798,8 +913,8 @@ function sectionGaps(section: PrivacyNoticeSection) {
 
 /** Which step edits a section, so a caption can stay quiet until it is opened. */
 const SECTION_STEPS: Record<PrivacyNoticeSection, number> = {
-  data: 2,
-  purposes: 3,
+  purposes: 2,
+  data: 3,
   recipients: 4,
   retention: 5,
   free_text: 0,
@@ -950,7 +1065,7 @@ function setCustomSpecial(entry: PrivacyDataCategoryEntry, value: boolean) {
   entry.specialCategoryBasis = value ? DEFAULT_SPECIAL_CATEGORY_BASIS : null;
 }
 function setEntryLabel(
-  entry: PrivacyDataCategoryEntry | PrivacyPurposeEntry,
+  entry: PrivacyDataCategoryEntry | PrivacyPurposeEntry | PrivacyRecipientEntry,
   value: unknown,
 ) {
   entry.label = asTranslatable(value);
@@ -1028,6 +1143,22 @@ function setAllEvents(
   } else {
     delete entry.allEvents;
   }
+}
+
+const customRecipients = computed(() =>
+  content.value.recipients.filter((entry) => isCustomKey(entry.key)),
+);
+
+function addCustomRecipient() {
+  content.value.recipients.push({
+    key: nextCustomKey(content.value.recipients),
+    label: null,
+  });
+}
+function removeRecipient(key: PrivacyRecipientRef) {
+  content.value.recipients = content.value.recipients.filter(
+    (entry) => entry.key !== key,
+  );
 }
 
 function recipient(key: PrivacyRecipientKey) {
@@ -1260,13 +1391,16 @@ step:
     caption: 'Recipients'
     hint: 'Some are already ticked because of the purposes you chose — adjust anything that does not fit.'
   retention:
-    title: 'How long you keep it'
+    title: 'How long you keep it, and where it goes'
     caption: 'Retention, transfers, DPO'
   additional:
     title: 'Anything else'
     caption: 'Optional free text'
     hint: 'Only for processing the options above cannot describe. Text you write here is not translated for you.'
 custom:
+  recipient:
+    title: 'Someone else?'
+    hint: 'Add a recipient the list above does not cover — a school, a sports club, a venue’s security.'
   category:
     title: 'Something else?'
     hint: 'Add a category the list above does not cover. Keep it at the level of a category, not a single form field.'
@@ -1274,6 +1408,7 @@ custom:
     title: 'Something else?'
     hint: 'Add a purpose the list above does not cover.'
 field:
+  customRecipientName: 'Recipient'
   customCategoryName: 'Name of the category'
   customCategorySpecial: 'Sensitive (Art. 9 GDPR)'
   customCategorySpecialHint: 'Health, disability, religion, ethnicity, politics, trade-union membership, sex life or biometric data.'
@@ -1281,7 +1416,6 @@ field:
   legalBasis: 'Legal basis'
   legitimateInterest: 'Describe your legitimate interest'
   recipientAlways: 'Always a recipient.'
-  allEvents: 'Applies to every event — events cannot exclude it'
   additionalPlaceholder: 'Additional privacy information…'
 status:
   unpublishedDetail: 'Nothing is shown to registrants yet, and your organisation cannot be verified until you publish.'
@@ -1289,6 +1423,7 @@ completeness:
   title: 'Completeness'
   ok: 'All required information is present.'
 action:
+  addRecipient: 'Add a recipient'
   next: 'Continue'
   back: 'Back'
   addCategory: 'Add another category'
@@ -1298,6 +1433,14 @@ notify:
   rejected: 'Published. This organization is still rejected — publishing alone does not request a new review.'
   rejectedAction: 'Overview'
   publishFailed: 'Publishing failed'
+group:
+  general:
+    title: 'General data'
+    hint: 'Everyday details a registration needs.'
+  special:
+    title: 'Special categories (Art. 9 GDPR)'
+    hint: 'Health, religion and the like need an extra legal basis — usually a consent question in the form.'
+readOnly: 'You can view this privacy information but not change it. Administrators of the organization can.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -1343,13 +1486,16 @@ step:
     caption: 'Empfänger'
     hint: 'Einiges ist bereits angehakt, weil es zu den gewählten Zwecken gehört – passe an, was nicht zutrifft.'
   retention:
-    title: 'Wie lange die Daten gespeichert werden'
+    title: 'Speicherdauer und Übermittlung'
     caption: 'Speicherdauer, Übermittlung, Datenschutzbeauftragte'
   additional:
     title: 'Sonstiges'
     caption: 'Optionaler Freitext'
     hint: 'Nur für Verarbeitungen, die sich mit den Optionen oben nicht beschreiben lassen. Hier eingegebener Text wird nicht automatisch übersetzt.'
 custom:
+  recipient:
+    title: 'Jemand anderes?'
+    hint: 'Ergänze einen Empfänger, den die Liste oben nicht abdeckt – eine Schule, einen Sportverein, den Sicherheitsdienst einer Unterkunft.'
   category:
     title: 'Etwas anderes?'
     hint: 'Ergänze eine Kategorie, die in der Liste oben fehlt. Beschreibe dabei eine Kategorie, nicht ein einzelnes Formularfeld.'
@@ -1357,6 +1503,7 @@ custom:
     title: 'Etwas anderes?'
     hint: 'Ergänze einen Zweck, der in der Liste oben fehlt.'
 field:
+  customRecipientName: 'Empfänger'
   customCategoryName: 'Bezeichnung der Kategorie'
   customCategorySpecial: 'Besondere Kategorie (Art. 9 DSGVO)'
   customCategorySpecialHint: 'Gesundheit, Behinderung, Religion, ethnische Herkunft, politische Meinung, Gewerkschaftszugehörigkeit, Sexualleben oder biometrische Daten.'
@@ -1364,7 +1511,6 @@ field:
   legalBasis: 'Rechtsgrundlage'
   legitimateInterest: 'Das berechtigte Interesse beschreiben'
   recipientAlways: 'Immer Empfänger.'
-  allEvents: 'Gilt für alle Veranstaltungen – Veranstaltungen können es nicht ausschließen'
   additionalPlaceholder: 'Weitere Datenschutzinformationen…'
 status:
   unpublishedDetail: 'Anmeldende sehen noch nichts, und die Organisation kann bis zur Veröffentlichung nicht verifiziert werden.'
@@ -1372,6 +1518,7 @@ completeness:
   title: 'Vollständigkeit'
   ok: 'Alle erforderlichen Angaben liegen vor.'
 action:
+  addRecipient: 'Empfänger hinzufügen'
   next: 'Weiter'
   back: 'Zurück'
   addCategory: 'Weitere Kategorie hinzufügen'
@@ -1381,6 +1528,14 @@ notify:
   rejected: 'Veröffentlicht. Diese Organisation ist weiterhin abgelehnt – das Veröffentlichen allein fordert keine neue Prüfung an.'
   rejectedAction: 'Übersicht'
   publishFailed: 'Veröffentlichen fehlgeschlagen'
+group:
+  general:
+    title: 'Allgemeine Daten'
+    hint: 'Alltägliche Angaben, die eine Anmeldung braucht.'
+  special:
+    title: 'Besondere Kategorien (Art. 9 DSGVO)'
+    hint: 'Gesundheit, Religion und Ähnliches brauchen eine zusätzliche Rechtsgrundlage – meist eine Einwilligungsfrage im Formular.'
+readOnly: 'Du kannst diese Datenschutzinformationen ansehen, aber nicht ändern. Das können Administrator:innen der Organisation.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -1426,13 +1581,16 @@ step:
     caption: 'Destinataires'
     hint: 'Certaines cases sont déjà cochées en raison des finalités retenues — ajustez ce qui ne convient pas.'
   retention:
-    title: 'Combien de temps vous les conservez'
+    title: 'Durée de conservation et transferts'
     caption: 'Conservation, transferts, DPO'
   additional:
     title: 'Autres informations'
     caption: 'Texte libre facultatif'
     hint: "Uniquement pour les traitements que les options ci-dessus ne peuvent décrire. Le texte saisi ici n'est pas traduit automatiquement."
 custom:
+  recipient:
+    title: 'Quelqu’un d’autre ?'
+    hint: 'Ajoute un destinataire que la liste ci-dessus ne couvre pas – une école, un club sportif, la sécurité d’un lieu.'
   category:
     title: 'Autre chose ?'
     hint: "Ajoutez une catégorie que la liste ci-dessus ne couvre pas. Restez au niveau d'une catégorie, pas d'un champ de formulaire."
@@ -1440,6 +1598,7 @@ custom:
     title: 'Autre chose ?'
     hint: 'Ajoutez une finalité que la liste ci-dessus ne couvre pas.'
 field:
+  customRecipientName: 'Destinataire'
   customCategoryName: 'Nom de la catégorie'
   customCategorySpecial: 'Donnée sensible (art. 9 RGPD)'
   customCategorySpecialHint: 'Santé, handicap, religion, origine ethnique, opinions politiques, appartenance syndicale, vie sexuelle ou données biométriques.'
@@ -1447,7 +1606,6 @@ field:
   legalBasis: 'Base légale'
   legitimateInterest: 'Décrivez votre intérêt légitime'
   recipientAlways: 'Toujours destinataire.'
-  allEvents: "S'applique à tous les événements — un événement ne peut pas l'exclure"
   additionalPlaceholder: 'Informations complémentaires…'
 status:
   unpublishedDetail: "Rien n'est encore montré et votre organisation ne peut pas être vérifiée tant que vous n'avez pas publié."
@@ -1455,6 +1613,7 @@ completeness:
   title: 'Exhaustivité'
   ok: 'Toutes les informations requises sont présentes.'
 action:
+  addRecipient: 'Ajouter un destinataire'
   next: 'Continuer'
   back: 'Retour'
   addCategory: 'Ajouter une catégorie'
@@ -1464,6 +1623,14 @@ notify:
   rejected: 'Publié. Cette organisation reste refusée : la publication seule ne demande pas de nouvelle vérification.'
   rejectedAction: 'Aperçu'
   publishFailed: 'Échec de la publication'
+group:
+  general:
+    title: 'Données générales'
+    hint: 'Les informations courantes dont une inscription a besoin.'
+  special:
+    title: 'Catégories particulières (art. 9 RGPD)'
+    hint: 'La santé, la religion et similaires exigent une base juridique supplémentaire – le plus souvent une question de consentement dans le formulaire.'
+readOnly: "Tu peux consulter ces informations sur la protection des données, mais pas les modifier. Les administrateurs de l'organisation le peuvent."
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1509,13 +1676,16 @@ step:
     caption: 'Příjemci'
     hint: 'Něco je už zaškrtnuté, protože to patří ke zvoleným účelům – uprav, co nesedí.'
   retention:
-    title: 'Jak dlouho je uchováváte'
+    title: 'Doba uchování a předávání'
     caption: 'Uchování, předávání, pověřenec'
   additional:
     title: 'Cokoli dalšího'
     caption: 'Volitelný volný text'
     hint: 'Jen pro zpracování, které volbami výše popsat nelze. Zde zadaný text se automaticky nepřekládá.'
 custom:
+  recipient:
+    title: 'Někdo jiný?'
+    hint: 'Doplň příjemce, kterého seznam výše nepokrývá – školu, sportovní klub, ostrahu ubytování.'
   category:
     title: 'Něco dalšího?'
     hint: 'Přidej kategorii, kterou seznam výše nepokrývá. Zůstaň na úrovni kategorie, ne jednotlivého pole formuláře.'
@@ -1523,6 +1693,7 @@ custom:
     title: 'Něco dalšího?'
     hint: 'Přidej účel, který seznam výše nepokrývá.'
 field:
+  customRecipientName: 'Příjemce'
   customCategoryName: 'Název kategorie'
   customCategorySpecial: 'Citlivý údaj (čl. 9 GDPR)'
   customCategorySpecialHint: 'Zdraví, postižení, náboženství, etnický původ, politické názory, členství v odborech, sexuální život nebo biometrické údaje.'
@@ -1530,7 +1701,6 @@ field:
   legalBasis: 'Právní základ'
   legitimateInterest: 'Popiš váš oprávněný zájem'
   recipientAlways: 'Vždy příjemce.'
-  allEvents: 'Platí pro všechny akce – akce to nemohou vyloučit'
   additionalPlaceholder: 'Další informace o ochraně osobních údajů…'
 status:
   unpublishedDetail: 'Přihlašující zatím nic nevidí a organizaci nelze do zveřejnění ověřit.'
@@ -1538,6 +1708,7 @@ completeness:
   title: 'Úplnost'
   ok: 'Všechny povinné údaje jsou vyplněny.'
 action:
+  addRecipient: 'Přidat příjemce'
   next: 'Pokračovat'
   back: 'Zpět'
   addCategory: 'Přidat další kategorii'
@@ -1547,6 +1718,14 @@ notify:
   rejected: 'Zveřejněno. Tato organizace je stále zamítnutá — samotné zveřejnění o nové ověření nežádá.'
   rejectedAction: 'Přehled'
   publishFailed: 'Publikování se nezdařilo'
+group:
+  general:
+    title: 'Obecné údaje'
+    hint: 'Běžné údaje, které registrace potřebuje.'
+  special:
+    title: 'Zvláštní kategorie (čl. 9 GDPR)'
+    hint: 'Zdraví, náboženství a podobné vyžadují další právní základ – obvykle otázku na souhlas ve formuláři.'
+readOnly: 'Tyto informace o ochraně údajů můžeš zobrazit, ale ne měnit. To mohou administrátoři organizace.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1592,13 +1771,16 @@ step:
     caption: 'Odbiorcy'
     hint: 'Część jest już zaznaczona, bo wynika z wybranych celów – dostosuj to, co nie pasuje.'
   retention:
-    title: 'Jak długo je przechowujecie'
+    title: 'Okres przechowywania i przekazywanie'
     caption: 'Przechowywanie, przekazywanie, IOD'
   additional:
     title: 'Coś jeszcze'
     caption: 'Opcjonalny tekst'
     hint: 'Tylko dla przetwarzania, którego nie da się opisać powyższymi opcjami. Wpisany tu tekst nie jest tłumaczony automatycznie.'
 custom:
+  recipient:
+    title: 'Ktoś inny?'
+    hint: 'Dodaj odbiorcę, którego nie obejmuje lista powyżej – szkołę, klub sportowy, ochronę obiektu.'
   category:
     title: 'Coś jeszcze?'
     hint: 'Dodaj kategorię, której nie obejmuje powyższa lista. Pozostań na poziomie kategorii, nie pojedynczego pola formularza.'
@@ -1606,6 +1788,7 @@ custom:
     title: 'Coś jeszcze?'
     hint: 'Dodaj cel, którego nie obejmuje powyższa lista.'
 field:
+  customRecipientName: 'Odbiorca'
   customCategoryName: 'Nazwa kategorii'
   customCategorySpecial: 'Dane wrażliwe (art. 9 RODO)'
   customCategorySpecialHint: 'Zdrowie, niepełnosprawność, religia, pochodzenie etniczne, poglądy polityczne, przynależność związkowa, życie seksualne lub dane biometryczne.'
@@ -1613,7 +1796,6 @@ field:
   legalBasis: 'Podstawa prawna'
   legitimateInterest: 'Opisz Wasz prawnie uzasadniony interes'
   recipientAlways: 'Zawsze odbiorca.'
-  allEvents: 'Dotyczy wszystkich wydarzeń — wydarzenie nie może tego wykluczyć'
   additionalPlaceholder: 'Dodatkowe informacje o ochronie danych…'
 status:
   unpublishedDetail: 'Zgłaszający jeszcze nic nie widzą, a organizacji nie można zweryfikować do czasu publikacji.'
@@ -1621,6 +1803,7 @@ completeness:
   title: 'Kompletność'
   ok: 'Wszystkie wymagane informacje są uzupełnione.'
 action:
+  addRecipient: 'Dodaj odbiorcę'
   next: 'Dalej'
   back: 'Wstecz'
   addCategory: 'Dodaj kolejną kategorię'
@@ -1630,4 +1813,12 @@ notify:
   rejected: 'Opublikowano. Ta organizacja nadal jest odrzucona — sama publikacja nie zgłasza prośby o ponowną weryfikację.'
   rejectedAction: 'Przegląd'
   publishFailed: 'Publikacja nie powiodła się'
+group:
+  general:
+    title: 'Dane ogólne'
+    hint: 'Codzienne informacje potrzebne do rejestracji.'
+  special:
+    title: 'Szczególne kategorie (art. 9 RODO)'
+    hint: 'Zdrowie, religia i podobne wymagają dodatkowej podstawy prawnej – zwykle pytania o zgodę w formularzu.'
+readOnly: 'Możesz przeglądać te informacje o ochronie danych, ale nie możesz ich zmieniać. Mogą to zrobić administratorzy organizacji.'
 </i18n>

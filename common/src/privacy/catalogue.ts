@@ -85,6 +85,12 @@ export const PRIVACY_RECIPIENT_KEYS = [
   'funding_body',
   'payment_provider',
   'public_authority',
+  // A co-organizer or partner abroad; its `country` drives the transfer notice.
+  'partner_organization',
+  // Lists shared with other participants, e.g. for carpooling.
+  'participants',
+  // The organizer's own processors: mail, cloud storage, accounting.
+  'it_service_provider',
 ] as const;
 
 export type PrivacyRecipientKey = (typeof PRIVACY_RECIPIENT_KEYS)[number];
@@ -104,7 +110,7 @@ export const ALWAYS_RECIPIENT_KEYS = [
   'platform_operator',
 ] as const satisfies readonly PrivacyRecipientKey[];
 
-export function isAlwaysRecipient(key: PrivacyRecipientKey): boolean {
+export function isAlwaysRecipient(key: PrivacyRecipientRef): boolean {
   return (ALWAYS_RECIPIENT_KEYS as readonly string[]).includes(key);
 }
 
@@ -225,6 +231,7 @@ export function nextCustomKey(existing: readonly { key: string }[]): CustomKey {
 
 export type PrivacyPurposeRef = PrivacyPurposeKey | CustomKey;
 export type PrivacyDataCategoryRef = PrivacyDataCategoryKey | CustomKey;
+export type PrivacyRecipientRef = PrivacyRecipientKey | CustomKey;
 
 /**
  * Categories that are special under Art. 9 in every case, and so always pull in

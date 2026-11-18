@@ -45,6 +45,10 @@ export default {
     funding_body: "L'organisme financeur",
     medical_provider: 'Les médecins et les services de secours',
     public_authority: 'Les autorités publiques',
+    partner_organization: 'Une organisation partenaire ou co-organisatrice',
+    participants: 'Les autres participants',
+    it_service_provider:
+      'Les prestataires informatiques (p. ex. e-mail, stockage en ligne, comptabilité)',
     payment_provider: 'Le prestataire de paiement',
     platform_operator: "L'exploitant de cette plateforme d'inscription",
   },
@@ -152,6 +156,8 @@ export default {
     special_category_basis:
       "Les données sensibles n'ont pas de base légale au titre de l'art. 9",
     custom_category_label: "Une catégorie que vous avez ajoutée n'a pas de nom",
+    custom_recipient_label:
+      "Un destinataire que vous avez ajouté n'a pas de nom",
     automated_details:
       "Une décision automatisée est déclarée mais sa logique n'est pas expliquée",
     recipients: "Aucun destinataire n'a été indiqué",

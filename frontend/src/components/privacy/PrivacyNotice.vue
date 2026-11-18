@@ -93,7 +93,7 @@
             v-for="recipient in builderNotice.recipients"
             :key="recipient.key"
           >
-            {{ gt(`privacy.recipient.${recipient.key}`) }}
+            {{ recipientLabel(recipient) }}
             <template v-if="recipient.name"> ({{ recipient.name }}) </template>
           </li>
         </ul>
@@ -291,8 +291,13 @@ const { t } = useI18n();
 // The catalogue vocabulary and country names are global
 const { t: gt } = useI18n({ useScope: 'global' });
 const { to } = useObjectTranslation();
-const { categoryLabel, purposeLabel, exceptionLabel, countryLabel } =
-  usePrivacyLabels();
+const {
+  categoryLabel,
+  purposeLabel,
+  exceptionLabel,
+  recipientLabel,
+  countryLabel,
+} = usePrivacyLabels();
 
 const countryName = computed<string>(() =>
   countryLabel(props.notice.controller.country),

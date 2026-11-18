@@ -21,6 +21,7 @@ export type PrivacyNoticeGap =
   | 'data_categories'
   | 'special_category_basis'
   | 'custom_category_label'
+  | 'custom_recipient_label'
   | 'recipients'
   | 'retention'
   | 'retention_exception'
@@ -50,6 +51,7 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   data_categories: 'data',
   special_category_basis: 'data',
   custom_category_label: 'data',
+  custom_recipient_label: 'recipients',
   recipients: 'recipients',
   retention: 'retention',
   retention_exception: 'retention',
@@ -156,6 +158,14 @@ export function privacyNoticeCompleteness(
   // registration, so an empty list is an oversight rather than a claim.
   if (content.recipients.length === 0) {
     gaps.push('recipients');
+  }
+
+  if (
+    content.recipients.some(
+      (recipient) => isCustomKey(recipient.key) && isBlank(recipient.label),
+    )
+  ) {
+    gaps.push('custom_recipient_label');
   }
 
   if (!content.retention || content.retention.months <= 0) {

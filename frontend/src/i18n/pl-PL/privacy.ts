@@ -46,6 +46,10 @@ export default {
     funding_body: 'Podmiot finansujący',
     medical_provider: 'Lekarze i służby ratunkowe',
     public_authority: 'Organy publiczne',
+    partner_organization: 'Organizacja partnerska lub współorganizująca',
+    participants: 'Inni uczestnicy',
+    it_service_provider:
+      'Dostawcy usług IT (np. poczta e-mail, chmura, księgowość)',
     payment_provider: 'Dostawca usług płatniczych',
     platform_operator: 'Operator tej platformy zgłoszeniowej',
   },
@@ -155,6 +159,7 @@ export default {
     special_category_basis:
       'Szczególne kategorie danych nie mają podstawy prawnej z art. 9',
     custom_category_label: 'Dodana przez Ciebie kategoria nie ma nazwy',
+    custom_recipient_label: 'Dodany przez Ciebie odbiorca nie ma nazwy',
     automated_details:
       'Zadeklarowano zautomatyzowane podejmowanie decyzji, ale nie wyjaśniono jego zasad',
     recipients: 'Nie wskazano żadnych odbiorców',

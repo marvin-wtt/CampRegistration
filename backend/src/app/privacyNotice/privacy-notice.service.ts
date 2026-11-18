@@ -502,6 +502,7 @@ export class PrivacyNoticeService extends BaseService {
   ): PrivacyRecipientEntry[] {
     return recipients.map((recipient) => ({
       ...recipient,
+      label: this.sanitizePlainTranslatable(recipient.label),
       name: recipient.name ? sanitizePlainText(recipient.name) : recipient.name,
     }));
   }
