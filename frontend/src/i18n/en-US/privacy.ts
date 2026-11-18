@@ -124,7 +124,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Legal basis',
-      art9Other: 'Use a different legal basis',
       art9Advisory:
         'Not sensitive in itself. If your form offers halal or kosher options, also tick “Religious affiliation”; if it collects allergies, tick “Allergies”.',
       consentQuestion:
@@ -134,10 +133,6 @@ export default {
         'Naming the actual recipient is clearer than the category alone.',
     },
     /** Which of the two authors an entry came from. */
-    origin: {
-      organization: 'From your organisation',
-      event: 'Added here',
-    },
     action: {
       publish: 'Publish',
       preview: 'Preview',

@@ -7,6 +7,7 @@
     :disable
     dense
     no-caps
+    no-wrap
     rounded
     unelevated
     size="sm"
@@ -54,6 +55,29 @@ const options = computed(() => [
 <style lang="scss" scoped>
 .inherited-entry-toggle {
   flex-shrink: 0;
+
+  // Narrow rows (PrivacyEntryRow is the container): full width, fixed equal
+  // segments. The fill marks the selection; the checkmark would not fit.
+  @container (max-width: 34rem) {
+    flex: 1 1 auto;
+    width: 100%;
+    grid-auto-columns: minmax(0, 1fr) !important;
+
+    :deep(.q-btn) {
+      min-width: 0;
+    }
+
+    :deep(.q-btn__content::before),
+    :deep(.q-btn__content::after) {
+      display: none !important;
+    }
+
+    :deep(.q-btn__content > .block) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }
 </style>
 

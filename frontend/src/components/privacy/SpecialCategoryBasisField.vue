@@ -1,38 +1,46 @@
 <template>
-  <!-- Explicit consent is what a event relies on in practice, so it is stated
-       rather than chosen. The four alternatives each need a condition most
-       events do not meet, so they live behind a disclosure with those
-       conditions spelled out — a flat list of five invites picking whichever
-       sounds nicest. -->
-  <div class="art9">
-    <div class="text-caption">
-      {{ t('privacy.editor.field.art9Basis') }}:
-      {{ t(`privacy.specialCategoryBasis.${selected}`) }}
-    </div>
-    <q-expansion-item
-      dense
-      :label="t('privacy.editor.field.art9Other')"
-      header-class="text-caption text-primary q-pl-none"
-    >
-      <div
-        v-for="option in options"
-        :key="option.value"
-        class="q-mt-xs"
+  <!-- Explicit consent is what an event relies on in practice, so it comes
+       first and is preselected. Each alternative shows its condition in the
+       menu, so nobody picks one because it merely sounds nicer. -->
+  <q-select
+    :model-value="selected"
+    :options
+    :label="t('privacy.editor.field.art9Basis')"
+    :disable="!canEdit"
+    emit-value
+    map-options
+    outlined
+    dense
+    options-dense
+    popup-content-class="art9__menu"
+    @update:model-value="(value: SpecialCategoryBasisKey) => (model = value)"
+  >
+    <template #option="{ itemProps, opt, selected: active }">
+      <q-item
+        v-bind="itemProps"
+        class="art9__option"
       >
-        <q-radio
-          :model-value="selected"
-          :val="option.value"
-          :label="option.label"
-          dense
-          :disable="!canEdit"
-          @update:model-value="(value) => (model = value)"
-        />
-        <div class="text-caption text-on-surface-variant art9__condition">
-          {{ option.condition }}
-        </div>
-      </div>
-    </q-expansion-item>
-  </div>
+        <q-item-section>
+          <q-item-label>{{ opt.label }}</q-item-label>
+          <q-item-label
+            caption
+            class="art9__condition"
+          >
+            {{ opt.condition }}
+          </q-item-label>
+        </q-item-section>
+        <q-item-section
+          v-if="active"
+          side
+        >
+          <q-icon
+            name="check"
+            color="primary"
+          />
+        </q-item-section>
+      </q-item>
+    </template>
+  </q-select>
 </template>
 
 <script lang="ts" setup>
@@ -67,11 +75,18 @@ const options = computed(() =>
 );
 </script>
 
-<style lang="scss" scoped>
-// Lines the condition up with its radio's label rather than with the radio.
-.art9__condition {
-  margin-left: 2rem;
-  margin-bottom: 0.35rem;
-  max-width: 34rem;
+<style lang="scss">
+// The menu is teleported, so these rules can't be scoped.
+.art9__menu {
+  max-width: min(34rem, calc(100vw - 2rem));
+
+  .art9__option {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .art9__condition {
+    white-space: normal;
+  }
 }
 </style>

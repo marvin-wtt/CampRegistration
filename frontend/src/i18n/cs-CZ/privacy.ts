@@ -111,7 +111,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Právní základ',
-      art9Other: 'Zvolit jiný právní základ',
       art9Advisory:
         'Samo o sobě není citlivé. Pokud formulář nabízí halal nebo košer, zaškrtni také „Náboženské vyznání“; pokud sbírá alergie, zaškrtni „Alergie“.',
       consentQuestion:
@@ -119,10 +118,6 @@ export default {
       recipientName: 'Název (volitelné)',
       recipientNameHint:
         'Uvést konkrétního příjemce je srozumitelnější než jen kategorii.',
-    },
-    origin: {
-      organization: 'Od organizace',
-      event: 'Doplněno zde',
     },
     action: {
       publish: 'Zveřejnit',

@@ -110,7 +110,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Base légale',
-      art9Other: 'Utiliser une autre base légale',
       art9Advisory:
         "Pas sensible en soi. Si votre formulaire propose halal ou casher, cochez aussi « Appartenance religieuse » ; s'il recueille des allergies, cochez « Allergies ».",
       consentQuestion:
@@ -118,10 +117,6 @@ export default {
       recipientName: 'Nom (facultatif)',
       recipientNameHint:
         'Nommer le destinataire réel est plus clair que la seule catégorie.',
-    },
-    origin: {
-      organization: "De l'organisation",
-      event: 'Ajouté ici',
     },
     action: {
       publish: 'Publier',

@@ -922,6 +922,9 @@ reads tags after the tagging itself.
       (`AllEventsToggle`) instead of a sentence-long checkbox per entry;
     - the event page drops its duplicate list of the organization's entries,
       shows inherited entries inline, and can add purposes of its own;
+    - the event page is one card per topic (`PrivacySection`) with a one-line
+      summary ("2 from your organisation · 1 of this event"); a card lists what
+      applies and keeps the rest of the catalogue behind "Add more";
     - the event page proposes the categories the form's `privacyCategory` tags
       ask for, and says when an undeclared one blocks registrations;
     - both pages say when the viewer can read but not edit.

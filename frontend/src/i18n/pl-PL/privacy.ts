@@ -113,7 +113,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Podstawa prawna',
-      art9Other: 'Wybierz inną podstawę prawną',
       art9Advisory:
         'Same w sobie nie są wrażliwe. Jeśli formularz oferuje opcje halal lub koszerne, zaznacz też „Przynależność religijna”; jeśli zbiera alergie, zaznacz „Alergie”.',
       consentQuestion:
@@ -121,10 +120,6 @@ export default {
       recipientName: 'Nazwa (opcjonalnie)',
       recipientNameHint:
         'Wskazanie konkretnego odbiorcy jest jaśniejsze niż sama kategoria.',
-    },
-    origin: {
-      organization: 'Od organizacji',
-      event: 'Dodano tutaj',
     },
     action: {
       publish: 'Opublikuj',

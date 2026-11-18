@@ -4,55 +4,60 @@
        flow, and the details of a chosen entry sit indented under its label. -->
   <div
     class="privacy-entry"
-    :class="{ 'privacy-entry--excluded': excluded }"
+    :class="{
+      'privacy-entry--active': inherited || selected,
+      'privacy-entry--excluded': excluded,
+    }"
   >
-    <div class="privacy-entry__lead">
-      <q-icon
-        v-if="inherited"
-        name="subdirectory_arrow_right"
-        size="xs"
-        class="text-on-surface-variant"
-      />
-      <q-checkbox
-        v-else
-        :model-value="selected"
-        :disable="disable || locked"
-        dense
-        :aria-label="label"
-        @update:model-value="(value) => emit('update:selected', value)"
-      />
-    </div>
-
-    <div class="privacy-entry__body">
-      <div class="privacy-entry__title">
-        <span class="privacy-entry__label text-body2">{{ label }}</span>
-        <q-chip
-          v-if="special"
+    <div class="privacy-entry__grid">
+      <div class="privacy-entry__lead">
+        <q-icon
+          v-if="inherited"
+          name="subdirectory_arrow_right"
+          size="xs"
+          class="text-on-surface-variant"
+        />
+        <q-checkbox
+          v-else
+          :model-value="selected"
+          :disable="disable || locked"
           dense
-          square
-          class="privacy-entry__chip privacy-entry__chip--special"
+          :aria-label="label"
+          @update:model-value="(value) => emit('update:selected', value)"
+        />
+      </div>
+
+      <div class="privacy-entry__body">
+        <div class="privacy-entry__title">
+          <span class="privacy-entry__label text-body2">{{ label }}</span>
+          <q-chip
+            v-if="special"
+            dense
+            square
+            class="privacy-entry__chip privacy-entry__chip--special"
+          >
+            {{ t('special') }}
+          </q-chip>
+          <slot name="chips" />
+        </div>
+        <div
+          v-if="caption"
+          class="text-caption text-on-surface-variant"
         >
-          {{ t('special') }}
-        </q-chip>
-        <slot name="chips" />
+          {{ caption }}
+        </div>
       </div>
+
+      <div class="privacy-entry__actions">
+        <slot name="actions" />
+      </div>
+
       <div
-        v-if="caption"
-        class="text-caption text-on-surface-variant"
+        v-if="$slots.default"
+        class="privacy-entry__details"
       >
-        {{ caption }}
+        <slot />
       </div>
-    </div>
-
-    <div class="privacy-entry__actions">
-      <slot name="actions" />
-    </div>
-
-    <div
-      v-if="$slots.default"
-      class="privacy-entry__details"
-    >
-      <slot />
     </div>
   </div>
 </template>
@@ -83,15 +88,35 @@ const { t } = useI18n();
 
 <style lang="scss" scoped>
 .privacy-entry {
-  display: grid;
-  grid-template-columns: 2rem 1fr auto;
-  align-items: center;
-  column-gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  border-bottom: 1px solid var(--md3-outline-variant);
+  // Narrow by the room the row actually has, not the window: a side
+  // navigation can leave a desktop window phone-wide.
+  container-type: inline-size;
+  border-radius: 0.75rem;
+  transition: background-color 150ms ease;
 
-  &:last-child {
-    border-bottom: none;
+  // Catalogue entries not chosen stay quiet until hovered.
+  &:hover {
+    background-color: var(--md3-surface-container-high);
+  }
+
+  // Chosen and inherited entries are the content; they get a surface and a
+  // little more room than the catalogue around them.
+  &--active {
+    background-color: var(--md3-surface-container);
+  }
+
+  &--active &__grid {
+    min-height: 3rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 2rem 1fr auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    min-height: 2.5rem;
+    padding: 0.25rem 0.75rem;
   }
 
   &__lead {
@@ -114,12 +139,33 @@ const { t } = useI18n();
     display: flex;
     align-items: center;
     gap: 0.25rem;
+
+    &:empty {
+      display: none;
+    }
   }
 
   &__details {
     grid-column: 2 / 4;
-    padding: 0.25rem 0 0.5rem;
+    padding: 0.5rem 0 0.25rem;
     max-width: 32rem;
+  }
+
+  // Narrow rows: controls and details get the full width under the label.
+  @container (max-width: 34rem) {
+    &__grid {
+      grid-template-columns: 2rem 1fr;
+    }
+
+    &__actions {
+      grid-column: 1 / -1;
+      padding-top: 0.5rem;
+    }
+
+    &__details {
+      grid-column: 1 / -1;
+      max-width: none;
+    }
   }
 
   &__chip {

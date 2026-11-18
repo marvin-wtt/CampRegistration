@@ -114,7 +114,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Rechtsgrundlage',
-      art9Other: 'Andere Rechtsgrundlage wählen',
       art9Advisory:
         'Für sich genommen nicht sensibel. Wenn das Formular halal oder koscher zur Auswahl stellt, wähle zusätzlich „Religionszugehörigkeit“; werden Allergien erfasst, wähle „Allergien“.',
       consentQuestion:
@@ -122,10 +121,6 @@ export default {
       recipientName: 'Name (optional)',
       recipientNameHint:
         'Den konkreten Empfänger zu nennen ist klarer als nur die Kategorie.',
-    },
-    origin: {
-      organization: 'Von der Organisation',
-      event: 'Hier ergänzt',
     },
     action: {
       publish: 'Veröffentlichen',

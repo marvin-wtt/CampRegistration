@@ -41,7 +41,7 @@
            counsel-drafted wording. -->
       <q-card
         flat
-        bordered
+        class="rounded-xl bg-surface-container-low"
       >
         <q-card-section>
           <div class="text-subtitle2 text-weight-bold">
@@ -66,7 +66,7 @@
       <q-card
         v-if="content.mode === 'free_text'"
         flat
-        bordered
+        class="rounded-xl bg-surface-container-low"
       >
         <q-card-section>
           <div class="text-subtitle2 text-weight-bold">
@@ -106,11 +106,10 @@
         vertical
         animated
         flat
-        bordered
         header-nav
         color="primary"
         keep-alive
-        class="privacy-stepper"
+        class="privacy-stepper rounded-xl bg-surface-container-low"
       >
         <!-- 1 -->
         <q-step
@@ -183,11 +182,7 @@
         >
           <p class="text-body2">{{ t('step.purposes.hint') }}</p>
 
-          <q-card
-            flat
-            bordered
-            class="entry-list"
-          >
+          <privacy-entry-list>
             <privacy-entry-row
               v-for="key in purposeKeys"
               :key="key"
@@ -241,7 +236,7 @@
                 </div>
               </template>
             </privacy-entry-row>
-          </q-card>
+          </privacy-entry-list>
 
           <div class="q-mt-lg">
             <div class="text-body2 text-weight-medium">
@@ -366,11 +361,7 @@
             <div class="text-caption text-on-surface-variant q-mb-sm">
               {{ t(`group.${group.key}.hint`) }}
             </div>
-            <q-card
-              flat
-              bordered
-              class="entry-list"
-            >
+            <privacy-entry-list>
               <privacy-entry-row
                 v-for="key in group.keys"
                 :key="key"
@@ -407,7 +398,7 @@
                   />
                 </template>
               </privacy-entry-row>
-            </q-card>
+            </privacy-entry-list>
           </div>
 
           <!-- Anything the catalogue is deliberately too coarse for. Set apart
@@ -517,11 +508,7 @@
         >
           <p class="text-body2">{{ t('step.recipients.hint') }}</p>
 
-          <q-card
-            flat
-            bordered
-            class="entry-list"
-          >
+          <privacy-entry-list>
             <privacy-entry-row
               v-for="key in recipientKeys"
               :key="key"
@@ -561,7 +548,7 @@
                 />
               </template>
             </privacy-entry-row>
-          </q-card>
+          </privacy-entry-list>
 
           <!-- Anyone the catalogue has no word for: a school, a sports club, a
                venue's security. Named per locale, like custom categories. -->
@@ -798,6 +785,7 @@ import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
 import AllEventsToggle from '@/components/privacy/AllEventsToggle.vue';
 import PrivacyCategoryNotes from '@/components/privacy/PrivacyCategoryNotes.vue';
+import PrivacyEntryList from '@/components/privacy/PrivacyEntryList.vue';
 import PrivacyEntryRow from '@/components/privacy/PrivacyEntryRow.vue';
 import PrivacyPreviewDialog from '@/components/privacy/PrivacyPreviewDialog.vue';
 import PrivacyPublishCard from '@/components/privacy/PrivacyPublishCard.vue';
