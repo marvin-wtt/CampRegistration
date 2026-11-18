@@ -160,7 +160,10 @@ import type {
   PayoutDirection,
 } from '@camp-registration/common/entities';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { usePayoutStatus } from '@/composables/payoutStatus';
+import {
+  type PayoutStatusKey,
+  usePayoutStatus,
+} from '@/composables/payoutStatus';
 import { usePermissions } from '@/composables/permissions';
 
 const {
@@ -183,8 +186,23 @@ const { can } = usePermissions();
 const { money } = useFinanceFormat();
 const { status: payoutStatus } = usePayoutStatus();
 
+const STATUS_STYLE: Record<
+  PayoutStatusKey,
+  { color: string; textColor: string; icon?: string }
+> = {
+  outdated: { color: 'error-container', textColor: 'on-error-container' },
+  unsigned: { color: 'tertiary-container', textColor: 'on-tertiary-container' },
+  toPay: { color: 'warning-container', textColor: 'on-warning-container' },
+  toReceive: { color: 'warning-container', textColor: 'on-warning-container' },
+  // Done is quiet: open payouts stand out on a card with many.
+  done: { color: 'transparent', textColor: 'positive', icon: 'check' },
+};
+
 const rows = computed(() =>
-  payouts.map((payout) => ({ payout, status: payoutStatus(payout) })),
+  payouts.map((payout) => {
+    const status = payoutStatus(payout);
+    return { payout, status: { ...status, ...STATUS_STYLE[status.key] } };
+  }),
 );
 
 const initial = computed(() => balance.name.trim().charAt(0).toUpperCase());

@@ -29,18 +29,6 @@ export function payoutStatusKey(payout: Payout): PayoutStatusKey {
   return 'done';
 }
 
-const STATUS_STYLE: Record<
-  PayoutStatusKey,
-  { color: string; textColor: string; icon?: string }
-> = {
-  outdated: { color: 'error-container', textColor: 'on-error-container' },
-  unsigned: { color: 'tertiary-container', textColor: 'on-tertiary-container' },
-  toPay: { color: 'warning-container', textColor: 'on-warning-container' },
-  toReceive: { color: 'warning-container', textColor: 'on-warning-container' },
-  // Done is quiet: open payouts stand out on a card with many.
-  done: { color: 'transparent', textColor: 'positive', icon: 'check' },
-};
-
 /** A payout's state in words, so it reads without tooltips on touch. */
 export function usePayoutStatus() {
   const { t, d } = useI18n({ useScope: 'global' });
@@ -50,7 +38,6 @@ export function usePayoutStatus() {
     return {
       key,
       label: t(`finance.payout.status.${key}`),
-      ...STATUS_STYLE[key],
     };
   }
 
