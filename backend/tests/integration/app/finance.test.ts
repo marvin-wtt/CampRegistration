@@ -9,6 +9,7 @@ import {
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
+import { uploadFile } from './utils/file.js';
 import type { Event } from '#generated/prisma/client.js';
 
 describe('finances', () => {
@@ -49,6 +50,23 @@ describe('finances', () => {
       .expect(201);
 
     return body.data as { id: string; receiptNumber: number };
+  };
+
+  // A PDF linked straight to its expense or payout, stored unless told not to.
+  const attachFile = async (
+    owner: { expenseId: string } | { payoutId: string },
+    stored = true,
+  ) => {
+    const file = await FileFactory.create(
+      'expenseId' in owner
+        ? { expense: { connect: { id: owner.expenseId } } }
+        : { payout: { connect: { id: owner.payoutId } } },
+    );
+    if (stored) {
+      await uploadFile('blank.pdf', file.name);
+    }
+
+    return file;
   };
 
   describe('receipt numbers', () => {
@@ -327,6 +345,84 @@ describe('finances', () => {
         context: { receiptNumber: 1, amount: 4780 },
       });
     });
+
+    it('keeps the payer of a manager who left when sent back unchanged', async () => {
+      const { event, token } = await setup();
+      const counselor = await addManager(event, 'COUNSELOR');
+      const created = await createExpense(event, token, {
+        paidByUserId: counselor.user.id,
+      });
+      await prisma.eventManager.deleteMany({
+        where: { eventId: event.id, userId: counselor.user.id },
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/events/${event.id}/expenses/${created.id}`)
+        .send({ paidByUserId: counselor.user.id, amount: 5000 })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data.paidByName).toBe(counselor.user.name);
+
+      const stranger = await UserFactory.create();
+      await request()
+        .patch(`/api/v1/events/${event.id}/expenses/${created.id}`)
+        .send({ paidByUserId: stranger.id })
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('re-matches a typed payer only when the name changes', async () => {
+      const { event, token } = await setup();
+      const created = await createExpense(event, token, { paidByName: 'Anna' });
+      // A manager named like the typed payer joins afterwards.
+      const anna = await addManager(event, 'COUNSELOR');
+      await prisma.user.update({
+        where: { id: anna.user.id },
+        data: { name: 'Anna' },
+      });
+      const path = `/api/v1/events/${event.id}/expenses/${created.id}`;
+      const payer = async () => {
+        const row = await prisma.expense.findUniqueOrThrow({
+          where: { id: created.id },
+        });
+        return [row.paidByUserId, row.paidByName];
+      };
+
+      await request()
+        .patch(path)
+        .send({ paidByName: 'Anna' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(await payer()).toEqual([null, 'Anna']);
+
+      await request()
+        .patch(path)
+        .send({ paidByName: 'anna' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(await payer()).toEqual([anna.user.id, 'Anna']);
+    });
+
+    it('shows a receipt file to whoever may see its expense', async () => {
+      const { event, token: director } = await setup();
+      const counselor = await addManager(event, 'COUNSELOR');
+      const other = await addManager(event, 'COUNSELOR');
+      const viewer = await addManager(event, 'VIEWER');
+      const own = await createExpense(event, counselor.token);
+      const file = await attachFile({ expenseId: own.id });
+
+      for (const [token, status] of [
+        [director, 200],
+        [counselor.token, 200],
+        [other.token, 403],
+        [viewer.token, 403],
+      ] as const) {
+        await request()
+          .get(`/api/v1/files/${file.id}`)
+          .auth(token, { type: 'bearer' })
+          .expect(status);
+      }
+    });
   });
 
   describe('own expenses', () => {
@@ -492,6 +588,29 @@ describe('finances', () => {
         .auth(token, { type: 'bearer' })
         .expect(400);
       await createExpense(event, token, { categoryId: food.id });
+    });
+
+    it('checks a category changed on update', async () => {
+      const { event, token } = await setup();
+      const group = await createCategory(event, token, { name: 'Eligible' });
+      const food = await createCategory(event, token, {
+        name: 'Food',
+        parentId: group.id,
+      });
+      const created = await createExpense(event, token);
+      const path = `/api/v1/events/${event.id}/expenses/${created.id}`;
+
+      await request()
+        .patch(path)
+        .send({ categoryId: group.id })
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+      const { body } = await request()
+        .patch(path)
+        .send({ categoryId: food.id })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data.categoryId).toBe(food.id);
     });
 
     it('keeps expense and income categories apart', async () => {
@@ -974,6 +1093,25 @@ describe('finances', () => {
         expect(logs.filter((log) => log.action === 'signed')).toHaveLength(1);
       });
 
+      it('shows a scan to whoever may see its payout', async () => {
+        const { event, token } = await setup('TREASURER');
+        const recipient = await addManager(event, 'COUNSELOR');
+        const other = await addManager(event, 'COUNSELOR');
+        const payout = await createPayout(event, token, recipient.user.id);
+        const scan = await attachFile({ payoutId: payout.id });
+
+        for (const [requester, status] of [
+          [token, 200],
+          [recipient.token, 200],
+          [other.token, 403],
+        ] as const) {
+          await request()
+            .get(`/api/v1/files/${scan.id}`)
+            .auth(requester, { type: 'bearer' })
+            .expect(status);
+        }
+      });
+
       it('logs a scan replaced or removed in an edit as a signing', async () => {
         const { event, user, token } = await setup();
         const payout = await createPayout(event, token, user.id);
@@ -1057,6 +1195,15 @@ describe('finances', () => {
         .auth(token, { type: 'bearer' })
         .expect(201);
       expect(payout.data.label).toBe('A1');
+
+      const { body: settings } = await request()
+        .get(`/api/v1/events/${event.id}/finances/settings`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(settings.data).toEqual({
+        payoutNumberPrefix: 'A',
+        payoutNumberPrefixLocked: true,
+      });
 
       await request()
         .delete(`/api/v1/events/${event.id}/payouts/${payout.data.id}`)
@@ -1189,6 +1336,43 @@ describe('finances', () => {
         .expect(200);
 
       expect(headers['content-type']).toContain('application/zip');
+    });
+
+    it('names each receipt file by its number', async () => {
+      const { event, token } = await setup();
+      const first = await createExpense(event, token);
+      const second = await createExpense(event, token);
+      await attachFile({ expenseId: first.id });
+      await attachFile({ expenseId: second.id });
+      await attachFile({ expenseId: second.id });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/finances/receipts`)
+        .auth(token, { type: 'bearer' })
+        .buffer(true)
+        .parse(binary as Parameters<ReturnType<typeof request>['parse']>[0])
+        .expect(200);
+
+      // Stored entries keep their names readable in the archive.
+      const archive = (body as Buffer).toString('latin1');
+      expect(archive.startsWith('PK')).toBe(true);
+      for (const name of ['001', '002', '002-2']) {
+        expect(archive).toContain(name);
+      }
+    });
+
+    it('cuts the connection when a receipt file cannot be read', async () => {
+      const { event, token } = await setup();
+      const created = await createExpense(event, token);
+      await attachFile({ expenseId: created.id }, false);
+
+      await expect(
+        request()
+          .get(`/api/v1/events/${event.id}/finances/receipts`)
+          .auth(token, { type: 'bearer' })
+          .buffer(true)
+          .parse(binary as Parameters<ReturnType<typeof request>['parse']>[0]),
+      ).rejects.toThrow();
     });
 
     it('accepts group folders and rejects unknown layouts', async () => {
