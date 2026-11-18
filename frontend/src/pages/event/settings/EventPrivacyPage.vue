@@ -158,7 +158,7 @@
             </div>
           </div>
           <q-toggle
-            v-if="hasInherited"
+            v-if="hasInherited && !organizationFreeText"
             v-model="hideInherited"
             :label="t('addendum.hideInherited')"
             dense
@@ -169,145 +169,171 @@
 
         <q-separator />
 
-        <q-card-section>
-          <div class="text-caption text-weight-medium q-mb-sm">
-            {{ t('addendum.dataCategories') }}
-          </div>
-
-          <!-- Derived from the questions the form author tagged with a
-               `eventDataType`; a suggestion the manager confirms, never an
-               automatic claim about what the form collects. -->
+        <!-- A free-text organization notice has no structure for entries to
+             join, so only the event's own text reaches registrants. -->
+        <q-card-section
+          v-if="organizationFreeText && hasStructuredEntries(content)"
+        >
           <q-banner
-            v-if="suggestedCategories.length"
             dense
-            class="suggestion-banner q-mb-sm"
+            class="baseline-banner"
           >
             <template #avatar>
-              <q-icon name="lightbulb" />
-            </template>
-            <div class="row items-center justify-between q-gutter-sm">
-              <div class="col text-caption">
-                {{
-                  t('addendum.suggested', {
-                    categories: suggestedCategories
-                      .map((key) => gt(`privacy.dataCategory.${key}`))
-                      .join(', '),
-                  })
-                }}
-              </div>
-              <m-btn
-                :label="t('addendum.applySuggested')"
-                flat
-                dense
-                color="primary"
-                :disable="!canEdit"
-                @click="applySuggested"
+              <q-icon
+                name="warning"
+                class="text-warning"
               />
+            </template>
+            <div class="text-body2">
+              {{ t('addendum.freeTextEntries.title') }}
+            </div>
+            <div class="text-caption text-on-surface-variant">
+              {{ t('addendum.freeTextEntries.detail') }}
             </div>
           </q-banner>
+        </q-card-section>
 
-          <div
-            v-for="key in visibleDataCategoryKeys"
-            :key="key"
-            class="entry"
-          >
-            <div class="row items-center no-wrap">
-              <q-checkbox
-                :model-value="inheritsCategory(key) || hasDataCategory(key)"
-                :label="gt(`privacy.dataCategory.${key}`)"
-                :disable="!canEdit || inheritsCategory(key)"
-                dense
-                @update:model-value="(on) => toggleDataCategory(key, on)"
-              />
-              <origin-chip
-                :origin="categoryOrigin(key)"
-                class="q-ml-sm"
-              />
+        <template v-if="!organizationFreeText">
+          <q-card-section>
+            <div class="text-caption text-weight-medium q-mb-sm">
+              {{ t('addendum.dataCategories') }}
             </div>
 
-            <!-- Inherited entries show the organization's own answer rather
+            <!-- Derived from the questions the form author tagged with a
+               `eventDataType`; a suggestion the manager confirms, never an
+               automatic claim about what the form collects. -->
+            <q-banner
+              v-if="suggestedCategories.length"
+              dense
+              class="suggestion-banner q-mb-sm"
+            >
+              <template #avatar>
+                <q-icon name="lightbulb" />
+              </template>
+              <div class="row items-center justify-between q-gutter-sm">
+                <div class="col text-caption">
+                  {{
+                    t('addendum.suggested', {
+                      categories: suggestedCategories
+                        .map((key) => gt(`privacy.dataCategory.${key}`))
+                        .join(', '),
+                    })
+                  }}
+                </div>
+                <m-btn
+                  :label="t('addendum.applySuggested')"
+                  flat
+                  dense
+                  color="primary"
+                  :disable="!canEdit"
+                  @click="applySuggested"
+                />
+              </div>
+            </q-banner>
+
+            <div
+              v-for="key in visibleDataCategoryKeys"
+              :key="key"
+              class="entry"
+            >
+              <div class="row items-center no-wrap">
+                <q-checkbox
+                  :model-value="inheritsCategory(key) || hasDataCategory(key)"
+                  :label="gt(`privacy.dataCategory.${key}`)"
+                  :disable="!canEdit || inheritsCategory(key)"
+                  dense
+                  @update:model-value="(on) => toggleDataCategory(key, on)"
+                />
+                <origin-chip
+                  :origin="categoryOrigin(key)"
+                  class="q-ml-sm"
+                />
+              </div>
+
+              <!-- Inherited entries show the organization's own answer rather
                  than an editable copy of it: restating it here would let the
                  event silently override the notice it is adding to. -->
-            <div
-              v-if="inheritedCategoryBasis(key)"
-              class="text-caption text-on-surface-variant entry__note"
-            >
-              {{ gt('privacy.editor.field.art9Basis') }}:
-              {{
-                gt(
-                  `privacy.specialCategoryBasis.${inheritedCategoryBasis(key)}`,
-                )
-              }}
-            </div>
+              <div
+                v-if="inheritedCategoryBasis(key)"
+                class="text-caption text-on-surface-variant entry__note"
+              >
+                {{ gt('privacy.editor.field.art9Basis') }}:
+                {{
+                  gt(
+                    `privacy.specialCategoryBasis.${inheritedCategoryBasis(key)}`,
+                  )
+                }}
+              </div>
 
-            <special-category-basis-field
-              v-else-if="hasDataCategory(key) && isSpecialCategory(key)"
-              :model-value="dataCategory(key)?.specialCategoryBasis"
-              :can-edit="canEdit"
-              class="entry__nested"
-              @update:model-value="(value) => setSpecialBasis(key, value)"
-            />
+              <special-category-basis-field
+                v-else-if="hasDataCategory(key) && isSpecialCategory(key)"
+                :model-value="dataCategory(key)?.specialCategoryBasis"
+                :can-edit="canEdit"
+                class="entry__nested"
+                @update:model-value="(value) => setSpecialBasis(key, value)"
+              />
 
-            <!-- Rendered for inherited entries too: the organization declared
+              <!-- Rendered for inherited entries too: the organization declared
                  the category, but both notes ask about this event's own form,
                  and it is this event's manager who builds it. -->
-            <privacy-category-notes
-              v-if="inheritsCategory(key) || hasDataCategory(key)"
-              :category-key="key"
-              class="text-caption text-on-surface-variant entry__note"
-            />
-          </div>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-section>
-          <div class="text-caption text-weight-medium q-mb-sm">
-            {{ t('addendum.recipients') }}
-          </div>
-          <div
-            v-for="key in visibleRecipientKeys"
-            :key="key"
-            class="entry"
-          >
-            <div class="row items-center no-wrap">
-              <q-checkbox
-                :model-value="inheritsRecipient(key) || hasRecipient(key)"
-                :label="gt(`privacy.recipient.${key}`)"
-                :disable="!canEdit || inheritsRecipient(key)"
-                dense
-                @update:model-value="(on) => toggleRecipient(key, on)"
-              />
-              <origin-chip
-                :origin="recipientOrigin(key)"
-                class="q-ml-sm"
+              <privacy-category-notes
+                v-if="inheritsCategory(key) || hasDataCategory(key)"
+                :category-key="key"
+                class="text-caption text-on-surface-variant entry__note"
               />
             </div>
+          </q-card-section>
 
+          <q-separator />
+
+          <q-card-section>
+            <div class="text-caption text-weight-medium q-mb-sm">
+              {{ t('addendum.recipients') }}
+            </div>
             <div
-              v-if="inheritedRecipientName(key)"
-              class="text-caption text-on-surface-variant entry__note"
+              v-for="key in visibleRecipientKeys"
+              :key="key"
+              class="entry"
             >
-              {{ inheritedRecipientName(key) }}
+              <div class="row items-center no-wrap">
+                <q-checkbox
+                  :model-value="inheritsRecipient(key) || hasRecipient(key)"
+                  :label="gt(`privacy.recipient.${key}`)"
+                  :disable="!canEdit || inheritsRecipient(key)"
+                  dense
+                  @update:model-value="(on) => toggleRecipient(key, on)"
+                />
+                <origin-chip
+                  :origin="recipientOrigin(key)"
+                  class="q-ml-sm"
+                />
+              </div>
+
+              <div
+                v-if="inheritedRecipientName(key)"
+                class="text-caption text-on-surface-variant entry__note"
+              >
+                {{ inheritedRecipientName(key) }}
+              </div>
+
+              <q-input
+                v-else-if="hasRecipient(key)"
+                :model-value="recipient(key)?.name ?? ''"
+                :label="gt('privacy.editor.field.recipientName')"
+                :hint="gt('privacy.editor.field.recipientNameHint')"
+                dense
+                outlined
+                :disable="!canEdit"
+                class="entry__nested entry__field"
+                @update:model-value="
+                  (value) => setRecipientName(key, String(value))
+                "
+              />
             </div>
+          </q-card-section>
 
-            <q-input
-              v-else-if="hasRecipient(key)"
-              :model-value="recipient(key)?.name ?? ''"
-              :label="gt('privacy.editor.field.recipientName')"
-              :hint="gt('privacy.editor.field.recipientNameHint')"
-              dense
-              outlined
-              :disable="!canEdit"
-              class="entry__nested entry__field"
-              @update:model-value="
-                (value) => setRecipientName(key, String(value))
-              "
-            />
-          </div>
-        </q-card-section>
-
-        <q-separator />
+          <q-separator />
+        </template>
 
         <q-card-section>
           <div class="text-caption text-weight-medium">
@@ -356,7 +382,7 @@
              something has been changed: on an untouched event the status line
              already says it. -->
         <div
-          v-else-if="isEmptyAddendum(content) && hasUnpublishedChanges"
+          v-else-if="isEmptyAddendum(publishable) && hasUnpublishedChanges"
           class="text-body2 text-on-surface-variant"
         >
           {{
@@ -415,8 +441,10 @@ import {
   PRIVACY_RECIPIENT_KEYS,
   addendumGaps,
   composePrivacyNotice,
+  hasStructuredEntries,
   isEmptyAddendum,
   isSpecialCategory,
+  publishableAddendum,
   type PrivacyDataCategoryKey,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
@@ -486,8 +514,21 @@ const canEditOrganization = computed(
     canOrgFor(organizationId.value, 'organization.edit'),
 );
 
+const organizationFreeText = computed(
+  () => organizationContent.value?.mode === 'free_text',
+);
+
+// What publishing sends and the preview shows: under a free-text organization
+// notice, entries from before the switch are dropped rather than refused.
+const publishable = computed(() =>
+  publishableAddendum(organizationContent.value, content.value),
+);
+
+// Leftover entries count as a change: only publishing removes them.
 const hasUnpublishedChanges = computed(
-  () => JSON.stringify(content.value) !== publishedSnapshot.value,
+  () =>
+    JSON.stringify(content.value) !== publishedSnapshot.value ||
+    (organizationFreeText.value && hasStructuredEntries(content.value)),
 );
 
 /**
@@ -499,7 +540,7 @@ const hasUnpublishedChanges = computed(
 const publishDisabled = computed(
   () =>
     !organizationContent.value ||
-    (isEmptyAddendum(content.value) && publishedVersion.value === null) ||
+    (isEmptyAddendum(publishable.value) && publishedVersion.value === null) ||
     gaps.value.length > 0,
 );
 
@@ -509,9 +550,9 @@ const publishDisabled = computed(
  * rather than a statement, so there is nothing to check.
  */
 const gaps = computed(() =>
-  isEmptyAddendum(content.value)
+  isEmptyAddendum(publishable.value)
     ? []
-    : addendumGaps(organizationContent.value, content.value),
+    : addendumGaps(organizationContent.value, publishable.value),
 );
 
 function emptyAddendum(): PrivacyNoticeAddendum {
@@ -624,7 +665,7 @@ const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
   return {
     ...published.value,
     notice: organizationContent.value
-      ? composePrivacyNotice(organizationContent.value, content.value)
+      ? composePrivacyNotice(organizationContent.value, publishable.value)
       : null,
     eventVersion: publishedVersion.value,
   };
@@ -868,7 +909,7 @@ async function publish() {
 
   publishing.value = true;
   try {
-    const context = await publishEventAddendum(id, { ...content.value });
+    const context = await publishEventAddendum(id, { ...publishable.value });
     publishedVersion.value = context.publishedVersion;
     publishedAt.value = context.publishedAt;
     // From what came back, not from what was sent: the server sanitizes the
@@ -961,7 +1002,7 @@ baseline:
   none: 'Nothing listed'
   open: 'Read the full notice'
   edit: 'Edit at the organisation'
-  freeText: 'Your organisation wrote its notice as free text, so nothing below can be matched against it. Read its notice before adding anything here.'
+  freeText: 'Your organisation wrote its notice as free text, so this event can only add text of its own. Read its notice before adding anything here.'
   missing:
     title: 'Your organisation has not published any privacy information yet.'
     detail: 'Until it does, registrants see no notice for this event — and nothing you add here reaches them.'
@@ -969,6 +1010,9 @@ addendum:
   title: 'Additions for this event'
   hint: 'Only what is specific to this event — a particular bus company, an insurer, photos published this season. What your organisation already declares is ticked and locked.'
   hideInherited: 'Hide what the organisation covers'
+  freeTextEntries:
+    title: 'Earlier additions are not shown'
+    detail: 'This event added entries before your organisation switched to free text. Registrants do not see them; publishing removes them. Add anything still needed as text below.'
   dataCategories: 'Data collected'
   recipients: 'Recipients'
   additional: 'Additional information'
@@ -1006,7 +1050,7 @@ baseline:
   none: 'Nichts angegeben'
   open: 'Vollständige Informationen lesen'
   edit: 'Bei der Organisation bearbeiten'
-  freeText: 'Eure Organisation hat die Informationen als Freitext verfasst; die Angaben unten lassen sich deshalb nicht damit abgleichen. Lies sie durch, bevor du hier etwas ergänzt.'
+  freeText: 'Eure Organisation hat die Informationen als Freitext verfasst, deshalb kann diese Veranstaltung nur eigenen Text ergänzen. Lies sie durch, bevor du hier etwas ergänzt.'
   missing:
     title: 'Eure Organisation hat noch keine Datenschutzinformationen veröffentlicht.'
     detail: 'Bis dahin sehen Anmeldende zu dieser Veranstaltung keine Informationen – und auch nichts, was du hier ergänzt.'
@@ -1014,6 +1058,9 @@ addendum:
   title: 'Ergänzungen für diese Veranstaltung'
   hint: 'Nur was für diese Veranstaltung besonders ist — ein bestimmtes Busunternehmen, eine Versicherung, in dieser Saison veröffentlichte Fotos. Was die Organisation bereits angibt, ist angehakt und gesperrt.'
   hideInherited: 'Angaben der Organisation ausblenden'
+  freeTextEntries:
+    title: 'Frühere Ergänzungen werden nicht angezeigt'
+    detail: 'Diese Veranstaltung hat Angaben ergänzt, bevor eure Organisation auf Freitext umgestellt hat. Teilnehmende sehen sie nicht; beim Veröffentlichen werden sie entfernt. Ergänze, was weiterhin nötig ist, unten als Text.'
   dataCategories: 'Erhobene Daten'
   recipients: 'Empfänger'
   additional: 'Zusätzliche Informationen'
@@ -1051,7 +1098,7 @@ baseline:
   none: 'Rien indiqué'
   open: 'Lire les informations complètes'
   edit: "Modifier au niveau de l'organisation"
-  freeText: "Votre organisation a rédigé ses informations en texte libre ; rien ci-dessous ne peut donc y être comparé. Lisez-les avant d'ajouter quoi que ce soit ici."
+  freeText: "Votre organisation a rédigé ses informations en texte libre ; cet événement ne peut donc y ajouter que son propre texte. Lisez-les avant d'ajouter quoi que ce soit ici."
   missing:
     title: "Votre organisation n'a pas encore publié d'informations sur la protection des données."
     detail: "D'ici là, les personnes qui s'inscrivent ne voient aucune information pour cet événement — ni ce que vous ajoutez ici."
@@ -1059,6 +1106,9 @@ addendum:
   title: 'Ajouts pour cet événement'
   hint: 'Uniquement ce qui est propre à cet événement — un transporteur précis, un assureur, des photos publiées cette saison. Ce que votre organisation déclare déjà est coché et verrouillé.'
   hideInherited: "Masquer ce que couvre l'organisation"
+  freeTextEntries:
+    title: 'Les ajouts précédents ne sont pas affichés'
+    detail: 'Cet événement a ajouté des éléments avant que votre organisation ne passe au texte libre. Les participants ne les voient pas ; la publication les supprime. Ajoutez ci-dessous sous forme de texte ce qui reste nécessaire.'
   dataCategories: 'Données collectées'
   recipients: 'Destinataires'
   additional: 'Informations supplémentaires'
@@ -1096,7 +1146,7 @@ baseline:
   none: 'Nic uvedeno'
   open: 'Přečíst celé informace'
   edit: 'Upravit u organizace'
-  freeText: 'Vaše organizace sepsala informace volným textem, položky níže s nimi proto nelze porovnat. Přečti si je, než tu něco doplníš.'
+  freeText: 'Vaše organizace sepsala informace volným textem, tato akce k nim proto může doplnit jen vlastní text. Přečti si je, než tu něco doplníš.'
   missing:
     title: 'Vaše organizace zatím nezveřejnila žádné informace o ochraně osobních údajů.'
     detail: 'Do té doby přihlašující se u této akce nevidí žádné informace – ani to, co tu doplníš.'
@@ -1104,6 +1154,9 @@ addendum:
   title: 'Doplnění pro tuto akci'
   hint: 'Jen to, co je specifické pro tuto akci — konkrétní dopravce, pojišťovna, fotografie zveřejněné v této sezóně. Co organizace už uvádí, je zaškrtnuté a uzamčené.'
   hideInherited: 'Skrýt to, co pokrývá organizace'
+  freeTextEntries:
+    title: 'Dřívější doplňky se nezobrazují'
+    detail: 'Tato akce doplnila položky dřív, než vaše organizace přešla na volný text. Účastníci je nevidí; zveřejněním se odstraní. Co je stále potřeba, doplň níže jako text.'
   dataCategories: 'Sbírané údaje'
   recipients: 'Příjemci'
   additional: 'Další informace'
@@ -1141,7 +1194,7 @@ baseline:
   none: 'Nic nie podano'
   open: 'Przeczytaj pełne informacje'
   edit: 'Edytuj w organizacji'
-  freeText: 'Wasza organizacja napisała informacje własnym tekstem, więc poniższych pozycji nie da się z nimi zestawić. Przeczytaj je, zanim coś tu dodasz.'
+  freeText: 'Wasza organizacja napisała informacje własnym tekstem, więc to wydarzenie może do nich dodać tylko własny tekst. Przeczytaj je, zanim coś tu dodasz.'
   missing:
     title: 'Wasza organizacja nie opublikowała jeszcze żadnych informacji o ochronie danych.'
     detail: 'Do tego czasu osoby zgłaszające się nie widzą przy tym wydarzeniu żadnych informacji – ani tego, co tu dodasz.'
@@ -1149,6 +1202,9 @@ addendum:
   title: 'Uzupełnienia dla tego wydarzenia'
   hint: 'Tylko to, co jest specyficzne dla tego wydarzenia — konkretny przewoźnik, ubezpieczyciel, zdjęcia publikowane w tym sezonie. To, co organizacja już podaje, jest zaznaczone i zablokowane.'
   hideInherited: 'Ukryj to, co obejmuje organizacja'
+  freeTextEntries:
+    title: 'Wcześniejsze uzupełnienia nie są wyświetlane'
+    detail: 'To wydarzenie dodało pozycje, zanim wasza organizacja przeszła na tekst własny. Uczestnicy ich nie widzą; publikacja je usunie. To, co nadal jest potrzebne, dodaj poniżej jako tekst.'
   dataCategories: 'Zbierane dane'
   recipients: 'Odbiorcy'
   additional: 'Dodatkowe informacje'

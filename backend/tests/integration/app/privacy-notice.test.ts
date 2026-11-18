@@ -483,6 +483,51 @@ describe('privacy notices', () => {
         .expect(200);
     });
 
+    describe('under a free-text organization notice', () => {
+      const freeTextEvent = async () => {
+        const organization = await OrganizationFactory.create(
+          {},
+          {
+            privacyNotice: {
+              ...emptyPrivacyNoticeContent(),
+              mode: 'free_text',
+              freeText: { en: '<p>Our notice</p>' },
+            },
+          },
+        );
+
+        return EventFactory.create({
+          organization: { connect: { id: organization.id } },
+        });
+      };
+
+      it('should refuse structured entries no registrant would see', async () => {
+        const event = await freeTextEvent();
+
+        await request()
+          .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+          .send({
+            content: {
+              dataCategories: [
+                { key: 'health', specialCategoryBasis: 'explicit_consent' },
+              ],
+            },
+          })
+          .auth(await eventManagerToken(event.id), { type: 'bearer' })
+          .expect(422);
+      });
+
+      it('should accept free text of its own', async () => {
+        const event = await freeTextEvent();
+
+        await request()
+          .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+          .send({ content: { additional: { en: '<p>Bus to camp</p>' } } })
+          .auth(await eventManagerToken(event.id), { type: 'bearer' })
+          .expect(200);
+      });
+    });
+
     it('should sanitize the addendum free text', async () => {
       const organization = await OrganizationFactory.create();
       const event = await EventFactory.create({

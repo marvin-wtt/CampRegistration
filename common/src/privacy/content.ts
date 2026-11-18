@@ -206,6 +206,25 @@ export function isEmptyAddendum(addendum: PrivacyNoticeAddendum): boolean {
   );
 }
 
+/** Whether the event adds anything besides its own free text. */
+export function hasStructuredEntries(addendum: PrivacyNoticeAddendum): boolean {
+  return !isEmptyAddendum({ ...addendum, additional: null });
+}
+
+/**
+ * What of an addendum registrants can actually be shown. A free-text
+ * organization notice has no structure for entries to join, so only the
+ * event's own text survives composition.
+ */
+export function publishableAddendum(
+  organization: PrivacyNoticeContent | null,
+  addendum: PrivacyNoticeAddendum,
+): PrivacyNoticeAddendum {
+  return organization?.mode === 'free_text'
+    ? { additional: addendum.additional ?? null }
+    : addendum;
+}
+
 export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
   return {
     mode: 'builder',

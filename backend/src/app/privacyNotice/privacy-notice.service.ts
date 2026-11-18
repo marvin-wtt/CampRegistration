@@ -7,8 +7,10 @@ import {
   addendumGaps,
   composePrivacyNotice,
   emptyPrivacyNoticeContent,
+  hasStructuredEntries,
   isEmptyAddendum,
   privacyNoticeCompleteness,
+  publishableAddendum,
   retentionExceptions,
   supervisoryAuthorityFor,
   type EventPrivacyNotice,
@@ -149,6 +151,21 @@ export class PrivacyNoticeService extends BaseService {
       'ORGANIZATION',
       organizationId,
     );
+    const organizationContent =
+      (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
+      null;
+
+    // Composition drops structured entries under a free-text notice, so
+    // accepting them would publish statements no registrant is shown.
+    if (
+      organizationContent?.mode === 'free_text' &&
+      hasStructuredEntries(sanitized)
+    ) {
+      throw new ApiError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        'The organization notice is free text; an event can only add text to it.',
+      );
+    }
 
     if (isEmptyAddendum(sanitized)) {
       if (!(await this.latestVersion('EVENT', eventId))) {
@@ -158,11 +175,7 @@ export class PrivacyNoticeService extends BaseService {
         );
       }
     } else {
-      const gaps = addendumGaps(
-        (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
-          null,
-        sanitized,
-      );
+      const gaps = addendumGaps(organizationContent, sanitized);
 
       if (gaps.length > 0) {
         throw new ApiError(
@@ -234,9 +247,9 @@ export class PrivacyNoticeService extends BaseService {
     toOrganizationId: string,
   ): Promise<void> {
     const eventVersion = await this.latestVersion('EVENT', fromEventId);
-    const content = eventVersion?.content as PrivacyNoticeAddendum | undefined;
+    const source = eventVersion?.content as PrivacyNoticeAddendum | undefined;
 
-    if (!content || isEmptyAddendum(content)) {
+    if (!source) {
       return;
     }
 
@@ -244,11 +257,17 @@ export class PrivacyNoticeService extends BaseService {
       'ORGANIZATION',
       toOrganizationId,
     );
-    const gaps = addendumGaps(
+    const organizationContent =
       (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
-        null,
-      content,
-    );
+      null;
+    // Under a free-text target notice only the source's text can be shown.
+    const content = publishableAddendum(organizationContent, source);
+
+    if (isEmptyAddendum(content)) {
+      return;
+    }
+
+    const gaps = addendumGaps(organizationContent, content);
 
     if (gaps.length > 0) {
       return;
