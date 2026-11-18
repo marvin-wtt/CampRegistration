@@ -49,9 +49,8 @@ only appear here where they touch registrant data.
   - the event's retention period replaces the baseline, its exceptions are added;
   - third-country transfers are a union an event cannot undo;
   - the event's free text stays a section of its own.
-- **[gap]** An event can inherit or override an organization entry, but not drop
-  one. A seminar of an organization whose camps collect health data declares health
-  data too. See "Event exclusions" below.
+- **[implemented]** An event can inherit, override or drop (exclude) an
+  organization entry. See "Event exclusions" below.
 - **[implemented]** Two modes (`PrivacyNoticeMode`):
   - `builder` — the organization ticks catalogue entries and the app renders the
     legal text in all five locales.
@@ -69,7 +68,11 @@ organization notice is the union of all its events, so an event inheriting it
 whole over-declares. Each inherited entry gets three states — inherit, override,
 exclude — inside the existing addendum. No per-event notice, no new table.
 
-- **[planned]** One optional addendum field, stored in the same versioned JSON:
+Code: `common/src/privacy/exclusions.ts` (`appliedExclusions`, `refusedExclusions`,
+`normalizeExclusions`, `withoutRefused`), composition in `compose.ts`, publish and
+clone rules in `PrivacyNoticeService`.
+
+- **[implemented]** One optional addendum field, stored in the same versioned JSON:
 
   ```ts
   excluded?: {
@@ -80,10 +83,10 @@ exclude — inside the existing addendum. No per-event notice, no new table.
   } | null;
   ```
 
-- **[planned]** `composePrivacyNotice` removes excluded organization entries before
+- **[implemented]** `composePrivacyNotice` removes excluded organization entries before
   merging the event's own, so the order is: organization → minus exclusions → plus
   event entries (an event entry with the same key is an override, as today).
-- **[planned]** Per part of the notice:
+- **[implemented]** Per part of the notice:
 
   | Part                     | Inherit | Override                 | Exclude                                                   |
   | ------------------------ | ------- | ------------------------ | --------------------------------------------------------- |
@@ -96,47 +99,47 @@ exclude — inside the existing addendum. No per-event notice, no new table.
   | DPO, automated decisions | yes     | no                       | no — organization-level facts                             |
   | Organization free text   | yes     | no                       | no — see the gap below                                    |
 
-- **[planned]** Retention exceptions share the purpose vocabulary (`scope`), so
+- **[implemented]** Retention exceptions share the purpose vocabulary (`scope`), so
   excluding a purpose also drops the exception scoped to it, and a `custom:` scope
   is excluded by its ref. No second list, and an excluded consent purpose never
   leaves a consent-bound exception behind (`retention_exception_consent_basis`).
   An event that drops a purpose but must keep its statutory exception restates the
   exception.
-- **[planned]** Transfers: `countries` is the organization's minus the excluded ones,
+- **[implemented]** Transfers: `countries` is the organization's minus the excluded ones,
   plus the event's. A country stays whenever a composed recipient names it, so
   excluding a country can never hide a transfer that a listed recipient causes.
   `enabled` is false and the safeguard drops when no country remains.
-- **[planned]** Mandatory entries. The organization can mark a purpose, category or
+- **[implemented]** Mandatory entries. The organization can mark a purpose, category or
   recipient "applies to every event" (`allEvents: true` on the entry, default
   false). Together with `ALWAYS_RECIPIENT_KEYS` these cannot be excluded.
-- **[planned]** Two layers, so a notice cannot become false by construction at any
+- **[implemented]** Two layers, so a notice cannot become false by construction at any
   time:
   - composition _ignores_ an exclusion that may not apply (mandatory entry, always
     recipient, country in use), so an organization flagging an entry later reaches
     events that excluded it earlier;
   - publishing _refuses_ such an exclusion (422, like structured entries under a
     free-text notice), so the author is not misled.
-- **[planned]** On publish the server normalizes exclusions: it drops exclusions of
+- **[implemented]** On publish the server normalizes exclusions: it drops exclusions of
   keys the current organization notice does not declare, and of keys the event
   restates (restating wins). An entry the organization adds later is therefore
   inherited, never silently hidden — over-declaring is the safe failure.
-- **[planned]** Completeness stays one function. `addendumGaps` already checks the
+- **[implemented]** Completeness stays one function. `addendumGaps` already checks the
   composed notice and reports only the gaps the event introduces, so excluding the
   last purpose, category or recipient blocks publishing with the existing gaps. No
   new gap codes.
-- **[planned]** Exclusions count as structured entries: under a free-text
+- **[implemented]** Exclusions count as structured entries: under a free-text
   organization notice they are refused (`hasStructuredEntries`) and stripped when
   cloning (`publishableAddendum`).
-- **[planned]** Versioning needs no change: exclusions are part of the addendum
+- **[implemented]** Versioning needs no change: exclusions are part of the addendum
   content, so publishing appends a version, identical content is reused, and the
   stamp on the registration proves what was hidden. Versions without `excluded`
   compose as before. The retention reminder reads the composed notice and follows.
-- **[planned]** Cloning copies exclusions with the addendum; normalization against
+- **[implemented]** Cloning copies exclusions with the addendum; normalization against
   the target organization drops those it does not declare.
-- **[planned]** Exclusions versus the form. Once questions are tagged (section 5),
+- Exclusions versus the form. **[planned]** Once questions are tagged (section 5),
   an excluded category that the form collects is undeclared, so the registration
-  gate refuses registrations — no separate check. Until then, the editor warns when
-  an excluded category matches a form `eventDataType` suggestion.
+  gate refuses registrations — no separate check. **[implemented]** Until then, the
+  editor warns when an excluded category matches a form `eventDataType` suggestion.
 - **[review]** For purposes and recipients the platform cannot see whether the
   processing happens; excluding rests on the event team, acting for the controller.
   The organization's tool is `allEvents`.
@@ -219,10 +222,15 @@ exclude — inside the existing addendum. No per-event notice, no new table.
   (`EVENT_DATA_TYPE_DATA_CATEGORIES`) — identity, contact, address, date of birth,
   gender only. "Hide inherited" is a view filter; inherited entries are locked and
   cannot be removed.
-- **[planned]** Each inherited entry gets inherit / override / exclude in the event
-  editor, with exclusion unavailable for mandatory entries and always-recipients
-  (section 2, "Event exclusions"). Excluded entries stay visible, struck through,
-  so the editor shows the whole organization baseline.
+- **[implemented]** Each inherited entry gets keep / change / exclude in the event
+  editor (`InheritedEntryToggle.vue`), with exclusion unavailable for mandatory
+  entries, always-recipients and countries in use; the caption says why. "Change"
+  is offered where the event has a value of its own to set: the Art. 9 basis of a
+  special category and a recipient's name. Purposes and transfer countries are
+  keep / exclude only, and the organization's custom categories get rows too.
+  Excluded entries stay visible, struck through, also under "hide inherited".
+- **[implemented]** The organization wizard marks a purpose, category or recipient
+  "applies to every event" (`allEvents`).
 - **[implemented]** Preview renders the unpublished state exactly as registrants
   will read it (`PrivacyPreviewDialog.vue`); the publish card shows the live version
   and unpublished changes (`PrivacyPublishCard.vue`).
@@ -281,8 +289,8 @@ Findings, most important first:
    option of section 5 exists.
 10. **[review]** Church organizations under KDG / DSG-EKD have their own law and
     authorities; the notice cites GDPR only.
-11. **[gap] Events over-declare.** Every event inherits all organization entries and
-    cannot drop any. **[planned]** Event exclusions (section 2).
+11. **Events over-declare.** Every event inherited all organization entries.
+    **[implemented]** Event exclusions (section 2).
 
 ## 4. Legal bases
 
@@ -610,7 +618,7 @@ policy rather than the organization's notice.
 | Obligation                             | Article           | How the app answers it                                   | Status                |
 | -------------------------------------- | ----------------- | -------------------------------------------------------- | --------------------- |
 | Inform before collection               | 13                | Notice builder, completeness gate, disclosure under form | implemented           |
-| Notice matches the event's processing  | 13, 5(1)(a)       | Addendum overrides; exclusions with mandatory entries    | implemented / planned |
+| Notice matches the event's processing  | 13, 5(1)(a)       | Addendum overrides; exclusions with mandatory entries    | implemented           |
 | Inform third persons named in a form   | 14                | —                                                        | review                |
 | Prove what was shown                   | 5(2)              | Notice versions stamped; platform policy by timestamp    | implemented / review  |
 | Intelligible, in the reader's language | 12                | Five locales; authored texts per locale                  | implemented / planned |
@@ -668,7 +676,7 @@ reads tags after the tagging itself.
 3. Notice wording: Art. 13(2)(e), generic text for regional supervisory authorities,
    how to obtain a copy of transfer safeguards (section 3, findings 2–4).
 
-**Phase 1 — event exclusions, independent of tagging**
+**Phase 1 — event exclusions, independent of tagging** (done)
 
 4. Event exclusions: the `excluded` addendum field, composition, publish
    normalization and refusal, `allEvents` on organization entries, the editor's
