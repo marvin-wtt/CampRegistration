@@ -224,6 +224,7 @@ export default {
         {
           type: 'boolean',
           name: 'consent_privacy',
+          consent: true,
           title: {
             en: 'I agree that photographs of {first_name} {last_name} may be taken and made available to the organizer for media coverage and advertising.',
             de: 'Ich stimme zu, dass von {first_name} {last_name} Aufnahmen erstellt werden dürfen und dem Veranstalter für Berichterstattung und Werbezwecke zur Verfügung gestellt werden.',

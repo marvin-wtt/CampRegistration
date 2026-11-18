@@ -69,6 +69,8 @@ function answerBook(registrant: Registrant): Record<string, unknown> {
     guardian_first_name: guardian?.firstName,
     guardian_last_name: guardian?.lastName,
     guardian_email: guardian?.email,
+    // Health answers are only kept with their consent (docs/privacy.md).
+    consent_health: !!registrant.medicalRestrictions,
     medical_restrictions: registrant.medicalRestrictions,
     food_intolerance: registrant.foodIntolerance,
     additional_information: registrant.additionalInformation,

@@ -657,8 +657,35 @@ export default {
       },
       elements: [
         {
+          type: 'boolean',
+          name: 'consent_health',
+          consent: true,
+          consentFor: ['health', 'allergies'],
+          title: {
+            en: 'I agree that the health information and allergies of {first_name} entered below are processed to look after {first_name} during the event and passed on to the event team and, where needed, to medical staff.',
+            de: 'Ich willige ein, dass die unten angegebenen Gesundheitsdaten und Allergien von {first_name} verarbeitet werden, um {first_name} während der Veranstaltung zu betreuen, und an das Veranstaltungsteam sowie bei Bedarf an medizinisches Personal weitergegeben werden.',
+            fr: "J'accepte que les informations de santé et les allergies de {first_name} indiquées ci-dessous soient traitées pour prendre soin de {first_name} pendant l'événement et transmises à l'équipe de l'événement et, si nécessaire, au personnel médical.",
+            pl: 'Wyrażam zgodę na przetwarzanie podanych poniżej informacji o zdrowiu i alergiach {first_name} w celu opieki nad {first_name} podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia, a w razie potrzeby personelowi medycznemu.',
+            cs: 'Souhlasím se zpracováním níže uvedených zdravotních údajů a alergií {first_name} za účelem péče o {first_name} během akce a s jejich předáním týmu akce a v případě potřeby zdravotnickému personálu.',
+            default:
+              'I agree that the health information and allergies of {first_name} entered below are processed to look after {first_name} during the event and passed on to the event team and, where needed, to medical staff.',
+          },
+          description: {
+            en: 'Voluntary. Without it, we cannot take health needs into account. You can withdraw it at any time by contacting the organizer.',
+            de: 'Freiwillig. Ohne Einwilligung können wir gesundheitliche Bedürfnisse nicht berücksichtigen. Du kannst sie jederzeit beim Veranstalter widerrufen.',
+            fr: "Facultatif. Sans ce consentement, nous ne pouvons pas tenir compte des besoins de santé. Tu peux le retirer à tout moment auprès de l'organisateur.",
+            pl: 'Dobrowolne. Bez tej zgody nie możemy uwzględnić potrzeb zdrowotnych. Możesz ją w każdej chwili wycofać, kontaktując się z organizatorem.',
+            cs: 'Dobrovolné. Bez tohoto souhlasu nemůžeme zohlednit zdravotní potřeby. Souhlas můžeš kdykoli odvolat u pořadatele.',
+            default:
+              'Voluntary. Without it, we cannot take health needs into account. You can withdraw it at any time by contacting the organizer.',
+          },
+        },
+        {
           type: 'comment',
           name: 'medical_restrictions',
+          privacyCategory: 'health',
+          // Hidden until consent; a hidden answer is cleared on submit.
+          visibleIf: '{consent_health} = true',
           title: {
             en: 'Medical Restrictions',
             de: 'Medizinische Einschränkungen',
@@ -689,12 +716,13 @@ export default {
             default: 'Special nutrition',
           },
           description: {
-            en: 'e.g. vegetarian, vegan, allergies or intolerances.',
-            de: 'z.B. vegetarisch, vegan, Allergien oder Unverträglichkeiten.',
-            fr: 'p.ex. végétarien, végétalien, allergies ou intolérances.',
-            pl: 'np. wegetariańska, wegańska, alergie lub nietolerancje.',
-            cs: 'např. vegetariánská, veganská, alergie nebo intolerance.',
-            default: 'e.g. vegetarian, vegan, allergies or intolerances.',
+            en: 'e.g. vegetarian or vegan. Please enter allergies and intolerances above.',
+            de: 'z.B. vegetarisch oder vegan. Allergien und Unverträglichkeiten bitte oben angeben.',
+            fr: 'p.ex. végétarien ou végétalien. Indique les allergies et intolérances ci-dessus.',
+            pl: 'np. wegetariańska lub wegańska. Alergie i nietolerancje podaj powyżej.',
+            cs: 'např. vegetariánská nebo veganská. Alergie a intolerance uveď výše.',
+            default:
+              'e.g. vegetarian or vegan. Please enter allergies and intolerances above.',
           },
         },
       ],
@@ -784,6 +812,7 @@ export default {
         {
           type: 'boolean',
           name: 'consent_forward_list_participants',
+          consent: true,
           title: {
             en: 'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
             de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer der Veranstaltung weitergeleitet werden dürfen.',
@@ -797,6 +826,7 @@ export default {
         {
           type: 'boolean',
           name: 'consent_privacy',
+          consent: true,
           title: {
             en: 'I agree that photographs of the participant, {first_name} {last_name}, may be taken and made available to the organizer for the purpose of media coverage and advertising.',
             de: 'Ich stimme zu, dass von dem Teilnehmenden, {first_name} {last_name} Aufnahmen erstellt werden dürfen und dem Veranstalter zum Zwecke der Berichterstattung in Medien und für Werbezwecke zur Verfügung gestellt werden.',
@@ -839,6 +869,7 @@ export default {
           },
           isRequired: true,
           eventDataType: 'newsletter_consent',
+          consent: true,
         },
         {
           type: 'boolean',

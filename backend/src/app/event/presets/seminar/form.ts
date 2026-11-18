@@ -191,12 +191,51 @@ export default {
             default: 'Dietary requirements',
           },
           description: {
-            en: 'e.g. vegetarian, vegan, allergies or intolerances.',
-            de: 'z.B. vegetarisch, vegan, Allergien oder Unverträglichkeiten.',
-            fr: 'p.ex. végétarien, végétalien, allergies ou intolérances.',
-            pl: 'np. wegetariańska, wegańska, alergie lub nietolerancje.',
-            cs: 'např. vegetariánská, veganská, alergie nebo intolerance.',
-            default: 'e.g. vegetarian, vegan, allergies or intolerances.',
+            en: 'e.g. vegetarian or vegan.',
+            de: 'z.B. vegetarisch oder vegan.',
+            fr: 'p.ex. végétarien ou végétalien.',
+            pl: 'np. wegetariańska lub wegańska.',
+            cs: 'např. vegetariánská nebo veganská.',
+            default: 'e.g. vegetarian or vegan.',
+          },
+        },
+        {
+          type: 'boolean',
+          name: 'consent_allergies',
+          consent: true,
+          consentFor: ['allergies'],
+          title: {
+            en: 'I agree that the allergies and intolerances I enter below are processed for catering during the event and passed on to the event team and the caterer.',
+            de: 'Ich willige ein, dass die unten angegebenen Allergien und Unverträglichkeiten für die Verpflegung während der Veranstaltung verarbeitet und an das Veranstaltungsteam und den Caterer weitergegeben werden.',
+            fr: "J'accepte que les allergies et intolérances indiquées ci-dessous soient traitées pour la restauration pendant l'événement et transmises à l'équipe de l'événement et au traiteur.",
+            pl: 'Wyrażam zgodę na przetwarzanie podanych poniżej alergii i nietolerancji w celu zapewnienia wyżywienia podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia i firmie cateringowej.',
+            cs: 'Souhlasím se zpracováním níže uvedených alergií a intolerancí za účelem stravování během akce a s jejich předáním týmu akce a dodavateli stravování.',
+            default:
+              'I agree that the allergies and intolerances I enter below are processed for catering during the event and passed on to the event team and the caterer.',
+          },
+          description: {
+            en: 'Voluntary. Without it, we cannot take health needs into account. You can withdraw it at any time by contacting the organizer.',
+            de: 'Freiwillig. Ohne Einwilligung können wir gesundheitliche Bedürfnisse nicht berücksichtigen. Du kannst sie jederzeit beim Veranstalter widerrufen.',
+            fr: "Facultatif. Sans ce consentement, nous ne pouvons pas tenir compte des besoins de santé. Tu peux le retirer à tout moment auprès de l'organisateur.",
+            pl: 'Dobrowolne. Bez tej zgody nie możemy uwzględnić potrzeb zdrowotnych. Możesz ją w każdej chwili wycofać, kontaktując się z organizatorem.',
+            cs: 'Dobrovolné. Bez tohoto souhlasu nemůžeme zohlednit zdravotní potřeby. Souhlas můžeš kdykoli odvolat u pořadatele.',
+            default:
+              'Voluntary. Without it, we cannot take health needs into account. You can withdraw it at any time by contacting the organizer.',
+          },
+        },
+        {
+          type: 'comment',
+          name: 'allergies',
+          privacyCategory: 'allergies',
+          // Hidden until consent; a hidden answer is cleared on submit.
+          visibleIf: '{consent_allergies} = true',
+          title: {
+            en: 'Allergies and intolerances',
+            de: 'Allergien und Unverträglichkeiten',
+            fr: 'Allergies et intolérances',
+            pl: 'Alergie i nietolerancje',
+            cs: 'Alergie a intolerance',
+            default: 'Allergies and intolerances',
           },
         },
       ],
@@ -238,6 +277,7 @@ export default {
         {
           type: 'boolean',
           name: 'consent_privacy',
+          consent: true,
           title: {
             en: 'I agree that photographs of {first_name} {last_name} may be taken and made available to the organizer for media coverage and advertising.',
             de: 'Ich stimme zu, dass von {first_name} {last_name} Aufnahmen erstellt werden dürfen und dem Veranstalter für Berichterstattung und Werbezwecke zur Verfügung gestellt werden.',
