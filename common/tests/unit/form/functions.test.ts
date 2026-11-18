@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SurveyModel } from 'survey-core';
 import '../../../src/form/index.js';
+import translate from '../../../src/form/functions/translate.js';
 
 describe('functions', () => {
   describe('isMinor', () => {
@@ -774,6 +775,11 @@ describe('functions', () => {
       });
 
       expect(model.calculatedValues[0].value).toBe('Hallo');
+    });
+
+    it('should skip empty entries but keep an empty text', () => {
+      expect(translate([{ de: '', en: 'Hello' }, 'de'])).toBe('Hello');
+      expect(translate([{ de: '' }, 'de'])).toBe('');
     });
   });
 

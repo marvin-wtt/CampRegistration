@@ -22,8 +22,8 @@ const COUNTRY_LOCALE_MAP = {
 
 /**
  * The language each country writes in. Countries and locales only look alike
- * (`gb` → `en`, `cz` → `cs`): a value stored under one is never found by
- * looking up the other.
+ * (`gb` → `en`, `cz` → `cs`); `translate` maps one to the other, a plain key
+ * lookup doesn't.
  */
 export const COUNTRY_LOCALES: Readonly<Record<string, AppLocale>> =
   COUNTRY_LOCALE_MAP;

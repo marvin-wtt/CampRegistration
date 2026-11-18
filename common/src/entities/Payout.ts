@@ -2,7 +2,6 @@ import type { Identifiable } from './Identifiable.js';
 import type { Ownable } from './Ownable.js';
 import type { Timestamps } from './Timestamps.js';
 import type { ServiceFile } from './ServiceFile.js';
-import type { Translatable } from './Translatable.js';
 
 /** `OUT` pays a person from event funds; `IN` is money they hand back. */
 export type PayoutDirection = 'OUT' | 'IN';
@@ -46,8 +45,8 @@ export interface PayoutStatementLine {
 /** What the slip shows, formatted once in the creator's language. */
 export interface PayoutStatementContent {
   locale: string;
-  eventName: Translatable;
-  organizer: Translatable;
+  eventName: string;
+  organizer: string;
   createdOn: string;
   expenses: {
     number: string;

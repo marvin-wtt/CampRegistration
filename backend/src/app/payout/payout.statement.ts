@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import i18n from '#core/i18n/i18n.client';
 import {
+  allGroupValues,
   formatMoney,
   payerKey,
   recipientKey,
@@ -10,6 +11,7 @@ import type {
   ExpenseType,
   PayoutDirection,
   PayoutStatementContent,
+  PerGroup,
   Translatable,
 } from '@camp-registration/common/entities';
 
@@ -62,14 +64,13 @@ const line = z.object({
   amount: z.string(),
   strong: z.boolean().optional(),
 });
-const translatable = z.union([z.string(), z.record(z.string(), z.string())]);
 
 // What a payout row is expected to hold; checked on read, not trusted.
 const FrozenStatementSchema = z.object({
   content: z.object({
     locale: z.string(),
-    eventName: translatable,
-    organizer: translatable,
+    eventName: z.string(),
+    organizer: z.string(),
     createdOn: z.string(),
     expenses: z.array(
       z.object({
@@ -214,7 +215,7 @@ export interface StatementContext {
   timezone: string;
   payoutNumberPrefix: string;
   eventName: Translatable;
-  organizer: Translatable;
+  organizer: PerGroup<string>;
 }
 
 /** The slip's text, formatted once; it is printed as is from then on. */
@@ -241,10 +242,13 @@ export function renderStatementContent(
   const sign = (p: Pick<StatementPayout, 'direction' | 'amount'>) =>
     `${p.direction === 'OUT' ? '−' : '+'}${money(p.amount)}`;
 
+  const eventName = translate(context.eventName, locale) ?? '';
+
   return {
     locale,
-    eventName: context.eventName,
-    organizer: context.organizer,
+    eventName,
+    // A payout belongs to no group, so the slip names every group's organizer.
+    organizer: allGroupValues(context.organizer).filter(Boolean).join(' / '),
     createdOn: new Intl.DateTimeFormat(locale, {
       ...numeric,
       timeZone: context.timezone,
@@ -274,7 +278,7 @@ export function renderStatementContent(
     ],
     balanceAfter: { label: t('balanceAfter'), amount: money(statement.after) },
     declaration: t('declaration', {
-      event: translate(context.eventName, locale) ?? '',
+      event: eventName,
     }),
   };
 }

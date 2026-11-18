@@ -1,12 +1,41 @@
 import type { PerGroup, Translatable } from '../entities/index.js';
+import { COUNTRY_LOCALES } from '../locales.js';
 
 function isRecord<T>(value: T | Record<string, T>): value is Record<string, T> {
   return typeof value === 'object' && value !== null;
 }
 
+// Event texts are keyed by country (`gb`), others by language (`en`): a
+// locale matches both, its own country before others speaking its language.
+function localeKeys(locale: string): string[] {
+  const normalized = locale.toLowerCase();
+  const [language, region] = normalized.split('-');
+
+  if (!language) {
+    return [];
+  }
+
+  const countries = Object.keys(COUNTRY_LOCALES).filter(
+    (country) => COUNTRY_LOCALES[country] === language,
+  );
+
+  return [
+    normalized,
+    language,
+    // The locale can itself be a country code (`cz` → `cs`).
+    ...(COUNTRY_LOCALES[language] ? [COUNTRY_LOCALES[language]] : []),
+    ...(region ? [region] : []),
+    ...countries,
+  ];
+}
+
+const isPresent = <T>(entry: T | undefined): entry is T =>
+  entry !== undefined && entry !== null && entry !== '';
+
 /**
- * A `Translatable` in one locale: the exact locale, then its language
- * (`de-AT` → `de`), then the fallback locale, then any value.
+ * A `Translatable` in one locale: the locale, its language and the countries
+ * writing it, then the same for the fallback locale, then any value. Empty
+ * entries count as missing.
  */
 export function translate<T>(
   value: Translatable<T> | null | undefined,
@@ -17,17 +46,17 @@ export function translate<T>(
     return value ?? undefined;
   }
 
-  const candidates = [locale, fallbackLocale].flatMap((candidate) => [
-    candidate,
-    candidate.split('-')[0],
-  ]);
-  for (const candidate of candidates) {
-    if (candidate && candidate in value) {
-      return value[candidate];
+  const entries = new Map(
+    Object.entries(value).map(([key, entry]) => [key.toLowerCase(), entry]),
+  );
+  for (const key of [...localeKeys(locale), ...localeKeys(fallbackLocale)]) {
+    const entry = entries.get(key);
+    if (isPresent(entry)) {
+      return entry;
     }
   }
 
-  return Object.values(value)[0];
+  return Object.values(value).find(isPresent);
 }
 
 /**

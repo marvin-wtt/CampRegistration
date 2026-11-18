@@ -22,8 +22,7 @@
         <header class="slip-header">
           <div class="slip-heading">
             <div class="slip-eyebrow">
-              {{ toIn(data.organizer, data.locale) }} ·
-              {{ toIn(data.eventName, data.locale) }}
+              {{ data.organizer }} · {{ data.eventName }}
             </div>
             <h1 class="slip-title">
               {{ data.direction === 'OUT' ? t('titleOut') : t('titleIn') }}
@@ -162,12 +161,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { SIGNATURE_VIEWBOX } from '@camp-registration/common/entities';
-import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import type { PrintPayoutSlipPayload } from '@/components/event/finances/printPayoutSlip';
 
 const i18n = useI18n();
-const { toIn } = useObjectTranslation();
 
 const { payload: data, error } = usePrintPage<PrintPayoutSlipPayload>({
   messagePrefix: 'PRINT_PAYOUT',

@@ -22,6 +22,34 @@ describe('translate', () => {
     expect(translate({ fr: 'Salut' }, 'pl')).toBe('Salut');
   });
 
+  it('should resolve country keys for the language they write in', () => {
+    const name = { gb: 'Summer Camp', de: 'Sommerlager' };
+
+    expect(translate(name, 'en-US')).toBe('Summer Camp');
+    expect(translate({ de: 'Sommerlager', gb: 'Summer Camp' }, 'en')).toBe(
+      'Summer Camp',
+    );
+    expect(translate(name, 'de-DE')).toBe('Sommerlager');
+  });
+
+  it("should prefer the reader's own country", () => {
+    const name = { gb: 'Summer Camp', us: 'Summer Kamp' };
+
+    expect(translate(name, 'en-US')).toBe('Summer Kamp');
+    expect(translate(name, 'en-GB')).toBe('Summer Camp');
+  });
+
+  it('should map a country code to its language', () => {
+    expect(translate({ de: 'Sommerlager', cs: 'Letni tabor' }, 'cz')).toBe(
+      'Letni tabor',
+    );
+  });
+
+  it('should skip empty entries', () => {
+    expect(translate({ de: '', en: 'Hello' }, 'de')).toBe('Hello');
+    expect(translate({ en: '', fr: 'Salut' }, 'de')).toBe('Salut');
+  });
+
   it('should pass a plain value through', () => {
     expect(translate('Hello', 'de')).toBe('Hello');
     expect(translate(null, 'de')).toBeUndefined();

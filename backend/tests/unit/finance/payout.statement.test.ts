@@ -139,6 +139,17 @@ describe('frozen statements', () => {
     expect(content.declaration).toContain('„Sommerlager“');
   });
 
+  it('names the event in its language and every group’s organizer', () => {
+    const { content } = freezeStatement(settle, expenses, [], 1, {
+      ...context,
+      eventName: { gb: 'Summer Camp', de: 'Sommerlager' },
+      organizer: { de: 'Verein', fr: 'Association', gb: 'Verein' },
+    });
+
+    expect(content.eventName).toBe('Sommerlager');
+    expect(content.organizer).toBe('Verein / Association');
+  });
+
   it('is outdated only when its figures change', () => {
     const outdated = (list: StatementExpense[]) =>
       isStatementOutdated(frozen(), list, []);

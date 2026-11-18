@@ -1,20 +1,9 @@
+import { translate as translateValue } from '../../utils/translatable.js';
+
+// Expected input: [value: object | string, locale?: string, fallback?: string]
 const translate = (params: unknown[]): unknown => {
-  // Expected input: [value: object | string, locale: string, fallback?: string]
-  const defaultFallback = 'en-US';
+  const [value, locale = null, fallback = null] = params;
 
-  if (params.length === 0) {
-    return null;
-  }
-
-  function getParam(index: number): unknown {
-    if (index >= params.length) {
-      return null;
-    }
-
-    return params[index];
-  }
-
-  const value = params[0] as Record<string, unknown> | string | null;
   if (typeof value === 'string') {
     return value;
   }
@@ -23,30 +12,22 @@ const translate = (params: unknown[]): unknown => {
     return null;
   }
 
-  const locale = getParam(1) ?? defaultFallback;
-  if (typeof locale !== 'string') {
+  if (locale !== null && typeof locale !== 'string') {
     return null;
   }
 
-  if (locale in value) {
-    return value[locale];
-  }
+  const entries = value as Record<string, unknown>;
 
-  const fallback =
-    params.length >= 3 && typeof params[2] === 'string'
-      ? params[2]
-      : defaultFallback;
-
-  if (fallback in value) {
-    return value[fallback];
-  }
-
-  const shortFallback = fallback.split('-')[0];
-  if (shortFallback in value) {
-    return value[shortFallback];
-  }
-
-  return Object.values(value)[0];
+  // Only empty entries: keep the empty text rather than turning it into null.
+  return (
+    translateValue(
+      entries,
+      locale ?? 'en-US',
+      typeof fallback === 'string' ? fallback : 'en-US',
+    ) ??
+    Object.values(entries)[0] ??
+    null
+  );
 };
 
 export default translate;
