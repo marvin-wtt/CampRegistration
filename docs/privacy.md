@@ -354,11 +354,11 @@ Findings, most important first:
   `eventDataType: 'newsletter_consent'` → `Registration.newsletterConsent`.
 - **[implemented]** The presets tag their questions and ask for consent before
   health data (Phase 2, below). Events created earlier keep their saved forms.
-- **[gap]** Nothing enforces consent yet. Questions can be tagged, but the server
-  accepts health answers whether or not any box was ticked (Phase 3).
-- **[gap]** The wording of any consent question — photos, carpool list, newsletter —
-  cannot be proven: the form editor autosaves into the live `Event.form`, so the text
-  a registrant saw is overwritten by the next edit.
+- **[implemented]** Consent is enforced for events created since
+  `PRIVACY_ENFORCED_SINCE` (Phase 3, below).
+- **[implemented]** The wording of every tagged consent is stored with the
+  registration (`Registration.consentTexts`). Untagged consent questions are not
+  copied; the form editor autosaves, so their wording is not provable.
 
 ### Planned: consent questions and special categories
 
@@ -444,19 +444,21 @@ be tagged, and only boolean questions can be consents.
 | Who consented            | The registrant, or the guardian via `confirmation_guardian` answers   |
 | Changes after submission | The audit log (`registration.audit.ts`) — who, when, which field      |
 
-- **[planned]** One nullable JSON column, `Registration.consentTexts`, keyed by
-  question name: `{ "consent_privacy": "I agree that photographs of …" }`. The only
-  schema change consent needs (skill: `prisma-migration`); existing registrations
-  stay `null`, like the notice stamp.
-- **The server copies the text**, never the client. `registration.form.ts` already
-  builds the survey server-side in the registration's locale with the event
-  variables set; it reads each tagged question's title and description with
-  placeholders filled in (`{first_name}`). The description is included because it
+- **[implemented]** One nullable JSON column, `Registration.consentTexts`, keyed by
+  question name: `{ "consent_privacy": "I agree that photographs of …" }`
+  (migration `20261118120000_add_registration_consent_texts`). Existing
+  registrations stay `null`, like the notice stamp. Managers see it in the
+  registration resource.
+- **[implemented] The server copies the text**, never the client.
+  `RegistrationForm.givenConsentTexts` (`registration.form.ts`) reads each tagged
+  consent's title and description in the registration's locale with placeholders
+  filled in (`{first_name}`), through the shared `consentTexts`
+  (`common/src/form/privacyTags.ts`). The description is included because it
   often carries the legally relevant part ("voluntary, can be revoked at any time").
-- Copied when a consent answer becomes `true` — at submission, or when a manager
-  records a consent given on paper (timed by its audit entry, not `createdAt`). A
-  withdrawal leaves the copied text in place: it still shows what was consented to,
-  and the audit log shows the withdrawal.
+- **[implemented]** Copied when a consent answer becomes `true` — at submission,
+  or when a manager records a consent given on paper (timed by its audit entry, not
+  `createdAt`). A stored text is never replaced. A withdrawal leaves it in place: it
+  still shows what was consented to, and the audit log shows the withdrawal.
 
 **Stale forms — compare the consent texts, like the price**
 
@@ -464,13 +466,17 @@ The form may change between opening and submitting: the editor autosaves, and li
 forms get edited while registration is open. Copying the server's current text would
 then record wording the registrant never saw.
 
-- On submit, the client sends the texts of the tagged consent questions it displayed,
-  next to the displayed total it already sends for `assertPriceUnchanged`.
-- The server renders the same questions from the current form and compares:
+- **[implemented]** On submit, the client sends the texts of the tagged consent
+  questions it displayed (`displayedConsents`), next to the displayed total it
+  already sends for `assertPriceUnchanged`.
+- **[implemented]** The server renders the same questions from the current form and
+  compares the consents given (`assertConsentTextsUnchanged`,
+  `registration.privacy.ts`):
   - equal — the server's text is stored;
-  - different — refused with a conflict; the client reloads the form, keeps the
-    answers and asks the registrant to review the changed consent before submitting,
-    mirroring the existing `priceChanged` state.
+  - different — refused with a conflict (`REGISTRATION_CONSENT_CHANGED`); the form
+    shows a `consentChanged` state asking to reload the page and register again,
+    exactly like `priceChanged`. The answers are not kept across the reload — the
+    simpler of the two, and the same as a price change.
 - Only consent texts are compared, not the whole form: unrelated edits do not
   interrupt anyone filling in a form. No form versioning, no hash — the texts are
   short.
@@ -497,14 +503,28 @@ The form editor autosaves; an incomplete form is a normal state mid-edit, so sav
 is never refused. Enforcement sits at the outward-facing action, like organization
 verification:
 
-- **Registration gate.** An event refuses public registrations while a tagged
-  category relying on `explicit_consent` has no consent question covering it, or a
-  tagged category is not declared in the notice with an Art. 9 basis. Same guard
-  chain as `registrationOpen` / `eventOrganizationVerified`; the event page says
-  registration is unavailable. The editor and event dashboard show why.
-- **Submission and manager edits.** Refuse (422) when a tagged question relying on
-  consent has an answer while its consent is not `true`. Checked on the submitted
-  data, so hidden questions do not slip through.
+- **[implemented] Registration gate.** An event refuses public registrations while
+  a tagged category relying on consent has no consent question covering it, or a
+  tagged category is not declared in the composed notice
+  (`formPrivacyIssues`, `common/src/form/privacyCompliance.ts`). Guard
+  `eventPrivacyCompliant` (`registration.guard.ts`), in the same chain as
+  `registrationOpen` / `eventOrganizationVerified`; like a closed registration it
+  answers anonymous requests with 401. Managers with
+  `event.registrations.create` bypass it, as they bypass the open/close dates — the
+  submission check below still applies to them.
+- **[implemented]** The public event page runs the same check and shows a
+  `privacy` state ("registration is not possible at the moment") instead of a form
+  that would fail. The form editor raises a notification naming what is missing
+  when the problem first appears or changes, not on every autosave.
+  **[planned]** A banner on the event dashboard.
+- Which categories rely on consent: every special category, except those the notice
+  declares on another Art. 9 basis (`consentBasedCategories`). Under a free-text
+  notice nothing is readable, so all special categories rely on consent and the
+  "undeclared" check is skipped.
+- **[implemented] Submission and manager edits.** Refuse (422,
+  `REGISTRATION_CONSENT_MISSING`) when a tagged question relying on consent has an
+  answer while its consent is not `true` (`assertConsentsGiven`). Checked on the
+  submitted data, so hidden questions do not slip through.
 - Categories relying on (g) or another non-consent basis need no consent question.
 - **[review]** Editing a live form into a non-compliant state stops registrations
   until it is fixed. Intended: collecting without a basis is not allowed even
@@ -525,9 +545,13 @@ verification:
 
 **Scope and legacy events**
 
-- Enforcement applies to events created after the release; existing and past events
-  are not changed. The cutoff is a release date compared with `Event.createdAt`
-  (null on the oldest events, which counts as legacy) — no new column.
+- **[implemented]** Enforcement applies to events created since
+  `PRIVACY_ENFORCED_SINCE` (`isPrivacyEnforced`), compared with `Event.createdAt`
+  (null on the oldest events, which counts as legacy) — no new column. The event
+  resource exposes it as `privacyEnforced`. Consent texts are copied for every
+  event, legacy included.
+- **[review]** `PRIVACY_ENFORCED_SINCE` is set to 18.11.2026; set it to the actual
+  release date before deploying.
 - An event created from a reference event counts as new and must pass the gate.
 - **[planned]** Legacy events that still accept registrations are reviewed, not
   migrated: their managers see a warning on the event dashboard asking them to add
@@ -550,17 +574,90 @@ verification:
   (`sanitizeContent` / `sanitizeAddendum`) and again when rendered (DOMPurify).
 - **[implemented]** Stored files are encrypted at rest when the storage is
   configured for it (`core/storage/encrypted.storage.ts`).
-- **[gap]** Every role with `event.registrations.view` sees every answer, health
-  data included. Message templates receive the full `registration.data`
-  (`template.mail.ts`), change emails list changed answers by label
-  (`registration.changes.ts`), and CSV export (`useCsvExport.ts`), table templates
-  and the registration PDF show whatever the viewer can see.
-- **[planned]** One permission, `event.registrations.health.view` (skill:
-  `add-permission`), granted to directors and coordinators by default. Answers of
-  tagged questions are removed for everyone without it in one place — the
-  registration resource — so API, SSE, table templates, PDF and CSV export follow.
-  Emails never include tagged answers: they are removed from the template context
-  and from change emails. Justified by Art. 32 and data minimisation.
+- **[implemented]** Need-to-know is decided per role, not per answer. Every role
+  with `event.registrations.view` sees every answer, health data included, because
+  every one of them needs it:
+
+  | Role          | Registrations | Why                                                               |
+  | ------------- | ------------- | ----------------------------------------------------------------- |
+  | `DIRECTOR`    | full          | Runs the event, answers for it                                    |
+  | `COORDINATOR` | full          | Organizes participants, rooms and program                         |
+  | `COUNSELOR`   | full          | Supervises participants; needs allergies and medical restrictions |
+  | `VIEWER`      | full          | Helpers such as kitchen staff; organizers grant it knowing this   |
+  | `TREASURER`   | none          | Finances only (`docs/finances.md`); see "Treasurer" below         |
+
+  Filtering health answers inside a role (an `event.registrations.health.view`
+  permission) was considered and dropped: almost every holder would need it, and
+  filtering every place that shows registration data costs far more than it
+  protects. Organizers who want a helper to see less give them no role.
+
+- **[gap]** Emails leave the platform's access control: they are forwarded and
+  kept in inboxes. Message templates receive the full `registration.data`
+  (`template.mail.ts`) and change emails list changed answers by label
+  (`registration.changes.ts`).
+- **[planned]** Emails never include answers of questions tagged with a special
+  category. Justified by Art. 32.
+  - **Rendering time, not request time.** The job keeps carrying a snapshot of the
+    registration, so the mail shows what the sender saw, even if the registration
+    is edited or deleted before it goes out. `RegistrationTemplateMessage.context()`
+    builds a `SurveyModel` from the snapshot's form and answers and calls
+    `clearValue()` on every tagged question; the template gets `survey.data`.
+    SurveyJS decides where a value lives ("Other" text, comments, dynamic panels,
+    future question types) — the platform has no storage rules of its own.
+  - **Cost.** About 20 ms per mail (camp preset, measured), in the worker, one job
+    at a time; Node serves other requests between jobs. Filtering every
+    registration up front at request time was rejected: 20 s of blocked event loop
+    per 1,000 recipients.
+  - **Preview.** `message.controller.ts` renders through the same `context()`, so
+    the preview shows exactly what is sent, filtering included. The editor's token
+    picker leaves tagged questions out, since they would render empty.
+  - **Change emails.** A changed tagged answer keeps its label and loses its value,
+    like files today (`registration.changes.ts`, `changes.markup.ts`).
+  - **Limit.** A sensitive answer copied into an untagged question
+    (`setValueExpression`, `copyvalue`/`setvalue` triggers) is not caught — the
+    organizer's tagging responsibility (open question 5).
+- **[gap]** Queued mail jobs carry the full registration snapshot and outlive the
+  mail. The database queue keeps completed jobs 30 days and failed jobs 90
+  (`queue.service.ts`, daily cleanup); the Redis queue sets neither
+  `removeOnComplete` nor `removeOnFail`, so BullMQ keeps them indefinitely.
+  Deleting a registration leaves these copies.
+- **[planned]** A per-queue `retention: { completed, failed }` option in
+  `QueueOptions`, mapped to BullMQ's `removeOnComplete`/`removeOnFail` (`age`) and
+  used by the database queue's cleanup; queues without it keep today's behaviour.
+  The mail queue deletes a job as soon as it completes — `MessageDelivery` already
+  records the send — and keeps failed jobs 14 days for retries. Failed jobs are not
+  searched out when a registration is deleted (JSON payloads in two drivers); the
+  14 days are the accepted remainder.
+
+### Treasurer and payments
+
+- **[implemented]** `TREASURER` holds no registration permission. Nothing in
+  finances, expenses or payouts reads registration data.
+- **[planned, with `feat/payments`]** To match payments to registrations, the
+  treasurer gets a fixed, read-only projection of each registration — never
+  `data`, never files:
+
+  | Field                              | Why                                                               |
+  | ---------------------------------- | ----------------------------------------------------------------- |
+  | id, payment reference              | The key a bank transfer is matched by                             |
+  | first and last name                | Recognizing the registration                                      |
+  | payer name                         | A guardian usually pays for a minor, under their own name         |
+  | contact email                      | Payment reminders and refunds                                     |
+  | address                            | Only once invoices are generated (invoice recipient)              |
+  | status, created at                 | Cancelled or waitlisted registrations owe nothing or get a refund |
+  | `quotedAmount`, currency, payments | What is due, what was paid, the balance                           |
+
+  Amounts are already stored on the registration (`quotedAmount`), so no form
+  answer is needed. Date of birth, gender, group, room and every answer stay out.
+
+- **[planned]** It is a separate endpoint and resource with its own permission
+  (skill: `add-permission`), not a filter on the registration resource:
+  - an allowlist of fields cannot leak a question added later; a filter on
+    `RegistrationResource` is a denylist every consumer must respect (SSE, table
+    templates, PDF, CSV export, messages);
+  - the treasurer works on payments, so it lives with the payments ledger: the
+    payment list joined with the registration fields above;
+  - the registration resource and its frontend stay free of partial objects.
 
 ## 7. Platform-level processing
 
@@ -592,6 +689,8 @@ policy rather than the organization's notice.
   invoice, an insurance claim, a safeguarding matter) is the controller's judgment.
 - **[implemented]** Managers delete registrations individually; files left without
   an owner are removed from storage by the file service.
+- **[gap]** Copies of a registration in finished mail jobs survive its deletion —
+  see section 6 for the planned queue retention.
 - **[gap]** A consent-bound exception ("until consent is withdrawn") has no upper
   limit, so data a person never withdraws consent for is kept indefinitely.
   **[planned]** Consent-bound exceptions also state a maximum period; the completeness
@@ -647,11 +746,11 @@ policy rather than the organization's notice.
 | Whether provision is required          | 13(2)(e)          | Contractual vs. statutory, per purpose; (g) to follow    | implemented / planned |
 | Lawful basis per purpose               | 6                 | Catalogue, per-purpose basis, legitimate-interest text   | implemented           |
 | Basis for special categories           | 9(2)              | Declared in notice, registration gate; (g) to be added   | implemented / planned |
-| Explicit consent obtained              | 9(2)(a), 7        | Tagged consent questions, gate, submission check         | planned               |
-| Proof of consent                       | 7(1)              | Form answer, `createdAt`, `consentTexts`, audit log      | planned               |
+| Explicit consent obtained              | 9(2)(a), 7        | Tagged consent questions, gate, submission check         | implemented           |
+| Proof of consent                       | 7(1)              | Form answer, `createdAt`, `consentTexts`, audit log      | implemented           |
 | Freely given                           | 7(4)              | Optional by default; mandatory option under review       | planned / review      |
 | Withdrawal                             | 7(3)              | Manager action, audit-logged                             | planned / review      |
-| Need-to-know access                    | 5(1)(f), 32       | Role permissions; health permission in one place         | implemented / planned |
+| Need-to-know access                    | 5(1)(f), 32       | Role permissions; no health in emails; treasurer subset  | implemented / planned |
 | Storage limitation                     | 5(1)(e)           | Reminder, manual deletion, sensitive-answer deletion     | implemented / planned |
 | Erasure                                | 17                | Manager deletion, orphan file cleanup                    | implemented           |
 | Objection shown separately             | 21(4)             | List item plus note                                      | review                |
@@ -709,7 +808,7 @@ reads tags after the tagging itself.
    coverage helper (`common/src/form/`).
 6. Presets: tag their questions and add a health consent question. New events only.
 
-**Phase 3 — enforcement and proof, shipped together**
+**Phase 3 — enforcement and proof, shipped together** (done)
 
 7. Registration gate and submission check. Its release date is the legacy cutoff.
    Excluded categories count as undeclared.
@@ -717,9 +816,15 @@ reads tags after the tagging itself.
 
 **Phase 4 — access**
 
-9. `event.registrations.health.view`, filtering in the registration resource, health
-   answers kept out of emails. Most urgent in substance, but it only works on tagged
-   forms.
+9. Emails and the mail queue (section 6), in this order:
+   - Queue retention per queue; the mail queue drops completed jobs at once and
+     failed ones after 14 days. Independent of tagging, covers every mail ever
+     queued — ships first.
+   - Tagged answers cleared through the SurveyJS model when a mail is rendered
+     (worker and preview), values of tagged changes redacted, tagged questions out
+     of the token picker. Only works on tagged forms.
+   - The treasurer's payment projection (section 6) ships with `feat/payments`,
+     not here.
 
 **Phase 5 — lifecycle**
 
