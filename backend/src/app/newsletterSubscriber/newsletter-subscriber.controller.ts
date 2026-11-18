@@ -81,7 +81,6 @@ export class NewsletterSubscriberController extends BaseController {
       newsletter.id,
       body.eventId,
       body.group,
-      body.requireConsent,
     );
 
     res.json({ data: result });
