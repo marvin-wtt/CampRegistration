@@ -21,10 +21,10 @@ export const privacyCategory: PropertyDefinition = {
 };
 
 /** Marks a boolean as a consent, whose wording is kept as proof. */
-export const consent: PropertyDefinition = {
+export const privacyConsent: PropertyDefinition = {
   className: 'boolean',
   propertyInfo: {
-    name: 'consent:boolean',
+    name: 'privacyConsent:boolean',
     default: false,
     category: 'general',
     visibleIndex: 5,
@@ -35,13 +35,13 @@ export const consent: PropertyDefinition = {
  * The special categories a consent unlocks. Separate from `consent`, so a
  * consent about something else (photos, a carpool list) gates no question.
  */
-export const consentFor: PropertyDefinition = {
+export const privacyConsentFor: PropertyDefinition = {
   className: 'boolean',
   propertyInfo: {
-    name: 'consentFor:multiplevalues',
+    name: 'privacyConsentFor:multiplevalues',
     choices: [...SPECIAL_CATEGORY_DATA_KEYS],
-    dependsOn: ['consent'],
-    visibleIf: (obj: Base) => obj.getPropertyValue('consent') === true,
+    dependsOn: ['privacyConsent'],
+    visibleIf: (obj: Base) => obj.getPropertyValue('privacyConsent') === true,
     category: 'general',
     visibleIndex: 6,
   },

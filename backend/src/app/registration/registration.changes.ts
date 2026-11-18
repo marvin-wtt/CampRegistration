@@ -16,6 +16,8 @@ export interface RegistrationChange {
   value: string | null;
   /** File answers are ULIDs — the caller words these instead of printing them. */
   isFile: boolean;
+  /** Special-category answers travel without their value, worded by the caller. */
+  isSensitive: boolean;
 }
 
 /**
@@ -123,8 +125,10 @@ export function diffRegistrationData(
     changes.push({
       path: answer.path,
       label: answer.label,
-      value,
+      // Never carried into the mail job, let alone the mail.
+      value: answer.isSensitive ? null : value,
       isFile: answer.isFile,
+      isSensitive: answer.isSensitive,
     });
   };
 

@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { Serializer, SurveyModel } from 'survey-core';
 import {
   PRIVACY_ENFORCED_SINCE,
-  REPEATED,
   consentTexts,
   extractPrivacyTags,
   formPrivacyIssues,
   hasPrivacyIssues,
   isPrivacyEnforced,
   uncoveredConsentCategories,
-  unconsentedAnswers,
+  clearUnconsentedAnswers,
+  unconsentedQuestions,
 } from '../../../src/form/index.js';
 import { composePrivacyNotice } from '../../../src/privacy/index.js';
 
@@ -26,18 +26,24 @@ const medication = {
 const healthConsent = {
   type: 'boolean',
   name: 'consent_health',
-  consent: true,
-  consentFor: ['allergies', 'medication'],
+  privacyConsent: true,
+  privacyConsentFor: ['allergies', 'medication'],
 };
-const photoConsent = { type: 'boolean', name: 'consent_photos', consent: true };
+const photoConsent = {
+  type: 'boolean',
+  name: 'consent_photos',
+  privacyConsent: true,
+};
 
 const consentBased = new Set(['allergies', 'medication', 'health']);
 
 describe('privacy properties', () => {
   it('are registered on the survey serializer', () => {
     expect(Serializer.findProperty('question', 'privacyCategory')).toBeTruthy();
-    expect(Serializer.findProperty('boolean', 'consent')).toBeTruthy();
-    expect(Serializer.findProperty('boolean', 'consentFor')).toBeTruthy();
+    expect(Serializer.findProperty('boolean', 'privacyConsent')).toBeTruthy();
+    expect(
+      Serializer.findProperty('boolean', 'privacyConsentFor'),
+    ).toBeTruthy();
   });
 
   it('survive a round trip through the survey model', () => {
@@ -63,20 +69,14 @@ describe('extractPrivacyTags', () => {
       ],
     });
 
-    expect(tags.tagged).toEqual([
-      { name: 'allergies', path: ['allergies'], category: 'allergies' },
-    ]);
+    expect(tags.tagged).toEqual([{ name: 'allergies', category: 'allergies' }]);
     expect(tags.consents).toEqual([
-      {
-        name: 'consent_health',
-        path: ['consent_health'],
-        categories: ['allergies', 'medication'],
-      },
-      { name: 'consent_photos', path: ['consent_photos'], categories: [] },
+      { name: 'consent_health', categories: ['allergies', 'medication'] },
+      { name: 'consent_photos', categories: [] },
     ]);
   });
 
-  it('steps into each entry of a dynamic panel', () => {
+  it('reads the tags inside a dynamic panel', () => {
     const tags = extractPrivacyTags({
       elements: [
         {
@@ -87,15 +87,7 @@ describe('extractPrivacyTags', () => {
       ],
     });
 
-    expect(tags.tagged[0]?.path).toEqual(['children', REPEATED, 'allergies']);
-  });
-
-  it('reads the value name where one is set', () => {
-    const tags = extractPrivacyTags({
-      elements: [{ ...allergies, valueName: 'allergy_notes' }],
-    });
-
-    expect(tags.tagged[0]?.path).toEqual(['allergy_notes']);
+    expect(tags.tagged).toEqual([{ name: 'allergies', category: 'allergies' }]);
   });
 
   it('only counts booleans as consents', () => {
@@ -127,36 +119,53 @@ describe('uncoveredConsentCategories', () => {
   });
 });
 
-describe('unconsentedAnswers', () => {
-  const tags = extractPrivacyTags({
-    elements: [allergies, medication, healthConsent],
-  });
+describe('unconsentedQuestions', () => {
+  const survey = (data: Record<string, unknown>, extra: object[] = []) => {
+    const model = new SurveyModel({
+      elements: [allergies, medication, healthConsent, ...extra],
+    });
+    model.data = data;
+    return model;
+  };
+  const names = (model: SurveyModel, categories?: Set<string>) =>
+    unconsentedQuestions(model, categories).map((q) => q.name);
 
   it('reports answers given without the covering consent', () => {
-    expect(
-      unconsentedAnswers(tags, consentBased, { allergies: 'Nuts' }).map(
-        (question) => question.name,
-      ),
-    ).toEqual(['allergies']);
+    expect(names(survey({ allergies: 'Nuts' }), consentBased)).toEqual([
+      'allergies',
+    ]);
   });
 
   it('accepts them once the consent is given', () => {
     expect(
-      unconsentedAnswers(tags, consentBased, {
-        allergies: 'Nuts',
-        consent_health: true,
-      }),
+      names(survey({ allergies: 'Nuts', consent_health: true }), consentBased),
     ).toEqual([]);
+  });
+
+  it('reports them when the consent is declined', () => {
+    expect(
+      names(survey({ allergies: 'Nuts', consent_health: false }), consentBased),
+    ).toEqual(['allergies']);
   });
 
   it('ignores unanswered questions', () => {
-    expect(
-      unconsentedAnswers(tags, consentBased, { allergies: '', medication: [] }),
-    ).toEqual([]);
+    expect(names(survey({ allergies: '' }), consentBased)).toEqual([]);
+  });
+
+  it('ignores categories resting on another basis', () => {
+    expect(names(survey({ allergies: 'Nuts' }), new Set())).toEqual([]);
+  });
+
+  it('defaults to the categories the form asks consent for', () => {
+    const model = survey({ allergies: 'Nuts', diet: 'x' }, [
+      { type: 'text', name: 'diet', privacyCategory: 'religion' },
+    ]);
+
+    expect(names(model)).toEqual(['allergies']);
   });
 
   it('checks every entry of a dynamic panel', () => {
-    const repeated = extractPrivacyTags({
+    const model = new SurveyModel({
       elements: [
         {
           type: 'paneldynamic',
@@ -166,12 +175,57 @@ describe('unconsentedAnswers', () => {
         healthConsent,
       ],
     });
+    model.data = { children: [{ allergies: '' }, { allergies: 'Nuts' }] };
 
-    expect(
-      unconsentedAnswers(repeated, consentBased, {
-        children: [{ allergies: '' }, { allergies: 'Nuts' }],
-      }),
-    ).toHaveLength(1);
+    expect(names(model, consentBased)).toEqual(['allergies']);
+  });
+
+  it('counts a consent asked per entry only when given in every entry', () => {
+    const model = new SurveyModel({
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'children',
+          templateElements: [allergies, healthConsent],
+        },
+      ],
+    });
+    model.data = {
+      children: [
+        { allergies: 'Nuts', consent_health: true },
+        { consent_health: false },
+      ],
+    };
+
+    expect(names(model, consentBased)).toEqual(['allergies']);
+  });
+});
+
+describe('clearUnconsentedAnswers', () => {
+  it('clears what a declined consent covers, comments included', () => {
+    const model = new SurveyModel({
+      elements: [
+        {
+          type: 'checkbox',
+          name: 'allergies',
+          privacyCategory: 'allergies',
+          choices: ['nuts'],
+          showOtherItem: true,
+        },
+        { type: 'text', name: 'first_name' },
+        healthConsent,
+      ],
+    });
+    model.data = {
+      first_name: 'Jane',
+      allergies: ['nuts', 'other'],
+      'allergies-Comment': 'milk',
+      consent_health: false,
+    };
+
+    clearUnconsentedAnswers(model);
+
+    expect(model.data).toEqual({ first_name: 'Jane', consent_health: false });
   });
 });
 

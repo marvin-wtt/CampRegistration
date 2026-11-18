@@ -1,10 +1,12 @@
-import type { SurveyModel } from 'survey-core';
+import type { Question, SurveyModel } from 'survey-core';
+import { SPECIAL_CATEGORY_DATA_KEYS } from '../privacy/catalogue.js';
 
 /**
  * Reads the privacy tags of a form (docs/privacy.md, section 5): which
  * questions collect which data category, and which consent question covers
- * which special category. Works on the saved form JSON, so the server can check
- * a form without building a survey.
+ * which special category. The tags are the platform's own properties, so they
+ * are read off the saved form JSON — in the browser and on the server, without
+ * building a survey. Answers are only ever read through the survey model.
  */
 
 interface ElementJson {
@@ -14,23 +16,17 @@ interface ElementJson {
   elements?: unknown;
   templateElements?: unknown;
   privacyCategory?: unknown;
-  consent?: unknown;
-  consentFor?: unknown;
+  privacyConsent?: unknown;
+  privacyConsentFor?: unknown;
 }
-
-/** Marks a step into each entry of a dynamic panel. */
-export const REPEATED = '*';
 
 export interface PrivacyTaggedQuestion {
   name: string;
-  /** Where the answer sits in the form data; `REPEATED` steps into each entry. */
-  path: string[];
   category: string;
 }
 
 export interface ConsentQuestion {
   name: string;
-  path: string[];
   /** The special categories it unlocks; empty for a consent about other things. */
   categories: string[];
 }
@@ -49,13 +45,8 @@ function asElements(value: unknown): ElementJson[] {
     : [];
 }
 
-function valueName(element: ElementJson): string | null {
-  const name =
-    typeof element.valueName === 'string' && element.valueName
-      ? element.valueName
-      : element.name;
-
-  return typeof name === 'string' && name ? name : null;
+function nameOf(element: ElementJson): string | null {
+  return typeof element.name === 'string' && element.name ? element.name : null;
 }
 
 export function extractPrivacyTags(form: unknown): FormPrivacyTags {
@@ -64,36 +55,33 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
     return tags;
   }
 
-  const walk = (elements: ElementJson[], prefix: string[]) => {
+  const walk = (elements: ElementJson[]) => {
     for (const element of elements) {
       const type = element.type;
-      const name = valueName(element);
+      const name = nameOf(element);
 
-      // A plain panel groups questions without nesting their answers.
       if (type === 'panel') {
-        walk(asElements(element.elements), prefix);
+        walk(asElements(element.elements));
         continue;
       }
-      if (type === 'paneldynamic' && name) {
-        walk(asElements(element.templateElements), [...prefix, name, REPEATED]);
+      if (type === 'paneldynamic') {
+        walk(asElements(element.templateElements));
       }
       if (!name) {
         continue;
       }
 
-      const path = [...prefix, name];
       if (
         typeof element.privacyCategory === 'string' &&
         element.privacyCategory
       ) {
-        tags.tagged.push({ name, path, category: element.privacyCategory });
+        tags.tagged.push({ name, category: element.privacyCategory });
       }
-      if (type === 'boolean' && element.consent === true) {
+      if (type === 'boolean' && element.privacyConsent === true) {
         tags.consents.push({
           name,
-          path,
-          categories: Array.isArray(element.consentFor)
-            ? element.consentFor.filter(
+          categories: Array.isArray(element.privacyConsentFor)
+            ? element.privacyConsentFor.filter(
                 (key): key is string => typeof key === 'string',
               )
             : [],
@@ -104,9 +92,9 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
 
   const json = form as { pages?: unknown; elements?: unknown };
   for (const page of asElements(json.pages)) {
-    walk(asElements(page.elements), []);
+    walk(asElements(page.elements));
   }
-  walk(asElements(json.elements), []);
+  walk(asElements(json.elements));
 
   return tags;
 }
@@ -133,65 +121,85 @@ export function uncoveredConsentCategories(
   ];
 }
 
-function valuesAt(data: unknown, path: readonly string[]): unknown[] {
-  if (path.length === 0) {
-    return [data];
-  }
+function categoriesOf(question: Question): string[] {
+  const value: unknown = question.getPropertyValue('privacyConsentFor');
 
-  const [step, ...rest] = path;
-  if (step === REPEATED) {
-    return Array.isArray(data)
-      ? data.flatMap((entry) => valuesAt(entry, rest))
-      : [];
-  }
-  if (!data || typeof data !== 'object') {
-    return [];
-  }
-
-  return valuesAt((data as Record<string, unknown>)[step], rest);
-}
-
-function isAnswered(value: unknown): boolean {
-  if (value === undefined || value === null || value === '') {
-    return false;
-  }
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-  if (typeof value === 'object') {
-    return Object.keys(value).length > 0;
-  }
-
-  return true;
-}
-
-/** Given when the question holds `true` — in every entry, if repeated. */
-function isGiven(consent: ConsentQuestion, data: unknown): boolean {
-  const values = valuesAt(data, consent.path);
-
-  return values.length > 0 && values.every((value) => value === true);
+  return Array.isArray(value)
+    ? value.filter((key): key is string => typeof key === 'string')
+    : [];
 }
 
 /**
- * Tagged questions answered although no consent covering their category was
- * given. Categories outside `consentCategories` rest on another basis and are
- * never reported.
+ * Special categories with a given consent. A consent asked once per dynamic
+ * panel entry counts only when given in every entry.
  */
-export function unconsentedAnswers(
-  tags: FormPrivacyTags,
-  consentCategories: ReadonlySet<string>,
-  data: unknown,
-): PrivacyTaggedQuestion[] {
-  return tags.tagged.filter(
-    (question) =>
-      consentCategories.has(question.category) &&
-      valuesAt(data, question.path).some(isAnswered) &&
-      !tags.consents.some(
-        (consent) =>
-          consent.categories.includes(question.category) &&
-          isGiven(consent, data),
-      ),
-  );
+function consentedCategories(questions: Question[]): Set<string> {
+  const byName = new Map<string, Question[]>();
+  for (const question of questions) {
+    if (
+      question.getType() === 'boolean' &&
+      question.getPropertyValue('privacyConsent') === true
+    ) {
+      const name = question.getValueName();
+      byName.set(name, [...(byName.get(name) ?? []), question]);
+    }
+  }
+
+  const given = new Set<string>();
+  for (const instances of byName.values()) {
+    if (instances.every((question) => question.value === true)) {
+      for (const category of categoriesOf(instances[0])) {
+        given.add(category);
+      }
+    }
+  }
+
+  return given;
+}
+
+/**
+ * Questions answered although no consent covering their category was given,
+ * read through the survey model — which knows where every answer lives.
+ * Categories outside `consentCategories` rest on another basis and are never
+ * reported; without it, every category some consent question covers counts.
+ */
+export function unconsentedQuestions(
+  survey: SurveyModel,
+  consentCategories?: ReadonlySet<string>,
+): Question[] {
+  const questions = survey.getAllQuestions(false, false, true);
+  const given = consentedCategories(questions);
+  const relying =
+    consentCategories ??
+    new Set(
+      questions
+        .filter((question) => question.getPropertyValue('privacyConsent'))
+        .flatMap(categoriesOf),
+    );
+
+  return questions.filter((question) => {
+    const category: unknown = question.getPropertyValue('privacyCategory');
+
+    return (
+      typeof category === 'string' &&
+      relying.has(category) &&
+      !given.has(category) &&
+      !question.isEmpty()
+    );
+  });
+}
+
+/**
+ * Clears the answers a declined consent does not cover, so they are never
+ * sent (docs/privacy.md, 5). The form calls it before submitting.
+ */
+export function clearUnconsentedAnswers(
+  survey: SurveyModel,
+  consentCategories?: ReadonlySet<string>,
+): void {
+  for (const question of unconsentedQuestions(survey, consentCategories)) {
+    question.clearValue();
+  }
 }
 
 /**
@@ -208,7 +216,7 @@ export function consentTexts(
   for (const question of survey.getAllQuestions()) {
     if (
       question.getType() !== 'boolean' ||
-      question.getPropertyValue('consent') !== true ||
+      question.getPropertyValue('privacyConsent') !== true ||
       (options.givenOnly && question.value !== true)
     ) {
       continue;
@@ -221,4 +229,24 @@ export function consentTexts(
   }
 
   return texts;
+}
+
+const SPECIAL_CATEGORIES = new Set<unknown>(SPECIAL_CATEGORY_DATA_KEYS);
+
+/** Whether a `privacyCategory` tag names an Art. 9 special category. */
+export function isSpecialCategory(category: unknown): boolean {
+  return SPECIAL_CATEGORIES.has(category);
+}
+
+/**
+ * Clears every answer to a question tagged with a special category, through
+ * SurveyJS itself: it knows where a value lives — "Other" text and comments,
+ * dynamic panel entries, `valueName` — so the platform keeps no rules of its own.
+ */
+export function clearSpecialCategoryAnswers(survey: SurveyModel): void {
+  for (const question of survey.getAllQuestions(false, false, true)) {
+    if (isSpecialCategory(question.getPropertyValue('privacyCategory'))) {
+      question.clearValue();
+    }
+  }
 }

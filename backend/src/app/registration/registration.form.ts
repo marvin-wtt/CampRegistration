@@ -11,7 +11,10 @@ import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
 import {
+  clearSpecialCategoryAnswers,
   consentTexts,
+  isSpecialCategory,
+  unconsentedQuestions,
   extractEventData,
   extractPaymentAmounts,
   setVariables,
@@ -31,6 +34,8 @@ export interface FormAnswer {
   displayValue: unknown;
   /** The answer is a stored file reference, never something to print. */
   isFile: boolean;
+  /** Tagged with a special category: never printed in a mail. */
+  isSensitive: boolean;
 }
 
 /** A reason the submitted data does not fit the form. */
@@ -50,6 +55,7 @@ interface PlainDataEntry {
   value: unknown;
   displayValue: unknown;
   questionType?: string;
+  privacyCategory?: unknown;
   data?: PlainDataEntry[];
 }
 
@@ -164,6 +170,7 @@ function flattenAnswers(
         value: entry.value,
         displayValue: entry.displayValue,
         isFile: questionType === FILE_TYPE,
+        isSensitive: isSpecialCategory(entry.privacyCategory),
       },
     ];
   });
@@ -256,6 +263,23 @@ export class RegistrationForm {
     return consentTexts(this.survey, { givenOnly: true });
   }
 
+  /** Questions answered without the consent their category rests on. */
+  unconsentedQuestions(consentCategories: ReadonlySet<string>): string[] {
+    return unconsentedQuestions(this.survey, consentCategories).map(
+      (question) => question.getValueName(),
+    );
+  }
+
+  /**
+   * The response without answers to special-category questions, for mails
+   * (docs/privacy.md, 6). Clears them in this form, so read nothing after it.
+   */
+  withoutSensitiveAnswers(): Record<string, unknown> {
+    clearSpecialCategoryAnswers(this.survey);
+
+    return this.data;
+  }
+
   /** What the answers add to the event price, for `computeAmountDue`. */
   paymentAmounts(): number[] {
     return extractPaymentAmounts(this.survey);
@@ -270,6 +294,7 @@ export class RegistrationForm {
     const plain = this.survey.getPlainData({
       includeEmpty: true,
       includeQuestionTypes: true,
+      calculations: [{ propertyName: 'privacyCategory' }],
     });
 
     return flattenAnswers(plain, []);

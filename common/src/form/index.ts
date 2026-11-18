@@ -27,11 +27,13 @@ export { formLintOptions } from './lint.js';
 export { extractEventData } from './eventData.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
-  REPEATED,
+  clearSpecialCategoryAnswers,
+  clearUnconsentedAnswers,
   consentTexts,
+  isSpecialCategory,
   extractPrivacyTags,
   uncoveredConsentCategories,
-  unconsentedAnswers,
+  unconsentedQuestions,
   type ConsentQuestion,
   type FormPrivacyTags,
   type PrivacyTaggedQuestion,

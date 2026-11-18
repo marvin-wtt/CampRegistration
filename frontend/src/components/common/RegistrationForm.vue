@@ -173,7 +173,10 @@ import {
   isConsentChangedError,
   isPriceChangedError,
 } from '@/services/RegistrationService';
-import { consentTexts } from '@camp-registration/common/form';
+import {
+  clearUnconsentedAnswers,
+  consentTexts,
+} from '@camp-registration/common/form';
 import { useErrorExtractor } from '@/composables/errorText';
 
 const { locale, t } = useI18n();
@@ -472,6 +475,8 @@ function createModel(eventId: string, form: object): SurveyModel {
     submitState.value = 'saving';
 
     mapFileQuestionValues(sender);
+    // A declined consent: the answers it would have covered are never sent.
+    clearUnconsentedAnswers(sender);
 
     // What the form presented, if it presented a price at all. Only for the
     // server to compare: it charges its own amount, whatever this says.

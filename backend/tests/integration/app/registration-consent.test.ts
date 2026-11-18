@@ -22,8 +22,8 @@ const consent = {
   name: 'consent_health',
   title: 'I agree that the allergies of {first_name} are processed.',
   description: 'Voluntary, can be withdrawn at any time.',
-  consent: true,
-  consentFor: ['allergies'],
+  privacyConsent: true,
+  privacyConsentFor: ['allergies'],
 };
 
 const healthNotice = completePrivacyNoticeContent({
@@ -71,7 +71,7 @@ describe('registration consent', () => {
       const event = await eventWith([
         firstName,
         { type: 'comment', name: 'meds', privacyCategory: 'medication' },
-        { ...consent, consentFor: ['medication'] },
+        { ...consent, privacyConsentFor: ['medication'] },
       ]);
 
       const { status } = await register(event.id, {

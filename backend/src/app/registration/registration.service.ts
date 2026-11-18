@@ -155,12 +155,11 @@ export class RegistrationService extends BaseService {
     // Sensitive answers need the consent they rest on (docs/privacy.md, 5).
     if (isPrivacyEnforced(event)) {
       assertConsentsGiven(
-        event.form,
+        form,
         await this.privacyNoticeService.getComposedNotice(
           event.id,
           event.organizationId,
         ),
-        formData,
       );
     }
     const consentTexts = form.givenConsentTexts();
@@ -318,12 +317,11 @@ export class RegistrationService extends BaseService {
 
         if (isPrivacyEnforced(event)) {
           assertConsentsGiven(
-            event.form,
+            form,
             await this.privacyNoticeService.getComposedNotice(
               event.id,
               event.organizationId,
             ),
-            data.data,
           );
         }
         consentTexts = newlyGivenConsentTexts(before, form.givenConsentTexts());

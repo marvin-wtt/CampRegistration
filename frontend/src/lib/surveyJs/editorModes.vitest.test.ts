@@ -120,13 +120,13 @@ describe('editor modes', () => {
     // What a consent covers only matters once the question is one.
     const consent = creator.survey.getQuestionByName('consent_health');
     creator.selectElement(consent);
-    expect(properties()).toContain('consent');
-    expect(properties()).not.toContain('consentFor');
+    expect(properties()).toContain('privacyConsent');
+    expect(properties()).not.toContain('privacyConsentFor');
 
-    consent.setPropertyValue('consent', true);
+    consent.setPropertyValue('privacyConsent', true);
     creator.selectElement(null);
     creator.selectElement(consent);
-    expect(properties()).toContain('consentFor');
+    expect(properties()).toContain('privacyConsentFor');
   });
 
   describe.each(['simple', 'standard', 'expert'] as const)(
