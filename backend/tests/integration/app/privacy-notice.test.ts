@@ -9,7 +9,10 @@ import {
 import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
-import { emptyPrivacyNoticeContent } from '@camp-registration/common/privacy';
+import {
+  emptyPrivacyNoticeContent,
+  type PrivacyNoticeContent,
+} from '@camp-registration/common/privacy';
 import { eventListed } from './fixtures/registration.fixtures.js';
 
 /** An organization whose notice was never published — the blocked state. */
@@ -483,6 +486,99 @@ describe('privacy notices', () => {
         .expect(200);
     });
 
+    describe('exclusions', () => {
+      const eventOf = async (data: Partial<PrivacyNoticeContent> = {}) => {
+        const organization = await OrganizationFactory.create(
+          {},
+          {
+            privacyNotice: completePrivacyNoticeContent({
+              purposes: [
+                { key: 'registration_administration', legalBasis: 'contract' },
+                { key: 'medical_care', legalBasis: 'contract' },
+              ],
+              dataCategories: [
+                { key: 'identity' },
+                { key: 'health', specialCategoryBasis: 'explicit_consent' },
+              ],
+              ...data,
+            }),
+          },
+        );
+
+        return EventFactory.create({
+          organization: { connect: { id: organization.id } },
+        });
+      };
+
+      const publish = async (eventId: string, content: object) =>
+        request()
+          .put(`/api/v1/events/${eventId}/privacy-notice/addendum`)
+          .send({ content })
+          .auth(await eventManagerToken(eventId), { type: 'bearer' });
+
+      it('should drop excluded organization entries from the published notice', async () => {
+        const event = await eventOf();
+
+        await publish(event.id, {
+          excluded: { purposes: ['medical_care'], dataCategories: ['health'] },
+        }).then((res) => expect(res.status).toBe(200));
+
+        const { body } = await request()
+          .get(`/api/v1/events/${event.id}/privacy-notice`)
+          .expect(200);
+        const keys = (entries: { key: string }[]) =>
+          entries.map((entry) => entry.key);
+
+        expect(keys(body.data.notice.purposes)).not.toContain('medical_care');
+        expect(keys(body.data.notice.dataCategories)).not.toContain('health');
+      });
+
+      it('should drop exclusions of keys the organization does not declare', async () => {
+        const event = await eventOf();
+
+        const { body } = await publish(event.id, {
+          excluded: { purposes: ['medical_care', 'newsletter'] },
+        });
+
+        expect(body.data.content.excluded).toStrictEqual({
+          purposes: ['medical_care'],
+        });
+      });
+
+      it('should refuse excluding an entry that applies to every event', async () => {
+        const event = await eventOf({
+          dataCategories: [
+            { key: 'identity' },
+            {
+              key: 'health',
+              specialCategoryBasis: 'explicit_consent',
+              allEvents: true,
+            },
+          ],
+        });
+
+        await publish(event.id, {
+          excluded: { dataCategories: ['health'] },
+        }).then((res) => expect(res.status).toBe(422));
+      });
+
+      it('should refuse excluding an always-present recipient', async () => {
+        const event = await eventOf();
+
+        await publish(event.id, {
+          excluded: { recipients: ['platform_operator'] },
+        }).then((res) => expect(res.status).toBe(422));
+      });
+
+      it('should refuse excluding the last category', async () => {
+        const event = await eventOf();
+
+        await publish(event.id, {
+          excluded: { dataCategories: ['identity', 'health'] },
+        }).then((res) => expect(res.status).toBe(422));
+      });
+    });
+
     describe('under a free-text organization notice', () => {
       const freeTextEvent = async () => {
         const organization = await OrganizationFactory.create(
@@ -513,6 +609,16 @@ describe('privacy notices', () => {
               ],
             },
           })
+          .auth(await eventManagerToken(event.id), { type: 'bearer' })
+          .expect(422);
+      });
+
+      it('should refuse exclusions, which are structured too', async () => {
+        const event = await freeTextEvent();
+
+        await request()
+          .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+          .send({ content: { excluded: { purposes: ['medical_care'] } } })
           .auth(await eventManagerToken(event.id), { type: 'bearer' })
           .expect(422);
       });

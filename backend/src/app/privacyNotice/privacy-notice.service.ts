@@ -9,10 +9,13 @@ import {
   emptyPrivacyNoticeContent,
   hasStructuredEntries,
   isEmptyAddendum,
+  normalizeExclusions,
   privacyNoticeCompleteness,
   publishableAddendum,
+  refusedExclusions,
   retentionExceptions,
   supervisoryAuthorityFor,
+  withoutRefused,
   type EventPrivacyNotice,
   type OrganizationPrivacyNotice,
   type PrivacyDataCategoryEntry,
@@ -167,7 +170,22 @@ export class PrivacyNoticeService extends BaseService {
       );
     }
 
-    if (isEmptyAddendum(sanitized)) {
+    // Undeclared and restated keys hide nothing, so they are dropped rather
+    // than stored for a later organization entry to vanish under.
+    const addendum = normalizeExclusions(organizationContent, sanitized);
+
+    // Composition would ignore these; publishing them would mislead the author.
+    const refused = refusedExclusions(organizationContent, addendum);
+    if (refused.length > 0) {
+      throw new ApiError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        `These entries cannot be excluded: ${refused
+          .map((entry) => `${entry.part}.${entry.key} (${entry.reason})`)
+          .join(', ')}`,
+      );
+    }
+
+    if (isEmptyAddendum(addendum)) {
       if (!(await this.latestVersion('EVENT', eventId))) {
         throw new ApiError(
           httpStatus.UNPROCESSABLE_ENTITY,
@@ -175,7 +193,7 @@ export class PrivacyNoticeService extends BaseService {
         );
       }
     } else {
-      const gaps = addendumGaps(organizationContent, sanitized);
+      const gaps = addendumGaps(organizationContent, addendum);
 
       if (gaps.length > 0) {
         throw new ApiError(
@@ -185,7 +203,7 @@ export class PrivacyNoticeService extends BaseService {
       }
     }
 
-    const eventVersion = await this.appendVersion('EVENT', eventId, sanitized);
+    const eventVersion = await this.appendVersion('EVENT', eventId, addendum);
 
     return this.toEventNotice(organizationVersion, eventVersion);
   }
@@ -261,7 +279,14 @@ export class PrivacyNoticeService extends BaseService {
       (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
       null;
     // Under a free-text target notice only the source's text can be shown.
-    const content = publishableAddendum(organizationContent, source);
+    // Exclusions are re-read against the target organization; any it would
+    // ignore are dropped, since cloning must not fail on them.
+    const normalized = normalizeExclusions(
+      organizationContent,
+      publishableAddendum(organizationContent, source),
+    );
+    const refused = refusedExclusions(organizationContent, normalized);
+    const content = withoutRefused(normalized, refused);
 
     if (isEmptyAddendum(content)) {
       return;

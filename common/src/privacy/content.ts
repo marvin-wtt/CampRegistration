@@ -7,6 +7,7 @@ import type {
   PrivacyRecipientKey,
   SpecialCategoryBasisKey,
 } from './catalogue.js';
+import type { PrivacyNoticeExclusions } from './exclusions.js';
 import {
   ALWAYS_RECIPIENT_KEYS,
   RETENTION_ANCHORS,
@@ -31,6 +32,8 @@ export interface PrivacyPurposeEntry {
   legitimateInterest?: Translatable | null;
   /** What to call it. Set only on `custom:` entries. */
   label?: Translatable | null;
+  /** Applies to every event: events cannot exclude it. */
+  allEvents?: boolean | null;
 }
 
 export interface PrivacyDataCategoryEntry {
@@ -44,6 +47,8 @@ export interface PrivacyDataCategoryEntry {
    * this is decided by `SPECIAL_CATEGORY_DATA_KEYS`, not by the author.
    */
   special?: boolean;
+  /** Applies to every event: events cannot exclude it. */
+  allEvents?: boolean | null;
 }
 
 /**
@@ -56,6 +61,8 @@ export interface PrivacyRecipientEntry {
   name?: string | null;
   /** ISO 3166-1 alpha-2. Drives the third-country transfer disclosure. */
   country?: string | null;
+  /** Applies to every event: events cannot exclude it. */
+  allEvents?: boolean | null;
 }
 
 export type RetentionAnchor = (typeof RETENTION_ANCHORS)[number];
@@ -192,6 +199,8 @@ export interface PrivacyNoticeAddendum {
   retention?: PrivacyRetention | null;
   thirdCountryTransfers?: PrivacyThirdCountryTransfers | null;
   additional?: Translatable | null;
+  /** Organization entries this event drops; see `appliedExclusions`. */
+  excluded?: PrivacyNoticeExclusions | null;
 }
 
 /** Whether the event says anything of its own yet. */
@@ -202,7 +211,14 @@ export function isEmptyAddendum(addendum: PrivacyNoticeAddendum): boolean {
     !addendum.recipients?.length &&
     !addendum.retention &&
     !addendum.thirdCountryTransfers &&
-    !addendum.additional
+    !addendum.additional &&
+    !hasExclusions(addendum.excluded)
+  );
+}
+
+function hasExclusions(excluded: PrivacyNoticeExclusions | null | undefined) {
+  return Object.values(excluded ?? {}).some(
+    (keys) => Array.isArray(keys) && keys.length > 0,
   );
 }
 

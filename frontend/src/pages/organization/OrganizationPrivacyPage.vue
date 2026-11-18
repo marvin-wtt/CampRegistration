@@ -194,6 +194,15 @@
               :category-key="key"
               class="text-caption text-on-surface-variant q-ml-lg q-mb-sm"
             />
+            <q-checkbox
+              v-if="dataCategory(key)"
+              :model-value="dataCategory(key)?.allEvents === true"
+              :label="t('field.allEvents')"
+              dense
+              :disable="!canEdit"
+              class="q-ml-lg q-mb-sm"
+              @update:model-value="(v) => setAllEvents(dataCategory(key), v)"
+            />
           </div>
 
           <!-- Anything the catalogue is deliberately too coarse for. Set apart
@@ -263,6 +272,15 @@
                   v-model="entry.specialCategoryBasis"
                   :can-edit="canEdit"
                   class="inset-card__basis q-mt-xs"
+                />
+                <q-checkbox
+                  v-if="entry"
+                  :model-value="entry?.allEvents === true"
+                  :label="t('field.allEvents')"
+                  dense
+                  :disable="!canEdit"
+                  class="q-mt-sm"
+                  @update:model-value="(v) => setAllEvents(entry, v)"
                 />
               </q-card-section>
             </q-card>
@@ -344,6 +362,15 @@
               >
                 {{ gt('privacy.editor.field.consentQuestion') }}
               </div>
+              <q-checkbox
+                v-if="purpose(key)"
+                :model-value="purpose(key)?.allEvents === true"
+                :label="t('field.allEvents')"
+                dense
+                :disable="!canEdit"
+                class="q-ml-lg q-mt-xs"
+                @update:model-value="(v) => setAllEvents(purpose(key), v)"
+              />
             </template>
           </div>
 
@@ -415,6 +442,15 @@
                 >
                   {{ gt('privacy.editor.field.consentQuestion') }}
                 </div>
+                <q-checkbox
+                  v-if="entry"
+                  :model-value="entry?.allEvents === true"
+                  :label="t('field.allEvents')"
+                  dense
+                  :disable="!canEdit"
+                  class=""
+                  @update:model-value="(v) => setAllEvents(entry, v)"
+                />
               </q-card-section>
             </q-card>
 
@@ -483,6 +519,15 @@
               :disable="!canEdit"
               class="q-ml-lg q-mt-xs"
               @update:model-value="(v) => setRecipientName(key, String(v))"
+            />
+            <q-checkbox
+              v-if="!isAlwaysRecipient(key) && recipient(key)"
+              :model-value="recipient(key)?.allEvents === true"
+              :label="t('field.allEvents')"
+              dense
+              :disable="!canEdit"
+              class="q-ml-lg q-mt-xs"
+              @update:model-value="(v) => setAllEvents(recipient(key), v)"
             />
           </div>
           <q-stepper-navigation>
@@ -967,6 +1012,24 @@ function addCustomPurpose() {
 
 /* Recipients */
 
+/**
+ * Marks an entry as part of every event's notice, so no event can exclude it.
+ * Left off the entry rather than stored as false.
+ */
+function setAllEvents(
+  entry: { allEvents?: boolean | null } | undefined,
+  on: boolean,
+) {
+  if (!entry) {
+    return;
+  }
+  if (on) {
+    entry.allEvents = true;
+  } else {
+    delete entry.allEvents;
+  }
+}
+
 function recipient(key: PrivacyRecipientKey) {
   return content.value.recipients.find((entry) => entry.key === key);
 }
@@ -1218,6 +1281,7 @@ field:
   legalBasis: 'Legal basis'
   legitimateInterest: 'Describe your legitimate interest'
   recipientAlways: 'Always a recipient.'
+  allEvents: 'Applies to every event — events cannot exclude it'
   additionalPlaceholder: 'Additional privacy information…'
 status:
   unpublishedDetail: 'Nothing is shown to registrants yet, and your organisation cannot be verified until you publish.'
@@ -1300,6 +1364,7 @@ field:
   legalBasis: 'Rechtsgrundlage'
   legitimateInterest: 'Das berechtigte Interesse beschreiben'
   recipientAlways: 'Immer Empfänger.'
+  allEvents: 'Gilt für alle Veranstaltungen – Veranstaltungen können es nicht ausschließen'
   additionalPlaceholder: 'Weitere Datenschutzinformationen…'
 status:
   unpublishedDetail: 'Anmeldende sehen noch nichts, und die Organisation kann bis zur Veröffentlichung nicht verifiziert werden.'
@@ -1382,6 +1447,7 @@ field:
   legalBasis: 'Base légale'
   legitimateInterest: 'Décrivez votre intérêt légitime'
   recipientAlways: 'Toujours destinataire.'
+  allEvents: "S'applique à tous les événements — un événement ne peut pas l'exclure"
   additionalPlaceholder: 'Informations complémentaires…'
 status:
   unpublishedDetail: "Rien n'est encore montré et votre organisation ne peut pas être vérifiée tant que vous n'avez pas publié."
@@ -1464,6 +1530,7 @@ field:
   legalBasis: 'Právní základ'
   legitimateInterest: 'Popiš váš oprávněný zájem'
   recipientAlways: 'Vždy příjemce.'
+  allEvents: 'Platí pro všechny akce – akce to nemohou vyloučit'
   additionalPlaceholder: 'Další informace o ochraně osobních údajů…'
 status:
   unpublishedDetail: 'Přihlašující zatím nic nevidí a organizaci nelze do zveřejnění ověřit.'
@@ -1546,6 +1613,7 @@ field:
   legalBasis: 'Podstawa prawna'
   legitimateInterest: 'Opisz Wasz prawnie uzasadniony interes'
   recipientAlways: 'Zawsze odbiorca.'
+  allEvents: 'Dotyczy wszystkich wydarzeń — wydarzenie nie może tego wykluczyć'
   additionalPlaceholder: 'Dodatkowe informacje o ochronie danych…'
 status:
   unpublishedDetail: 'Zgłaszający jeszcze nic nie widzą, a organizacji nie można zweryfikować do czasu publikacji.'
