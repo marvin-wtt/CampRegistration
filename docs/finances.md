@@ -138,8 +138,12 @@ Payout  id, eventId, number, recipientUserId?, recipientName,
         direction (OUT | IN), amount, paidOn?, note?, signature?,
         signedAt?, statement (Json), createdByUserId
 File    … payoutId?   (a scan of the slip signed on paper)
-Event   … payoutNumberPrefix (default "P")
+EventFinance  eventId, payoutNumberPrefix (default "P"),
+              lastReceiptNumber, lastPayoutNumber
 ```
+
+`EventFinance` is created with its event and kept apart from it, so handing
+out a number or setting the prefix doesn't change the event's `updatedAt`.
 
 A person's **balance** = their expenses − their refunds − payouts `OUT` +
 payouts `IN`, counting only payouts already made.

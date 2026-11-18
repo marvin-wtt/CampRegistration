@@ -12,7 +12,7 @@ export class PayoutResource extends JsonResource<PayoutView, PayoutData> {
     return {
       id: this.data.id,
       number: this.data.number,
-      label: `${this.data.event.payoutNumberPrefix}${this.data.number.toString()}`,
+      label: `${this.data.finance.payoutNumberPrefix}${this.data.number.toString()}`,
       recipientUserId: this.data.recipientUserId,
       recipientName: this.data.recipientName,
       direction: this.data.direction,

@@ -98,7 +98,7 @@ export class EventController extends BaseController {
         };
 
     const event = await this.eventService.createEvent({
-      directorId: userId,
+      userId,
       event: {
         organizationId: organization.id,
         countries: body.countries,

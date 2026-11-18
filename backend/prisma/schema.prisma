@@ -186,12 +186,6 @@ model Event {
   /// ![Record<string, unknown>]
   themes                  Json             @default("{}") @db.Json
   retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
-  /// Shown before payout numbers (`P1`); fixed once the first payout exists.
-  payoutNumberPrefix      String           @default("P") @map("payout_number_prefix") @db.VarChar(8)
-  /// The last receipt and payout numbers handed out. Counters rather than
-  /// `MAX() + 1`, so deleting the newest record never frees its number.
-  lastReceiptNumber       Int              @default(0) @map("last_receipt_number") @db.UnsignedInt
-  lastPayoutNumber        Int              @default(0) @map("last_payout_number") @db.UnsignedInt
   createdAt               DateTime?        @default(now()) @map("created_at")
   updatedAt               DateTime?        @updatedAt @map("updated_at")
 
@@ -213,9 +207,27 @@ model Event {
   financeCategories    FinanceCategory[]
   expenses             Expense[]
   payouts              Payout[]
+  finance              EventFinance?
 
   @@index([organizationId], map: "events_organization_id_index")
   @@map("events")
+}
+
+// An event's finance numbering, apart from the event so handing out a number
+// isn't an event edit (no `updatedAt`). Created with the event.
+model EventFinance {
+  eventId            String @id @map("event_id") @db.Char(26)
+  /// Shown before payout numbers (`P1`); fixed once the first payout exists.
+  payoutNumberPrefix String @default("P") @map("payout_number_prefix") @db.VarChar(8)
+  /// The last receipt and payout numbers handed out. Counters rather than
+  /// `MAX() + 1`, so deleting the newest record never frees its number.
+  lastReceiptNumber  Int    @default(0) @map("last_receipt_number") @db.UnsignedInt
+  lastPayoutNumber   Int    @default(0) @map("last_payout_number") @db.UnsignedInt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_finances_event_id_foreign")
+  payouts Payout[]
+
+  @@map("event_finances")
 }
 
 model EventManager {
@@ -529,9 +541,11 @@ model Payout {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime?       @updatedAt @map("updated_at")
 
-  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
-  recipient User?  @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_recipient_user_id_foreign")
-  createdBy User?  @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_created_by_user_id_foreign")
+  event     Event        @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
+  // The same event id: a payout reads its number prefix from here.
+  finance   EventFinance @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_finance_foreign")
+  recipient User?        @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_recipient_user_id_foreign")
+  createdBy User?        @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_created_by_user_id_foreign")
   files     File[]
 
   @@unique([eventId, number], map: "payouts_event_id_number_unique")

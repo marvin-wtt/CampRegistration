@@ -69,18 +69,16 @@ export class FinanceService extends BaseService {
   }
 
   async getSettings(eventId: string): Promise<FinanceSettings> {
-    const [event, payoutCount] = await Promise.all([
-      this.prisma.event.findUniqueOrThrow({
-        where: { id: eventId },
-        select: { payoutNumberPrefix: true, lastPayoutNumber: true },
-      }),
-      this.prisma.payout.count({ where: { eventId } }),
-    ]);
+    const finance = await this.prisma.eventFinance.findUniqueOrThrow({
+      where: { eventId },
+      select: { payoutNumberPrefix: true, lastPayoutNumber: true },
+    });
 
     return {
-      payoutNumberPrefix: event.payoutNumberPrefix,
-      // A deleted payout's slip may still be in someone's folder.
-      payoutNumberPrefixLocked: payoutCount > 0 || event.lastPayoutNumber > 0,
+      payoutNumberPrefix: finance.payoutNumberPrefix,
+      // The counter counts deleted payouts too, whose slips may still be in
+      // someone's folder.
+      payoutNumberPrefixLocked: finance.lastPayoutNumber > 0,
     };
   }
 
@@ -94,19 +92,22 @@ export class FinanceService extends BaseService {
       data.payoutNumberPrefix !== undefined &&
       data.payoutNumberPrefix !== settings.payoutNumberPrefix
     ) {
-      if (settings.payoutNumberPrefixLocked) {
-        throw new ApiError(
-          httpStatus.CONFLICT,
-          'The payout prefix is fixed once a payout exists.',
-          { code: 'PAYOUT_PREFIX_LOCKED' },
-        );
-      }
-
       const prefix = data.payoutNumberPrefix;
       await this.transaction(async (tx) => {
-        // Raw, like the number counters: a finance setting isn't an event
-        // edit and must not bump its `updatedAt`.
-        await tx.$executeRaw`UPDATE events SET payout_number_prefix = ${prefix} WHERE id = ${eventId}`;
+        // Conditional on the counter, so a payout created meanwhile can't
+        // end up with the old prefix.
+        const { count } = await tx.eventFinance.updateMany({
+          where: { eventId, lastPayoutNumber: 0 },
+          data: { payoutNumberPrefix: prefix },
+        });
+        if (count === 0) {
+          throw new ApiError(
+            httpStatus.CONFLICT,
+            'The payout prefix is fixed once a payout exists.',
+            { code: 'PAYOUT_PREFIX_LOCKED' },
+          );
+        }
+
         await this.audit.record({
           action: 'updated',
           entityType: 'event',
@@ -142,10 +143,14 @@ export class FinanceService extends BaseService {
 
   /** Everything the export and the receipt ZIP are built from. */
   async getExportData(eventId: string) {
-    const [event, expenses, payouts, categories] = await Promise.all([
+    const [event, finance, expenses, payouts, categories] = await Promise.all([
       this.prisma.event.findUniqueOrThrow({
         where: { id: eventId },
-        select: { currency: true, payoutNumberPrefix: true },
+        select: { currency: true },
+      }),
+      this.prisma.eventFinance.findUniqueOrThrow({
+        where: { eventId },
+        select: { payoutNumberPrefix: true },
       }),
       this.prisma.expense.findMany({
         where: { eventId },
@@ -161,7 +166,7 @@ export class FinanceService extends BaseService {
 
     return {
       currency: event.currency,
-      payoutNumberPrefix: event.payoutNumberPrefix,
+      payoutNumberPrefix: finance.payoutNumberPrefix,
       expenses,
       payouts,
       categories,

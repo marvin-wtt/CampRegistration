@@ -81,7 +81,10 @@ describe('finances', () => {
         where: { id: event.id },
       });
       expect(after.updatedAt).toEqual(event.updatedAt);
-      expect(after.lastReceiptNumber).toBe(1);
+      const finance = await prisma.eventFinance.findUniqueOrThrow({
+        where: { eventId: event.id },
+      });
+      expect(finance.lastReceiptNumber).toBe(1);
     });
   });
 

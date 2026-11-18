@@ -13,9 +13,6 @@ const DENY_KEYS: (keyof Event)[] = [
   'themes',
   'retentionReminderSentAt',
   'form',
-  // Finance counters, handed out with every receipt and payout.
-  'lastReceiptNumber',
-  'lastPayoutNumber',
 ];
 
 export const eventAuditPolicy: AuditChangePolicy<Event> = {

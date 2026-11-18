@@ -19,7 +19,7 @@ import type { PayoutDirection } from '@camp-registration/common/entities';
 import type { PrismaTransaction } from '#core/database/transaction';
 
 export type PayoutWithPrefix = Payout & {
-  event: { payoutNumberPrefix: string };
+  finance: { payoutNumberPrefix: string };
   createdBy: { name: string } | null;
   files: File[];
 };
@@ -28,7 +28,7 @@ export type PayoutWithPrefix = Payout & {
 export type PayoutView = PayoutWithPrefix & { outdated: boolean };
 
 const include = {
-  event: { select: { payoutNumberPrefix: true } },
+  finance: { select: { payoutNumberPrefix: true } },
   createdBy: { select: { name: true } },
   files: { orderBy: { id: 'asc' } },
 } as const satisfies Prisma.PayoutInclude;
@@ -129,7 +129,7 @@ export class PayoutService extends BaseService {
       // receipts up to `lastReceiptNumber`, none committed in between.
       const number = await nextFinanceNumber(tx, eventId, 'payout');
       const recipient = await this.resolveRecipient(eventId, data);
-      const [event, ledger] = await Promise.all([
+      const [event, finance, ledger] = await Promise.all([
         tx.event.findUniqueOrThrow({
           where: { id: eventId },
           select: {
@@ -137,9 +137,11 @@ export class PayoutService extends BaseService {
             organizer: true,
             currency: true,
             timezone: true,
-            payoutNumberPrefix: true,
-            lastReceiptNumber: true,
           },
+        }),
+        tx.eventFinance.findUniqueOrThrow({
+          where: { eventId },
+          select: { payoutNumberPrefix: true, lastReceiptNumber: true },
         }),
         this.loadLedger(tx, eventId),
       ]);
@@ -159,12 +161,12 @@ export class PayoutService extends BaseService {
         },
         ledger.expenses,
         ledger.payouts,
-        event.lastReceiptNumber,
+        finance.lastReceiptNumber,
         {
           locale,
           currency: event.currency,
           timezone: event.timezone,
-          payoutNumberPrefix: event.payoutNumberPrefix,
+          payoutNumberPrefix: finance.payoutNumberPrefix,
           eventName: event.name,
           organizer: event.organizer,
         },

@@ -90,10 +90,6 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     themes: data.themes ?? expect.anything(),
     // Written only by the retention reminder job, never on create or update.
     retentionReminderSentAt: null,
-    // Finance numbering keeps its defaults: never part of an event edit.
-    payoutNumberPrefix: 'P',
-    lastReceiptNumber: 0,
-    lastPayoutNumber: 0,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -1254,6 +1250,26 @@ describe('/api/v1/events', () => {
         });
 
         expect(templates.length).not.toBe(0);
+      });
+
+      it('should create the finance numbering with its defaults', async () => {
+        const accessToken = await createEventCreatorToken();
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send(eventCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const finance = await prisma.eventFinance.findUniqueOrThrow({
+          where: { eventId: body.data.id },
+        });
+
+        expect(finance).toMatchObject({
+          payoutNumberPrefix: 'P',
+          lastReceiptNumber: 0,
+          lastPayoutNumber: 0,
+        });
       });
 
       it('should create the default expense categories in the event languages', async () => {

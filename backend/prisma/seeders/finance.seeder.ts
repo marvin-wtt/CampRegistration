@@ -379,8 +379,12 @@ class FinanceSeeder extends BaseSeeder {
   ): Promise<void> {
     const event = await prisma.event.findUniqueOrThrow({
       where: { id: eventId },
-      include: { eventManager: { include: { user: true } } },
+      include: { eventManager: { include: { user: true } }, finance: true },
     });
+    const finance = event.finance;
+    if (!finance) {
+      throw new Error(`Event ${eventId} has no finance row.`);
+    }
 
     // Custom categories replace nothing: only Spring defines its own.
     let position = 0;
@@ -498,7 +502,7 @@ class FinanceSeeder extends BaseSeeder {
           locale: 'de-DE',
           currency: event.currency,
           timezone: event.timezone,
-          payoutNumberPrefix: event.payoutNumberPrefix,
+          payoutNumberPrefix: finance.payoutNumberPrefix,
           eventName: event.name as Translatable,
           organizer: event.organizer as Translatable,
         },
@@ -523,8 +527,8 @@ class FinanceSeeder extends BaseSeeder {
     }
 
     // The counters remember every number handed out, deleted ones included.
-    await prisma.event.update({
-      where: { id: eventId },
+    await prisma.eventFinance.update({
+      where: { eventId },
       data: {
         lastReceiptNumber: receiptNumber,
         lastPayoutNumber: payoutNumber,

@@ -1,7 +1,15 @@
--- AlterTable
-ALTER TABLE `events` ADD COLUMN `last_payout_number` INTEGER UNSIGNED NOT NULL DEFAULT 0,
-    ADD COLUMN `last_receipt_number` INTEGER UNSIGNED NOT NULL DEFAULT 0,
-    ADD COLUMN `payout_number_prefix` VARCHAR(8) NOT NULL DEFAULT 'P';
+-- CreateTable
+CREATE TABLE `event_finances` (
+    `event_id` CHAR(26) NOT NULL,
+    `payout_number_prefix` VARCHAR(8) NOT NULL DEFAULT 'P',
+    `last_receipt_number` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `last_payout_number` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+
+    PRIMARY KEY (`event_id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Backfill: every event has its finance row.
+INSERT INTO `event_finances` (`event_id`) SELECT `id` FROM `events`;
 
 -- AlterTable
 ALTER TABLE `files` ADD COLUMN `expense_id` CHAR(26) NULL,
@@ -109,6 +117,12 @@ ALTER TABLE `expenses` ADD CONSTRAINT `expenses_created_by_user_id_foreign` FORE
 
 -- AddForeignKey
 ALTER TABLE `payouts` ADD CONSTRAINT `payouts_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `event_finances` ADD CONSTRAINT `event_finances_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `payouts` ADD CONSTRAINT `payouts_event_id_finance_foreign` FOREIGN KEY (`event_id`) REFERENCES `event_finances`(`event_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `payouts` ADD CONSTRAINT `payouts_recipient_user_id_foreign` FOREIGN KEY (`recipient_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

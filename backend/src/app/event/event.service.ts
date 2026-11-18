@@ -41,22 +41,14 @@ export interface EventSeed {
 // query shape are the service's business — a caller never writes Prisma input.
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
 // it is written once by the retention job and never by an author.
-// Finance numbering is the finance module's: counters and prefix keep their
-// defaults on creation and are never part of an event edit.
 export type EventCreateData = Omit<
   Event,
-  | 'id'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'retentionReminderSentAt'
-  | 'payoutNumberPrefix'
-  | 'lastReceiptNumber'
-  | 'lastPayoutNumber'
+  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
 >;
 export interface EventCreateInput {
   event: EventCreateData;
   /** The creating user, who becomes the event's director. */
-  directorId: string;
+  userId: string;
   seed?: EventSeed;
 }
 
@@ -377,7 +369,7 @@ export class EventService extends BaseService {
     return { total, open, upcoming, closed };
   }
 
-  async createEvent({ event: data, directorId, seed = {} }: EventCreateInput) {
+  async createEvent({ event: data, userId, seed = {} }: EventCreateInput) {
     const {
       tableTemplates = [],
       messageTemplates = [],
@@ -415,7 +407,7 @@ export class EventService extends BaseService {
           form,
           eventManager: {
             create: {
-              userId: directorId,
+              userId,
               role: 'DIRECTOR',
             },
           },
@@ -432,6 +424,7 @@ export class EventService extends BaseService {
           // Not stripped: the ids are new ones, generated up front so a
           // category can name its group's new id in this same insert.
           financeCategories: { createMany: { data: financeCategories } },
+          finance: { create: {} },
         },
         include: { ...this.eventResourceInclude() },
       });
