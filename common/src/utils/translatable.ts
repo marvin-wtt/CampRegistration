@@ -1,5 +1,5 @@
 import type { PerGroup, Translatable } from '../entities/index.js';
-import { COUNTRY_LOCALES } from '../locales.js';
+import { COUNTRY_LOCALES, type AppLocale } from '../locales.js';
 
 function isRecord<T>(value: T | Record<string, T>): value is Record<string, T> {
   return typeof value === 'object' && value !== null;
@@ -18,12 +18,13 @@ function localeKeys(locale: string): string[] {
   const countries = Object.keys(COUNTRY_LOCALES).filter(
     (country) => COUNTRY_LOCALES[country] === language,
   );
+  // The locale can itself be a country code (`cz` → `cs`).
+  const ownLocale = COUNTRY_LOCALES[language] as AppLocale | undefined;
 
   return [
     normalized,
     language,
-    // The locale can itself be a country code (`cz` → `cs`).
-    ...(COUNTRY_LOCALES[language] ? [COUNTRY_LOCALES[language]] : []),
+    ...(ownLocale ? [ownLocale] : []),
     ...(region ? [region] : []),
     ...countries,
   ];
