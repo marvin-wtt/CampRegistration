@@ -60,6 +60,20 @@ only appear here where they touch registrant data.
   supervisory authority from `Organization.country` (`supervisoryAuthorities.ts`).
   Data-subject rights, the complaint right and the data-provision statement are fixed
   text, not authored.
+- **[implemented]** Recipients, like purposes and categories, take `custom:<id>`
+  entries with an organizer-written label per locale (`PrivacyRecipientRef`):
+  Art. 13(1)(e) asks for every recipient or category of recipients, and a closed
+  list left an organizer whose recipient fits no key to leave it out or force it
+  into a wrong one. Composition, exclusions, `allEvents` and transfers work by key;
+  a custom recipient without a name is a completeness gap
+  (`custom_recipient_label`). The organization editor adds them; events see them as
+  inherited rows.
+- **[implemented]** Catalogue additions for the frequent cases:
+  `partner_organization` (co-organizer or partner abroad — its `country` drives
+  the transfer disclosure), `participants` (lists shared with other participants,
+  e.g. the carpool list), `it_service_provider` (the organizer's own processors:
+  mail, cloud storage, accounting).
+  - **[review]** Their wording in the five locales.
 
 ### Event exclusions
 
@@ -380,27 +394,35 @@ be tagged, and only boolean questions can be consents.
 
 - `privacyCategory` on a data question: the catalogue key it collects (`health`,
   `allergies`, …).
-- `consent: true` on a consent question: its wording is copied into the registration
-  (see "Proof"). Used by every consent — photos, carpool list, newsletter, health.
-- `consentFor` on a consent question, optional: the special categories it unlocks.
-  Only these feed the registration gate and the submission check.
+- `privacyConsent: true` on a consent question: its wording is copied into the
+  registration (see "Proof"). Used by every consent — photos, carpool list,
+  newsletter, health.
+- `privacyConsentFor` on a consent question, optional: the special categories it
+  unlocks. Only these feed the registration gate and the submission check.
+- The `privacy` prefix keeps the names out of SurveyJS's way: a native property of
+  the same name would be removed when ours is registered. A test
+  (`common/tests/unit/form/propertyNames.test.ts`) fails if SurveyJS ever defines
+  one of the platform's property names.
 - Not `eventDataType`: it holds one value and maps to registration columns, and the
   newsletter question already uses it (`newsletter_consent`).
-- `consent` and `consentFor` stay separate so a consent that is not about a special
-  category (the carpool list shares contact data) does not gate every contact
-  question.
+- `privacyConsent` and `privacyConsentFor` stay separate so a consent that is not
+  about a special category (the carpool list shares contact data) does not gate
+  every contact question.
 - **[implemented]** The presets tag their own data and consent questions:
-  - camp: a consent `consent_health` (health, allergies) before
-    `medical_restrictions`, which is shown only once consent is given;
-    `food_intolerance` now asks for preferences only and sends allergies to the
-    medical question;
-  - seminar: `dietary_requirements` asks for preferences only; a new `allergies`
-    question follows a consent `consent_allergies`;
-  - every preset: photo consent tagged `consent`, and the camp's carpool-list and
+  - camp: `medical_restrictions` is always visible and optional; the consent
+    `consent_health` (health, allergies) opens the consent page as a required
+    yes/no. `food_intolerance` asks for preferences only and sends allergies to
+    the medical question;
+  - seminar: `dietary_requirements` asks for preferences only; a new optional
+    `allergies` question, with the consent `consent_allergies` on the consent page;
+  - every preset: photo consent tagged `privacyConsent`, and the camp's carpool-list and
     newsletter consents too. Terms and conditions are agreements, not consents, and
     stay untagged.
-  - **[review]** A preference field can still receive a religious diet (halal,
-    kosher). The descriptions only suggest vegetarian or vegan.
+  - The nutrition fields (`food_intolerance`, `dietary_requirements`) are tagged
+    too: an intolerance is health data, a religious diet (halal, kosher) a special
+    category. The one consent covers health, allergies and diet, so it also
+    appears when only a diet is entered — a little more than strictly needed, and
+    simpler than telling preferences from health.
 
 **Classification — organizer-controlled**
 
@@ -408,7 +430,7 @@ be tagged, and only boolean questions can be consents.
   `allergies`, …). The organizer sets it; it is the source of truth.
 - **Optional aid:** a keyword hint in the form editor's linter (five locales, names,
   titles and choices) suggests `privacyCategory` for untagged data questions and
-  `consent` for boolean questions that read like consent ("agree", "einverstanden",
+  `privacyConsent` for boolean questions that read like consent ("agree", "einverstanden",
   "j'accepte"). A warning only — it never blocks saving or registrations, and
   dismissing it needs no record.
 - **[review]** Tagging rests on the organizer, as controller. The platform enforces
@@ -419,10 +441,16 @@ be tagged, and only boolean questions can be consents.
 
 - The organizer writes the consent question in the form editor and decides where
   it goes. Wording, placement and translations stay with the organizer.
-- **[planned]** When tagging a special category, the editor can offer a default
-  consent question generated from the notice (what, for which purpose, who receives
-  it, how to withdraw), freely editable. Not part of Phase 2; the presets carry
-  written defaults instead.
+- **[implemented]** While a tagged special category has no consent covering it,
+  the form editor's toolbar offers "Add consent question"
+  (`consentQuestionJson`, `frontend/src/lib/surveyJs/consentQuestion.ts`). It
+  appends a consent at the end, worded in all five locales from the tagged
+  categories (what, for which purpose, who receives it, voluntary, how to
+  withdraw) and asked like the presets: shown once a covered question is answered,
+  then required. A covered question inside a dynamic panel cannot be seen by a
+  form-level condition, so the consent is then shown always and left optional.
+  - **[review]** The generic wording names the event team as recipient and care
+    during the event as purpose; an organizer whose purpose differs must edit it.
 
 **Scope of one consent**
 
@@ -489,13 +517,52 @@ then record wording the registrant never saw.
   Proof of a later change must not be needed longer than that, or the registration
   is deleted earlier anyway.
 
+**Placement and answer — asked at the end, only when health data was entered**
+
+Organizers and registrants are not privacy lawyers; hiding questions behind a
+consent confused both. So the data questions stay visible and optional, and one
+consent is asked once, after them, only if it is needed.
+
+- **[implemented]** Health questions are ordinary optional questions. The consent
+  covering them sits on the consent page and appears once any of them has an
+  answer (`visibleIf: '{medical_restrictions} notempty or {food_intolerance}
+notempty'`). "No known allergies" is
+  an answer too, so it asks for consent as well.
+- **[implemented]** Once shown, it must be agreed to (`requireTrue`), by ticking it
+  — never preselected. `requireTrue` alone enforces it once shown; `isRequired`
+  would only add the asterisk and SurveyJS's generic message, so the presets
+  leave it out, like their other consents. Without health data the registration
+  goes through without it. Not wanting to consent means leaving the health fields empty; the consent
+  text and its error message say so. The registrant's choice stays free (Art. 7(4)):
+  share health data with consent, or share none.
+- **[implemented]** Before processing: nothing is processed before submitting, and
+  the form saves no drafts, so a consent asked last still comes first.
+- **[implemented]** One consent per purpose: health, allergies and medication for
+  care during the event share one question; the wording names the purpose, the
+  recipients (event team, medical staff or caterer) and how to withdraw.
+- **[implemented]** Safety nets, for organizer-built forms that do not follow the
+  preset: before submitting, the form clears answers whose consent was not given
+  (`clearUnconsentedAnswers`, `common/src/form/privacyTags.ts`), and the server's
+  submission check refuses them.
+- No table flag for a missing health consent: health data without consent cannot
+  be stored (the form demands the consent, clears declined answers, the server
+  refuses them), so `consent_health != true` would only mean "nothing entered" —
+  which the empty health columns already show — and would read like a refusal.
+- **Necessary for participation:** an organizer who genuinely needs the
+  information — a youth camp — marks the health question required. The consent then
+  always appears and must be given, with no extra setting: the preset's rule already
+  follows the answers. Whether that may be made a condition is still open
+  question 2.
+- **[implemented]** "Add consent question" in the form editor — see "Consent
+  wording".
+
 **Mandatory consent (Art. 7(4))**
 
-- Optional by default. The organizer can mark a consent "necessary for
-  participation", which makes it required to submit.
+- Not by default: optional data, consent only with data.
 - **[review]** Whether consent may be a condition of participation when the data is
-  needed for the person's safety (e.g. allergies at a catered camp) is not assumed;
-  the option ships with a warning until confirmed.
+  needed for the person's safety (e.g. allergies at a catered camp) is open
+  question 2. The mechanism exists — a required health question — but the presets
+  do not use it; it is the organizer's judgment until confirmed.
 
 **Enforcement**
 
@@ -523,8 +590,11 @@ verification:
   "undeclared" check is skipped.
 - **[implemented] Submission and manager edits.** Refuse (422,
   `REGISTRATION_CONSENT_MISSING`) when a tagged question relying on consent has an
-  answer while its consent is not `true` (`assertConsentsGiven`). Checked on the
-  submitted data, so hidden questions do not slip through.
+  answer while its consent is not `true` (`assertConsentsGiven`). Read through the
+  survey model (`unconsentedQuestions`), like the client's clearing and the mail
+  filter, so SurveyJS decides where an answer lives; a consent asked per dynamic
+  panel entry counts only when given in every entry. Tags alone are read off the
+  form JSON (`extractPrivacyTags`): they are the platform's own properties.
 - Categories relying on (g) or another non-consent basis need no consent question.
 - **[review]** Editing a live form into a non-compliant state stops registrations
   until it is fixed. Intended: collecting without a basis is not allowed even
@@ -536,7 +606,7 @@ verification:
   notice say how.
 - **[planned]** A manager action "withdraw consent" on a registration sets the
   consent answer to `false` and deletes the answers in the categories its
-  `consentFor` covers. The existing audit entry records who did it and when.
+  `privacyConsentFor` covers. The existing audit entry records who did it and when.
 - Handled without undue delay; the event's managers are responsible.
 - **[review]** Art. 7(3) requires withdrawing to be as easy as giving consent.
   Consent is a click; withdrawal is an email followed by a manager's action. Whether
@@ -591,43 +661,49 @@ verification:
   filtering every place that shows registration data costs far more than it
   protects. Organizers who want a helper to see less give them no role.
 
-- **[gap]** Emails leave the platform's access control: they are forwarded and
-  kept in inboxes. Message templates receive the full `registration.data`
-  (`template.mail.ts`) and change emails list changed answers by label
-  (`registration.changes.ts`).
-- **[planned]** Emails never include answers of questions tagged with a special
-  category. Justified by Art. 32.
+- **[implemented]** Emails leave the platform's access control — they are
+  forwarded and kept in inboxes — so they never include answers of questions
+  tagged with a special category. Justified by Art. 32.
   - **Rendering time, not request time.** The job keeps carrying a snapshot of the
     registration, so the mail shows what the sender saw, even if the registration
-    is edited or deleted before it goes out. `RegistrationTemplateMessage.context()`
-    builds a `SurveyModel` from the snapshot's form and answers and calls
-    `clearValue()` on every tagged question; the template gets `survey.data`.
-    SurveyJS decides where a value lives ("Other" text, comments, dynamic panels,
-    future question types) — the platform has no storage rules of its own.
+    is edited or deleted before it goes out. `RegistrationTemplateMessage.answers()`
+    loads the snapshot into `RegistrationForm` and calls
+    `withoutSensitiveAnswers()` (`clearSpecialCategoryAnswers`, SurveyJS's
+    `clearValue()` on every tagged question); the template gets the result as
+    `registration.data`. SurveyJS decides where a value lives ("Other" text,
+    comments, dynamic panels, `valueName`, future question types) — the platform
+    has no storage rules of its own. A form that can't be read yields no answers,
+    never all of them.
   - **Cost.** About 20 ms per mail (camp preset, measured), in the worker, one job
     at a time; Node serves other requests between jobs. Filtering every
     registration up front at request time was rejected: 20 s of blocked event loop
     per 1,000 recipients.
   - **Preview.** `message.controller.ts` renders through the same `context()`, so
     the preview shows exactly what is sent, filtering included. The editor's token
-    picker leaves tagged questions out, since they would render empty.
-  - **Change emails.** A changed tagged answer keeps its label and loses its value,
-    like files today (`registration.changes.ts`, `changes.markup.ts`).
-  - **Limit.** A sensitive answer copied into an untagged question
+    picker leaves tagged questions out (`extractFormFields(…,
+{ withoutSpecialCategories })`), since they would render empty.
+  - **Change emails.** A changed tagged answer keeps its label and is worded
+    "changed" (`isSensitive` on `RegistrationChange`); its value is dropped when
+    the change list is computed, so it never enters the mail job either.
+  - **Limits.** A sensitive answer copied into an untagged question
     (`setValueExpression`, `copyvalue`/`setvalue` triggers) is not caught — the
-    organizer's tagging responsibility (open question 5).
-- **[gap]** Queued mail jobs carry the full registration snapshot and outlive the
-  mail. The database queue keeps completed jobs 30 days and failed jobs 90
-  (`queue.service.ts`, daily cleanup); the Redis queue sets neither
-  `removeOnComplete` nor `removeOnFail`, so BullMQ keeps them indefinitely.
-  Deleting a registration leaves these copies.
-- **[planned]** A per-queue `retention: { completed, failed }` option in
-  `QueueOptions`, mapped to BullMQ's `removeOnComplete`/`removeOnFail` (`age`) and
-  used by the database queue's cleanup; queues without it keep today's behaviour.
-  The mail queue deletes a job as soon as it completes — `MessageDelivery` already
-  records the send — and keeps failed jobs 14 days for retries. Failed jobs are not
-  searched out when a registration is deleted (JSON payloads in two drivers); the
-  14 days are the accepted remainder.
+    organizer's tagging responsibility (open question 5). Answers to questions
+    since deleted from the form stay in `data` and are printable by name; SurveyJS
+    knows no question for them, and dropping unknown keys would need storage rules
+    of the platform's own.
+- **[implemented]** Queued mail jobs carry the full registration snapshot, so they
+  must not outlive the mail. Each queue has a `retention: { completed, failed }`
+  (`QueueOptions`, default 30 and 90 days) and prunes its own jobs
+  (`Queue.prune()`): the database and memory queues delete rows, the Redis queue
+  maps it to BullMQ's `removeOnComplete`/`removeOnFail` (`age`) — before, BullMQ
+  kept finished jobs forever — and sweeps with `clean()`. `QueueService` only
+  delegates; the daily `queue-job-cleanup` (04:45) is enough for retentions
+  measured in days, and one measured in hours would need it to run more often.
+- **[implemented]** The mail queue deletes a job as soon as it completes —
+  `MessageDelivery` already records the send — and keeps failed jobs 14 days for
+  retries. Failed jobs are not searched out when a registration is deleted (JSON
+  payloads in two drivers); the 14 days are the accepted remainder. Rows of a
+  queue that no longer exists are not pruned; renaming a queue must clean them.
 
 ### Treasurer and payments
 
@@ -804,7 +880,7 @@ reads tags after the tagging itself.
 
 **Phase 2 — tagging, the foundation** (done)
 
-5. `privacyCategory`, `consent`, `consentFor` question properties and the shared
+5. `privacyCategory`, `privacyConsent`, `privacyConsentFor` question properties and the shared
    coverage helper (`common/src/form/`).
 6. Presets: tag their questions and add a health consent question. New events only.
 
@@ -819,26 +895,53 @@ reads tags after the tagging itself.
 9. Emails and the mail queue (section 6), in this order:
    - Queue retention per queue; the mail queue drops completed jobs at once and
      failed ones after 14 days. Independent of tagging, covers every mail ever
-     queued — ships first.
+     queued — ships first. (done)
+   - Privacy properties renamed `privacyConsent`/`privacyConsentFor`, plus the
+     SurveyJS name-clash test. (done)
    - Tagged answers cleared through the SurveyJS model when a mail is rendered
      (worker and preview), values of tagged changes redacted, tagged questions out
-     of the token picker. Only works on tagged forms.
+     of the token picker. Only works on tagged forms. (done)
    - The treasurer's payment projection (section 6) ships with `feat/payments`,
      not here.
 
+**Phase 4b — consent flow for organizers and registrants** (done)
+
+10. Health questions always visible and optional; the consent asked last, only
+    once health data was entered, and then required. The submission check reads
+    answers through the survey model (`unconsentedQuestions`); the JSON walk only
+    reads tags.
+
+**Phase 4c — privacy UI review** (done)
+
+11. The organization and event privacy pages:
+    - one row layout for every entry (`PrivacyEntryRow`): selection, label and
+      chips, controls in a fixed right column, details indented below;
+    - the organization wizard asks purposes before data, since a purpose
+      pre-selects its data and recipients; data categories are grouped into
+      general and special (Art. 9); "applies to every event" is a lock toggle
+      (`AllEventsToggle`) instead of a sentence-long checkbox per entry;
+    - the event page drops its duplicate list of the organization's entries,
+      shows inherited entries inline, and can add purposes of its own;
+    - the event page proposes the categories the form's `privacyCategory` tags
+      ask for, and says when an undeclared one blocks registrations;
+    - both pages say when the viewer can read but not edit.
+
+    Custom recipients and the new recipient keys (section 2), and "Add consent
+    question" in the form editor (section 5).
+
 **Phase 5 — lifecycle**
 
-10. Manager action "withdraw consent".
-11. Per-event "delete sensitive answers", linked from the retention reminder.
-12. Maximum period for consent-bound retention exceptions. Tightens completeness:
+12. Manager action "withdraw consent".
+13. Per-event "delete sensitive answers", linked from the retention reminder.
+14. Maximum period for consent-bound retention exceptions. Tightens completeness:
     existing notices must add it on their next publish.
 
 **Phase 6 — rollout and conveniences**
 
-13. Warnings for legacy events still accepting registrations, and the
+15. Warnings for legacy events still accepting registrations, and the
     administrator's list of them.
-14. Keyword hint in the form editor's linter.
-15. Translation completeness per locale. Tightens completeness like item 12; release
+16. Keyword hint in the form editor's linter.
+17. Translation completeness per locale. Tightens completeness like item 14; release
     both together with one announcement to organizers.
 
 **Waiting for legal review:** Art. 9(2)(g) and its legal reference, the "necessary
