@@ -104,6 +104,7 @@
             <country-select
               v-model="data.country"
               :label="t('field.country')"
+              group="EEA"
               :rules="[required]"
               class="col-12 col-sm-6"
               rounded

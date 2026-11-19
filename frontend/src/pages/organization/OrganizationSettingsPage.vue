@@ -138,6 +138,7 @@
               <country-select
                 v-model="form.country"
                 :label="t('field.country')"
+                group="EEA"
                 :rules="[required]"
                 :disable="locked"
                 class="col-12"

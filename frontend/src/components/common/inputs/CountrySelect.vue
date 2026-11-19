@@ -35,16 +35,17 @@ import type { ValidationRule } from 'quasar';
 
 const { t, locale } = useI18n();
 
-const { label, rules, disable } = defineProps<{
+const { label, rules, disable, group } = defineProps<{
   label: string;
   rules?: ValidationRule[];
   disable?: boolean;
+  group?: 'EEA' | 'ALL';
 }>();
 
 const model = defineModel<string | undefined>();
 
 const allOptions = computed<CountryOption[]>(() =>
-  countryOptions(locale.value),
+  countryOptions(locale.value, group),
 );
 const needle = ref('');
 
