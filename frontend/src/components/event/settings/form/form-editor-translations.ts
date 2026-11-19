@@ -58,7 +58,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pehelp: {
         privacyCategory:
-          'Welche Art personenbezogener Daten diese Frage erhebt, wie in den Datenschutzinformationen aufgeführt. Fragen zu Gesundheit, Allergien, Medikamenten, Behinderung oder Religion brauchen eine Rechtsgrundlage, meist eine Einwilligungsfrage.',
+          'Welche Art personenbezogener Daten diese Frage erhebt, wie in den Datenschutzinformationen aufgeführt. Fragen zu Gesundheit, Allergien, Medikamenten, Behinderung oder Religion brauchen eine Rechtsgrundlage, meist eine Einwilligungsfrage. Nur so markierte Fragen werden als sensibel behandelt – die Plattform erkennt sensible Angaben nicht von selbst. Prüfe auch Freitextfelder.',
         privacyConsent:
           'Diese Frage holt eine Einwilligung ein. Ihr Wortlaut wird mit jeder Anmeldung gespeichert, als Nachweis, wozu die Person eingewilligt hat.',
         privacyConsentFor:
@@ -117,7 +117,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pehelp: {
         privacyCategory:
-          'What kind of personal data this question collects, as listed in the privacy information. Questions about health, allergies, medication, disability or religion need a legal basis, usually a consent question.',
+          'What kind of personal data this question collects, as listed in the privacy information. Questions about health, allergies, medication, disability or religion need a legal basis, usually a consent question. Only questions marked here are treated as sensitive – the platform does not detect sensitive answers by itself. Check free-text fields too.',
         privacyConsent:
           'This question asks for consent. Its wording is stored with each registration as proof of what the person agreed to.',
         privacyConsentFor:
@@ -175,7 +175,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pehelp: {
         privacyCategory:
-          'Le type de données personnelles que cette question collecte, tel que décrit dans les informations sur la protection des données. Les questions sur la santé, les allergies, les médicaments, le handicap ou la religion nécessitent une base légale, le plus souvent une question de consentement.',
+          'Le type de données personnelles que cette question collecte, tel que décrit dans les informations sur la protection des données. Les questions sur la santé, les allergies, les médicaments, le handicap ou la religion nécessitent une base légale, le plus souvent une question de consentement. Seules les questions marquées ici sont traitées comme sensibles : la plateforme ne détecte pas d’elle-même les données sensibles. Vérifie aussi les champs de texte libre.',
         privacyConsent:
           'Cette question demande un consentement. Son libellé est enregistré avec chaque inscription, comme preuve de ce que la personne a accepté.',
         privacyConsentFor:
@@ -234,7 +234,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pehelp: {
         privacyCategory:
-          'Jakiego rodzaju dane osobowe zbiera to pytanie, zgodnie z informacjami o ochronie danych. Pytania o zdrowie, alergie, leki, niepełnosprawność lub religię wymagają podstawy prawnej, zwykle pytania o zgodę.',
+          'Jakiego rodzaju dane osobowe zbiera to pytanie, zgodnie z informacjami o ochronie danych. Pytania o zdrowie, alergie, leki, niepełnosprawność lub religię wymagają podstawy prawnej, zwykle pytania o zgodę. Tylko oznaczone tu pytania są traktowane jako wrażliwe – platforma sama nie wykrywa danych wrażliwych. Sprawdź też pola tekstowe.',
         privacyConsent:
           'To pytanie prosi o zgodę. Jego treść jest zapisywana przy każdym zgłoszeniu jako dowód tego, na co dana osoba się zgodziła.',
         privacyConsentFor:
@@ -293,7 +293,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pehelp: {
         privacyCategory:
-          'Jaký druh osobních údajů tato otázka shromažďuje, jak je uvedeno v informacích o ochraně údajů. Otázky na zdraví, alergie, léky, zdravotní postižení nebo náboženství potřebují právní základ, obvykle otázku na souhlas.',
+          'Jaký druh osobních údajů tato otázka shromažďuje, jak je uvedeno v informacích o ochraně údajů. Otázky na zdraví, alergie, léky, zdravotní postižení nebo náboženství potřebují právní základ, obvykle otázku na souhlas. Jako citlivé se zachází jen s takto označenými otázkami – platforma citlivé údaje sama nerozpozná. Zkontroluj i pole pro volný text.',
         privacyConsent:
           'Tato otázka žádá o souhlas. Její znění se ukládá ke každé přihlášce jako doklad, s čím osoba souhlasila.',
         privacyConsentFor:

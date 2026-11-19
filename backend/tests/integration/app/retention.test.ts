@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import moment from 'moment';
 import {
   EventFactory,
+  FileFactory,
   OrganizationFactory,
   PrivacyNoticeFactory,
   RegistrationFactory,
@@ -61,6 +62,7 @@ async function eventDue(
     .toDate();
   const event = await EventFactory.create({
     organization: { connect: { id: organization.id } },
+    startAt: moment(endAt).subtract(7, 'days').toDate(),
     endAt,
     form,
   });
@@ -284,6 +286,55 @@ describe('retention workflow', () => {
   });
 
   describe('purging', () => {
+    it('should detach files uploaded to sensitive questions only', async () => {
+      const { event, registration, token } = await eventDue(-1, {
+        form: {
+          pages: [
+            {
+              name: 'page',
+              elements: [
+                { type: 'file', name: 'passport' },
+                {
+                  type: 'file',
+                  name: 'vaccination',
+                  privacyCategory: 'health',
+                },
+              ],
+            },
+          ],
+        },
+      });
+      const owned = { registration: { connect: { id: registration.id } } };
+      const passport = await FileFactory.create(owned);
+      const vaccination = await FileFactory.create(owned);
+      await prisma.registration.update({
+        where: { id: registration.id },
+        data: { data: { passport: passport.id, vaccination: vaccination.id } },
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
+        .send({ confirm: true })
+        .auth(token, { type: 'bearer' })
+        .expect(204);
+
+      const files = await prisma.file.findMany({
+        where: { id: { in: [passport.id, vaccination.id] } },
+        select: { id: true, registrationId: true },
+      });
+      // Detached files are removed by the nightly unassigned-file cleanup.
+      expect(
+        files.find((f) => f.id === vaccination.id)?.registrationId,
+      ).toBeNull();
+      expect(files.find((f) => f.id === passport.id)?.registrationId).toBe(
+        registration.id,
+      );
+      const stored = await prisma.registration.findUniqueOrThrow({
+        where: { id: registration.id },
+      });
+      expect(stored.data).toEqual({ passport: passport.id });
+    });
+
     it('should clear sensitive answers and close registrations for good', async () => {
       const { event, registration, token } = await eventDue(-1);
 
@@ -335,6 +386,36 @@ describe('retention workflow', () => {
         .send({ confirm: true })
         .auth(token, { type: 'bearer' })
         .expect(204);
+    });
+
+    it('should close an open registration and keep it closed', async () => {
+      const { event, token } = await eventDue(-1);
+      await prisma.event.update({
+        where: { id: event.id },
+        data: {
+          registrationOpensAt: moment().subtract(1, 'day').toDate(),
+          registrationClosesAt: moment().add(1, 'month').toDate(),
+        },
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
+        .send({ confirm: true })
+        .auth(token, { type: 'bearer' })
+        .expect(204);
+
+      const stored = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(stored.registrationClosesAt!.getTime()).toBeLessThanOrEqual(
+        Date.now(),
+      );
+
+      await request()
+        .patch(`/api/v1/events/${event.id}`)
+        .send({ registrationClosesAt: moment().add(1, 'month').toISOString() })
+        .auth(token, { type: 'bearer' })
+        .expect(409);
     });
 
     it('should require an explicit confirmation', async () => {

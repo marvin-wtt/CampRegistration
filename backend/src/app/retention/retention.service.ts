@@ -298,10 +298,13 @@ export class RetentionService extends BaseService {
     }
 
     await this.transaction(async (tx) => {
+      const now = new Date();
+      const closing = closeRegistration(event, now);
       await tx.event.update({
         where: { id: event.id },
         data: {
-          sensitiveDataPurgedAt: event.sensitiveDataPurgedAt ?? new Date(),
+          sensitiveDataPurgedAt: event.sensitiveDataPurgedAt ?? now,
+          ...closing,
         },
       });
       await this.audit.record({
@@ -309,7 +312,12 @@ export class RetentionService extends BaseService {
         entityType: 'retention',
         entityId: event.id,
         eventId: event.id,
-        details: { values: { count: cleared } },
+        details: {
+          values: {
+            count: cleared,
+            registrationClosed: !!closing.registrationClosesAt,
+          },
+        },
       });
     });
 
@@ -324,7 +332,10 @@ export class RetentionService extends BaseService {
   async purgeRegistrationData(
     event: Pick<
       Event,
-      'id' | 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
+      | 'id'
+      | 'sensitiveDataPurgedAt'
+      | 'registrationDataPurgedAt'
+      | 'registrationClosesAt'
     >,
   ): Promise<number> {
     let deleted = 0;
@@ -346,6 +357,7 @@ export class RetentionService extends BaseService {
     }
 
     const now = new Date();
+    const closing = closeRegistration(event, now);
     await this.transaction(async (tx) => {
       await tx.event.update({
         where: { id: event.id },
@@ -353,6 +365,7 @@ export class RetentionService extends BaseService {
           // Sensitive data is a subset: deleting all of it deletes that too.
           sensitiveDataPurgedAt: event.sensitiveDataPurgedAt ?? now,
           registrationDataPurgedAt: event.registrationDataPurgedAt ?? now,
+          ...closing,
         },
       });
       await this.audit.record({
@@ -360,7 +373,12 @@ export class RetentionService extends BaseService {
         entityType: 'retention',
         entityId: event.id,
         eventId: event.id,
-        details: { values: { count: deleted } },
+        details: {
+          values: {
+            count: deleted,
+            registrationClosed: !!closing.registrationClosesAt,
+          },
+        },
       });
     });
 
@@ -459,6 +477,19 @@ function asksSensitive(event: Pick<Event, 'form'>): boolean {
   return extractPrivacyTags(event.form).tagged.some((tag) =>
     isSpecialCategory(tag.category),
   );
+}
+
+/**
+ * Ends an open or scheduled registration window now: after a deletion the
+ * event takes no registrations again, and its window should say so too.
+ */
+function closeRegistration(
+  event: Pick<Event, 'registrationClosesAt'>,
+  now: Date,
+): { registrationClosesAt?: Date } {
+  return event.registrationClosesAt && event.registrationClosesAt <= now
+    ? {}
+    : { registrationClosesAt: now };
 }
 
 function earlier(date: Date, bound: Date | null): Date {

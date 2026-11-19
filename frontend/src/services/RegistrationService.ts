@@ -1,5 +1,6 @@
 import {
   REGISTRATION_CONSENT_CHANGED,
+  REGISTRATION_CONSENT_MISSING,
   REGISTRATION_PRICE_CHANGED,
   type Registration,
   type RegistrationCreateData,
@@ -93,4 +94,17 @@ export function isConsentChangedError(error: unknown): boolean {
   const body = error.response?.data as { errorCode?: unknown } | undefined;
 
   return body?.errorCode === REGISTRATION_CONSENT_CHANGED;
+}
+
+/**
+ * Whether the server refused answers that need a consent the form does not
+ * ask for — a form the organizer still has to fix (docs/privacy.md, 5).
+ */
+export function isConsentMissingError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+  const body = error.response?.data as { errorCode?: unknown } | undefined;
+
+  return body?.errorCode === REGISTRATION_CONSENT_MISSING;
 }

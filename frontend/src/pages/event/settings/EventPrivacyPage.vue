@@ -753,6 +753,8 @@ const previewOpen = ref(false);
 
 /** The organization's published notice — what this event is adding to. */
 const organizationContent = ref<PrivacyNoticeContent | null>(null);
+// The locales the event is offered in: every translated text needs each.
+const requiredLocales = ref<string[]>([]);
 const organizationPublishedVersion = ref<number | null>(null);
 const organizationPublishedAt = ref<string | null>(null);
 const publishedVersion = ref<number | null>(null);
@@ -812,7 +814,9 @@ const publishDisabled = computed(
 const gaps = computed(() =>
   isEmptyAddendum(publishable.value)
     ? []
-    : addendumGaps(organizationContent.value, publishable.value),
+    : addendumGaps(organizationContent.value, publishable.value, {
+        locales: requiredLocales.value,
+      }),
 );
 
 function emptyAddendum(): PrivacyNoticeAddendum {
@@ -853,6 +857,7 @@ async function loadPage() {
 
     loadPublished(context.content);
     organizationContent.value = context.organizationContent;
+    requiredLocales.value = context.requiredLocales;
     organizationPublishedVersion.value = context.organizationPublishedVersion;
     organizationPublishedAt.value = context.organizationPublishedAt;
     publishedVersion.value = context.publishedVersion;

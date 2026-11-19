@@ -71,8 +71,8 @@
         >
           <q-item-section avatar>
             <q-avatar
-              :color="item.color"
-              text-color="white"
+              :color="`${item.color}-container`"
+              :text-color="`on-${item.color}-container`"
               :icon="item.icon"
             />
           </q-item-section>
@@ -129,7 +129,8 @@ interface SettingsItem {
   label: string;
   description: string;
   icon: string;
-  color: string;
+  // Groups: event setup, content & communication, access & compliance.
+  color: 'primary' | 'secondary' | 'tertiary';
   to: RouteLocationRaw;
   permission?: PermissionRequirement<'event'>;
 }
@@ -154,13 +155,13 @@ const items = computed<SettingsItem[]>(() => [
     permission: { all: ['event.edit', 'event.files.view'] },
   },
   {
-    name: 'access',
-    label: t('access.label'),
-    description: t('access.description'),
-    icon: 'key',
-    color: 'tertiary',
-    to: { name: 'management.event.settings.access' },
-    permission: 'event.managers.view',
+    name: 'navigation',
+    label: t('navigation.label'),
+    description: t('navigation.description'),
+    icon: 'visibility',
+    color: 'primary',
+    to: { name: 'management.event.settings.navigation' },
+    permission: 'event.edit',
   },
   {
     name: 'emails',
@@ -181,21 +182,21 @@ const items = computed<SettingsItem[]>(() => [
     permission: 'event.files.view',
   },
   {
+    name: 'access',
+    label: t('access.label'),
+    description: t('access.description'),
+    icon: 'key',
+    color: 'tertiary',
+    to: { name: 'management.event.settings.access' },
+    permission: 'event.managers.view',
+  },
+  {
     name: 'privacy',
     label: t('privacy.label'),
     description: t('privacy.description'),
     icon: 'privacy_tip',
     color: 'tertiary',
     to: { name: 'management.event.settings.privacy' },
-    permission: 'event.edit',
-  },
-  {
-    name: 'navigation',
-    label: t('navigation.label'),
-    description: t('navigation.description'),
-    icon: 'visibility',
-    color: 'primary',
-    to: { name: 'management.event.settings.navigation' },
     permission: 'event.edit',
   },
   {

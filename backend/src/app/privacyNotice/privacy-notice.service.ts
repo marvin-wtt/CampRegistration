@@ -2,6 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#core/router/ApiError';
+import { localesForCountries } from '@camp-registration/common/locales';
 import { sanitizeHtmlContent, sanitizePlainText } from '#utils/sanitize';
 import {
   addendumGaps,
@@ -68,7 +69,10 @@ export class PrivacyNoticeService extends BaseService {
   ): Promise<OrganizationPrivacyNotice> {
     const published = await this.latestVersion('ORGANIZATION', organizationId);
 
-    return this.toOrganizationNotice(published);
+    return this.toOrganizationNotice(
+      published,
+      await this.organizationLocales(organizationId),
+    );
   }
 
   /**
@@ -81,7 +85,8 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeContent,
   ): Promise<OrganizationPrivacyNotice> {
     const sanitized = this.sanitizeContent(content);
-    const completeness = privacyNoticeCompleteness(sanitized);
+    const locales = await this.organizationLocales(organizationId);
+    const completeness = privacyNoticeCompleteness(sanitized, { locales });
 
     if (!completeness.complete) {
       throw new ApiError(
@@ -96,7 +101,7 @@ export class PrivacyNoticeService extends BaseService {
       sanitized,
     );
 
-    return this.toOrganizationNotice(published);
+    return this.toOrganizationNotice(published, locales);
   }
 
   /**
@@ -126,7 +131,11 @@ export class PrivacyNoticeService extends BaseService {
       this.latestVersion('EVENT', eventId),
     ]);
 
-    return this.toEventNotice(organizationVersion, eventVersion);
+    return this.toEventNotice(
+      organizationVersion,
+      eventVersion,
+      await this.eventLocales(eventId),
+    );
   }
 
   /**
@@ -151,6 +160,7 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeAddendum,
   ): Promise<EventPrivacyNotice> {
     const sanitized = this.sanitizeAddendum(content);
+    const locales = await this.eventLocales(eventId);
     const organizationVersion = await this.latestVersion(
       'ORGANIZATION',
       organizationId,
@@ -194,7 +204,7 @@ export class PrivacyNoticeService extends BaseService {
         );
       }
     } else {
-      const gaps = addendumGaps(organizationContent, addendum);
+      const gaps = addendumGaps(organizationContent, addendum, { locales });
 
       if (gaps.length > 0) {
         throw new ApiError(
@@ -206,7 +216,7 @@ export class PrivacyNoticeService extends BaseService {
 
     const eventVersion = await this.appendVersion('EVENT', eventId, addendum);
 
-    return this.toEventNotice(organizationVersion, eventVersion);
+    return this.toEventNotice(organizationVersion, eventVersion, locales);
   }
 
   /**
@@ -397,10 +407,35 @@ export class PrivacyNoticeService extends BaseService {
     });
   }
 
+  /** The locales an event is offered in, which its notice must be read in. */
+  private async eventLocales(eventId: string): Promise<string[]> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { countries: true },
+    });
+
+    return event ? localesForCountries(event.countries) : [];
+  }
+
+  /**
+   * Every locale one of the organization's events is offered in: its notice
+   * is shown with each of them (Art. 12). None yet means any locale will do.
+   */
+  private async organizationLocales(organizationId: string): Promise<string[]> {
+    const events = await this.prisma.event.findMany({
+      where: { organizationId },
+      select: { countries: true },
+    });
+
+    return localesForCountries(events.flatMap((event) => event.countries));
+  }
+
   private toOrganizationNotice(
     version: PrivacyNoticeVersion | null,
+    requiredLocales: string[],
   ): OrganizationPrivacyNotice {
     return {
+      requiredLocales,
       content:
         (version?.content as PrivacyNoticeContent | undefined) ??
         emptyPrivacyNoticeContent(),
@@ -412,8 +447,10 @@ export class PrivacyNoticeService extends BaseService {
   private toEventNotice(
     organizationVersion: PrivacyNoticeVersion | null,
     eventVersion: PrivacyNoticeVersion | null,
+    requiredLocales: string[],
   ): EventPrivacyNotice {
     return {
+      requiredLocales,
       content:
         (eventVersion?.content as PrivacyNoticeAddendum | undefined) ?? {},
       organizationContent:

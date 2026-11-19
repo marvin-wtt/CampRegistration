@@ -720,3 +720,52 @@ describe('privacyNoticeCompleteness — sensitive data retention', () => {
     ).toEqual([]);
   });
 });
+
+describe('privacyNoticeCompleteness — translations', () => {
+  const withExplanation = (
+    legitimateInterest: string | Record<string, string>,
+  ) => {
+    const content = completeContent();
+    content.purposes = [
+      {
+        key: 'photo_documentation',
+        legalBasis: 'legitimate_interests',
+        legitimateInterest,
+      },
+    ];
+    return content;
+  };
+
+  it('requires a translated text in every locale the notice is read in', () => {
+    const gaps = privacyNoticeCompleteness(
+      withExplanation({ de: 'Erinnerungen', fr: '' }),
+      { locales: ['de', 'fr'] },
+    ).gaps;
+
+    expect(gaps).toEqual(['legitimate_interest_explanation']);
+  });
+
+  it('accepts it once every locale has text', () => {
+    expect(
+      privacyNoticeCompleteness(
+        withExplanation({ de: 'Erinnerungen', fr: 'Souvenirs' }),
+        { locales: ['de', 'fr'] },
+      ).complete,
+    ).toBe(true);
+  });
+
+  it('lets an untranslated text serve every locale', () => {
+    expect(
+      privacyNoticeCompleteness(withExplanation('Memories'), {
+        locales: ['de', 'fr'],
+      }).complete,
+    ).toBe(true);
+  });
+
+  it('accepts any locale when none is required', () => {
+    expect(
+      privacyNoticeCompleteness(withExplanation({ de: 'Erinnerungen' }))
+        .complete,
+    ).toBe(true);
+  });
+});

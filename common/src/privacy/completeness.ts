@@ -78,21 +78,22 @@ export function gapsInSection(
   return gaps.filter((gap) => PRIVACY_NOTICE_GAP_SECTIONS[gap] === section);
 }
 
-function isBlank(value: Translatable | null | undefined): boolean {
-  if (value === null || value === undefined) {
-    return true;
-  }
-  if (typeof value === 'string') {
-    return value.trim().length === 0;
-  }
-  const values = Object.values(value);
-  return values.length === 0 || values.every((v) => v.trim().length === 0);
+export interface PrivacyNoticeCompletenessOptions {
+  /**
+   * Locales the notice is read in. A translated text then needs every one of
+   * them (Art. 12: in the reader's language); an untranslated text serves all.
+   * Without it, text in any locale counts.
+   */
+  locales?: readonly string[] | undefined;
 }
 
 export function privacyNoticeCompleteness(
   content: PrivacyNoticeContent | null | undefined,
+  { locales }: PrivacyNoticeCompletenessOptions = {},
 ): PrivacyNoticeCompleteness {
   const gaps: PrivacyNoticeGap[] = [];
+  const isBlank = (value: Translatable | null | undefined): boolean =>
+    isBlankIn(value, locales);
 
   if (!content) {
     return {
@@ -252,6 +253,24 @@ export function privacyNoticeCompleteness(
   return { complete: gaps.length === 0, gaps };
 }
 
+function isBlankIn(
+  value: Translatable | null | undefined,
+  locales: readonly string[] | undefined,
+): boolean {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return value.trim().length === 0;
+  }
+  const filled = (text: string | undefined) =>
+    typeof text === 'string' && text.trim().length > 0;
+  if (locales?.length) {
+    return !locales.every((locale) => filled(value[locale]));
+  }
+  return !Object.values(value).some(filled);
+}
+
 /**
  * The Art. 13 gaps an event's addendum introduces into the notice its registrants
  * actually read.
@@ -270,10 +289,14 @@ export function privacyNoticeCompleteness(
 export function addendumGaps(
   organization: PrivacyNoticeContent | null,
   addendum: PrivacyNoticeAddendum,
+  options: PrivacyNoticeCompletenessOptions = {},
 ): PrivacyNoticeGap[] {
-  const inherited = new Set(privacyNoticeCompleteness(organization).gaps);
+  const inherited = new Set(
+    privacyNoticeCompleteness(organization, options).gaps,
+  );
 
   return privacyNoticeCompleteness(
     composePrivacyNotice(organization, addendum),
+    options,
   ).gaps.filter((gap) => !inherited.has(gap));
 }

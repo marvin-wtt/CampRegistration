@@ -104,6 +104,20 @@
         </q-card-actions>
 
         <q-card-actions
+          v-else-if="submitState === 'consentMissing'"
+          align="center"
+          class="q-pb-md"
+        >
+          <m-btn
+            primary
+            icon="edit"
+            :label="t('submit.consentMissing.edit')"
+            data-test="registration-consent-edit"
+            @click="editAnswers"
+          />
+        </q-card-actions>
+
+        <q-card-actions
           v-else-if="submitState === 'error'"
           align="center"
           class="q-pb-md"
@@ -145,7 +159,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { computed, onBeforeMount, ref, toRef, watch, watchEffect } from 'vue';
-import { SurveyModel } from 'survey-core';
+import { CustomError, SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
@@ -171,10 +185,11 @@ import type {
 import { useAPIService } from '@/services/APIService';
 import {
   isConsentChangedError,
+  isConsentMissingError,
   isPriceChangedError,
 } from '@/services/RegistrationService';
 import {
-  clearUnconsentedAnswers,
+  unconsentedQuestions,
   consentTexts,
 } from '@camp-registration/common/form';
 import { useErrorExtractor } from '@/composables/errorText';
@@ -218,7 +233,13 @@ const emit = defineEmits<{
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
 const submitState = ref<
-  'saving' | 'success' | 'error' | 'priceChanged' | 'consentChanged' | null
+  | 'saving'
+  | 'success'
+  | 'error'
+  | 'priceChanged'
+  | 'consentChanged'
+  | 'consentMissing'
+  | null
 >(null);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
@@ -254,6 +275,8 @@ const statusTitle = computed(() => {
       return t('submit.priceChanged.title');
     case 'consentChanged':
       return t('submit.consentChanged.title');
+    case 'consentMissing':
+      return t('submit.consentMissing.title');
     default:
       return '';
   }
@@ -278,6 +301,8 @@ const statusText = computed(() => {
       return t('submit.priceChanged.text');
     case 'consentChanged':
       return t('submit.consentChanged.text');
+    case 'consentMissing':
+      return t('submit.consentMissing.text');
     default:
       return '';
   }
@@ -298,6 +323,7 @@ const badgeColor = computed(() => {
       return 'error-container';
     case 'priceChanged':
     case 'consentChanged':
+    case 'consentMissing':
       return 'warning-container';
     default:
       return 'primary-container';
@@ -319,6 +345,7 @@ const badgeTextColor = computed(() => {
       return 'on-error-container';
     case 'priceChanged':
     case 'consentChanged':
+    case 'consentMissing':
       return 'on-warning-container';
     default:
       return 'on-primary-container';
@@ -464,6 +491,21 @@ function createModel(eventId: string, form: object): SurveyModel {
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
   // the submission actually succeeds.
+  // Answers that need a consent nobody gave are never dropped silently: the
+  // person agrees or removes them (docs/privacy.md, 5). Normally the consent
+  // question itself is required; this catches one the form hides.
+  survey.onCompleting.add((sender, options) => {
+    const missing = unconsentedQuestions(sender);
+    if (missing.length === 0) {
+      return;
+    }
+    options.allow = false;
+    for (const question of missing) {
+      question.addError(new CustomError(t('consentMissing.question')));
+    }
+    missing[0]?.focus(true);
+  });
+
   survey.onComplete.add(async (sender) => {
     const submitFn = props.submitFn;
     if (!submitFn) {
@@ -475,8 +517,6 @@ function createModel(eventId: string, form: object): SurveyModel {
     submitState.value = 'saving';
 
     mapFileQuestionValues(sender);
-    // A declined consent: the answers it would have covered are never sent.
-    clearUnconsentedAnswers(sender);
 
     // What the form presented, if it presented a price at all. Only for the
     // server to compare: it charges its own amount, whatever this says.
@@ -518,12 +558,22 @@ function createModel(eventId: string, form: object): SurveyModel {
         submitState.value = 'consentChanged';
         return;
       }
+      if (isConsentMissingError(e)) {
+        submitState.value = 'consentMissing';
+        return;
+      }
       submitError.value = extractErrorText(e);
       submitState.value = 'error';
     }
   });
 
   return survey;
+}
+
+/** Back to the filled-in form, e.g. to remove answers that need consent. */
+function editAnswers() {
+  model.clear(false, false);
+  submitState.value = null;
 }
 
 function reloadPage() {
@@ -631,6 +681,10 @@ submit:
     title: 'The price has changed'
     text: 'The price changed while you were filling in the form. Please reload the page and register again.'
     reload: 'Reload page'
+  consentMissing:
+    title: 'Some answers cannot be saved'
+    text: 'The form asks for health or other sensitive details but not for the consent they need. Remove those answers to register anyway, or contact the organizer.'
+    edit: 'Edit answers'
   consentChanged:
     title: 'The consent text has changed'
     text: 'A consent question changed while you were filling in the form. Please reload the page, read it again and register again.'
@@ -649,6 +703,8 @@ complete:
     text: 'This event is currently full, so your registration has been placed on the waiting list. We will notify you if a spot opens up.'
   registerAnother: 'Register another person'
   exploreEvents: 'Explore other events'
+consentMissing:
+  question: 'This answer can only be saved with your consent. Please agree to the consent question, or remove the answer.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -662,6 +718,10 @@ submit:
     title: 'Der Preis hat sich geändert'
     text: 'Der Preis hat sich geändert, während du das Formular ausgefüllt hast. Bitte lade die Seite neu und melde dich erneut an.'
     reload: 'Seite neu laden'
+  consentMissing:
+    title: 'Einige Angaben können nicht gespeichert werden'
+    text: 'Das Formular fragt nach Gesundheits- oder anderen sensiblen Angaben, holt aber die dafür nötige Einwilligung nicht ein. Entferne diese Angaben, um dich trotzdem anzumelden, oder wende dich an die Veranstalter.'
+    edit: 'Angaben bearbeiten'
   consentChanged:
     title: 'Der Einwilligungstext hat sich geändert'
     text: 'Eine Einwilligungsfrage hat sich geändert, während du das Formular ausgefüllt hast. Bitte lade die Seite neu, lies sie erneut und melde dich noch einmal an.'
@@ -680,6 +740,8 @@ complete:
     text: 'Diese Veranstaltung ist derzeit ausgebucht, daher wurde deine Anmeldung auf die Warteliste gesetzt. Wir benachrichtigen dich, sobald ein Platz frei wird.'
   registerAnother: 'Weitere Person anmelden'
   exploreEvents: 'Weitere Veranstaltungen entdecken'
+consentMissing:
+  question: 'Diese Angabe kann nur mit deiner Einwilligung gespeichert werden. Bitte stimme der Einwilligung zu oder entferne die Angabe.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -693,6 +755,10 @@ submit:
     title: 'Le prix a changé'
     text: 'Le prix a changé pendant que tu remplissais le formulaire. Recharge la page et inscris-toi à nouveau.'
     reload: 'Recharger la page'
+  consentMissing:
+    title: 'Certaines réponses ne peuvent pas être enregistrées'
+    text: 'Le formulaire demande des données de santé ou d’autres données sensibles, mais pas le consentement nécessaire. Supprime ces réponses pour t’inscrire quand même, ou contacte l’organisateur.'
+    edit: 'Modifier les réponses'
   consentChanged:
     title: 'Le texte du consentement a changé'
     text: 'Une question de consentement a changé pendant que tu remplissais le formulaire. Recharge la page, relis-la et inscris-toi à nouveau.'
@@ -711,6 +777,8 @@ complete:
     text: "Cet événement est actuellement complet, ton inscription a donc été placée sur liste d'attente. Nous te préviendrons si une place se libère."
   registerAnother: 'Inscrire une autre personne'
   exploreEvents: "Découvrir d'autres événements"
+consentMissing:
+  question: 'Cette réponse ne peut être enregistrée qu’avec ton consentement. Donne ton consentement ou supprime la réponse.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -724,6 +792,10 @@ submit:
     title: 'Cena się zmieniła'
     text: 'Cena zmieniła się podczas wypełniania formularza. Odśwież stronę i zarejestruj się ponownie.'
     reload: 'Odśwież stronę'
+  consentMissing:
+    title: 'Niektórych odpowiedzi nie można zapisać'
+    text: 'Formularz pyta o dane o zdrowiu lub inne dane wrażliwe, ale nie prosi o wymaganą zgodę. Usuń te odpowiedzi, aby mimo to się zarejestrować, albo skontaktuj się z organizatorem.'
+    edit: 'Edytuj odpowiedzi'
   consentChanged:
     title: 'Treść zgody się zmieniła'
     text: 'Pytanie o zgodę zmieniło się podczas wypełniania formularza. Odśwież stronę, przeczytaj je ponownie i zarejestruj się jeszcze raz.'
@@ -742,6 +814,8 @@ complete:
     text: 'To wydarzenie jest obecnie pełne, więc Twoje zgłoszenie zostało umieszczone na liście oczekujących. Powiadomimy Cię, gdy zwolni się miejsce.'
   registerAnother: 'Zarejestruj kolejną osobę'
   exploreEvents: 'Odkryj inne wydarzenia'
+consentMissing:
+  question: 'Tę odpowiedź można zapisać tylko za Twoją zgodą. Wyraź zgodę albo usuń odpowiedź.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -755,6 +829,10 @@ submit:
     title: 'Cena se změnila'
     text: 'Cena se změnila během vyplňování formuláře. Načti stránku znovu a zaregistruj se znovu.'
     reload: 'Načíst stránku znovu'
+  consentMissing:
+    title: 'Některé odpovědi nelze uložit'
+    text: 'Formulář se ptá na zdravotní nebo jiné citlivé údaje, ale nežádá o potřebný souhlas. Odstraň tyto odpovědi, aby ses mohl(a) přesto přihlásit, nebo kontaktuj pořadatele.'
+    edit: 'Upravit odpovědi'
   consentChanged:
     title: 'Text souhlasu se změnil'
     text: 'Otázka na souhlas se změnila během vyplňování formuláře. Načti stránku znovu, přečti si ji znovu a zaregistruj se znovu.'
@@ -773,6 +851,8 @@ complete:
     text: 'Tato akce je momentálně plně obsazená, proto byla tvoje registrace zařazena na čekací listinu. Jakmile se uvolní místo, dáme ti vědět.'
   registerAnother: 'Registrovat další osobu'
   exploreEvents: 'Prozkoumat další akcey'
+consentMissing:
+  question: 'Tuto odpověď lze uložit jen s tvým souhlasem. Udělej souhlas, nebo odpověď odstraň.'
 </i18n>
 
 <style lang="scss">

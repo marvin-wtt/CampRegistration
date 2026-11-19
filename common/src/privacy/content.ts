@@ -299,6 +299,8 @@ export interface OrganizationPrivacyNotice {
   content: PrivacyNoticeContent;
   publishedVersion: number | null;
   publishedAt: string | null;
+  /** Every locale the organization's events are offered in. */
+  requiredLocales: string[];
 }
 
 /**
@@ -326,6 +328,8 @@ export type PrivacyNoticeUpdateData = Pick<
  * to it.
  */
 export interface EventPrivacyNotice {
+  /** The locales the event is offered in. */
+  requiredLocales: string[];
   content: PrivacyNoticeAddendum;
   /** Null while the organization has published nothing at all. */
   organizationContent: PrivacyNoticeContent | null;

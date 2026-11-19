@@ -150,9 +150,10 @@ clone rules in `PrivacyNoticeService`.
   compose as before. The retention reminder reads the composed notice and follows.
 - **[implemented]** Cloning copies exclusions with the addendum; normalization against
   the target organization drops those it does not declare.
-- Exclusions versus the form. **[planned]** Once questions are tagged (section 5),
+- Exclusions versus the form. **[implemented]** With questions tagged (section 5),
   an excluded category that the form collects is undeclared, so the registration
-  gate refuses registrations — no separate check. **[implemented]** Until then, the
+  gate refuses registrations — no separate check. **[implemented]** For untagged
+  questions, the
   editor warns when an excluded category matches a form `eventDataType` suggestion.
 - **[review]** For purposes and recipients the platform cannot see whether the
   processing happens; excluding rests on the event team, acting for the controller.
@@ -209,8 +210,10 @@ clone rules in `PrivacyNoticeService`.
   guard, `registration.routes.ts`).
 - **[implemented]** Cloning an event copies its addendum only if the target
   organization's notice covers it (`copyEventAddendum`).
-- **[gap]** The notice and the form are not linked. A form can ask for health data
-  that the notice never declares. See section 5.
+- **[implemented]** The notice and the form are linked through the questions'
+  privacy tags: a form asking for a tagged category the notice does not declare is
+  refused at the registration gate. Untagged questions stay the organizer's
+  responsibility. See section 5.
 
 ## 3. The notice builder
 
@@ -287,10 +290,12 @@ Findings, most important first:
 4. **Art. 13(1)(f).** **[implemented]** For standard contractual clauses and binding
    corporate rules, the notice says a copy can be requested from the controller's
    contact address. Adequacy decisions are public; derogations have no copy.
-5. **[gap] Translations are not checked per locale.** `isBlank` accepts a
-   `Translatable` when any locale has text, so an authored explanation may exist in
-   German only while the event is offered in French (Art. 12). **[planned]** Require
-   text in every locale the organization's events are offered in.
+5. **[implemented] Translations are checked per locale.** A translated text in
+   the notice needs every locale it is read in (Art. 12): the organization's notice
+   every locale its events are offered in, an event's addendum the event's locales
+   (`requiredLocales`, `PrivacyNoticeCompletenessOptions`). An untranslated text
+   serves all locales; an organization without events accepts any. Copying an
+   addendum to a new event stays lenient; the next publish checks it.
 6. **[review] Categories, purposes and recipients are unlinked in the output.** The
    reader cannot tell that allergies go to the caterer and medication only to the
    medical staff. Art. 13 does not strictly demand the link; no change planned.
@@ -428,11 +433,12 @@ be tagged, and only boolean questions can be consents.
 
 - A question property `privacyCategory` holds a catalogue key (`health`,
   `allergies`, …). The organizer sets it; it is the source of truth.
-- **Optional aid:** a keyword hint in the form editor's linter (five locales, names,
-  titles and choices) suggests `privacyCategory` for untagged data questions and
-  `privacyConsent` for boolean questions that read like consent ("agree", "einverstanden",
-  "j'accepte"). A warning only — it never blocks saving or registrations, and
-  dismissing it needs no record.
+- **[dropped] Keyword hints** (suggesting a tag for questions that read like
+  health data or a consent). Matching words cannot tell what a question collects:
+  a free-text "anything we should know?" asks for health data without any keyword,
+  so a quiet editor would read as "checked, nothing found". Tagging rests on the
+  organizer; the `privacyCategory` help text says that only tagged questions are
+  treated as sensitive and to check free-text fields too.
 - **[review]** Tagging rests on the organizer, as controller. The platform enforces
   consequences of what is tagged; it does not try to discover what is not. An
   untagged consent question gets no wording copy.
@@ -541,13 +547,18 @@ notempty'`). "No known allergies" is
   care during the event share one question; the wording names the purpose, the
   recipients (event team, medical staff or caterer) and how to withdraw.
 - **[implemented]** Safety nets, for organizer-built forms that do not follow the
-  preset: before submitting, the form clears answers whose consent was not given
-  (`clearUnconsentedAnswers`, `common/src/form/privacyTags.ts`), and the server's
-  submission check refuses them.
+  preset. Answers whose consent was not given are never dropped silently: the form
+  stops before submitting and marks those questions, asking to agree or remove the
+  answer (`unconsentedQuestions`) — this catches a consent question the form hides.
+  The server's submission check refuses such answers
+  (`REGISTRATION_CONSENT_MISSING`); the form explains that state and offers to edit
+  the answers. While the form asks for a category no consent covers, the public
+  registration is refused altogether (`eventPrivacyCompliant`) and the managers see
+  why on the event dashboard (`PrivacyComplianceNotice`).
 - No table flag for a missing health consent: health data without consent cannot
-  be stored (the form demands the consent, clears declined answers, the server
-  refuses them), so `consent_health != true` would only mean "nothing entered" —
-  which the empty health columns already show — and would read like a refusal.
+  be stored (the form demands the consent, the server refuses answers without it),
+  so `consent_health != true` would only mean "nothing entered" — which the empty
+  health columns already show — and would read like a refusal.
 - **Necessary for participation:** an organizer who genuinely needs the
   information — a youth camp — marks the health question required. The consent then
   always appears and must be given, with no extra setting: the preset's rule already
@@ -583,7 +594,8 @@ verification:
   `privacy` state ("registration is not possible at the moment") instead of a form
   that would fail. The form editor raises a notification naming what is missing
   when the problem first appears or changes, not on every autosave.
-  **[planned]** A banner on the event dashboard.
+  **[implemented]** A notice on the event dashboard while registration is open or
+  scheduled (`PrivacyComplianceNotice`).
 - Which categories rely on consent: every special category, except those the notice
   declares on another Art. 9 basis (`consentBasedCategories`). Under a free-text
   notice nothing is readable, so all special categories rely on consent and the
@@ -624,11 +636,10 @@ verification:
 - **[review]** `PRIVACY_ENFORCED_SINCE` is set to 18.11.2026; set it to the actual
   release date before deploying.
 - An event created from a reference event counts as new and must pass the gate.
-- Legacy events are neither migrated nor warned about as such. **[planned]** One
-  warning for every event that accepts registrations while the privacy check finds
-  a problem (a tagged question without consent, an undeclared category, no
-  published notice). It reuses the checks behind the registration gate and the form
-  editor; for enforced events it adds that registrations are blocked.
+- Legacy events are neither migrated nor warned about as such. **[implemented]** The
+  dashboard notice above covers every enforced event whose registration is open or
+  scheduled while the gate refuses it; legacy events, which the gate does not
+  refuse, see the issues in the form editor.
 - Out of scope: health data registrants volunteer in general free-text fields
   (`additional_information`). Presets get a hint asking not to.
 
@@ -819,7 +830,10 @@ keep data.
   resolved; it gets no more reminders and leaves the overviews.
 - Either timestamp closes the event for registrations permanently
   (`eventRegistrationStatus`, also for managers creating one): a new registration
-  would bring back what was deleted. After the sensitive deletion an edit cannot
+  would bring back what was deleted. The deletion also ends an open or scheduled
+  registration window, and the window cannot be changed afterwards (409; the editor
+  and the event card disable it). Registrants only see the event as closed. The
+  data page warns while registration is open or the event has not ended. After the sensitive deletion an edit cannot
   store sensitive answers again. After deleting everything, the dashboard hides the
   cards built on registrations and the participants page says the data is gone.
 - One audit entry per action (`retention` entity: `sensitive_purged`,
@@ -1022,11 +1036,11 @@ reads tags after the tagging itself.
 17. Settings page "Data & deletion" with the periods, both deletions and event
     deletion; the dashboard card becomes a summary.
 
-**Phase 6 — rollout and conveniences**
+**Phase 6 — rollout and conveniences** (done)
 
-18. A warning for any event accepting registrations while the privacy check finds
-    a problem (section 5). No legacy list, no migration.
-19. Keyword hint in the form editor's linter.
+18. A warning on the event dashboard while registration is open or scheduled and
+    the privacy check refuses it (section 5). No legacy list, no migration.
+19. ~~Keyword hint in the form editor~~ — dropped, see section 5.
 20. Translation completeness per locale. Tightens completeness like item 12; release
     both together with one announcement to organizers.
 

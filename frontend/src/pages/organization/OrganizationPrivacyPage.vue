@@ -862,7 +862,12 @@ const organizationId = computed<string>(
 );
 const canEdit = computed<boolean>(() => canAccessOrg('organization.edit'));
 
-const completeness = computed(() => privacyNoticeCompleteness(content.value));
+// The locales its events are offered in: every translated text needs each.
+const requiredLocales = ref<string[]>([]);
+
+const completeness = computed(() =>
+  privacyNoticeCompleteness(content.value, { locales: requiredLocales.value }),
+);
 
 void loadNotice();
 
@@ -874,6 +879,7 @@ async function loadNotice() {
     content.value = { ...emptyPrivacyNoticeContent(), ...notice.content };
     publishedAt.value = notice.publishedAt;
     publishedVersion.value = notice.publishedVersion;
+    requiredLocales.value = notice.requiredLocales;
     // Baseline what was actually published, *before* normalising: a notice
     // published before these keys became implicit really is missing them, and
     // baselining afterwards would report it as up to date while the recipient

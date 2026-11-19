@@ -97,16 +97,16 @@
 
       <!-- Registration status -->
       <component
-        :is="canEdit ? 'button' : 'div'"
+        :is="canEditWindow ? 'button' : 'div'"
         class="mgmt-card__status"
         :class="[
           `mgmt-card__status--${status.kind}`,
-          { 'mgmt-card__status--editable': canEdit },
+          { 'mgmt-card__status--editable': canEditWindow },
         ]"
-        :type="canEdit ? 'button' : undefined"
-        :disabled="canEdit ? registrationLoading : undefined"
-        :aria-label="canEdit ? t('registration.manage') : undefined"
-        @click="canEdit && manageRegistration()"
+        :type="canEditWindow ? 'button' : undefined"
+        :disabled="canEditWindow ? registrationLoading : undefined"
+        :aria-label="canEditWindow ? t('registration.manage') : undefined"
+        @click="canEditWindow && manageRegistration()"
       >
         <q-spinner
           v-if="registrationLoading"
@@ -119,7 +119,7 @@
         />
         {{ status.label }}
         <q-icon
-          v-if="canEdit && !registrationLoading"
+          v-if="canEditWindow && !registrationLoading"
           name="edit"
           size="13px"
           class="mgmt-card__status-edit"
@@ -404,6 +404,14 @@ const quickLinks = computed<QuickLink[]>(() => {
 });
 
 const canEdit = computed<boolean>(() => canFor(event.id, 'event.edit'));
+
+// After a deletion the window is frozen (docs/privacy.md, 8).
+const canEditWindow = computed<boolean>(
+  () =>
+    canEdit.value &&
+    !event.sensitiveDataPurgedAt &&
+    !event.registrationDataPurgedAt,
+);
 
 const registrationLoading = ref<boolean>(false);
 

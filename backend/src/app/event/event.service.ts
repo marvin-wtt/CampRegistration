@@ -1,3 +1,5 @@
+import ApiError from '#core/router/ApiError';
+import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import type { FinanceCategoryCreateManyData } from '#app/financeCategory/finance-category.service';
 import { ulid } from '#utils/ulid';
@@ -8,7 +10,11 @@ import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
-import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
+import {
+  calculateFreePlaces,
+  isRetentionPurged,
+  type FreePlaces,
+} from '#app/event/event.util';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
@@ -518,6 +524,8 @@ export class EventService extends BaseService {
         where: { id: event.id },
       });
 
+      assertRegistrationWindowKept(before, data);
+
       const updatedEvent = await tx.event.update({
         where: { id: event.id },
         data: {
@@ -577,3 +585,31 @@ const withMediaFlags = <
     hasBanner: files.some((file) => file.field === EVENT_BANNER_SLOT),
   };
 };
+
+/**
+ * After registration data was deleted the event never takes registrations
+ * again (docs/privacy.md, 8), so its registration window is frozen: a new one
+ * would only promise what the event refuses.
+ */
+function assertRegistrationWindowKept(
+  before: Event,
+  data: EventUpdateData,
+): void {
+  if (!isRetentionPurged(before)) {
+    return;
+  }
+
+  const changed = (
+    ['registrationOpensAt', 'registrationClosesAt'] as const
+  ).some(
+    (key) =>
+      data[key] !== undefined &&
+      (data[key]?.getTime() ?? null) !== (before[key]?.getTime() ?? null),
+  );
+  if (changed) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'Registration data of this event was deleted; its registration stays closed.',
+    );
+  }
+}

@@ -78,6 +78,26 @@
         :summary="t('delete.summary')"
         danger
       >
+        <!-- Deleting early is allowed but rarely meant: say what it costs. -->
+        <div
+          v-if="canDeleteData && earlyWarnings.length > 0"
+          class="danger-note bg-error-container text-on-error-container rounded-lg q-mb-sm"
+          data-test="retention-early"
+        >
+          <q-icon
+            name="schedule"
+            size="20px"
+          />
+          <div>
+            <div
+              v-for="warning in earlyWarnings"
+              :key="warning"
+            >
+              {{ t(`early.${warning}`) }}
+            </div>
+          </div>
+        </div>
+
         <div
           v-if="canDeleteData && rows.some((row) => !row.purged)"
           class="danger-note bg-error-container text-on-error-container rounded-lg q-mb-md"
@@ -321,6 +341,20 @@ const EVENT_EFFECTS = [
 
 // The only things that outlive the event; keep in sync like the list above.
 const EVENT_KEEPS = ['newsletter', 'audit', 'outside'] as const;
+
+/** Why deleting now would be early: registration still possible, event on. */
+const earlyWarnings = computed<('registration' | 'event')[]>(() => {
+  const current = event.value;
+  if (!current || current.registrationDataPurgedAt) {
+    return [];
+  }
+  return [
+    ...(current.registrationStatus !== 'closed'
+      ? (['registration'] as const)
+      : []),
+    ...(new Date(current.endAt) > new Date() ? (['event'] as const) : []),
+  ];
+});
 
 interface Row {
   kind: RetentionDeadlineKind;
@@ -656,6 +690,9 @@ purge:
   irreversible: 'This cannot be undone.'
   sensitive: 'Delete sensitive data?'
   registrations: 'Delete all registrations?'
+early:
+  registration: 'Registration is still open or scheduled. Deleting closes it immediately and for good.'
+  event: 'The event has not ended yet. Data you need during it, such as health details, would be gone.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -733,6 +770,9 @@ purge:
   irreversible: 'Das kann nicht rückgängig gemacht werden.'
   sensitive: 'Sensible Daten löschen?'
   registrations: 'Alle Anmeldungen löschen?'
+early:
+  registration: 'Die Anmeldung ist noch offen oder geplant. Löschen schließt sie sofort und dauerhaft.'
+  event: 'Die Veranstaltung ist noch nicht vorbei. Daten, die ihr währenddessen braucht, etwa Gesundheitsangaben, wären danach weg.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -810,6 +850,9 @@ purge:
   irreversible: 'Cette action est irréversible.'
   sensitive: 'Supprimer les données sensibles ?'
   registrations: 'Supprimer toutes les inscriptions ?'
+early:
+  registration: 'Les inscriptions sont encore ouvertes ou prévues. La suppression les ferme immédiatement et définitivement.'
+  event: 'L’événement n’est pas encore terminé. Les données nécessaires pendant celui-ci, comme les informations de santé, disparaîtraient.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -887,6 +930,9 @@ purge:
   irreversible: 'Tego nie można cofnąć.'
   sensitive: 'Usunąć dane wrażliwe?'
   registrations: 'Usunąć wszystkie zgłoszenia?'
+early:
+  registration: 'Zgłoszenia są jeszcze otwarte lub zaplanowane. Usunięcie zamyka je natychmiast i na stałe.'
+  event: 'Wydarzenie jeszcze się nie zakończyło. Dane potrzebne w jego trakcie, np. informacje o zdrowiu, zostałyby utracone.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -964,4 +1010,7 @@ purge:
   irreversible: 'Tuto akci nelze vrátit.'
   sensitive: 'Smazat citlivé údaje?'
   registrations: 'Smazat všechny přihlášky?'
+early:
+  registration: 'Přihlašování je ještě otevřené nebo naplánované. Smazání ho okamžitě a natrvalo uzavře.'
+  event: 'Akce ještě neskončila. Údaje potřebné během ní, například zdravotní informace, by zmizely.'
 </i18n>

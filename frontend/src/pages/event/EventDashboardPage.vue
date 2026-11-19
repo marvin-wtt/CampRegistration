@@ -48,6 +48,12 @@
         :verification-status="event.organizationVerificationStatus"
       />
 
+      <!-- Configured, but refused by the privacy rules (docs/privacy.md, 5). -->
+      <privacy-compliance-notice
+        v-if="event"
+        :event
+      />
+
       <!-- Wide screens: the phase's main cards on the left, things to do on the
            right. Narrow screens: one column in the layout's order. -->
       <div
@@ -142,6 +148,7 @@ import ReadinessCard from '@/components/event/dashboard/ReadinessCard.vue';
 import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue';
 import RetentionCard from '@/components/event/dashboard/RetentionCard.vue';
 import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
+import PrivacyComplianceNotice from '@/components/privacy/PrivacyComplianceNotice.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';

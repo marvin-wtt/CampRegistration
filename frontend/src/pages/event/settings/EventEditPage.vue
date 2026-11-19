@@ -330,10 +330,17 @@
             </q-card-section>
 
             <q-card-section class="column q-gutter-y-md">
+              <div
+                v-if="windowFrozen"
+                class="text-body2 text-on-surface-variant"
+                data-test="registration-window-frozen"
+              >
+                {{ t('registrationPurged') }}
+              </div>
               <!-- Registration opens -->
               <date-time-input
                 v-model="event.registrationOpensAt"
-                :disable="loading"
+                :disable="loading || windowFrozen"
                 :label="t('field.registrationOpensAt')"
                 :rules="[
                   (val?: string | null) =>
@@ -355,7 +362,7 @@
               <!-- Registration closes -->
               <date-time-input
                 v-model="event.registrationClosesAt"
-                :disable="loading"
+                :disable="loading || windowFrozen"
                 :label="t('field.registrationClosesAt')"
                 :rules="[
                   (val?: string | null) =>
@@ -508,6 +515,13 @@ const { can } = usePermissions();
 
 const eventStore = useEventDetailsStore();
 const { data, error, isLoading } = storeToRefs(eventStore);
+
+// After a deletion the window is frozen (docs/privacy.md, 8).
+const windowFrozen = computed<boolean>(
+  () =>
+    !!data.value?.sensitiveDataPurgedAt ||
+    !!data.value?.registrationDataPurgedAt,
+);
 
 // Edits survive a reload, e.g. after a failed save or another manager's change.
 const {
@@ -687,6 +701,7 @@ action:
   submit:
     create: 'Create'
     edit: 'Save'
+registrationPurged: 'Registration data of this event was deleted, so its registration stays closed.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -770,6 +785,7 @@ action:
   submit:
     create: 'Erstellen'
     edit: 'Speichern'
+registrationPurged: 'Die Anmeldedaten dieser Veranstaltung wurden gelöscht, deshalb bleibt die Anmeldung geschlossen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -856,6 +872,7 @@ action:
   submit:
     create: 'Créer'
     edit: 'Sauver'
+registrationPurged: 'Les données d’inscription de cet événement ont été supprimées, les inscriptions restent donc fermées.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -939,6 +956,7 @@ action:
   submit:
     create: 'Utwórz'
     edit: 'Zapisz'
+registrationPurged: 'Dane zgłoszeń tego wydarzenia zostały usunięte, dlatego zgłoszenia pozostają zamknięte.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1022,4 +1040,5 @@ action:
   submit:
     create: 'Vytvořit'
     edit: 'Uložit'
+registrationPurged: 'Údaje z přihlášek této akce byly smazány, proto přihlašování zůstává uzavřené.'
 </i18n>
