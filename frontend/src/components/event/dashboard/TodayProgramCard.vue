@@ -15,14 +15,29 @@
 
     <q-card-section
       v-if="birthdays.length > 0"
-      class="birthday-bar"
+      class="birthday-section"
       data-test="dashboard-birthdays"
     >
-      <q-icon
-        name="cake"
-        size="18px"
-      />
-      <span>{{ birthdayText }}</span>
+      <ul
+        class="birthday-list"
+        :aria-label="t('birthdays')"
+      >
+        <li
+          v-for="birthday in birthdays"
+          :key="birthday.registrationId"
+          class="birthday-chip"
+        >
+          <q-icon
+            name="cake"
+            size="16px"
+          />
+          <span class="birthday-name">{{ birthday.name }}</span>
+          <span class="birthday-age">{{ birthday.age }}</span>
+          <q-tooltip>
+            {{ t('birthday', { name: birthday.name, age: birthday.age }) }}
+          </q-tooltip>
+        </li>
+      </ul>
     </q-card-section>
 
     <q-card-section
@@ -248,11 +263,6 @@ const { birthdaysOn } = useEventBirthdays(() => event);
 const birthdays = computed(() =>
   plannerSettings.showBirthdays ? birthdaysOn(date.value) : [],
 );
-const birthdayText = computed<string>(() =>
-  birthdays.value
-    .map(({ name, age }) => t('birthday', { name, age }))
-    .join(' · '),
-);
 
 const programLoading = computed<boolean>(() => programStore.isLoading);
 
@@ -421,17 +431,49 @@ const nextRow = computed(() => {
   padding-top: 0;
 }
 
-.birthday-bar {
+.birthday-section {
+  padding-top: 0;
+}
+
+.birthday-list {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  margin: 0 16px 8px;
-  padding: 8px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.birthday-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 4px 4px 10px;
   color: var(--md3-on-tertiary-container);
   font-size: 0.875rem;
   font-weight: 500;
   background: var(--md3-tertiary-container);
-  border-radius: 12px;
+  border-radius: 999px;
+}
+
+.birthday-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.birthday-age {
+  min-width: 24px;
+  padding: 2px 6px;
+  color: var(--md3-on-tertiary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: var(--md3-tertiary);
+  border-radius: 999px;
 }
 
 .plan-bar {
@@ -579,6 +621,7 @@ title:
   day: 'Program · Day {day}'
 dayOf: 'Day {day} of {days}'
 birthday: '{name} turns {age}'
+birthdays: 'Birthdays'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -606,6 +649,7 @@ title:
   day: 'Programm · Tag {day}'
 dayOf: 'Tag {day} von {days}'
 birthday: '{name} wird {age}'
+birthdays: 'Geburtstage'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -633,6 +677,7 @@ title:
   day: 'Programme · Jour {day}'
 dayOf: 'Jour {day} sur {days}'
 birthday: '{name} fête ses {age} ans'
+birthdays: 'Anniversaires'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -660,6 +705,7 @@ title:
   day: 'Program · Dzień {day}'
 dayOf: 'Dzień {day} z {days}'
 birthday: '{name} obchodzi {age}. urodziny'
+birthdays: 'Urodziny'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -687,6 +733,7 @@ title:
   day: 'Program · Den {day}'
 dayOf: 'Den {day} z {days}'
 birthday: '{name} slaví {age}. narozeniny'
+birthdays: 'Narozeniny'
 plan:
   a: 'Plán A'
   b: 'Plán B'
