@@ -54,24 +54,20 @@
         </div>
       </div>
 
+      <!-- The one action on the card itself: copying the public link. Any
+           caveat (registration closed, organization unverified) is already on
+           the card as its status chip, and the copy confirmation names it. -->
       <q-btn
-        class="mgmt-card__more"
-        icon="more_vert"
+        class="mgmt-card__share"
+        icon="share"
         round
         flat
         dense
-        :disable="actionLoading"
-        :aria-label="t('action.more')"
-        @click.stop
+        :aria-label="t('action.share')"
+        @click.stop="shareAction"
         @keyup.enter.stop
       >
-        <event-card-menu
-          :event
-          :share-warning="shareWarning"
-          @edit="editAction"
-          @delete="deleteAction"
-          @share="shareAction"
-        />
+        <q-tooltip>{{ t('action.share') }}</q-tooltip>
       </q-btn>
     </div>
 
@@ -165,7 +161,6 @@
 </template>
 
 <script lang="ts" setup>
-import EventCardMenu from '@/components/event/index/EventCardMenu.vue';
 import EventAvatar from '@/components/event/EventAvatar.vue';
 import { useEventsStore } from '@/stores/events-store';
 import { useRouter } from 'vue-router';
@@ -177,7 +172,6 @@ import type { ScopePermission } from '@camp-registration/common/permissions';
 import { sumGroupValues, zonedInstant } from '@camp-registration/common/utils';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
-import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import RegistrationScheduleDialog from '@/components/event/index/RegistrationScheduleDialog.vue';
 import type { RegistrationScheduleResult } from '@/components/event/index/RegistrationScheduleDialog.vue';
 import { usePermissions } from '@/composables/permissions';
@@ -412,12 +406,6 @@ const quickLinks = computed<QuickLink[]>(() => {
 const canEdit = computed<boolean>(() => canFor(event.id, 'event.edit'));
 
 const registrationLoading = ref<boolean>(false);
-const editLoading = ref<boolean>(false);
-const deleteLoading = ref<boolean>(false);
-
-const actionLoading = computed<boolean>(() => {
-  return registrationLoading.value || deleteLoading.value || editLoading.value;
-});
 
 function manageRegistration() {
   quasar
@@ -477,36 +465,6 @@ function shareAction() {
       quasar.notify({
         type: 'negative',
         message: t('notification.share_fail'),
-      });
-    });
-}
-
-function editAction() {
-  void withLoading(editLoading, async () => {
-    await router.push({
-      name: 'management.event.settings',
-      params: {
-        eventId: event.id,
-      },
-    });
-  });
-}
-
-function deleteAction() {
-  quasar
-    .dialog({
-      component: SafeDeleteDialog,
-      componentProps: {
-        title: t('dialog.delete.title'),
-        message: t('dialog.delete.message'),
-        label: t('dialog.delete.label'),
-        value: to(event.name),
-      },
-      persistent: true,
-    })
-    .onOk(() => {
-      void withLoading(deleteLoading, async () => {
-        await capsStore.deleteEntry(event.id);
       });
     });
 }
@@ -624,7 +582,7 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   font-size: 12px;
 }
 
-.mgmt-card__more {
+.mgmt-card__share {
   flex-shrink: 0;
   color: var(--md3-on-surface-variant);
 }
@@ -797,7 +755,7 @@ phase:
   ongoing: 'Ongoing'
 organization: 'Owned by {organization}'
 action:
-  more: 'More actions'
+  share: 'Copy public link'
 status:
   open: 'Registration open'
   openUntil: 'Open until {date}'
@@ -813,11 +771,6 @@ share:
   closed: 'Registration is closed — visitors can view the event but cannot sign up.'
   upcoming: 'Registration has not opened yet — visitors can view the event but cannot sign up yet.'
   unverified: 'Only this event’s managers can open the link while {organization} is unverified.'
-dialog:
-  delete:
-    title: 'Delete event'
-    message: 'Are you sure you want to delete this event? All registrations will be lost. This event cannot be used as a template for future events.'
-    label: 'Event name'
 notification:
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
@@ -835,7 +788,7 @@ phase:
   ongoing: 'Laufend'
 organization: 'Gehört zu {organization}'
 action:
-  more: 'Weitere Aktionen'
+  share: 'Öffentlichen Link kopieren'
 status:
   open: 'Anmeldung offen'
   openUntil: 'Offen bis {date}'
@@ -851,11 +804,6 @@ share:
   closed: 'Die Anmeldung ist geschlossen — Besucher sehen die Veranstaltung, können sich aber nicht anmelden.'
   upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen die Veranstaltung, können sich aber noch nicht anmelden.'
   unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieser Veranstaltung den Link öffnen.'
-dialog:
-  delete:
-    title: 'Veranstaltung löschen'
-    message: 'Bist du sicher, dass du diese Veranstaltung löschen möchtest? Alle Anmeldungen gehen verloren. Diese Veranstaltung kann nicht als Vorlage für zukünftige Veranstaltungen verwendet werden.'
-    label: 'Veranstaltungsname'
 notification:
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
@@ -873,7 +821,7 @@ phase:
   ongoing: 'En cours'
 organization: 'Appartient à {organization}'
 action:
-  more: "Plus d'actions"
+  share: 'Copier le lien public'
 status:
   open: 'Inscription ouverte'
   openUntil: "Ouvert jusqu'au {date}"
@@ -891,13 +839,6 @@ share:
   upcoming: "Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir l'événement mais pas encore s’inscrire."
 
   unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de cet événement peuvent ouvrir le lien.'
-dialog:
-  delete:
-    title: "Supprimer l'événement"
-
-    message: 'Êtes-vous sûr de vouloir supprimer cet événement ? Toutes les inscriptions seront perdues. Cet événement ne peut pas être utilisé comme modèle pour les événements futurs.'
-    label: "Nom de l'événement"
-
 notification:
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
@@ -915,7 +856,7 @@ phase:
   ongoing: 'W trakcie'
 organization: 'Należy do {organization}'
 action:
-  more: 'Więcej akcji'
+  share: 'Kopiuj link publiczny'
 status:
   open: 'Rejestracja otwarta'
   openUntil: 'Otwarte do {date}'
@@ -931,11 +872,6 @@ share:
   closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą wydarzenie, ale nie mogą się zapisać.'
   upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą wydarzenie, ale nie mogą się jeszcze zapisać.'
   unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym wydarzeniem.'
-dialog:
-  delete:
-    title: 'Usuń wydarzenie'
-    message: 'Czy na pewno chcesz usunąć to wydarzenie? Wszystkie zgłoszenia zostaną utracone. To wydarzenie nie będzie mogło być użyte jako szablon dla przyszłych wydarzeń.'
-    label: 'Nazwa wydarzenia'
 notification:
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
@@ -953,7 +889,7 @@ phase:
   ongoing: 'Probíhá'
 organization: 'Patří organizaci {organization}'
 action:
-  more: 'Další akce'
+  share: 'Kopírovat veřejný odkaz'
 status:
   open: 'Registrace otevřena'
   openUntil: 'Otevřeno do {date}'
@@ -969,11 +905,6 @@ share:
   closed: 'Registrace je uzavřena — návštěvníci akci uvidí, ale nemohou se přihlásit.'
   upcoming: 'Registrace ještě nezačala — návštěvníci akci uvidí, ale zatím se nemohou přihlásit.'
   unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa této akce.'
-dialog:
-  delete:
-    title: 'Smazat akci'
-    message: 'Opravdu chcete tuto akci smazat? Všechny registrace budou ztraceny. Tuto akci nebude možné použít jako šablonu pro budoucí akce.'
-    label: 'Název akce'
 notification:
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
