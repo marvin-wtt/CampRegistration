@@ -122,12 +122,18 @@ export class EventService extends BaseService {
     return event?.organization.verificationStatus === 'VERIFIED';
   }
 
-  /** The public directory's events that have not ended yet. */
+  /** The public directory's events that still accept, or will accept, registrations. */
   async getSitemapEvents() {
+    const now = new Date();
+
     return this.prisma.event.findMany({
       where: {
         ...this.publicDirectoryWhere(),
-        endAt: { gte: new Date() },
+        endAt: { gte: now },
+        OR: [
+          this.eventStatusWhere('open', now),
+          this.eventStatusWhere('upcoming', now),
+        ],
       },
       select: { id: true, updatedAt: true },
       orderBy: { startAt: 'asc' },

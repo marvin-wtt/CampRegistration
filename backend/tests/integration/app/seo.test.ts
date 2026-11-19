@@ -57,6 +57,19 @@ describe('GET /sitemap.xml', () => {
       },
       'VERIFIED',
     ],
+    [
+      'an event whose registration has closed',
+      {
+        registrationOpensAt: new Date(Date.now() - 7 * DAY),
+        registrationClosesAt: new Date(Date.now() - DAY),
+      },
+      'VERIFIED',
+    ],
+    [
+      'an event whose registration data was purged',
+      { registrationDataPurgedAt: new Date() },
+      'VERIFIED',
+    ],
   ] as const)('should omit %s', async (_label, data, verificationStatus) => {
     const event = await createEvent(data, verificationStatus);
 
@@ -67,19 +80,34 @@ describe('GET /sitemap.xml', () => {
 
   /**
    * ⚠️ The drift alarm. The sitemap must offer exactly what the anonymous
-   * directory lists; a visibility change applied to one side only fails here.
+   * directory lists as open or upcoming; a visibility change applied to one
+   * side only fails here.
    */
-  it('should list exactly the events the anonymous directory serves', async () => {
+  it('should list exactly the open and upcoming events the anonymous directory serves', async () => {
     await createEvent();
+    await createEvent({
+      registrationOpensAt: new Date(Date.now() - DAY),
+      registrationClosesAt: new Date(Date.now() + DAY),
+    });
+    await createEvent({
+      registrationOpensAt: new Date(Date.now() - 7 * DAY),
+      registrationClosesAt: new Date(Date.now() - DAY),
+    });
     await createEvent({ listed: false });
     await createEvent({}, 'PENDING');
     await createEvent({ listed: false }, 'PENDING');
     await createEvent({}, 'REJECTED');
 
-    const { body } = await request().get('/api/v1/events').expect(200);
+    const directory = await Promise.all(
+      ['open', 'upcoming'].map((status) =>
+        request().get('/api/v1/events').query({ status }).expect(200),
+      ),
+    );
     const { text } = await request().get('/sitemap.xml').expect(200);
 
-    const listed = body.data.map((event: { id: string }) => event.id).sort();
+    const listed = directory
+      .flatMap(({ body }) => body.data.map((event: { id: string }) => event.id))
+      .sort();
     const offered = [...text.matchAll(/\/events\/([0-9A-Z]{26})</g)]
       .map((match) => match[1])
       .sort();
