@@ -10,7 +10,6 @@ import type { EventWithRelations } from '#app/event/event.types';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
-  isPrivacyEnforced,
 } from '@camp-registration/common/form';
 import { generateApiUrl } from '#utils/url';
 
@@ -58,7 +57,6 @@ export class EventResource extends JsonResource<
       freePlaces: this.data.freePlaces,
       freePlacesTotal: this.data.freePlacesTotal,
       registrationStatus: eventRegistrationStatus(this.data),
-      privacyEnforced: isPrivacyEnforced(this.data),
       sensitiveDataPurgedAt:
         this.data.sensitiveDataPurgedAt?.toISOString() ?? null,
       registrationDataPurgedAt:

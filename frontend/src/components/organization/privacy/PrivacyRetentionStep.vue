@@ -9,6 +9,7 @@
         :max="240"
         dense
         outlined
+        rounded
         :disable="!canEdit"
         class="col-12 col-sm-4"
       />
@@ -20,6 +21,7 @@
         map-options
         dense
         outlined
+        rounded
         :disable="!canEdit"
         class="col-12 col-sm-8"
       />
@@ -43,6 +45,7 @@
           :max="maxSpecialWeeks"
           dense
           outlined
+          rounded
           :disable="!canEdit"
           :error="specialWeeksInvalid"
           :error-message="
@@ -58,6 +61,7 @@
           map-options
           dense
           outlined
+          rounded
           :disable="!canEdit"
           class="col-12 col-sm-8"
         />
@@ -93,6 +97,7 @@
                 map-options
                 dense
                 outlined
+                rounded
                 hide-bottom-space
                 :disable="!canEdit"
                 :error="consentScopeInvalid(exception)"
@@ -107,6 +112,7 @@
                 map-options
                 dense
                 outlined
+                rounded
                 hide-bottom-space
                 :disable="!canEdit"
                 class="col-12 col-sm-6"
@@ -126,6 +132,7 @@
                 :max="600"
                 dense
                 outlined
+                rounded
                 hide-bottom-space
                 :disable="!canEdit"
                 :error="!((exception.months ?? 0) > 0)"
@@ -139,6 +146,7 @@
                 map-options
                 dense
                 outlined
+                rounded
                 hide-bottom-space
                 :disable="!canEdit"
                 class="col-7 col-sm-8"
@@ -167,6 +175,7 @@
             default-untranslated
             dense
             outlined
+            rounded
             hide-bottom-space
             :disable="!canEdit"
             class="retention-exception__field"
@@ -180,6 +189,7 @@
             default-untranslated
             dense
             outlined
+            rounded
             hide-bottom-space
             :disable="!canEdit"
             class="retention-exception__field"
@@ -224,6 +234,7 @@
             hide-dropdown-icon
             dense
             outlined
+            rounded
             :disable="!canEdit"
             :error="content.thirdCountryTransfers.countries.length === 0"
           />
@@ -235,6 +246,7 @@
             map-options
             dense
             outlined
+            rounded
             :disable="!canEdit"
             :error="!content.thirdCountryTransfers.safeguard"
           />
@@ -256,6 +268,7 @@
             :label="t('field.dpoName')"
             dense
             outlined
+            rounded
             :disable="!canEdit"
             :error="content.dpo.name.trim() === ''"
           />
@@ -265,6 +278,7 @@
             :label="t('field.dpoEmail')"
             dense
             outlined
+            rounded
             :disable="!canEdit"
             :error="content.dpo.email.trim() === ''"
           />
@@ -293,6 +307,7 @@
             type="textarea"
             dense
             outlined
+            rounded
             :disable="!canEdit"
             :error="!hasAutomatedDetails"
             @update:model-value="

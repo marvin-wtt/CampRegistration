@@ -23,6 +23,7 @@
           :min
           :max
           outlined
+          rounded
         />
         <q-input
           v-model="reason"
@@ -32,6 +33,7 @@
           :rules="[(value: string) => !!value.trim() || t('field.required')]"
           autogrow
           outlined
+          rounded
           maxlength="2000"
         />
       </div>

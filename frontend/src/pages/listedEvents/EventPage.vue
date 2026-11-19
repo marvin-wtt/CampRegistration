@@ -429,7 +429,7 @@ watch(
   () => event.value?.id,
   async (id) => {
     publishedNotice.value = null;
-    if (!id || !event.value?.privacyEnforced) {
+    if (!id) {
       return;
     }
     try {
@@ -442,7 +442,7 @@ watch(
 );
 
 const privacyBlocked = computed<boolean>(() => {
-  if (!event.value?.privacyEnforced || !publishedNotice.value) {
+  if (!event.value || !publishedNotice.value) {
     return false;
   }
 

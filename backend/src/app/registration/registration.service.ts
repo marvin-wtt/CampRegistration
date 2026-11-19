@@ -25,7 +25,6 @@ import {
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
-import { isPrivacyEnforced } from '@camp-registration/common/form';
 import {
   assertConsentsGiven,
   assertConsentTextsUnchanged,
@@ -163,15 +162,13 @@ export class RegistrationService extends BaseService {
     assertPriceUnchanged(quotedAmount, displayedTotal);
 
     // Sensitive answers need the consent they rest on (docs/privacy.md, 5).
-    if (isPrivacyEnforced(event)) {
-      assertConsentsGiven(
-        form,
-        await this.privacyNoticeService.getComposedNotice(
-          event.id,
-          event.organizationId,
-        ),
-      );
-    }
+    assertConsentsGiven(
+      form,
+      await this.privacyNoticeService.getComposedNotice(
+        event.id,
+        event.organizationId,
+      ),
+    );
     const consentTexts = form.givenConsentTexts();
     assertConsentTextsUnchanged(consentTexts, displayedConsents);
 
@@ -330,15 +327,13 @@ export class RegistrationService extends BaseService {
         computedData = computedRegistrationData(form.extractEventData());
         formFileIds = form.getFileIds();
 
-        if (isPrivacyEnforced(event)) {
-          assertConsentsGiven(
-            form,
-            await this.privacyNoticeService.getComposedNotice(
-              event.id,
-              event.organizationId,
-            ),
-          );
-        }
+        assertConsentsGiven(
+          form,
+          await this.privacyNoticeService.getComposedNotice(
+            event.id,
+            event.organizationId,
+          ),
+        );
         consentTexts = newlyGivenConsentTexts(before, form.givenConsentTexts());
       }
       if (data.customFiles) {

@@ -47,7 +47,6 @@ describe('RegistrationForm', () => {
     freePlaces: 0,
     freePlacesTotal: 0,
     registrationStatus: 'closed' as const,
-    privacyEnforced: false,
     sensitiveDataPurgedAt: null,
     registrationDataPurgedAt: null,
     logo: null,

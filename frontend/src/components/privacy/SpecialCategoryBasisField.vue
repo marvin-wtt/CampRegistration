@@ -10,6 +10,7 @@
     emit-value
     map-options
     outlined
+    rounded
     dense
     options-dense
     popup-content-class="art9__menu"

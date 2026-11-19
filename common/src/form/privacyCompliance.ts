@@ -6,23 +6,6 @@ import {
 } from './privacyTags.js';
 
 /**
- * Registrations opened after this moment are held to the consent rules of
- * docs/privacy.md, section 5. Events created before it — `createdAt` before
- * it, or none at all — are left as they are and only warned about.
- */
-export const PRIVACY_ENFORCED_SINCE = '2026-11-18T00:00:00.000Z';
-
-export function isPrivacyEnforced(event: {
-  createdAt?: Date | string | null;
-}): boolean {
-  if (!event.createdAt) {
-    return false;
-  }
-
-  return new Date(event.createdAt) >= new Date(PRIVACY_ENFORCED_SINCE);
-}
-
-/**
  * The special categories that need a consent question: all of them, except
  * those the notice declares on another Art. 9 basis. A free-text notice
  * declares nothing the platform can read, so it relies on consent throughout.

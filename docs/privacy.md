@@ -373,8 +373,7 @@ Findings, most important first:
   `eventDataType: 'newsletter_consent'` → `Registration.newsletterConsent`.
 - **[implemented]** The presets tag their questions and ask for consent before
   health data (Phase 2, below). Events created earlier keep their saved forms.
-- **[implemented]** Consent is enforced for events created since
-  `PRIVACY_ENFORCED_SINCE` (Phase 3, below).
+- **[implemented]** Consent is enforced for every event (Phase 3, below).
 - **[implemented]** The wording of every tagged consent is stored with the
   registration (`Registration.consentTexts`). Untagged consent questions are not
   copied; the form editor autosaves, so their wording is not provable.
@@ -628,18 +627,14 @@ verification:
 
 **Scope and legacy events**
 
-- **[implemented]** Enforcement applies to events created since
-  `PRIVACY_ENFORCED_SINCE` (`isPrivacyEnforced`), compared with `Event.createdAt`
-  (null on the oldest events, which counts as legacy) — no new column. The event
-  resource exposes it as `privacyEnforced`. Consent texts are copied for every
-  event, legacy included.
-- **[review]** `PRIVACY_ENFORCED_SINCE` is set to 18.11.2026; set it to the actual
-  release date before deploying.
-- An event created from a reference event counts as new and must pass the gate.
-- Legacy events are neither migrated nor warned about as such. **[implemented]** The
-  dashboard notice above covers every enforced event whose registration is open or
-  scheduled while the gate refuses it; legacy events, which the gate does not
-  refuse, see the issues in the form editor.
+- **[implemented]** Enforcement applies to every event, with no cutoff date. Every
+  rule reacts to privacy tags only, and forms saved before tags existed carry
+  none, so existing events are unaffected until a manager tags their questions —
+  which is when the rules should apply. (An earlier `PRIVACY_ENFORCED_SINCE`
+  cutoff was dropped for this reason.)
+- Existing events are neither migrated nor warned about as such. **[implemented]**
+  The dashboard notice above covers every event whose registration is open or
+  scheduled while the gate refuses it.
 - Out of scope: health data registrants volunteer in general free-text fields
   (`additional_information`). Presets get a hint asking not to.
 
@@ -975,8 +970,8 @@ reads tags after the tagging itself.
 
 **Phase 3 — enforcement and proof, shipped together** (done)
 
-7. Registration gate and submission check. Its release date is the legacy cutoff.
-   Excluded categories count as undeclared.
+7. Registration gate and submission check, for every event (the release-date
+   cutoff was dropped later). Excluded categories count as undeclared.
 8. `Registration.consentTexts`, the server-side copy, and the stale-text comparison.
 
 **Phase 4 — access**

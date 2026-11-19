@@ -213,6 +213,7 @@
                   map-options
                   dense
                   outlined
+                  rounded
                   :disable="!canEdit"
                   @update:model-value="(v) => setLegalBasis(key, v)"
                 />
@@ -224,6 +225,7 @@
                   always
                   dense
                   outlined
+                  rounded
                   :disable="!canEdit"
                   class="q-mt-xs"
                   @update:model-value="(v) => setLegitimateInterest(key, v)"
@@ -262,6 +264,7 @@
                     default-untranslated
                     dense
                     outlined
+                    rounded
                     hide-bottom-space
                     :disable="!canEdit"
                     class="col"
@@ -290,6 +293,7 @@
                   map-options
                   dense
                   outlined
+                  rounded
                   :disable="!canEdit"
                 />
                 <translated-input
@@ -300,6 +304,7 @@
                   always
                   dense
                   outlined
+                  rounded
                   :disable="!canEdit"
                   @update:model-value="
                     (v) => (entry.legitimateInterest = asTranslatable(v))
@@ -428,6 +433,7 @@
                     default-untranslated
                     dense
                     outlined
+                    rounded
                     hide-bottom-space
                     :disable="!canEdit"
                     class="col"
@@ -543,6 +549,7 @@
                   :hint="gt('privacy.editor.field.recipientNameHint')"
                   dense
                   outlined
+                  rounded
                   :disable="!canEdit"
                   @update:model-value="(v) => setRecipientName(key, String(v))"
                 />
@@ -576,6 +583,7 @@
                     default-untranslated
                     dense
                     outlined
+                    rounded
                     hide-bottom-space
                     :disable="!canEdit"
                     class="col"

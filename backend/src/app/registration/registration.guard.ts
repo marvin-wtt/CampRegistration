@@ -10,7 +10,6 @@ import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service'
 import {
   formPrivacyIssues,
   hasPrivacyIssues,
-  isPrivacyEnforced,
 } from '@camp-registration/common/form';
 
 export const registrationFileGuard = async (req: Request): Promise<GuardFn> => {
@@ -53,10 +52,6 @@ export const eventPrivacyCompliant = async (
   req: Request,
 ): Promise<boolean | string> => {
   const event = req.modelOrFail('event');
-  if (!isPrivacyEnforced(event)) {
-    return true;
-  }
-
   const notice = await resolve(PrivacyNoticeService).getComposedNotice(
     event.id,
     event.organizationId,

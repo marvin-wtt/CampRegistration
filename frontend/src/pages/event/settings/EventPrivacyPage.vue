@@ -184,6 +184,7 @@
                 map-options
                 dense
                 outlined
+                rounded
                 :disable="!canEdit"
                 @update:model-value="(v) => setEventLegalBasis(key, v)"
               />
@@ -473,6 +474,7 @@
                     :hint="gt('privacy.editor.field.recipientNameHint')"
                     dense
                     outlined
+                    rounded
                     :disable="!canEdit"
                     @update:model-value="
                       (value) => setRecipientName(key, String(value))
@@ -494,6 +496,7 @@
                   :hint="gt('privacy.editor.field.recipientNameHint')"
                   dense
                   outlined
+                  rounded
                   :disable="!canEdit"
                   @update:model-value="
                     (value) => setRecipientName(key, String(value))
@@ -971,11 +974,11 @@ const suggestedCategories = computed<PrivacyDataCategoryKey[]>(() =>
   ),
 );
 
-// A tagged question the notice does not declare stops registrations on an
-// enforced event (docs/privacy.md, 5) — then it is no longer a suggestion.
+// A tagged question the notice does not declare stops registrations
+// (docs/privacy.md, 5) — then it is no longer a suggestion.
 const suggestionBlocks = computed<boolean>(() => {
   const form = event.value?.form;
-  if (!form || !event.value?.privacyEnforced) {
+  if (!form) {
     return false;
   }
   const tagged = new Set(

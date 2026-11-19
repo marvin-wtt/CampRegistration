@@ -78,7 +78,6 @@ const createEvent = (
   freePlaces: 10,
   freePlacesTotal: 10,
   registrationStatus: 'closed' as const,
-  privacyEnforced: false,
   sensitiveDataPurgedAt: null,
   registrationDataPurgedAt: null,
   logo: null,

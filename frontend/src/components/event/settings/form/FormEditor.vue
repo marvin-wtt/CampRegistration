@@ -315,17 +315,15 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
 const publishedNotice = ref<ComposedPrivacyNotice | null>();
 let reportedPrivacyIssues = '';
 
-if (props.event.privacyEnforced) {
-  usePrivacyNoticeService()
-    .fetchEventNotice(props.event.id)
-    .then((published) => {
-      publishedNotice.value = published.notice;
-      reportPrivacyIssues();
-    })
-    .catch(() => {
-      // Without the notice there is nothing to compare; the server still gates.
-    });
-}
+usePrivacyNoticeService()
+  .fetchEventNotice(props.event.id)
+  .then((published) => {
+    publishedNotice.value = published.notice;
+    reportPrivacyIssues();
+  })
+  .catch(() => {
+    // Without the notice there is nothing to compare; the server still gates.
+  });
 
 /*
  * "Add consent question": while a tagged category has no consent covering it,

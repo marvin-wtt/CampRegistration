@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Serializer, SurveyModel } from 'survey-core';
 import {
-  PRIVACY_ENFORCED_SINCE,
   consentTexts,
   extractPrivacyTags,
   formPrivacyIssues,
   hasPrivacyIssues,
-  isPrivacyEnforced,
   uncoveredConsentCategories,
   clearUnconsentedAnswers,
   unconsentedQuestions,
@@ -310,15 +308,5 @@ describe('formPrivacyIssues', () => {
       undeclared: [],
       uncovered: ['allergies'],
     });
-  });
-});
-
-describe('isPrivacyEnforced', () => {
-  it('holds for events created since the rules took effect', () => {
-    expect(isPrivacyEnforced({ createdAt: PRIVACY_ENFORCED_SINCE })).toBe(true);
-    expect(isPrivacyEnforced({ createdAt: '2026-01-01T00:00:00Z' })).toBe(
-      false,
-    );
-    expect(isPrivacyEnforced({ createdAt: null })).toBe(false);
   });
 });

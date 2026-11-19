@@ -80,16 +80,6 @@ describe('registration consent', () => {
 
       expect(status).not.toBe(201);
     });
-
-    it('should leave events created before the rules took effect alone', async () => {
-      const event = await eventWith([firstName, allergies], {
-        createdAt: new Date('2026-01-01T00:00:00Z'),
-      });
-
-      await register(event.id, {
-        data: { first_name: 'Jane', allergies: 'Nuts' },
-      }).expect(201);
-    });
   });
 
   describe('submission', () => {

@@ -39,11 +39,9 @@ export {
   type PrivacyTaggedQuestion,
 } from './privacyTags.js';
 export {
-  PRIVACY_ENFORCED_SINCE,
   consentBasedCategories,
   formPrivacyIssues,
   hasPrivacyIssues,
-  isPrivacyEnforced,
   type FormPrivacyIssues,
 } from './privacyCompliance.js';
 export {

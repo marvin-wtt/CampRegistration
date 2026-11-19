@@ -64,7 +64,6 @@ function eventWith(
     freePlaces: Object.fromEntries(countries.map((c) => [c, 3])),
     maxParticipants: Object.fromEntries(countries.map((c) => [c, 10])),
     registrationStatus: 'open',
-    privacyEnforced: false,
     sensitiveDataPurgedAt: null,
     registrationDataPurgedAt: null,
     startAt: '2027-01-26T09:00:00',

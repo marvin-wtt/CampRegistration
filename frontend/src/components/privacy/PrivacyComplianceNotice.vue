@@ -81,13 +81,8 @@ function categoryNames(keys: string[]): string {
 
 /** What blocks registrations, as sentences; empty when nothing does. */
 const problems = computed<string[]>(() => {
-  // Old events are not held to the rules, and a closed registration loses
-  // nobody; the form editor still shows the issues.
-  if (
-    !event.privacyEnforced ||
-    event.registrationStatus === 'closed' ||
-    !notice.value
-  ) {
+  // A closed registration loses nobody; the form editor still shows them.
+  if (event.registrationStatus === 'closed' || !notice.value) {
     return [];
   }
 
