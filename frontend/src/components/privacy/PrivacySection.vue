@@ -5,6 +5,7 @@
   <q-card
     flat
     class="privacy-section rounded-xl"
+    :class="{ 'privacy-section--danger': danger }"
   >
     <div class="privacy-section__header">
       <div class="privacy-section__icon">
@@ -78,6 +79,8 @@ defineProps<{
   summary?: string | null;
   /** How many catalogue entries wait in the `more` slot; 0 hides it. */
   moreCount?: number;
+  /** Irreversible actions: an error-tinted surface, outline and icon. */
+  danger?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -138,6 +141,25 @@ const open = ref(false);
     gap: 0.5rem;
     padding-top: 0.75rem;
     margin-left: -0.5rem;
+  }
+
+  &--danger {
+    background-color: color-mix(
+      in srgb,
+      var(--md3-error) 6%,
+      var(--md3-surface-container-low)
+    );
+    outline: 1px solid color-mix(in srgb, var(--md3-error) 45%, transparent);
+    outline-offset: -1px;
+  }
+
+  &--danger &__icon {
+    background-color: var(--md3-error-container);
+    color: var(--md3-on-error-container);
+  }
+
+  &--danger &__title > :first-child {
+    color: var(--md3-error);
   }
 }
 </style>

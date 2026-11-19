@@ -268,6 +268,12 @@ const routes: RouteRecordRaw[] = [
                       import('@/pages/event/settings/EventPrivacyPage.vue'),
                   },
                   {
+                    path: 'data',
+                    name: 'management.event.settings.data',
+                    component: () =>
+                      import('@/pages/event/settings/DataSettingsPage.vue'),
+                  },
+                  {
                     path: 'audit',
                     name: 'management.event.settings.audit',
                     component: () =>

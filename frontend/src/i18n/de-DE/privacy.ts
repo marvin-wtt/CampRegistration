@@ -164,6 +164,8 @@ export default {
     retention: 'Es wurde keine Speicherdauer festgelegt',
     retention_exception:
       'Einer Ausnahme fehlt die Frist oder die Angabe, wofür sie gilt',
+    special_category_retention:
+      'Für Gesundheitsangaben und andere sensible Daten fehlt die Frist, oder sie ist länger als die allgemeine',
     retention_exception_consent_basis:
       'Daten, die bis zum Widerruf gespeichert werden, gehören zu einem Zweck, der nicht auf einer Einwilligung beruht',
     transfer_countries:

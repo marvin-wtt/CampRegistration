@@ -12,6 +12,7 @@ import {
   gapsInSection,
   isEmptyAddendum,
   privacyNoticeCompleteness,
+  maxSpecialCategoryWeeks,
   supervisoryAuthorityFor,
   type PrivacyNoticeContent,
 } from '../../src/privacy/index.js';
@@ -22,7 +23,12 @@ function completeContent(): PrivacyNoticeContent {
     purposes: [{ key: 'registration_administration', legalBasis: 'contract' }],
     dataCategories: [{ key: 'identity' }],
     recipients: [{ key: 'platform_operator' }],
-    retention: { months: 24, anchor: 'event_end', exceptions: [] },
+    retention: {
+      months: 24,
+      anchor: 'event_end',
+      exceptions: [],
+      specialCategories: { weeks: 4, anchor: 'event_end' },
+    },
   };
 }
 
@@ -175,6 +181,7 @@ describe('privacyNoticeCompleteness', () => {
       anchor: 'event_end',
       // @ts-expect-error legacy shape: exceptions used to be free text
       exceptions: { en: 'Tax records' },
+      specialCategories: { weeks: 4, anchor: 'event_end' },
     };
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
@@ -384,6 +391,8 @@ describe('composePrivacyNotice', () => {
       months: 6,
       anchor: 'submission',
       exceptions: [],
+      // Not restated by the event, so the organization's period applies.
+      specialCategories: { weeks: 4, anchor: 'event_end' },
     });
   });
 
@@ -545,6 +554,7 @@ describe('privacyNoticeCompleteness — consent-bound retention', () => {
     content.retention!.exceptions.push({
       scope: 'photo_publication',
       until: 'consent_withdrawn',
+      months: 60,
     });
 
     expect(privacyNoticeCompleteness(content)).toEqual({
@@ -558,6 +568,7 @@ describe('privacyNoticeCompleteness — consent-bound retention', () => {
     content.retention!.exceptions.push({
       scope: 'registration_administration',
       until: 'consent_withdrawn',
+      months: 60,
     });
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
@@ -571,11 +582,25 @@ describe('privacyNoticeCompleteness — consent-bound retention', () => {
     content.retention!.exceptions.push({
       scope: customKey('1'),
       until: 'consent_withdrawn',
+      months: 60,
     });
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
       'retention_exception',
     );
+  });
+
+  it('requires an upper limit for consent that is never withdrawn', () => {
+    const content = completeContent();
+    content.purposes.push({ key: 'photo_publication', legalBasis: 'consent' });
+    content.retention!.exceptions.push({
+      scope: 'photo_publication',
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content).gaps).toEqual([
+      'retention_exception',
+    ]);
   });
 
   it('routes the new gap to the retention step', () => {
@@ -635,10 +660,63 @@ describe('addendumGaps', () => {
             {
               scope: 'registration_administration',
               until: 'consent_withdrawn',
+              months: 60,
             },
           ],
         },
       }),
     ).toEqual(['retention_exception_consent_basis']);
+  });
+});
+
+describe('privacyNoticeCompleteness — sensitive data retention', () => {
+  it('requires a period for special categories', () => {
+    const content = completeContent();
+    delete content.retention!.specialCategories;
+
+    expect(privacyNoticeCompleteness(content).gaps).toEqual([
+      'special_category_retention',
+    ]);
+  });
+
+  it('refuses a period longer than the main one', () => {
+    const content = completeContent();
+    content.retention!.specialCategories = {
+      weeks: maxSpecialCategoryWeeks(24) + 1,
+      anchor: 'event_end',
+    };
+
+    expect(privacyNoticeCompleteness(content).gaps).toEqual([
+      'special_category_retention',
+    ]);
+  });
+
+  it('lets an event replace the period it inherits', () => {
+    const composed = composePrivacyNotice(completeContent(), {
+      retention: {
+        months: 24,
+        anchor: 'event_end',
+        exceptions: [],
+        specialCategories: { weeks: 2, anchor: 'event_end' },
+      },
+    });
+
+    expect(composed.retention?.specialCategories).toEqual({
+      weeks: 2,
+      anchor: 'event_end',
+    });
+  });
+
+  it('does not blame an event for a period its organization lacks', () => {
+    const organization = completeContent();
+    delete organization.retention!.specialCategories;
+
+    expect(
+      addendumGaps(organization, {
+        dataCategories: [
+          { key: 'health', specialCategoryBasis: 'explicit_consent' },
+        ],
+      }),
+    ).toEqual([]);
   });
 });

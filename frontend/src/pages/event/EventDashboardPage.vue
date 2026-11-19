@@ -107,6 +107,10 @@
               :program="features.program"
               :style="card.style"
             />
+            <retention-card
+              v-else-if="card.key === 'retention'"
+              :style="card.style"
+            />
             <demographics-card
               v-else-if="card.key === 'demographics'"
               :people="stats.acceptedParticipants.value"
@@ -136,6 +140,7 @@ import TodayDutiesCard from '@/components/event/dashboard/TodayDutiesCard.vue';
 import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
 import ReadinessCard from '@/components/event/dashboard/ReadinessCard.vue';
 import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue';
+import RetentionCard from '@/components/event/dashboard/RetentionCard.vue';
 import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useProfileStore } from '@/stores/profile-store';
@@ -161,7 +166,8 @@ type CardKey =
   | 'duties'
   | 'registrations'
   | 'readiness'
-  | 'demographics';
+  | 'demographics'
+  | 'retention';
 
 type Column = 'main' | 'side';
 
@@ -197,6 +203,7 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
   ],
   wrapUp: [
     ['attention', 'side'],
+    ['retention', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
     ['demographics', 'main'],
@@ -252,8 +259,13 @@ const error = computed<string | null>(
   () => eventError.value ?? registrationsError.value,
 );
 
+// Once all registration data is deleted, nothing built on it is shown.
+const registrationsPurged = computed<boolean>(
+  () => !!event.value?.registrationDataPurgedAt,
+);
+
 const features = computed(() => ({
-  registrations: can('event.registrations.view'),
+  registrations: can('event.registrations.view') && !registrationsPurged.value,
   files: can('event.files.view'),
   tasks: can('event.tasks.view') && isShown('tasks'),
   duties:

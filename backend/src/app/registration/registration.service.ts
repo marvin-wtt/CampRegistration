@@ -1,5 +1,6 @@
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
+import { isRetentionPurged } from '#app/event/event.util';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
@@ -132,6 +133,15 @@ export class RegistrationService extends BaseService {
     displayedTotal?: number,
     displayedConsents?: Record<string, string>,
   ) {
+    // Also for managers, who may register outside the window: deleted data
+    // is never restored (docs/privacy.md, 8).
+    if (isRetentionPurged(event)) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'Registration data of this event was deleted; it takes no registrations.',
+      );
+    }
+
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
     // Resolved by validation: one of the event's countries, defaulted for a
@@ -304,6 +314,7 @@ export class RegistrationService extends BaseService {
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
       let formFileIds: string[] | undefined;
       let consentTexts: Record<string, string> | undefined;
+      let formData = data.data;
 
       if (data.data) {
         // Read as the form it was answered in: the group's `{event.*}` values
@@ -312,6 +323,10 @@ export class RegistrationService extends BaseService {
           locale: before.locale,
           group: data.group ?? before.group,
         }).load(data.data);
+        // Sensitive answers deleted for good never come back through an edit.
+        if (event.sensitiveDataPurgedAt) {
+          formData = form.withoutSensitiveAnswers();
+        }
         computedData = computedRegistrationData(form.extractEventData());
         formFileIds = form.getFileIds();
 
@@ -364,7 +379,7 @@ export class RegistrationService extends BaseService {
         where: { id: registrationId },
         data: {
           ...computedData,
-          data: data.data,
+          data: formData,
           consentTexts,
           customData: data.customData,
           status: data.status,

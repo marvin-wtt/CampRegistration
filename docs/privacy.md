@@ -600,13 +600,14 @@ verification:
   until it is fixed. Intended: collecting without a basis is not allowed even
   briefly.
 
-**Withdrawal (Art. 7(3)) — manager workflow**
+**Withdrawal (Art. 7(3)) — by editing the registration**
 
 - The registrant withdraws by contacting the organizer; the consent text and the
   notice say how.
-- **[planned]** A manager action "withdraw consent" on a registration sets the
-  consent answer to `false` and deletes the answers in the categories its
-  `privacyConsentFor` covers. The existing audit entry records who did it and when.
+- **[implemented]** No dedicated action: a manager edits the registration and
+  empties the covered answers. The consent check also runs on updates, so a
+  registration cannot keep covered answers without the consent; emptying them hides
+  the consent question again. The audit log records who edited it and when.
 - Handled without undue delay; the event's managers are responsible.
 - **[review]** Art. 7(3) requires withdrawing to be as easy as giving consent.
   Consent is a click; withdrawal is an email followed by a manager's action. Whether
@@ -623,10 +624,11 @@ verification:
 - **[review]** `PRIVACY_ENFORCED_SINCE` is set to 18.11.2026; set it to the actual
   release date before deploying.
 - An event created from a reference event counts as new and must pass the gate.
-- **[planned]** Legacy events that still accept registrations are reviewed, not
-  migrated: their managers see a warning on the event dashboard asking them to add
-  consent questions to health questions, and the instance administrator can list
-  them. Nothing is changed automatically.
+- Legacy events are neither migrated nor warned about as such. **[planned]** One
+  warning for every event that accepts registrations while the privacy check finds
+  a problem (a tagged question without consent, an undeclared category, no
+  published notice). It reuses the checks behind the registration gate and the form
+  editor; for enforced events it adds that registrations are blocked.
 - Out of scope: health data registrants volunteer in general free-text fields
   (`additional_information`). Presets get a hint asking not to.
 
@@ -753,30 +755,103 @@ policy rather than the organization's notice.
 
 ## 8. Retention and deletion (Art. 5(1)(e), 17)
 
+Deletion is manual. The platform reminds, shows and records; what has to be kept
+beyond a deadline is the organizer's decision, and keeping copies of records it
+must retain (invoices, records for a funding body) is the organizer's job. Nothing
+is deleted automatically, and an overdue deadline never counts as permission to
+keep data.
+
+### Periods in the notice
+
 - **[implemented]** The notice states a retention period (anchored at event end or
   submission) plus exceptions, which either run for their own period or until
   consent is withdrawn — the latter only for purposes resting on consent
   (`retention_exception_consent_basis` gap).
-- **[implemented]** A daily job (`retention-reminder`, 06:30) emails an event's
-  directors 14 days before the latest period promised to its registrants runs out,
-  computed from the notice versions stamped on the registrations
-  (`privacy-retention.service.ts`). Events without stamped registrations are skipped.
-- **[review]** The job deliberately deletes nothing: what must be kept (an unpaid
-  invoice, an insurance claim, a safeguarding matter) is the controller's judgment.
-- **[implemented]** Managers delete registrations individually; files left without
-  an owner are removed from storage by the file service.
-- **[gap]** Copies of a registration in finished mail jobs survive its deletion —
-  see section 6 for the planned queue retention.
-- **[gap]** A consent-bound exception ("until consent is withdrawn") has no upper
-  limit, so data a person never withdraws consent for is kept indefinitely.
-  **[planned]** Consent-bound exceptions also state a maximum period; the completeness
-  check requires it. The newsletter subscription is unaffected — it lives in
-  `NewsletterSubscriber`, ended by unsubscribing.
-- **[gap]** Health answers are usually only needed until the event ends, but can
-  only be removed together with the whole registration. **[planned]** One manager
-  action per event, "delete sensitive answers", that clears the answers of tagged
-  questions in all its registrations (audit-logged). The existing retention reminder
-  mentions it. No per-category retention settings, no automatic deletion.
+- **[implemented]** Consent-bound exceptions also state a maximum period (`months`,
+  `anchor`), required by the completeness check (`retention_exception`). The
+  newsletter subscription is unaffected — it lives in `NewsletterSubscriber`, ended
+  by unsubscribing.
+- **[implemented]** `retention.specialCategories: { weeks, anchor }` is how long
+  sensitive answers are kept, stated to registrants only when the notice lists a
+  special category. Required on every builder notice
+  (`special_category_retention`), not only on one declaring a special category:
+  events may add one but have no retention editor, so they inherit the period. At
+  most `maxSpecialCategoryWeeks` (4 weeks per month of the main period).
+
+### Two kinds of data, two deadlines [implemented]
+
+| Kind            | What                                      | Deadline from                 |
+| --------------- | ----------------------------------------- | ----------------------------- |
+| `sensitive`     | answers to special-category questions     | `retention.specialCategories` |
+| `registrations` | all registration data, sensitive included | the notice's retention period |
+
+- Sensitive data is a subset of the registration data. Its deadline is capped at
+  the general one, and a postponement may not move it past it (nor the general one
+  before it).
+- Deadlines come from the notice versions stamped on the registrations, not from
+  today's notice: a period is a promise made to a person at a particular moment.
+  The latest promise per kind wins (`retention.deadlines.ts`). A form without
+  special-category questions has no sensitive deadline; notices from before the
+  sensitive period put sensitive answers under the main period. Events without
+  stamped registrations have no deadline.
+- `RetentionDeadline` holds one row per event and kind: the promised `dueAt`, a
+  postponement (`postponedUntil`, `postponeReason`, who and when) and the reminder
+  stage last sent. The daily `retention-reminder` job (06:30) syncs the rows, then
+  sends reminders; opening the event's retention card syncs it too.
+
+### Deletion [implemented]
+
+- "Delete sensitive data" clears the answers of special-category questions in all
+  registrations, model-based (`clearSpecialCategoryAnswers`, as for the email
+  filter), and detaches files uploaded to them; the file cleanup removes those.
+  Consent answers stay as proof of what was agreed.
+- "Delete all registrations" deletes every registration. Bed assignments, files and
+  audit entries are only detached (`SetNull`); a registration's mail delivery log
+  and chore assignments go with it. Nothing financial references a registration;
+  payments (`feat/payments`) must keep that so — their own payer details, no
+  cascade.
+- Both need `event.registrations.delete`, warn to keep a copy of anything legally
+  required first, and require typing the event name (`SafeDeleteDialog`); the
+  request carries `confirm: true`. Both run in batches and are idempotent.
+- The event records the deletion for good: `sensitiveDataPurgedAt`,
+  `registrationDataPurgedAt` (which implies the former). Nothing clears them, and
+  deleted data is never treated as restorable. A deadline whose data is deleted is
+  resolved; it gets no more reminders and leaves the overviews.
+- Either timestamp closes the event for registrations permanently
+  (`eventRegistrationStatus`, also for managers creating one): a new registration
+  would bring back what was deleted. After the sensitive deletion an edit cannot
+  store sensitive answers again. After deleting everything, the dashboard hides the
+  cards built on registrations and the participants page says the data is gone.
+- One audit entry per action (`retention` entity: `sensitive_purged`,
+  `registrations_purged` with the count; `postponed` with the date). No personal
+  data and no reason text. The existing two-year audit retention applies.
+
+### Postponement [implemented]
+
+- A manager with `event.registrations.delete` postpones a deadline immediately,
+  without approval: a reason and a new date, at most 12 months ahead
+  (`MAX_RETENTION_POSTPONE_MONTHS`). Postponing again is the renewal. The reminders
+  start over for the new date.
+- The reason may name a person or a case, so only managers with
+  `event.registrations.delete` see it; overviews and the audit log leave it out.
+
+### Reminders and visibility [implemented]
+
+- 30, 7 and 1 day before the effective date (the postponement's, else the due
+  date) the managers holding `event.registrations.delete` get a mail; on the date
+  the organization's admins get one too (`RetentionDeadlineMessage`). Each stage is
+  sent once, and a missed run sends the most urgent stage reached.
+- Settings › "Data & deletion" (`DataSettingsPage`) holds everything
+  irreversible: the periods the current notice states (`periods`, with a link to
+  the organization's privacy settings, where they are set), both deletion actions
+  — available at any time, deadline or not — with their deadline, estimate or
+  postponement, and deleting the event itself (moved here from the event card's
+  menu). Shown to managers with `event.registrations.delete` or `event.delete`.
+- Event dashboard (wrap-up phase): a summary of both deadlines and their status,
+  linking to that page; no actions.
+- Organization dashboard and platform administration: deadlines due within 30 days
+  or overdue — event, kind, date, status. No personal data, no reasons, no actions.
+  Organization admins gain no registration access.
 
 ## 9. Data-subject rights (Art. 15–21)
 
@@ -825,9 +900,9 @@ policy rather than the organization's notice.
 | Explicit consent obtained              | 9(2)(a), 7        | Tagged consent questions, gate, submission check         | implemented           |
 | Proof of consent                       | 7(1)              | Form answer, `createdAt`, `consentTexts`, audit log      | implemented           |
 | Freely given                           | 7(4)              | Optional by default; mandatory option under review       | planned / review      |
-| Withdrawal                             | 7(3)              | Manager action, audit-logged                             | planned / review      |
+| Withdrawal                             | 7(3)              | Registration edit, consent check, audit log              | implemented / review  |
 | Need-to-know access                    | 5(1)(f), 32       | Role permissions; no health in emails; treasurer subset  | implemented / planned |
-| Storage limitation                     | 5(1)(e)           | Reminder, manual deletion, sensitive-answer deletion     | implemented / planned |
+| Storage limitation                     | 5(1)(e)           | Deadlines, reminders, two manual deletion actions        | implemented           |
 | Erasure                                | 17                | Manager deletion, orphan file cleanup                    | implemented           |
 | Objection shown separately             | 21(4)             | List item plus note                                      | review                |
 | Children                               | 8                 | Guardian confirmation in preset                          | implemented / review  |
@@ -837,8 +912,8 @@ policy rather than the organization's notice.
 
 ## 13. Open questions for legal review
 
-1. Is consent withdrawal by email to the organizer, recorded by a manager,
-   sufficient under Art. 7(3)?
+1. Is consent withdrawal by email to the organizer, carried out by a manager
+   editing the registration, sufficient under Art. 7(3)?
 2. May consent to health data be a condition of participation when the data is
    needed for the participant's safety (Art. 7(4))?
 3. Which health fields of a French accueil collectif de mineurs rest on Art. 9(2)(g),
@@ -932,19 +1007,27 @@ reads tags after the tagging itself.
     Custom recipients and the new recipient keys (section 2), and "Add consent
     question" in the form editor (section 5).
 
-**Phase 5 — lifecycle**
+**Phase 5 — retention workflow** (section 8, done)
 
-12. Manager action "withdraw consent".
-13. Per-event "delete sensitive answers", linked from the retention reminder.
-14. Maximum period for consent-bound retention exceptions. Tightens completeness:
-    existing notices must add it on their next publish.
+12. Notice: `retention.specialCategories` with its completeness check, and the
+    maximum period for consent-bound exceptions. Both tighten completeness:
+    existing notices add them on their next publish.
+13. `RetentionDeadline` and the daily job (30, 7 and 1 days before, and on the
+    date), replacing the single reminder.
+14. "Delete sensitive data" and "Delete all registrations", the purge timestamps
+    and the permanent registration stop.
+15. Postponement with a reason and the 12-month limit.
+16. Event dashboard card, organization overview and platform administration list.
+
+17. Settings page "Data & deletion" with the periods, both deletions and event
+    deletion; the dashboard card becomes a summary.
 
 **Phase 6 — rollout and conveniences**
 
-15. Warnings for legacy events still accepting registrations, and the
-    administrator's list of them.
-16. Keyword hint in the form editor's linter.
-17. Translation completeness per locale. Tightens completeness like item 14; release
+18. A warning for any event accepting registrations while the privacy check finds
+    a problem (section 5). No legacy list, no migration.
+19. Keyword hint in the form editor's linter.
+20. Translation completeness per locale. Tightens completeness like item 12; release
     both together with one announcement to organizers.
 
 **Waiting for legal review:** Art. 9(2)(g) and its legal reference, the "necessary

@@ -187,7 +187,12 @@ describe('privacy notices', () => {
         .put(publishUrl(organization.id))
         .send({
           content: completePrivacyNoticeContent({
-            retention: { months: 6, anchor: 'submission', exceptions: [] },
+            retention: {
+              months: 6,
+              anchor: 'submission',
+              exceptions: [],
+              specialCategories: { weeks: 4, anchor: 'event_end' },
+            },
           }),
         })
         .auth(accessToken, { type: 'bearer' })
@@ -238,7 +243,12 @@ describe('privacy notices', () => {
         .put(publishUrl(organization.id))
         .send({
           content: completePrivacyNoticeContent({
-            retention: { months: 6, anchor: 'submission', exceptions: [] },
+            retention: {
+              months: 6,
+              anchor: 'submission',
+              exceptions: [],
+              specialCategories: { weeks: 4, anchor: 'event_end' },
+            },
           }),
         })
         .auth(accessToken, { type: 'bearer' })
@@ -701,6 +711,7 @@ describe('privacy notices', () => {
             retention: {
               months: 24,
               anchor: 'event_end',
+              specialCategories: { weeks: 4, anchor: 'event_end' },
               exceptions: [
                 {
                   scope: 'payment_and_invoicing',
@@ -723,6 +734,7 @@ describe('privacy notices', () => {
             retention: {
               months: 24,
               anchor: 'event_end',
+              specialCategories: { weeks: 4, anchor: 'event_end' },
               exceptions: [
                 { scope: 'photo_publication', months: 36, anchor: 'event_end' },
               ],
@@ -801,7 +813,12 @@ describe('privacy notices', () => {
         .put(`/api/v1/organizations/${organization.id}/privacy-notice`)
         .send({
           content: completePrivacyNoticeContent({
-            retention: { months: 1, anchor: 'submission', exceptions: [] },
+            retention: {
+              months: 1,
+              anchor: 'submission',
+              exceptions: [],
+              specialCategories: { weeks: 4, anchor: 'event_end' },
+            },
           }),
         })
         .auth(accessToken, { type: 'bearer' })

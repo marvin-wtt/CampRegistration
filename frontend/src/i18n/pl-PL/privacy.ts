@@ -161,6 +161,8 @@ export default {
     retention: 'Nie określono okresu przechowywania',
     retention_exception:
       'Wyjątek nie ma okresu albo nie wskazano, czego dotyczy',
+    special_category_retention:
+      'Brak okresu dla danych o zdrowiu i innych danych wrażliwych albo jest dłuższy niż okres ogólny',
     retention_exception_consent_basis:
       'Dane przechowywane do wycofania zgody są powiązane z celem, który nie opiera się na zgodzie',
     transfer_countries:

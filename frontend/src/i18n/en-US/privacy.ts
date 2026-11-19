@@ -173,6 +173,8 @@ export default {
     retention: 'No retention period has been set',
     retention_exception:
       'An exception has no period, or no name for what it covers',
+    special_category_retention:
+      'No period for health and other sensitive details, or one longer than the main period',
     retention_exception_consent_basis:
       'Data kept until consent is withdrawn is tied to a purpose that does not rest on consent',
     transfer_countries: 'Transfers outside the EEA name no destination country',

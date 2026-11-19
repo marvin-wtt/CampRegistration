@@ -22,6 +22,7 @@ import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { LegalModule } from '#app/legal/legal.module';
 import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
+import { RetentionModule } from '#app/retention/retention.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramItemModule } from '#app/programItem/program-item.module';
 import { ProgramPublicModule } from '#app/programPublic/program-public.module';
@@ -86,6 +87,7 @@ export const createAppModules = (): AppModule[] => [
   new AdminModule(),
   new LegalModule(),
   new PrivacyNoticeModule(),
+  new RetentionModule(),
   new RegistrationModule(),
   new TableTemplateModule(),
   new EventManagerModule(),

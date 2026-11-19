@@ -123,6 +123,22 @@ export default {
         archivedAt: 'Archivováno',
       },
     },
+    retention: {
+      label: 'Uchovávání údajů',
+      actions: {
+        postponed: 'Lhůta odložena',
+        sensitive_purged: 'Citlivé údaje smazány',
+        registrations_purged: 'Všechny přihlášky smazány',
+      },
+      fields: {
+        count: 'Dotčené přihlášky',
+        postponedUntil: 'Odloženo na',
+      },
+      kinds: {
+        sensitive: 'Citlivé údaje',
+        registrations: 'Všechny údaje z přihlášek',
+      },
+    },
     payout: {
       label: 'Výplata',
       actions: {

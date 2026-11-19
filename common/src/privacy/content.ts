@@ -118,6 +118,13 @@ export interface PrivacyRetentionPeriodException extends PrivacyRetentionExcepti
  */
 export interface PrivacyRetentionConsentException extends PrivacyRetentionExceptionBase {
   until: 'consent_withdrawn';
+  /**
+   * The upper limit for consent nobody withdraws: without one, the data would be
+   * kept indefinitely. Optional only because versions published before it
+   * existed have none; the completeness check requires it.
+   */
+  months?: number;
+  anchor?: RetentionAnchor;
 }
 
 export type PrivacyRetentionException =
@@ -137,6 +144,22 @@ export interface PrivacyRetention {
    * answer, and the author never has to categorise anything.
    */
   exceptions: PrivacyRetentionException[];
+  /**
+   * How long answers in special categories (Art. 9) are kept — usually only
+   * until shortly after the event, well before the rest. Optional only because
+   * older versions have none; the completeness check requires it.
+   */
+  specialCategories?: PrivacySpecialCategoryRetention | null;
+}
+
+export interface PrivacySpecialCategoryRetention {
+  weeks: number;
+  anchor: RetentionAnchor;
+}
+
+/** Weeks a sensitive-data period may not exceed, given the main period. */
+export function maxSpecialCategoryWeeks(months: number): number {
+  return months * 4;
 }
 
 export type TransferSafeguard = (typeof TRANSFER_SAFEGUARDS)[number];
@@ -252,7 +275,12 @@ export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
     // A real value, not just a placeholder in the editor's getter: the field
     // showed 24 while the notice stored nothing, so the author had to retype
     // the number they could already see to clear the completeness gap.
-    retention: { months: 24, anchor: 'event_end', exceptions: [] },
+    retention: {
+      months: 24,
+      anchor: 'event_end',
+      exceptions: [],
+      specialCategories: { weeks: 4, anchor: 'event_end' },
+    },
     thirdCountryTransfers: { enabled: false, countries: [] },
     dpo: null,
     automatedDecisionMaking: false,

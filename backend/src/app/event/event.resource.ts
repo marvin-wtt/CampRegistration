@@ -59,6 +59,10 @@ export class EventResource extends JsonResource<
       freePlacesTotal: this.data.freePlacesTotal,
       registrationStatus: eventRegistrationStatus(this.data),
       privacyEnforced: isPrivacyEnforced(this.data),
+      sensitiveDataPurgedAt:
+        this.data.sensitiveDataPurgedAt?.toISOString() ?? null,
+      registrationDataPurgedAt:
+        this.data.registrationDataPurgedAt?.toISOString() ?? null,
       logo: eventLogoUrl(this.data),
       banner: eventBannerUrl(this.data),
     };

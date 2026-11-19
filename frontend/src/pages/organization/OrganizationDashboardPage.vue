@@ -153,6 +153,17 @@
         </q-card>
       </div>
 
+      <retention-overview-card
+        :entries="retentionEntries"
+        :loading="retentionLoading"
+        :event-link="
+          (entry) => ({
+            name: 'management.event.dashboard',
+            params: { eventId: entry.eventId },
+          })
+        "
+      />
+
       <!-- Quick links -->
       <q-list
         v-if="links.length > 0"
@@ -189,6 +200,9 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
+import { useRetentionService } from '@/services/RetentionService';
+import RetentionOverviewCard from '@/components/retention/RetentionOverviewCard.vue';
+import type { RetentionOverviewEntry } from '@camp-registration/common/privacy';
 import type { OrganizationPermission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
@@ -224,6 +238,30 @@ watch(
       privacyNoticePublished.value = notice.publishedVersion !== null;
     } catch {
       // A hint, not a gate: if the lookup fails it simply stays hidden.
+    }
+  },
+  { immediate: true },
+);
+
+const { fetchOrganizationRetention } = useRetentionService();
+const retentionEntries = ref<RetentionOverviewEntry[]>([]);
+const retentionLoading = ref(false);
+
+watch(
+  () => organization.value?.id,
+  async (id) => {
+    retentionEntries.value = [];
+    if (!id) {
+      return;
+    }
+
+    retentionLoading.value = true;
+    try {
+      retentionEntries.value = await fetchOrganizationRetention(id);
+    } catch {
+      // An overview, not a gate: if the lookup fails it stays empty.
+    } finally {
+      retentionLoading.value = false;
     }
   },
   { immediate: true },

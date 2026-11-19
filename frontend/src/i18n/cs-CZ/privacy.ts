@@ -158,6 +158,8 @@ export default {
     recipients: 'Nebyli uvedeni žádní příjemci',
     retention: 'Nebyla stanovena doba uchování',
     retention_exception: 'U výjimky chybí doba nebo údaj, čeho se týká',
+    special_category_retention:
+      'Pro zdravotní a další citlivé údaje chybí doba, nebo je delší než obecná',
     retention_exception_consent_basis:
       'Údaje uchovávané do odvolání souhlasu patří k účelu, který na souhlasu nestojí',
     transfer_countries: 'U předávání mimo EHP není uvedena cílová země',

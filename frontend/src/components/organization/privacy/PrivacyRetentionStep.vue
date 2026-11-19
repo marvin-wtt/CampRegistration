@@ -25,6 +25,45 @@
       />
     </div>
 
+    <!-- Health and similar answers are only needed around the event, so they
+       get a shorter period of their own and their own deletion deadline. -->
+    <div class="q-mt-lg">
+      <div class="text-body2 text-weight-medium">
+        {{ t('retention.special.title') }}
+      </div>
+      <div class="text-caption text-on-surface-variant q-mb-sm">
+        {{ t('retention.special.hint') }}
+      </div>
+      <div class="row q-col-gutter-md">
+        <q-input
+          v-model.number="specialWeeks"
+          type="number"
+          :label="t('field.retentionWeeks')"
+          :min="1"
+          :max="maxSpecialWeeks"
+          dense
+          outlined
+          :disable="!canEdit"
+          :error="specialWeeksInvalid"
+          :error-message="
+            t('retention.special.tooLong', { max: maxSpecialWeeks })
+          "
+          class="col-12 col-sm-4"
+        />
+        <q-select
+          v-model="specialAnchor"
+          :options="retentionAnchorOptions"
+          :label="t('field.retentionAnchor')"
+          emit-value
+          map-options
+          dense
+          outlined
+          :disable="!canEdit"
+          class="col-12 col-sm-8"
+        />
+      </div>
+    </div>
+
     <!-- Optional by design: a event with one period never opens this. -->
     <div class="q-mt-lg retention-exceptions">
       <div class="text-body2 text-weight-medium">
@@ -73,36 +112,40 @@
                 class="col-12 col-sm-6"
                 @update:model-value="(v) => setExceptionUntil(index, v)"
               />
-              <!-- Consent-bound data has no period to state: the withdrawal is
-                 what ends it, so offering a number here would only invite one
-                 the notice cannot keep. -->
-              <template v-if="!isConsentBoundException(exception)">
-                <q-input
-                  v-model.number="exception.months"
-                  type="number"
-                  :label="t('field.retentionMonths')"
-                  :min="1"
-                  :max="600"
-                  dense
-                  outlined
-                  hide-bottom-space
-                  :disable="!canEdit"
-                  :error="exception.months <= 0"
-                  class="col-5 col-sm-4"
-                />
-                <q-select
-                  v-model="exception.anchor"
-                  :options="retentionAnchorOptions"
-                  :label="t('field.retentionAnchor')"
-                  emit-value
-                  map-options
-                  dense
-                  outlined
-                  hide-bottom-space
-                  :disable="!canEdit"
-                  class="col-7 col-sm-8"
-                />
-              </template>
+              <!-- For consent-bound data the period is the upper limit, for
+                 consent that is never withdrawn. -->
+              <q-input
+                v-model.number="exception.months"
+                type="number"
+                :label="
+                  isConsentBoundException(exception)
+                    ? t('field.retentionMaxMonths')
+                    : t('field.retentionMonths')
+                "
+                :min="1"
+                :max="600"
+                dense
+                outlined
+                hide-bottom-space
+                :disable="!canEdit"
+                :error="!((exception.months ?? 0) > 0)"
+                class="col-5 col-sm-4"
+              />
+              <q-select
+                :model-value="exception.anchor ?? retentionAnchor"
+                :options="retentionAnchorOptions"
+                :label="t('field.retentionAnchor')"
+                emit-value
+                map-options
+                dense
+                outlined
+                hide-bottom-space
+                :disable="!canEdit"
+                class="col-7 col-sm-8"
+                @update:model-value="
+                  (anchor: RetentionAnchor) => (exception.anchor = anchor)
+                "
+              />
             </div>
             <m-btn
               flat
@@ -274,6 +317,7 @@ import {
   customKey,
   isConsentBoundException,
   isCustomKey,
+  maxSpecialCategoryWeeks,
   nextCustomKey,
   privacyNoticeCompleteness,
   retentionExceptions,
@@ -318,24 +362,47 @@ const safeguardOptions = computed(() =>
 const retentionMonths = computed({
   get: () => content.value.retention?.months ?? 24,
   set: (months: number) => {
-    content.value.retention = {
-      months,
-      anchor: content.value.retention?.anchor ?? 'event_end',
-      exceptions: retentionExceptions(content.value.retention),
-    };
+    ensureRetention().months = months;
   },
 });
 
 const retentionAnchor = computed({
   get: () => content.value.retention?.anchor ?? 'event_end',
   set: (anchor: RetentionAnchor) => {
-    content.value.retention = {
-      months: content.value.retention?.months ?? 24,
-      anchor,
-      exceptions: retentionExceptions(content.value.retention),
-    };
+    ensureRetention().anchor = anchor;
   },
 });
+
+const maxSpecialWeeks = computed(() =>
+  maxSpecialCategoryWeeks(retentionMonths.value),
+);
+
+function ensureSpecial() {
+  const retention = ensureRetention();
+  retention.specialCategories ??= { weeks: 4, anchor: retention.anchor };
+  return retention.specialCategories;
+}
+
+const specialWeeks = computed({
+  get: () => content.value.retention?.specialCategories?.weeks ?? 0,
+  set: (weeks: number) => {
+    ensureSpecial().weeks = weeks;
+  },
+});
+
+const specialAnchor = computed({
+  get: () =>
+    content.value.retention?.specialCategories?.anchor ?? retentionAnchor.value,
+  set: (anchor: RetentionAnchor) => {
+    ensureSpecial().anchor = anchor;
+  },
+});
+
+const specialWeeksInvalid = computed(() =>
+  privacyNoticeCompleteness(content.value).gaps.includes(
+    'special_category_retention',
+  ),
+);
 
 const exceptions = computed(() => retentionExceptions(content.value.retention));
 
@@ -411,7 +478,7 @@ function setExceptionUntil(index: number, until: RetentionUntil) {
 
   retention.exceptions[index] =
     until === 'consent_withdrawn'
-      ? { scope, label, reason, until }
+      ? { scope, label, reason, until, months: 60, anchor: retention.anchor }
       : { scope, label, reason, months: 120, anchor: retention.anchor };
 }
 
@@ -456,6 +523,8 @@ const hasAutomatedDetails = computed(
 
 <i18n lang="yaml" locale="en">
 field:
+  retentionWeeks: 'Weeks'
+  retentionMaxMonths: 'At most (months)'
   retentionMonths: 'Months'
   retentionAnchor: 'Counted from'
   transfersEnabled: 'Data is transferred outside the EEA'
@@ -469,6 +538,10 @@ field:
   automatedDetails: 'Explain the logic and its consequences'
   automatedDetailsHint: 'Art. 13(2)(f) requires meaningful information about the logic involved and what it means for the person.'
 retention:
+  special:
+    title: 'Health and other sensitive details'
+    hint: 'Only needed around the event, so deleted well before the rest. Applies whenever an event collects them.'
+    tooLong: 'At most {max} weeks, and not longer than the period above.'
   exceptions:
     title: 'Anything you keep longer?'
     hint: 'Most events keep everything for the one period above and can skip this. Add an entry only where the law or a real need says otherwise.'
@@ -485,6 +558,8 @@ action:
 
 <i18n lang="yaml" locale="de">
 field:
+  retentionWeeks: 'Wochen'
+  retentionMaxMonths: 'Höchstens (Monate)'
   retentionMonths: 'Monate'
   retentionAnchor: 'Gerechnet ab'
   transfersEnabled: 'Daten werden außerhalb des EWR übermittelt'
@@ -498,6 +573,10 @@ field:
   automatedDetails: 'Logik und Folgen erläutern'
   automatedDetailsHint: 'Art. 13 Abs. 2 lit. f DSGVO verlangt aussagekräftige Informationen über die Logik und darüber, was sie für die betroffene Person bedeutet.'
 retention:
+  special:
+    title: 'Gesundheitsangaben und andere sensible Daten'
+    hint: 'Werden nur rund um die Veranstaltung gebraucht und deshalb deutlich früher gelöscht als der Rest. Gilt, sobald eine Veranstaltung sie erhebt.'
+    tooLong: 'Höchstens {max} Wochen und nicht länger als der Zeitraum oben.'
   exceptions:
     title: 'Wird etwas länger gespeichert?'
     hint: 'Die meisten Veranstaltungen speichern alles für die eine Frist oben und können das hier überspringen. Ergänze nur, wo das Gesetz oder ein echter Bedarf etwas anderes verlangt.'
@@ -514,6 +593,8 @@ action:
 
 <i18n lang="yaml" locale="fr">
 field:
+  retentionWeeks: 'Semaines'
+  retentionMaxMonths: 'Au plus (mois)'
   retentionMonths: 'Mois'
   retentionAnchor: 'À compter de'
   transfersEnabled: "Les données sont transférées hors de l'EEE"
@@ -527,6 +608,10 @@ field:
   automatedDetails: 'Expliquer la logique et ses conséquences'
   automatedDetailsHint: "L'art. 13, § 2, f, RGPD exige des informations utiles sur la logique sous-jacente et sur ce qu'elle implique pour la personne."
 retention:
+  special:
+    title: 'Données de santé et autres données sensibles'
+    hint: 'Nécessaires uniquement autour de l’événement, elles sont donc supprimées bien avant le reste. S’applique dès qu’un événement les collecte.'
+    tooLong: 'Au plus {max} semaines, et pas plus longtemps que la durée ci-dessus.'
   exceptions:
     title: 'Conservez-vous quelque chose plus longtemps ?'
     hint: "La plupart des événements conservent tout pendant la durée unique ci-dessus et peuvent passer cette étape. N'ajoutez une entrée que si la loi ou un besoin réel l'impose."
@@ -543,6 +628,8 @@ action:
 
 <i18n lang="yaml" locale="cs">
 field:
+  retentionWeeks: 'Týdnů'
+  retentionMaxMonths: 'Nejvýše (měsíců)'
   retentionMonths: 'Měsíců'
   retentionAnchor: 'Počítáno od'
   transfersEnabled: 'Údaje se předávají mimo EHP'
@@ -556,6 +643,10 @@ field:
   automatedDetails: 'Vysvětli logiku a její důsledky'
   automatedDetailsHint: 'Čl. 13 odst. 2 písm. f) GDPR vyžaduje smysluplné informace o použitém postupu a o tom, co znamená pro danou osobu.'
 retention:
+  special:
+    title: 'Zdravotní a další citlivé údaje'
+    hint: 'Jsou potřeba jen kolem akce, proto se mažou mnohem dříve než zbytek. Platí, jakmile je akce shromažďuje.'
+    tooLong: 'Nejvýše {max} týdnů a ne déle než doba uvedená výše.'
   exceptions:
     title: 'Uchováváte něco déle?'
     hint: 'Většina akcí uchovává vše po jednu dobu uvedenou výše a tohle může přeskočit. Přidej záznam jen tam, kde to vyžaduje zákon nebo skutečná potřeba.'
@@ -572,6 +663,8 @@ action:
 
 <i18n lang="yaml" locale="pl">
 field:
+  retentionWeeks: 'Tygodnie'
+  retentionMaxMonths: 'Najwyżej (miesiące)'
   retentionMonths: 'Miesiące'
   retentionAnchor: 'Liczone od'
   transfersEnabled: 'Dane są przekazywane poza EOG'
@@ -585,6 +678,10 @@ field:
   automatedDetails: 'Wyjaśnij logikę i jej konsekwencje'
   automatedDetailsHint: 'Art. 13 ust. 2 lit. f RODO wymaga istotnych informacji o zasadach podejmowania decyzji i o tym, co oznaczają dla danej osoby.'
 retention:
+  special:
+    title: 'Dane o zdrowiu i inne dane wrażliwe'
+    hint: 'Potrzebne tylko w związku z wydarzeniem, dlatego usuwane znacznie wcześniej niż reszta. Obowiązuje, gdy wydarzenie je zbiera.'
+    tooLong: 'Najwyżej {max} tygodni i nie dłużej niż okres powyżej.'
   exceptions:
     title: 'Czy coś przechowujecie dłużej?'
     hint: 'Większość wydarzeń przechowuje wszystko przez jeden okres podany wyżej i może to pominąć. Dodaj wpis tylko tam, gdzie wymaga tego prawo lub realna potrzeba.'

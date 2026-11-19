@@ -89,8 +89,9 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
-    // Written only by the retention reminder job, never on create or update.
-    retentionReminderSentAt: null,
+    // Written only by the retention workflow, never on create or update.
+    sensitiveDataPurgedAt: null,
+    registrationDataPurgedAt: null,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -132,6 +133,8 @@ const assertEventResponseBody = (
     freePlacesTotal: sumParticipants(data.maxParticipants),
     // Events created or edited by these tests may fall on either side of the cutoff.
     privacyEnforced: expect.any(Boolean),
+    sensitiveDataPurgedAt: null,
+    registrationDataPurgedAt: null,
     registrationStatus: eventRegistrationStatus({
       ...data,
       startAt:
@@ -867,6 +870,8 @@ describe('/api/v1/events', () => {
         freePlacesTotal: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
         privacyEnforced: isPrivacyEnforced(event),
+        sensitiveDataPurgedAt: null,
+        registrationDataPurgedAt: null,
         logo: null,
         banner: null,
       });

@@ -39,11 +39,15 @@ export interface EventSeed {
 
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
-// `retentionReminderSentAt` sits with the timestamps rather than the payload:
-// it is written once by the retention job and never by an author.
+// The purge timestamps sit with the timestamps rather than the payload: only
+// the retention workflow writes them, never an author.
 export type EventCreateData = Omit<
   Event,
-  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'sensitiveDataPurgedAt'
+  | 'registrationDataPurgedAt'
 >;
 export interface EventCreateInput {
   event: EventCreateData;
@@ -166,10 +170,16 @@ export class EventService extends BaseService {
     now: Date,
   ): Prisma.EventWhereInput {
     const noWindow = { registrationOpensAt: null, registrationClosesAt: null };
+    // Mirrors `isRetentionPurged`: such an event is closed for good.
+    const notPurged = {
+      sensitiveDataPurgedAt: null,
+      registrationDataPurgedAt: null,
+    };
 
     switch (status) {
       case 'upcoming':
         return {
+          ...notPurged,
           OR: [
             { ...noWindow, startAt: { gt: now } },
             {
@@ -187,11 +197,14 @@ export class EventService extends BaseService {
           OR: [
             { ...noWindow, startAt: { lte: now } },
             { registrationClosesAt: { lte: now } },
+            { sensitiveDataPurgedAt: { not: null } },
+            { registrationDataPurgedAt: { not: null } },
           ],
         };
       case 'open':
         return {
           AND: [
+            notPurged,
             {
               OR: [
                 { registrationOpensAt: { not: null } },

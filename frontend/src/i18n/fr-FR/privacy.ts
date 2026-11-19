@@ -159,6 +159,8 @@ export default {
     retention: "Aucune durée de conservation n'a été définie",
     retention_exception:
       "Une exception n'a pas de durée, ou pas d'objet indiqué",
+    special_category_retention:
+      'Aucune durée pour les données de santé et autres données sensibles, ou une durée plus longue que la durée générale',
     retention_exception_consent_basis:
       "Des données conservées jusqu'au retrait du consentement sont rattachées à une finalité qui ne repose pas sur le consentement",
     transfer_countries:

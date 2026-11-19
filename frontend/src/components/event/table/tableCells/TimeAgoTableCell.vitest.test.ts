@@ -79,6 +79,8 @@ const createEvent = (
   freePlacesTotal: 10,
   registrationStatus: 'closed' as const,
   privacyEnforced: false,
+  sensitiveDataPurgedAt: null,
+  registrationDataPurgedAt: null,
   logo: null,
   banner: null,
   form: {} as EventDetails['form'],

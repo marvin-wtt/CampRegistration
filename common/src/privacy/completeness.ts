@@ -3,6 +3,7 @@ import { isCustomKey, isSpecialCategory } from './catalogue.js';
 import { composePrivacyNotice, retentionExceptions } from './compose.js';
 import {
   isConsentBoundException,
+  maxSpecialCategoryWeeks,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
 } from './content.js';
@@ -26,6 +27,7 @@ export type PrivacyNoticeGap =
   | 'retention'
   | 'retention_exception'
   | 'retention_exception_consent_basis'
+  | 'special_category_retention'
   | 'transfer_countries'
   | 'transfer_safeguard'
   | 'dpo_details'
@@ -56,6 +58,7 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   retention: 'retention',
   retention_exception: 'retention',
   retention_exception_consent_basis: 'retention',
+  special_category_retention: 'retention',
   transfer_countries: 'retention',
   transfer_safeguard: 'retention',
   dpo_details: 'retention',
@@ -176,11 +179,12 @@ export function privacyNoticeCompleteness(
 
   // An exception with no period says nothing, and one the author named himself
   // needs that name — the catalogue cannot supply it. A consent-bound exception
-  // is exempt from the first: what ends it is the withdrawal, not a number.
+  // ends with the withdrawal, but still needs an upper limit for consent that
+  // is never withdrawn.
   if (
     exceptions.some(
       (exception) =>
-        (!isConsentBoundException(exception) && exception.months <= 0) ||
+        !((exception.months ?? 0) > 0) ||
         (isCustomKey(exception.scope) && isBlank(exception.label)),
     )
   ) {
@@ -205,6 +209,17 @@ export function privacyNoticeCompleteness(
     )
   ) {
     gaps.push('retention_exception_consent_basis');
+  }
+
+  // Required on every notice, not only one declaring a special category: an
+  // event may add one, and events inherit this period rather than set it.
+  const special = content.retention?.specialCategories;
+  if (
+    !special ||
+    special.weeks <= 0 ||
+    special.weeks > maxSpecialCategoryWeeks(content.retention?.months ?? 0)
+  ) {
+    gaps.push('special_category_retention');
   }
 
   if (content.thirdCountryTransfers.enabled) {

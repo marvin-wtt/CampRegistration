@@ -111,6 +111,14 @@
             })
           }}
         </p>
+        <p v-if="specialRetention">
+          {{
+            t('retentionSpecialSentence', {
+              weeks: specialRetention.weeks,
+              anchor: gt(`privacy.retentionAnchor.${specialRetention.anchor}`),
+            })
+          }}
+        </p>
         <template v-if="exceptions.length">
           <p>{{ t('retentionExceptionsIntro') }}</p>
           <ul>
@@ -122,7 +130,15 @@
               <!-- Nothing counts down here, so there is no period to state:
                    what ends it is the withdrawal. -->
               <template v-if="isConsentBoundException(exception)">
-                {{ gt('privacy.retentionUntil.consent_withdrawn') }}
+                {{ gt('privacy.retentionUntil.consent_withdrawn')
+                }}<template v-if="exception.months">{{
+                  t('retentionAtMost', {
+                    months: exception.months,
+                    anchor: gt(
+                      `privacy.retentionAnchor.${exception.anchor ?? builderNotice.retention.anchor}`,
+                    ),
+                  })
+                }}</template>
               </template>
               <template v-else>
                 {{
@@ -277,6 +293,8 @@ import { useI18n } from 'vue-i18n';
 import DOMPurify from 'dompurify';
 import {
   isConsentBoundException,
+  isCustomKey,
+  isSpecialCategory,
   retentionExceptions,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
@@ -337,6 +355,21 @@ const eventAdditionalHtml = computed<string | null>(() =>
 const exceptions = computed(() =>
   retentionExceptions(props.notice.notice?.retention),
 );
+
+// Only stated where the notice lists a special category: elsewhere there is
+// nothing it would apply to.
+const specialRetention = computed(() => {
+  const notice = props.notice.notice;
+  const declaresSpecial = notice?.dataCategories.some(
+    (category) =>
+      isSpecialCategory(category.key) ||
+      (isCustomKey(category.key) && category.special === true),
+  );
+
+  return declaresSpecial
+    ? (notice?.retention?.specialCategories ?? null)
+    : null;
+});
 
 const hasConsentBoundException = computed<boolean>(() =>
   exceptions.value.some(isConsentBoundException),
@@ -493,6 +526,8 @@ legitimateInterest: 'Our legitimate interest'
 retentionSentence: 'We keep your data for {months} months {anchor}.'
 retentionExceptionsIntro: 'Some of it we keep longer:'
 retentionSentenceShort: '{months} months {anchor}'
+retentionSpecialSentence: 'Health and other sensitive details are deleted {weeks} weeks {anchor}.'
+retentionAtMost: ', at the latest {months} months {anchor}'
 retentionLegalNote: 'Where the law requires data to be kept for longer — under tax, accounting or insurance rules, for example — we keep it for as long as that obligation lasts, even once the period above has passed.'
 transferSentence: 'Your data is transferred to {countries}, on the basis of {safeguard}.'
 transferCopy: 'You can request a copy of these safeguards from {email}.'
@@ -538,6 +573,8 @@ legitimateInterest: 'Unser berechtigtes Interesse'
 retentionSentence: 'Wir speichern deine Daten {months} Monate {anchor}.'
 retentionExceptionsIntro: 'Einiges davon speichern wir länger:'
 retentionSentenceShort: '{months} Monate {anchor}'
+retentionSpecialSentence: 'Gesundheitsangaben und andere sensible Daten löschen wir {weeks} Wochen {anchor}.'
+retentionAtMost: ', spätestens {months} Monate {anchor}'
 retentionLegalNote: 'Müssen Daten aufgrund gesetzlicher Vorgaben länger aufbewahrt werden – etwa nach steuer-, handels- oder versicherungsrechtlichen Vorschriften –, speichern wir sie so lange, wie diese Pflicht besteht, auch über den oben genannten Zeitraum hinaus.'
 transferSentence: 'Deine Daten werden nach {countries} übermittelt, gestützt auf {safeguard}.'
 transferCopy: 'Eine Kopie dieser Garantien kannst du bei {email} anfordern.'
@@ -583,6 +620,8 @@ legitimateInterest: 'Notre intérêt légitime'
 retentionSentence: 'Nous conservons vos données pendant {months} mois {anchor}.'
 retentionExceptionsIntro: 'Certaines données sont conservées plus longtemps :'
 retentionSentenceShort: '{months} mois {anchor}'
+retentionSpecialSentence: 'Nous supprimons les données de santé et autres données sensibles {weeks} semaines {anchor}.'
+retentionAtMost: ', au plus tard {months} mois {anchor}'
 retentionLegalNote: "Lorsque la loi impose une conservation plus longue — en matière fiscale, comptable ou d'assurance, par exemple —, nous conservons les données aussi longtemps que dure cette obligation, même une fois la durée indiquée ci-dessus écoulée."
 transferSentence: 'Vos données sont transférées vers {countries}, sur la base de {safeguard}.'
 transferCopy: 'Vous pouvez demander une copie de ces garanties à {email}.'
@@ -628,6 +667,8 @@ legitimateInterest: 'Náš oprávněný zájem'
 retentionSentence: 'Tvoje údaje uchováváme {months} měsíců {anchor}.'
 retentionExceptionsIntro: 'Něco z toho uchováváme déle:'
 retentionSentenceShort: '{months} měsíců {anchor}'
+retentionSpecialSentence: 'Zdravotní a další citlivé údaje mažeme {weeks} týdnů {anchor}.'
+retentionAtMost: ', nejpozději {months} měsíců {anchor}'
 retentionLegalNote: 'Pokud musíme údaje uchovávat déle na základě zákona – například podle daňových, účetních nebo pojistných předpisů –, uchováváme je po celou dobu trvání této povinnosti, i po uplynutí výše uvedené lhůty.'
 transferSentence: 'Tvoje údaje jsou předávány do {countries} na základě {safeguard}.'
 transferCopy: 'Kopii těchto záruk si můžeš vyžádat na {email}.'
@@ -673,6 +714,8 @@ legitimateInterest: 'Nasz prawnie uzasadniony interes'
 retentionSentence: 'Przechowujemy Twoje dane przez {months} miesięcy {anchor}.'
 retentionExceptionsIntro: 'Część z nich przechowujemy dłużej:'
 retentionSentenceShort: '{months} miesięcy {anchor}'
+retentionSpecialSentence: 'Dane o zdrowiu i inne dane wrażliwe usuwamy {weeks} tygodni {anchor}.'
+retentionAtMost: ', najpóźniej {months} miesięcy {anchor}'
 retentionLegalNote: 'Jeżeli przepisy wymagają dłuższego przechowywania — na przykład podatkowe, rachunkowe lub ubezpieczeniowe — przechowujemy dane tak długo, jak trwa ten obowiązek, także po upływie wskazanego wyżej okresu.'
 transferSentence: 'Twoje dane są przekazywane do {countries} na podstawie {safeguard}.'
 transferCopy: 'Kopię tych zabezpieczeń możesz otrzymać, pisząc na {email}.'

@@ -73,13 +73,12 @@ const RetentionPeriodExceptionSchema = z.object({
   anchor: z.enum(RETENTION_ANCHORS),
 });
 
-/**
- * No period, by design. `months`/`anchor` are refused rather than ignored: a
- * stored number nothing reads is a number the next author will believe.
- */
+/** Ends with the withdrawal, and at the latest after `months`. */
 const RetentionConsentExceptionSchema = z.strictObject({
   ...RetentionExceptionBase,
   until: z.literal('consent_withdrawn'),
+  months: z.int().min(1).max(600).optional(),
+  anchor: z.enum(RETENTION_ANCHORS).optional(),
 });
 
 // Consent first: the period branch accepts a missing `until`, so it would
@@ -95,6 +94,12 @@ const RetentionSchema = z.object({
   months: z.int().min(1).max(240),
   anchor: z.enum(RETENTION_ANCHORS),
   exceptions: z.array(RetentionExceptionSchema).max(25),
+  specialCategories: z
+    .object({
+      weeks: z.int().min(1).max(960),
+      anchor: z.enum(RETENTION_ANCHORS),
+    })
+    .nullish(),
 });
 
 const ThirdCountryTransfersSchema = z.object({

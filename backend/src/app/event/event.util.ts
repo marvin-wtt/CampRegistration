@@ -68,6 +68,12 @@ export function eventContactFor(
 export function eventRegistrationStatus(event: Event): EventRegistrationStatus {
   const now = new Date();
 
+  // Deleted data is never restored, and a new registration would bring back
+  // what was deleted (docs/privacy.md, 8).
+  if (isRetentionPurged(event)) {
+    return 'closed';
+  }
+
   // Without a window, registration simply hasn't been scheduled yet — unless
   // the event has already started.
   if (!event.registrationOpensAt && !event.registrationClosesAt) {
@@ -127,4 +133,11 @@ export function calculateFreePlaces(
     freePlaces,
     freePlacesTotal: Object.values(freePlaces).reduce((sum, v) => sum + v, 0),
   };
+}
+
+/** Whether any of the event's registration data was deleted for good. */
+export function isRetentionPurged(
+  event: Pick<Event, 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'>,
+): boolean {
+  return !!event.sensitiveDataPurgedAt || !!event.registrationDataPurgedAt;
 }

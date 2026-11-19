@@ -199,6 +199,15 @@ const items = computed<SettingsItem[]>(() => [
     permission: 'event.edit',
   },
   {
+    name: 'data',
+    label: t('data.label'),
+    description: t('data.description'),
+    icon: 'delete_sweep',
+    color: 'tertiary',
+    to: { name: 'management.event.settings.data' },
+    permission: { any: ['event.registrations.delete', 'event.delete'] },
+  },
+  {
     name: 'audit',
     label: t('audit.label'),
     description: t('audit.description'),
@@ -244,6 +253,9 @@ emails:
 files:
   label: 'Files'
   description: 'Upload and manage files for this event.'
+data:
+  label: 'Data & deletion'
+  description: 'Retention periods, and deleting registration data or the event.'
 privacy:
   label: 'Privacy'
   description: 'What this event adds to the privacy information of its organisation.'
@@ -273,6 +285,9 @@ emails:
 files:
   label: 'Dateien'
   description: 'Lade Dateien für diese Veranstaltung hoch und verwalte sie.'
+data:
+  label: 'Daten & Löschung'
+  description: 'Speicherfristen sowie das Löschen von Anmeldedaten oder der Veranstaltung.'
 privacy:
   label: 'Datenschutz'
   description: 'Was diese Freizeit den Datenschutzinformationen ihrer Organisation hinzufügt.'
@@ -302,6 +317,9 @@ emails:
 files:
   label: 'Fichiers'
   description: 'Téléchargez et gérez les fichiers de cet événement.'
+data:
+  label: 'Données et suppression'
+  description: 'Durées de conservation et suppression des données d’inscription ou de l’événement.'
 privacy:
   label: 'Confidentialité'
   description: 'Ce que ce séjour ajoute aux informations de son organisation.'
@@ -331,6 +349,9 @@ emails:
 files:
   label: 'Pliki'
   description: 'Przesyłaj pliki dla tego wydarzenia i zarządzaj nimi.'
+data:
+  label: 'Dane i usuwanie'
+  description: 'Okresy przechowywania oraz usuwanie danych zgłoszeń lub wydarzenia.'
 privacy:
   label: 'Prywatność'
   description: 'Co ten wydarzenie dodaje do informacji swojej organizacji.'
@@ -360,6 +381,9 @@ emails:
 files:
   label: 'Soubory'
   description: 'Nahrávejte a spravujte soubory pro tuto akci.'
+data:
+  label: 'Údaje a mazání'
+  description: 'Lhůty uchování a mazání údajů z přihlášek nebo akce.'
 privacy:
   label: 'Soukromí'
   description: 'Co tato akce doplňuje k informacím své organizace.'

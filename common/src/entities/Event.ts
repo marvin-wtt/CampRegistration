@@ -49,6 +49,10 @@ export interface Event extends Identifiable {
   registrationStatus: EventRegistrationStatus;
   /** Whether the consent rules hold for its registrations (`isPrivacyEnforced`). */
   privacyEnforced: boolean;
+  /** When sensitive answers were deleted for good (docs/privacy.md, 8). */
+  sensitiveDataPurgedAt: string | null;
+  /** When all registration data was deleted for good; implies the above. */
+  registrationDataPurgedAt: string | null;
   logo: string | null;
   banner: string | null;
 }
@@ -68,6 +72,8 @@ type EventServerFields =
   | 'freePlacesTotal'
   | 'registrationStatus'
   | 'privacyEnforced'
+  | 'sensitiveDataPurgedAt'
+  | 'registrationDataPurgedAt'
   | 'logo'
   | 'banner';
 
