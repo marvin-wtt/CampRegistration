@@ -45,8 +45,8 @@ export const registrationFileGuard = async (req: Request): Promise<GuardFn> => {
 /**
  * Refuses public registrations while the form asks for sensitive data its
  * privacy notice does not cover (docs/privacy.md, section 5). A state rule like
- * `registrationOpen`, not a permission. Events created before the rules took
- * effect are left as they are.
+ * `registrationOpen`, not a permission. Applies to every event; forms without
+ * privacy tags have nothing to refuse.
  */
 export const eventPrivacyCompliant = async (
   req: Request,

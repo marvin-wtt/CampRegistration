@@ -551,7 +551,10 @@ notempty'`). "No known allergies" is
   answer (`unconsentedQuestions`) — this catches a consent question the form hides.
   The server's submission check refuses such answers
   (`REGISTRATION_CONSENT_MISSING`); the form explains that state and offers to edit
-  the answers. While the form asks for a category no consent covers, the public
+  the answers. Manager edits are not checked: what a manager records (allergies a
+  parent phoned in) may rest on consent given outside the form, which is the
+  organizer's responsibility, and the audit log records the edit — checking them
+  would also make older registrations uneditable once questions are tagged. While the form asks for a category no consent covers, the public
   registration is refused altogether (`eventPrivacyCompliant`) and the managers see
   why on the event dashboard (`PrivacyComplianceNotice`).
 - No table flag for a missing health consent: health data without consent cannot
@@ -705,8 +708,11 @@ verification:
   (`Queue.prune()`): the database and memory queues delete rows, the Redis queue
   maps it to BullMQ's `removeOnComplete`/`removeOnFail` (`age`) — before, BullMQ
   kept finished jobs forever — and sweeps with `clean()`. `QueueService` only
-  delegates; the daily `queue-job-cleanup` (04:45) is enough for retentions
-  measured in days, and one measured in hours would need it to run more often.
+  delegates to `QueueManager.prune()`; the daily `queue-job-cleanup` (04:45) is
+  enough for retentions measured in days, and one measured in hours would need it
+  to run more often. With the database driver it also prunes finished jobs under
+  queue names nothing registers any more (renamed or removed queues), by the
+  default retention.
 - **[implemented]** The mail queue deletes a job as soon as it completes —
   `MessageDelivery` already records the send — and keeps failed jobs 14 days for
   retries. Failed jobs are not searched out when a registration is deleted (JSON
@@ -798,12 +804,18 @@ keep data.
   today's notice: a period is a promise made to a person at a particular moment.
   The latest promise per kind wins (`retention.deadlines.ts`). A form without
   special-category questions has no sensitive deadline; notices from before the
-  sensitive period put sensitive answers under the main period. Events without
-  stamped registrations have no deadline.
+  sensitive period put sensitive answers under the main period. Deadlines are computed in UTC (independent of the server's time zone) and stored in whole seconds, as the column holds them, so an unchanged promise compares equal. Free-text notices promise no date (composition drops their retention). Events whose registrations all predate the stamps
+  (before August 2026) have no deadline: by design, the least complicated
+  answer — they are deleted by hand on the data page.
 - `RetentionDeadline` holds one row per event and kind: the promised `dueAt`, a
   postponement (`postponedUntil`, `postponeReason`, who and when) and the reminder
-  stage last sent. The daily `retention-reminder` job (06:30) syncs the rows, then
-  sends reminders; opening the event's retention card syncs it too.
+  stage last sent. The daily `retention-reminder` job (06:30) syncs the rows of events whose promise can have changed (new registrations or edits within 7 days) or that are about to be reminded (a deadline within 30 days), then reminds only rows within 30 days and not yet reminded on
+  the deadline; opening the event's retention card or page syncs it too.
+- A changed promise resets the reminders only when the effective date moves to another day (stages count days): a postponement keeps its date, and one the new promise reaches is dropped.
+- **[implemented]** Deploying onto existing data sends nothing: the data
+  migration of `20261119120000_add_retention_workflow` backfills the deadlines of
+  existing events with every reminder stage already reached recorded as sent (the
+  old reminder had marked all ended events as reminded). Self-contained, it mirrors the deadline rule as it stood then (same UTC arithmetic, so the live sync finds the dates unchanged). The data-migration runner allows 30 minutes per migration instead of Prisma's 5-second default.
 
 ### Deletion [implemented]
 
@@ -818,7 +830,9 @@ keep data.
   cascade.
 - Both need `event.registrations.delete`, warn to keep a copy of anything legally
   required first, and require typing the event name (`SafeDeleteDialog`); the
-  request carries `confirm: true`. Both run in batches and are idempotent.
+  request carries `confirm: true`. Both run in batches and are idempotent. The
+  deletion is recorded and registration closed before any data is touched, so no
+  registration can arrive while it runs. Registration create and edit re-read the deletion state inside their transaction, so one racing a deletion is refused or stripped. An interrupted deletion of all registrations is visible (marked deleted, registrations left) and the page offers to complete it; an interrupted sensitive-data deletion is completed by calling the endpoint again.
 - The event records the deletion for good: `sensitiveDataPurgedAt`,
   `registrationDataPurgedAt` (which implies the former). Nothing clears them, and
   deleted data is never treated as restorable. A deadline whose data is deleted is

@@ -68,6 +68,10 @@ export class EventRetentionResource extends JsonResource<
       deadlines: deadlines.map((deadline) =>
         deadlineData(deadline, event, withReason),
       ),
+      purged: {
+        sensitive: purgedAt(event, 'sensitive')?.toISOString() ?? null,
+        registrations: purgedAt(event, 'registrations')?.toISOString() ?? null,
+      },
       periods,
       registrationCount,
     };

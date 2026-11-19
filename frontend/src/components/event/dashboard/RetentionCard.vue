@@ -49,17 +49,10 @@
               {{ t(`kind.${deadline.kind}`) }}
             </div>
             <div class="text-caption text-on-surface-variant">
-              {{ dateLine(deadline) }}
+              <retention-date-line :deadline />
             </div>
           </div>
-          <q-chip
-            dense
-            square
-            class="status-chip"
-            :color="STATUS_COLORS[deadline.status].color"
-            :text-color="STATUS_COLORS[deadline.status].textColor"
-            :label="t(`status.${deadline.status}`)"
-          />
+          <retention-status-chip :status="deadline.status" />
         </div>
       </div>
       <p class="text-caption text-on-surface-variant q-mb-none">
@@ -80,12 +73,10 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import type {
-  EventRetention,
-  RetentionDeadline,
-  RetentionDeadlineStatus,
-} from '@camp-registration/common/privacy';
+import type { EventRetention } from '@camp-registration/common/privacy';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
+import RetentionDateLine from '@/components/retention/RetentionDateLine.vue';
+import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
 import { useRetentionService } from '@/services/RetentionService';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { usePermissions } from '@/composables/permissions';
@@ -154,46 +145,12 @@ const caption = computed(() => {
   const next = open[0];
   return next ? t('caption.next', { date: d(next.effectiveAt, 'date') }) : '';
 });
-
-function dateLine(deadline: RetentionDeadline): string {
-  if (deadline.resolvedAt) {
-    return t('date.deleted', { date: d(deadline.resolvedAt, 'date') });
-  }
-  if (deadline.postponement) {
-    return t('date.postponed', {
-      date: d(deadline.postponement.until, 'date'),
-      original: d(deadline.dueAt, 'date'),
-    });
-  }
-  return t('date.due', { date: d(deadline.dueAt, 'date') });
-}
-
-// Status chip colours by MD3 role.
-const STATUS_COLORS: Record<
-  RetentionDeadlineStatus,
-  { color: string; textColor: string }
-> = {
-  upcoming: {
-    color: 'surface-container-highest',
-    textColor: 'on-surface-variant',
-  },
-  due_soon: { color: 'warning-container', textColor: 'on-warning-container' },
-  overdue: { color: 'error-container', textColor: 'on-error-container' },
-  resolved: {
-    color: 'positive-container',
-    textColor: 'on-positive-container',
-  },
-};
 </script>
 
 <style lang="scss" scoped>
 .deadline {
   padding: 0.75rem 1rem;
   background-color: var(--md3-surface-container);
-}
-
-.status-chip {
-  margin: 0;
 }
 </style>
 
@@ -207,15 +164,6 @@ caption:
 kind:
   sensitive: 'Health and other sensitive details'
   registrations: 'All registration data'
-status:
-  upcoming: 'Upcoming'
-  due_soon: 'Due soon'
-  overdue: 'Overdue'
-  resolved: 'Deleted'
-date:
-  due: 'Delete by {date}'
-  postponed: 'Postponed until {date} (originally {original})'
-  deleted: 'Deleted on {date}'
 noAutomaticDeletion: 'Nothing is deleted automatically. Deleting is permanent and cannot be undone.'
 request:
   load:
@@ -232,15 +180,6 @@ caption:
 kind:
   sensitive: 'Gesundheitsangaben und andere sensible Daten'
   registrations: 'Alle Anmeldedaten'
-status:
-  upcoming: 'Anstehend'
-  due_soon: 'Bald fällig'
-  overdue: 'Überfällig'
-  resolved: 'Gelöscht'
-date:
-  due: 'Löschen bis {date}'
-  postponed: 'Verschoben auf {date} (ursprünglich {original})'
-  deleted: 'Gelöscht am {date}'
 noAutomaticDeletion: 'Es wird nichts automatisch gelöscht. Löschen ist endgültig und kann nicht rückgängig gemacht werden.'
 request:
   load:
@@ -257,15 +196,6 @@ caption:
 kind:
   sensitive: 'Données de santé et autres données sensibles'
   registrations: 'Toutes les données d’inscription'
-status:
-  upcoming: 'À venir'
-  due_soon: 'Bientôt'
-  overdue: 'En retard'
-  resolved: 'Supprimé'
-date:
-  due: 'À supprimer avant le {date}'
-  postponed: 'Reporté au {date} (initialement {original})'
-  deleted: 'Supprimé le {date}'
 noAutomaticDeletion: 'Rien n’est supprimé automatiquement. La suppression est définitive.'
 request:
   load:
@@ -282,15 +212,6 @@ caption:
 kind:
   sensitive: 'Dane o zdrowiu i inne dane wrażliwe'
   registrations: 'Wszystkie dane zgłoszeń'
-status:
-  upcoming: 'Nadchodzący'
-  due_soon: 'Wkrótce'
-  overdue: 'Po terminie'
-  resolved: 'Usunięte'
-date:
-  due: 'Usunąć do {date}'
-  postponed: 'Przesunięto na {date} (pierwotnie {original})'
-  deleted: 'Usunięto {date}'
 noAutomaticDeletion: 'Nic nie jest usuwane automatycznie. Usunięcie jest trwałe i nieodwracalne.'
 request:
   load:
@@ -307,15 +228,6 @@ caption:
 kind:
   sensitive: 'Zdravotní a další citlivé údaje'
   registrations: 'Všechny údaje z přihlášek'
-status:
-  upcoming: 'Nadcházející'
-  due_soon: 'Brzy'
-  overdue: 'Po lhůtě'
-  resolved: 'Smazáno'
-date:
-  due: 'Smazat do {date}'
-  postponed: 'Odloženo na {date} (původně {original})'
-  deleted: 'Smazáno {date}'
 noAutomaticDeletion: 'Nic se nemaže automaticky. Smazání je trvalé a nelze ho vrátit.'
 request:
   load:

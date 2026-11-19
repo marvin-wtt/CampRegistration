@@ -60,16 +60,10 @@
         </q-item-section>
         <q-item-section side>
           <q-item-label>{{ d(entry.effectiveAt, 'date') }}</q-item-label>
-          <q-chip
-            dense
-            square
-            class="status-chip"
-            :color="STATUS_COLORS[entry.status].color"
-            :text-color="STATUS_COLORS[entry.status].textColor"
-            :label="
-              t(`status.${entry.status}`) +
-              (entry.postponed ? ` · ${t('postponed')}` : '')
-            "
+          <retention-status-chip
+            :status="entry.status"
+            :postponed="entry.postponed"
+            class="q-mt-xs"
           />
         </q-item-section>
       </q-item>
@@ -88,11 +82,9 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { RouteLocationRaw } from 'vue-router';
-import type {
-  RetentionDeadlineStatus,
-  RetentionOverviewEntry,
-} from '@camp-registration/common/privacy';
+import type { RetentionOverviewEntry } from '@camp-registration/common/privacy';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
 
 const props = defineProps<{
   entries: RetentionOverviewEntry[];
@@ -122,35 +114,13 @@ const summary = computed(() => {
     .filter((part) => part !== null)
     .join(' · ');
 });
-
-// Status chip colours by MD3 role.
-const STATUS_COLORS: Record<
-  RetentionDeadlineStatus,
-  { color: string; textColor: string }
-> = {
-  upcoming: {
-    color: 'surface-container-highest',
-    textColor: 'on-surface-variant',
-  },
-  due_soon: { color: 'warning-container', textColor: 'on-warning-container' },
-  overdue: { color: 'error-container', textColor: 'on-error-container' },
-  resolved: {
-    color: 'positive-container',
-    textColor: 'on-positive-container',
-  },
-};
 </script>
 
-<style lang="scss" scoped>
-.status-chip {
-  margin: 0;
-}
-</style>
+<style lang="scss" scoped></style>
 
 <i18n lang="yaml" locale="en">
 title: 'Retention deadlines'
 empty: 'No deadline is due within the next 30 days.'
-postponed: 'postponed'
 summary:
   none: 'Nothing due'
   overdue: '{n} overdue | {n} overdue'
@@ -158,17 +128,11 @@ summary:
 kind:
   sensitive: 'Sensitive data'
   registrations: 'All registration data'
-status:
-  upcoming: 'Upcoming'
-  due_soon: 'Due soon'
-  overdue: 'Overdue'
-  resolved: 'Deleted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Speicherfristen'
 empty: 'In den nächsten 30 Tagen ist keine Frist fällig.'
-postponed: 'verschoben'
 summary:
   none: 'Nichts fällig'
   overdue: '{n} überfällig | {n} überfällig'
@@ -176,17 +140,11 @@ summary:
 kind:
   sensitive: 'Sensible Daten'
   registrations: 'Alle Anmeldedaten'
-status:
-  upcoming: 'Anstehend'
-  due_soon: 'Bald fällig'
-  overdue: 'Überfällig'
-  resolved: 'Gelöscht'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Délais de conservation'
 empty: 'Aucun délai n’arrive à échéance dans les 30 prochains jours.'
-postponed: 'reporté'
 summary:
   none: 'Rien à traiter'
   overdue: '{n} en retard | {n} en retard'
@@ -194,17 +152,11 @@ summary:
 kind:
   sensitive: 'Données sensibles'
   registrations: 'Toutes les données d’inscription'
-status:
-  upcoming: 'À venir'
-  due_soon: 'Bientôt'
-  overdue: 'En retard'
-  resolved: 'Supprimé'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Terminy przechowywania'
 empty: 'W ciągu najbliższych 30 dni nie upływa żaden termin.'
-postponed: 'przesunięty'
 summary:
   none: 'Nic do zrobienia'
   overdue: '{n} po terminie | {n} po terminie'
@@ -212,17 +164,11 @@ summary:
 kind:
   sensitive: 'Dane wrażliwe'
   registrations: 'Wszystkie dane zgłoszeń'
-status:
-  upcoming: 'Nadchodzący'
-  due_soon: 'Wkrótce'
-  overdue: 'Po terminie'
-  resolved: 'Usunięte'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Lhůty uchování'
 empty: 'V příštích 30 dnech nevyprší žádná lhůta.'
-postponed: 'odloženo'
 summary:
   none: 'Nic k vyřízení'
   overdue: '{n} po lhůtě | {n} po lhůtě'
@@ -230,9 +176,4 @@ summary:
 kind:
   sensitive: 'Citlivé údaje'
   registrations: 'Všechny údaje z přihlášek'
-status:
-  upcoming: 'Nadcházející'
-  due_soon: 'Brzy'
-  overdue: 'Po lhůtě'
-  resolved: 'Smazáno'
 </i18n>

@@ -135,7 +135,9 @@ describe('registration consent', () => {
   });
 
   describe('manager edits', () => {
-    it('should refuse adding a sensitive answer without consent', async () => {
+    // Managers record what may rest on consent given outside the form (say,
+    // allergies a parent phoned in); that is the organizer's responsibility.
+    it('should let a manager record a sensitive answer without the form consent', async () => {
       const event = await eventWith([firstName, consent, allergies]);
       const { body } = await register(event.id, {
         data: { first_name: 'Jane' },
@@ -150,7 +152,7 @@ describe('registration consent', () => {
         .patch(`/api/v1/events/${event.id}/registrations/${body.data.id}`)
         .send({ data: { first_name: 'Jane', allergies: 'Nuts' } })
         .auth(generateAccessToken(user), { type: 'bearer' })
-        .expect(422);
+        .expect(200);
     });
 
     it('should copy the wording of a consent recorded later', async () => {

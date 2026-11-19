@@ -161,14 +161,16 @@ export class RegistrationService extends BaseService {
     assertAmountWithinLimit(quotedAmount);
     assertPriceUnchanged(quotedAmount, displayedTotal);
 
-    // Sensitive answers need the consent they rest on (docs/privacy.md, 5).
-    assertConsentsGiven(
-      form,
-      await this.privacyNoticeService.getComposedNotice(
+    // Which privacy information this person was shown, resolved before the
+    // transaction: it is a read of published state, and the create runs
+    // Serializable. Sensitive answers need the consent they rest on
+    // (docs/privacy.md, 5), checked against that same notice.
+    const { stamp: privacyStamp, notice } =
+      await this.privacyNoticeService.getNoticeForRegistration(
         event.id,
         event.organizationId,
-      ),
-    );
+      );
+    assertConsentsGiven(form, notice);
     const consentTexts = form.givenConsentTexts();
     assertConsentTextsUnchanged(consentTexts, displayedConsents);
 
@@ -210,16 +212,11 @@ export class RegistrationService extends BaseService {
       return registrationCount >= event.maxParticipants[group];
     };
 
-    // Which privacy information this person was shown, resolved before the
-    // transaction: it is a read of published state, and the create runs
-    // Serializable.
-    const privacyStamp = await this.privacyNoticeService.getStampForEvent(
-      event.id,
-      event.organizationId,
-    );
-
     return this.transaction(
       async (transaction) => {
+        // Re-read inside the transaction: a deletion that started after this
+        // request loaded the event must still stop it.
+        await assertNotPurged(transaction, event.id);
         const waitingList = await isWaitingList(transaction);
 
         const status = waitingList
@@ -321,19 +318,17 @@ export class RegistrationService extends BaseService {
           group: data.group ?? before.group,
         }).load(data.data);
         // Sensitive answers deleted for good never come back through an edit.
-        if (event.sensitiveDataPurgedAt) {
+        // Re-read inside the transaction, in case a deletion runs right now.
+        if (isRetentionPurged(await purgeState(tx, event.id))) {
           formData = form.withoutSensitiveAnswers();
         }
         computedData = computedRegistrationData(form.extractEventData());
         formFileIds = form.getFileIds();
 
-        assertConsentsGiven(
-          form,
-          await this.privacyNoticeService.getComposedNotice(
-            event.id,
-            event.organizationId,
-          ),
-        );
+        // No consent check here: only managers edit, and what they record
+        // (say, allergies a parent phoned in) may rest on consent given
+        // outside the form. That is the organizer's responsibility; the audit
+        // log records the edit. Registrants' own submissions are checked.
         consentTexts = newlyGivenConsentTexts(before, form.givenConsentTexts());
       }
       if (data.customFiles) {
@@ -477,5 +472,25 @@ export class RegistrationService extends BaseService {
     });
 
     await Promise.all(results);
+  }
+}
+
+function purgeState(tx: PrismaTransaction, eventId: string) {
+  return tx.event.findUniqueOrThrow({
+    where: { id: eventId },
+    select: { sensitiveDataPurgedAt: true, registrationDataPurgedAt: true },
+  });
+}
+
+/** Deleted data is never restored (docs/privacy.md, 8). */
+async function assertNotPurged(
+  tx: PrismaTransaction,
+  eventId: string,
+): Promise<void> {
+  if (isRetentionPurged(await purgeState(tx, eventId))) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'Registration data of this event was deleted; it takes no registrations.',
+    );
   }
 }

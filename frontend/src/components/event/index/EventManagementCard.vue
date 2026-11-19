@@ -54,20 +54,25 @@
         </div>
       </div>
 
-      <!-- The one action on the card itself: copying the public link. Any
-           caveat (registration closed, organization unverified) is already on
-           the card as its status chip, and the copy confirmation names it. -->
       <q-btn
-        class="mgmt-card__share"
-        icon="share"
+        class="mgmt-card__more"
+        icon="more_vert"
         round
         flat
         dense
-        :aria-label="t('action.share')"
-        @click.stop="shareAction"
+        :aria-label="t('action.more')"
+        @click.stop
         @keyup.enter.stop
       >
-        <q-tooltip>{{ t('action.share') }}</q-tooltip>
+        <!-- Delete opens the data settings page, where everything
+             irreversible is explained and confirmed. -->
+        <event-card-menu
+          :event
+          :share-warning="shareWarning"
+          @edit="go('management.event.settings')"
+          @delete="go('management.event.settings.data')"
+          @share="shareAction"
+        />
       </q-btn>
     </div>
 
@@ -164,6 +169,7 @@
 import EventAvatar from '@/components/event/EventAvatar.vue';
 import { useEventsStore } from '@/stores/events-store';
 import { useRouter } from 'vue-router';
+import EventCardMenu from '@/components/event/index/EventCardMenu.vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
@@ -590,7 +596,7 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   font-size: 12px;
 }
 
-.mgmt-card__share {
+.mgmt-card__more {
   flex-shrink: 0;
   color: var(--md3-on-surface-variant);
 }
@@ -763,7 +769,7 @@ phase:
   ongoing: 'Ongoing'
 organization: 'Owned by {organization}'
 action:
-  share: 'Copy public link'
+  more: 'More actions'
 status:
   open: 'Registration open'
   openUntil: 'Open until {date}'
@@ -796,7 +802,7 @@ phase:
   ongoing: 'Laufend'
 organization: 'Gehört zu {organization}'
 action:
-  share: 'Öffentlichen Link kopieren'
+  more: 'Weitere Aktionen'
 status:
   open: 'Anmeldung offen'
   openUntil: 'Offen bis {date}'
@@ -829,7 +835,7 @@ phase:
   ongoing: 'En cours'
 organization: 'Appartient à {organization}'
 action:
-  share: 'Copier le lien public'
+  more: "Plus d'actions"
 status:
   open: 'Inscription ouverte'
   openUntil: "Ouvert jusqu'au {date}"
@@ -864,7 +870,7 @@ phase:
   ongoing: 'W trakcie'
 organization: 'Należy do {organization}'
 action:
-  share: 'Kopiuj link publiczny'
+  more: 'Więcej akcji'
 status:
   open: 'Rejestracja otwarta'
   openUntil: 'Otwarte do {date}'
@@ -897,7 +903,7 @@ phase:
   ongoing: 'Probíhá'
 organization: 'Patří organizaci {organization}'
 action:
-  share: 'Kopírovat veřejný odkaz'
+  more: 'Další akce'
 status:
   open: 'Registrace otevřena'
   openUntil: 'Otevřeno do {date}'

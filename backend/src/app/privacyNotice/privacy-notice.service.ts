@@ -250,12 +250,7 @@ export class PrivacyNoticeService extends BaseService {
         registrationNumber: organization.registrationNumber,
       },
       supervisoryAuthority: supervisoryAuthorityFor(organization.country),
-      notice: organizationVersion
-        ? composePrivacyNotice(
-            organizationVersion.content as PrivacyNoticeContent,
-            eventVersion?.content as PrivacyNoticeAddendum | undefined,
-          )
-        : null,
+      notice: composeVersions(organizationVersion, eventVersion),
       organizationVersion: organizationVersion?.version ?? null,
       eventVersion: eventVersion?.version ?? null,
     };
@@ -326,19 +321,21 @@ export class PrivacyNoticeService extends BaseService {
       this.latestVersion('EVENT', eventId),
     ]);
 
-    return organizationVersion
-      ? composePrivacyNotice(
-          organizationVersion.content as PrivacyNoticeContent,
-          eventVersion?.content as PrivacyNoticeAddendum | undefined,
-        )
-      : null;
+    return composeVersions(organizationVersion, eventVersion);
   }
 
-  /** Resolved once per registration, at submission, and then never recomputed. */
-  async getStampForEvent(
+  /**
+   * What a registrant submitting now is shown, resolved once per registration:
+   * the stamp stored with it, and the composed notice its consents are checked
+   * against — the same versions, so the check and the proof agree.
+   */
+  async getNoticeForRegistration(
     eventId: string,
     organizationId: string,
-  ): Promise<PrivacyNoticeStamp> {
+  ): Promise<{
+    stamp: PrivacyNoticeStamp;
+    notice: ComposedPrivacyNotice | null;
+  }> {
     const [organizationVersion, eventVersion, platformPolicy] =
       await Promise.all([
         this.latestVersion('ORGANIZATION', organizationId),
@@ -347,9 +344,12 @@ export class PrivacyNoticeService extends BaseService {
       ]);
 
     return {
-      organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
-      eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
-      platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
+      stamp: {
+        organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
+        eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
+        platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
+      },
+      notice: composeVersions(organizationVersion, eventVersion),
     };
   }
 
@@ -594,4 +594,17 @@ export class PrivacyNoticeService extends BaseService {
       Object.entries(value).map(([locale, text]) => [locale, sanitize(text)]),
     );
   }
+}
+
+/** The notice registrants read, or null before the organization published. */
+function composeVersions(
+  organizationVersion: PrivacyNoticeVersion | null,
+  eventVersion: PrivacyNoticeVersion | null,
+): ComposedPrivacyNotice | null {
+  return organizationVersion
+    ? composePrivacyNotice(
+        organizationVersion.content as PrivacyNoticeContent,
+        eventVersion?.content as PrivacyNoticeAddendum | undefined,
+      )
+    : null;
 }

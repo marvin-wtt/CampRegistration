@@ -21,6 +21,8 @@ type PropertyKey =
 type LocaleSection = {
   qt: Record<QtKey, string>;
   toolboxCategories: { registration: string };
+  // Property grid tabs, looked up by the creator as `pe.tabs.<category>`.
+  pe: { tabs: { registration: string } };
   p: Record<PropertyKey, string>;
   pehelp: Record<PropertyKey, string>;
   // Property values, looked up by the creator as `pv.<property>.<value>`.
@@ -47,6 +49,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Anmeldung',
       },
+      pe: { tabs: { registration: 'Anmeldung' } },
       p: {
         privacyCategory: 'Datenschutz-Kategorie',
         privacyConsent: 'Einwilligung',
@@ -106,6 +109,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Registration',
       },
+      pe: { tabs: { registration: 'Registration' } },
       p: {
         privacyCategory: 'Privacy category',
         privacyConsent: 'Consent',
@@ -164,6 +168,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Inscription',
       },
+      pe: { tabs: { registration: 'Inscription' } },
       p: {
         privacyCategory: 'Catégorie de données personnelles',
         privacyConsent: 'Consentement',
@@ -223,6 +228,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Rejestracja',
       },
+      pe: { tabs: { registration: 'Zgłoszenie' } },
       p: {
         privacyCategory: 'Kategoria danych osobowych',
         privacyConsent: 'Zgoda',
@@ -282,6 +288,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Registrace',
       },
+      pe: { tabs: { registration: 'Přihláška' } },
       p: {
         privacyCategory: 'Kategorie osobních údajů',
         privacyConsent: 'Souhlas',

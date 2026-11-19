@@ -39,17 +39,15 @@
       </div>
 
       <template #actions>
-        <q-btn
+        <m-btn
           type="reset"
-          outline
-          rounded
-          color="primary"
+          primary
+          text
           :label="t('action.cancel')"
         />
-        <q-btn
+        <m-btn
           type="submit"
-          rounded
-          color="primary"
+          primary
           :disable="!until || !reason.trim()"
           :label="t('action.postpone')"
         />
@@ -62,6 +60,7 @@
 import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
   MAX_RETENTION_POSTPONE_MONTHS,
   type RetentionPostponeData,

@@ -609,4 +609,28 @@ describe('DatabaseQueue.prune', () => {
 
     await queue.close();
   });
+
+  it('should prune finished jobs of queue names nobody registers', async () => {
+    const finished = (queue: string, days: number) =>
+      prisma.job.create({
+        data: {
+          queue,
+          name: 'job',
+          status: 'COMPLETED',
+          finishedAt: moment().subtract(days, 'days').toDate(),
+          payload: {},
+        },
+      });
+    await finished('registered', 365);
+    await finished('renamed-away', 365); // DELETED
+    await finished('renamed-away', 1);
+
+    // Other tests may leave old jobs under their own names, pruned here too.
+    const pruned = await DatabaseQueue.pruneUnregistered(['registered']);
+    expect(pruned.completed).toBeGreaterThanOrEqual(1);
+    expect(await prisma.job.count({ where: { queue: 'registered' } })).toBe(1);
+    expect(await prisma.job.count({ where: { queue: 'renamed-away' } })).toBe(
+      1,
+    );
+  });
 });

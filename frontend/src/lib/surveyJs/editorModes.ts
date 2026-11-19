@@ -1,6 +1,7 @@
 import {
   defaultPropertyGridDefinition,
   type ICreatorPresetData,
+  type IPropertyTabInfo,
   type ISurveyPropertyGridDefinition,
   type SurveyCreatorModel,
   SurveyLogic,
@@ -16,6 +17,8 @@ import {
   surveyLocalization,
   SvgRegistry,
 } from 'survey-core';
+
+import { REGISTRATION_PROPERTY_CATEGORY } from '@camp-registration/common/form';
 
 export const EDITOR_MODES = ['simple', 'standard', 'expert'] as const;
 export type EditorMode = (typeof EDITOR_MODES)[number];
@@ -214,10 +217,63 @@ function modePropertyGrid(mode: EditorMode): ISurveyPropertyGridDefinition {
     case 'simple':
       return SIMPLE_PROPERTY_GRID;
     case 'standard':
-      return STANDARD_PROPERTY_GRID;
+      return withRegistrationTab(STANDARD_PROPERTY_GRID);
     case 'expert':
-      return defaultPropertyGridDefinition;
+      return withRegistrationTab(defaultPropertyGridDefinition);
   }
+}
+
+// Our "Anmeldung" category. Its properties are listed here rather than left
+// to the creator: properties no definition lists get their tab built first,
+// without an icon, and a later tab entry would not set it.
+const REGISTRATION_TAB: IPropertyTabInfo = {
+  name: REGISTRATION_PROPERTY_CATEGORY,
+  iconName: `icon-pg-${REGISTRATION_PROPERTY_CATEGORY}-24x24`,
+};
+
+// In the order they appear. A question type without one simply skips it.
+const REGISTRATION_PROPERTIES = [
+  'eventDataType',
+  'groupCountryMatch',
+  'price',
+  'privacyCategory',
+  'privacyConsent',
+  'privacyConsentFor',
+];
+
+function withRegistrationTab(
+  definition: ISurveyPropertyGridDefinition,
+): ISurveyPropertyGridDefinition {
+  const question = definition.classes.question ?? {};
+
+  return {
+    ...definition,
+    classes: {
+      ...definition.classes,
+      question: {
+        ...question,
+        tabs: [
+          ...(question.tabs ?? []).filter(
+            (tab) => tab.name !== REGISTRATION_TAB.name,
+          ),
+          REGISTRATION_TAB,
+        ],
+        properties: [
+          ...(question.properties ?? []).filter(
+            (property) =>
+              !REGISTRATION_PROPERTIES.includes(
+                typeof property === 'string' ? property : property.name,
+              ),
+          ),
+          ...REGISTRATION_PROPERTIES.map((name, index) => ({
+            name,
+            index,
+            tab: REGISTRATION_TAB.name,
+          })),
+        ],
+      },
+    },
+  };
 }
 
 // Logic tab actions counterpart to the excluded properties: ending the form

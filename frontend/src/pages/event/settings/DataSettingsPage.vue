@@ -37,12 +37,19 @@
             class="text-body2 q-mt-xs"
           >
             {{
-              t('periods.sensitive', {
-                weeks: retention.periods.sensitive.weeks,
-                anchor: gt(
-                  `privacy.retentionAnchor.${retention.periods.sensitive.anchor}`,
-                ),
-              })
+              'weeks' in retention.periods.sensitive
+                ? t('periods.sensitive', {
+                    weeks: retention.periods.sensitive.weeks,
+                    anchor: gt(
+                      `privacy.retentionAnchor.${retention.periods.sensitive.anchor}`,
+                    ),
+                  })
+                : t('periods.sensitiveMonths', {
+                    months: retention.periods.sensitive.months,
+                    anchor: gt(
+                      `privacy.retentionAnchor.${retention.periods.sensitive.anchor}`,
+                    ),
+                  })
             }}
           </div>
         </template>
@@ -121,14 +128,9 @@
               <div class="col text-body1 text-weight-medium">
                 {{ t(`kind.${row.kind}`) }}
               </div>
-              <q-chip
+              <retention-status-chip
                 v-if="row.status"
-                dense
-                square
-                class="status-chip"
-                :color="STATUS_COLORS[row.status].color"
-                :text-color="STATUS_COLORS[row.status].textColor"
-                :label="t(`status.${row.status}`)"
+                :status="row.status"
               />
             </div>
 
@@ -157,7 +159,11 @@
                   :name="row.purged ? 'check_circle' : 'event'"
                   size="16px"
                 />
-                {{ row.dateLine }}
+                <retention-date-line
+                  :deadline="row.deadline"
+                  :purged-at="row.purgedAt"
+                  :fallback="estimate(row.kind)"
+                />
               </div>
               <div
                 v-if="canDeleteData && !row.purged"
@@ -179,6 +185,21 @@
                   error
                   no-caps
                   :data-test="`retention-delete-${row.kind}`"
+                  @click="purge(row.kind)"
+                />
+              </div>
+              <!-- Marked deleted, yet registrations remain: an interrupted
+                   run, which running it again completes. -->
+              <div
+                v-else-if="canDeleteData && row.incomplete"
+                class="data-row__actions"
+              >
+                <m-btn
+                  :label="t('action.complete')"
+                  icon="delete_forever"
+                  error
+                  no-caps
+                  :data-test="`retention-complete-${row.kind}`"
                   @click="purge(row.kind)"
                 />
               </div>
@@ -275,6 +296,8 @@ import type {
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import PrivacySection from '@/components/privacy/PrivacySection.vue';
+import RetentionDateLine from '@/components/retention/RetentionDateLine.vue';
+import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
 import RetentionPostponeDialog from '@/components/retention/RetentionPostponeDialog.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useRetentionService } from '@/services/RetentionService';
@@ -361,17 +384,9 @@ interface Row {
   deadline: RetentionDeadline | null;
   status: RetentionDeadlineStatus | null;
   purged: boolean;
-  dateLine: string;
-}
-
-function purgedAt(kind: RetentionDeadlineKind): string | null {
-  const current = event.value;
-  if (!current) {
-    return null;
-  }
-  return kind === 'sensitive'
-    ? (current.sensitiveDataPurgedAt ?? current.registrationDataPurgedAt)
-    : current.registrationDataPurgedAt;
+  purgedAt: string | null;
+  /** Deleted, yet registrations remain: an interrupted run. */
+  incomplete: boolean;
 }
 
 /** Without a deadline yet: what the current notice would give. */
@@ -408,28 +423,19 @@ const rows = computed<Row[]>(() => {
 
   return kinds.map((kind) => {
     const deadline = deadlines.find((entry) => entry.kind === kind) ?? null;
-    const purged = purgedAt(kind);
-
-    let dateLine: string;
-    if (purged) {
-      dateLine = t('date.deleted', { date: d(purged, 'date') });
-    } else if (deadline?.postponement) {
-      dateLine = t('date.postponed', {
-        date: d(deadline.postponement.until, 'date'),
-        original: d(deadline.dueAt, 'date'),
-      });
-    } else if (deadline) {
-      dateLine = t('date.due', { date: d(deadline.dueAt, 'date') });
-    } else {
-      dateLine = estimate(kind);
-    }
+    // The server's rule for what counts as deleted, not a copy of it.
+    const purgedAt = retention.value?.purged[kind] ?? null;
 
     return {
       kind,
       deadline,
-      status: purged ? 'resolved' : (deadline?.status ?? null),
-      purged: !!purged,
-      dateLine,
+      status: purgedAt ? 'resolved' : (deadline?.status ?? null),
+      purged: !!purgedAt,
+      purgedAt,
+      incomplete:
+        kind === 'registrations' &&
+        !!purgedAt &&
+        (retention.value?.registrationCount ?? 0) > 0,
     };
   });
 });
@@ -524,23 +530,6 @@ function deleteEvent() {
         .catch(() => undefined);
     });
 }
-
-// Status chip colours by MD3 role.
-const STATUS_COLORS: Record<
-  RetentionDeadlineStatus,
-  { color: string; textColor: string }
-> = {
-  upcoming: {
-    color: 'surface-container-highest',
-    textColor: 'on-surface-variant',
-  },
-  due_soon: { color: 'warning-container', textColor: 'on-warning-container' },
-  overdue: { color: 'error-container', textColor: 'on-error-container' },
-  resolved: {
-    color: 'positive-container',
-    textColor: 'on-positive-container',
-  },
-};
 </script>
 
 <style lang="scss" scoped>
@@ -609,10 +598,6 @@ const STATUS_COLORS: Record<
   padding: 0.625rem 0.875rem;
   background-color: var(--md3-surface-container);
 }
-
-.status-chip {
-  margin: 0;
-}
 </style>
 
 <i18n lang="yaml" locale="en">
@@ -623,6 +608,7 @@ periods:
   summary: 'Set in your organisation’s privacy notice. Each registration keeps the periods it was shown.'
   registrations: 'Registration data: {months} months {anchor}'
   sensitive: 'Health and other sensitive details: {weeks} weeks {anchor}'
+  sensitiveMonths: 'Health and other sensitive details: {months} months {anchor}'
   none: 'The privacy notice states no period.'
   edit: 'Change in the organisation’s privacy settings'
 delete:
@@ -654,20 +640,13 @@ event:
 kind:
   sensitive: 'Health and other sensitive details'
   registrations: 'All registration data'
-status:
-  upcoming: 'Upcoming'
-  due_soon: 'Due soon'
-  overdue: 'Overdue'
-  resolved: 'Deleted'
 date:
-  due: 'Delete by {date}'
-  postponed: 'Postponed until {date} (originally {original})'
-  deleted: 'Deleted on {date}'
   estimate: 'Expected deadline: {date}'
   afterSubmission: 'Deadline counted from each registration'
   unknown: 'No deadline'
 postponedBy: 'Postponed by {name}: {reason}'
 action:
+  complete: 'Complete the deletion'
   postpone: 'Postpone'
   delete:
     sensitive: 'Delete sensitive data'
@@ -703,6 +682,7 @@ periods:
   summary: 'Festgelegt in den Datenschutzinformationen eurer Organisation. Jede Anmeldung behält die Fristen, die ihr gezeigt wurden.'
   registrations: 'Anmeldedaten: {months} Monate {anchor}'
   sensitive: 'Gesundheitsangaben und andere sensible Daten: {weeks} Wochen {anchor}'
+  sensitiveMonths: 'Gesundheitsangaben und andere sensible Daten: {months} Monate {anchor}'
   none: 'Die Datenschutzinformationen nennen keine Frist.'
   edit: 'In den Datenschutzeinstellungen der Organisation ändern'
 delete:
@@ -734,20 +714,13 @@ event:
 kind:
   sensitive: 'Gesundheitsangaben und andere sensible Daten'
   registrations: 'Alle Anmeldedaten'
-status:
-  upcoming: 'Anstehend'
-  due_soon: 'Bald fällig'
-  overdue: 'Überfällig'
-  resolved: 'Gelöscht'
 date:
-  due: 'Löschen bis {date}'
-  postponed: 'Verschoben auf {date} (ursprünglich {original})'
-  deleted: 'Gelöscht am {date}'
   estimate: 'Voraussichtliche Frist: {date}'
   afterSubmission: 'Frist zählt ab jeder Anmeldung'
   unknown: 'Keine Frist'
 postponedBy: 'Verschoben von {name}: {reason}'
 action:
+  complete: 'Löschung abschließen'
   postpone: 'Verschieben'
   delete:
     sensitive: 'Sensible Daten löschen'
@@ -783,6 +756,7 @@ periods:
   summary: 'Fixées dans les informations sur la protection des données de ton organisation. Chaque inscription garde les durées qui lui ont été présentées.'
   registrations: 'Données d’inscription : {months} mois {anchor}'
   sensitive: 'Données de santé et autres données sensibles : {weeks} semaines {anchor}'
+  sensitiveMonths: 'Données de santé et autres données sensibles : {months} mois {anchor}'
   none: 'Les informations sur la protection des données n’indiquent aucune durée.'
   edit: 'Modifier dans les paramètres de confidentialité de l’organisation'
 delete:
@@ -814,20 +788,13 @@ event:
 kind:
   sensitive: 'Données de santé et autres données sensibles'
   registrations: 'Toutes les données d’inscription'
-status:
-  upcoming: 'À venir'
-  due_soon: 'Bientôt'
-  overdue: 'En retard'
-  resolved: 'Supprimé'
 date:
-  due: 'À supprimer avant le {date}'
-  postponed: 'Reporté au {date} (initialement {original})'
-  deleted: 'Supprimé le {date}'
   estimate: 'Délai prévu : {date}'
   afterSubmission: 'Délai compté à partir de chaque inscription'
   unknown: 'Aucun délai'
 postponedBy: 'Reporté par {name} : {reason}'
 action:
+  complete: 'Terminer la suppression'
   postpone: 'Reporter'
   delete:
     sensitive: 'Supprimer les données sensibles'
@@ -863,6 +830,7 @@ periods:
   summary: 'Ustalone w informacjach o ochronie danych Twojej organizacji. Każde zgłoszenie zachowuje okresy, które mu pokazano.'
   registrations: 'Dane zgłoszeń: {months} mies. {anchor}'
   sensitive: 'Dane o zdrowiu i inne dane wrażliwe: {weeks} tyg. {anchor}'
+  sensitiveMonths: 'Dane o zdrowiu i inne dane wrażliwe: {months} mies. {anchor}'
   none: 'Informacje o ochronie danych nie podają okresu.'
   edit: 'Zmień w ustawieniach prywatności organizacji'
 delete:
@@ -894,20 +862,13 @@ event:
 kind:
   sensitive: 'Dane o zdrowiu i inne dane wrażliwe'
   registrations: 'Wszystkie dane zgłoszeń'
-status:
-  upcoming: 'Nadchodzący'
-  due_soon: 'Wkrótce'
-  overdue: 'Po terminie'
-  resolved: 'Usunięte'
 date:
-  due: 'Usunąć do {date}'
-  postponed: 'Przesunięto na {date} (pierwotnie {original})'
-  deleted: 'Usunięto {date}'
   estimate: 'Przewidywany termin: {date}'
   afterSubmission: 'Termin liczony od każdego zgłoszenia'
   unknown: 'Brak terminu'
 postponedBy: 'Przesunął(-ęła) {name}: {reason}'
 action:
+  complete: 'Dokończ usuwanie'
   postpone: 'Przesuń'
   delete:
     sensitive: 'Usuń dane wrażliwe'
@@ -943,6 +904,7 @@ periods:
   summary: 'Stanoveny v informacích o ochraně osobních údajů vaší organizace. Každá přihláška si ponechává lhůty, které jí byly ukázány.'
   registrations: 'Údaje z přihlášek: {months} měsíců {anchor}'
   sensitive: 'Zdravotní a další citlivé údaje: {weeks} týdnů {anchor}'
+  sensitiveMonths: 'Zdravotní a další citlivé údaje: {months} měsíců {anchor}'
   none: 'Informace o ochraně osobních údajů neuvádějí žádnou lhůtu.'
   edit: 'Změnit v nastavení ochrany údajů organizace'
 delete:
@@ -974,20 +936,13 @@ event:
 kind:
   sensitive: 'Zdravotní a další citlivé údaje'
   registrations: 'Všechny údaje z přihlášek'
-status:
-  upcoming: 'Nadcházející'
-  due_soon: 'Brzy'
-  overdue: 'Po lhůtě'
-  resolved: 'Smazáno'
 date:
-  due: 'Smazat do {date}'
-  postponed: 'Odloženo na {date} (původně {original})'
-  deleted: 'Smazáno {date}'
   estimate: 'Předpokládaná lhůta: {date}'
   afterSubmission: 'Lhůta se počítá od každé přihlášky'
   unknown: 'Bez lhůty'
 postponedBy: 'Odložil(a) {name}: {reason}'
 action:
+  complete: 'Dokončit mazání'
   postpone: 'Odložit'
   delete:
     sensitive: 'Smazat citlivé údaje'

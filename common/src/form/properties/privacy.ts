@@ -4,6 +4,10 @@ import {
 } from '../../privacy/catalogue.js';
 import type { Base } from 'survey-core';
 import type { PropertyDefinition } from './ProptertyDefinition.js';
+import {
+  REGISTRATION_PROPERTY_CATEGORY,
+  REGISTRATION_PROPERTY_CATEGORY_INDEX,
+} from './category.js';
 
 // Wire-level names, stored in saved form JSON (`Event.form`). Renaming one
 // needs a data migration of every form.
@@ -15,8 +19,9 @@ export const privacyCategory: PropertyDefinition = {
     name: 'privacyCategory',
     type: 'dropdown',
     choices: [...PRIVACY_DATA_CATEGORY_KEYS],
-    category: 'general',
-    visibleIndex: 4,
+    category: REGISTRATION_PROPERTY_CATEGORY,
+    categoryIndex: REGISTRATION_PROPERTY_CATEGORY_INDEX,
+    visibleIndex: 3,
   },
 };
 
@@ -26,8 +31,9 @@ export const privacyConsent: PropertyDefinition = {
   propertyInfo: {
     name: 'privacyConsent:boolean',
     default: false,
-    category: 'general',
-    visibleIndex: 5,
+    category: REGISTRATION_PROPERTY_CATEGORY,
+    categoryIndex: REGISTRATION_PROPERTY_CATEGORY_INDEX,
+    visibleIndex: 4,
   },
 };
 
@@ -42,7 +48,8 @@ export const privacyConsentFor: PropertyDefinition = {
     choices: [...SPECIAL_CATEGORY_DATA_KEYS],
     dependsOn: ['privacyConsent'],
     visibleIf: (obj: Base) => obj.getPropertyValue('privacyConsent') === true,
-    category: 'general',
-    visibleIndex: 6,
+    category: REGISTRATION_PROPERTY_CATEGORY,
+    categoryIndex: REGISTRATION_PROPERTY_CATEGORY_INDEX,
+    visibleIndex: 5,
   },
 };

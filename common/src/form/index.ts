@@ -64,3 +64,7 @@ export {
   PAYMENT_TOTAL_MODES,
   type PaymentTotalMode,
 } from './properties/showPaymentTotal.js';
+export {
+  REGISTRATION_PROPERTY_CATEGORY,
+  REGISTRATION_PROPERTY_CATEGORY_INDEX,
+} from './properties/category.js';

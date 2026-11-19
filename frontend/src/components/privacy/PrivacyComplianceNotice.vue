@@ -20,20 +20,18 @@
       v-if="canEdit"
       #actions
     >
-      <q-btn
+      <m-btn
         :label="t('action.form')"
-        outline
-        rounded
+        error
+        tonal
         no-caps
-        color="negative"
         :to="{ name: 'management.event.settings.form' }"
       />
-      <q-btn
+      <m-btn
         :label="t('action.privacy')"
-        flat
-        rounded
+        error
+        text
         no-caps
-        color="negative"
         :to="{ name: 'management.event.settings.privacy' }"
       />
     </template>
@@ -43,6 +41,7 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { EventDetails } from '@camp-registration/common/entities';
 import { formPrivacyIssues } from '@camp-registration/common/form';
 import type { PublishedPrivacyNotice } from '@camp-registration/common/privacy';

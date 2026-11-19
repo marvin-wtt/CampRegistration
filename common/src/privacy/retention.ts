@@ -72,14 +72,22 @@ export interface RetentionPostponeData {
 export interface RetentionPeriods {
   /** Null for a free-text notice or none at all. */
   registrations: { months: number; anchor: RetentionAnchor } | null;
-  /** Null when the form asks nothing sensitive. */
-  sensitive: { weeks: number; anchor: RetentionAnchor } | null;
+  /**
+   * Null when the form asks nothing sensitive. In months when an older
+   * notice states no sensitive period, so the main one applies.
+   */
+  sensitive:
+    | { weeks: number; anchor: RetentionAnchor }
+    | { months: number; anchor: RetentionAnchor }
+    | null;
 }
 
 /** What the event's data settings show and act on. */
 export interface EventRetention {
   deadlines: RetentionDeadline[];
   periods: RetentionPeriods;
+  /** When each kind was deleted for good; the server's one rule for it. */
+  purged: Record<RetentionDeadlineKind, string | null>;
   registrationCount: number;
 }
 

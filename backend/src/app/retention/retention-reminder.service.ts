@@ -37,8 +37,26 @@ export class RetentionReminderService extends BaseService {
   }
 
   async sendDueReminders(now: Date = new Date()): Promise<void> {
+    const horizon = moment(now)
+      .add(Math.max(...RETENTION_REMINDER_STAGES), 'days')
+      .endOf('day')
+      .toDate();
+
+    // Only what can be due: within reach of the first stage, and not yet
+    // reminded on the deadline itself.
     const deadlines = await this.prisma.retentionDeadline.findMany({
-      where: { event: { registrationDataPurgedAt: null } },
+      where: {
+        event: { registrationDataPurgedAt: null },
+        OR: [{ notifiedStage: null }, { notifiedStage: { gt: 0 } }],
+        AND: [
+          {
+            OR: [
+              { postponedUntil: null, dueAt: { lte: horizon } },
+              { postponedUntil: { lte: horizon } },
+            ],
+          },
+        ],
+      },
       include: {
         event: {
           select: {
@@ -172,9 +190,10 @@ interface Recipient {
 
 /** The most urgent stage reached, or null while more than 30 days away. */
 export function reminderStage(deadline: Date, now: Date): number | null {
-  const daysLeft = moment(deadline)
+  const daysLeft = moment
+    .utc(deadline)
     .startOf('day')
-    .diff(moment(now).startOf('day'), 'days');
+    .diff(moment.utc(now).startOf('day'), 'days');
   const reached = RETENTION_REMINDER_STAGES.filter(
     (stage) => daysLeft <= stage,
   );

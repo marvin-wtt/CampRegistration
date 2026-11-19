@@ -46,16 +46,6 @@ export class QueueService extends BaseService {
   }
 
   async deleteOldJobs(): Promise<PrunedJobs> {
-    const results = await Promise.all(
-      this.queueManager.all().map((queue) => queue.prune()),
-    );
-
-    return results.reduce(
-      (sum, result) => ({
-        completed: sum.completed + result.completed,
-        failed: sum.failed + result.failed,
-      }),
-      { completed: 0, failed: 0 },
-    );
+    return this.queueManager.prune();
   }
 }

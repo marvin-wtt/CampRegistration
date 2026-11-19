@@ -1,4 +1,8 @@
 import { IJsonPropertyInfo } from 'survey-core';
+import {
+  REGISTRATION_PROPERTY_CATEGORY,
+  REGISTRATION_PROPERTY_CATEGORY_INDEX,
+} from './category.js';
 
 // `name`/`type` are wire-level keys serialized into saved form JSON
 // (`Event.form`). A data migration rewrites existing forms' `campDataType`
@@ -11,8 +15,9 @@ const propertyInfo: IJsonPropertyInfo = {
   type: 'eventDataMapping',
   default: undefined,
   isRequired: false,
-  category: 'general',
-  visibleIndex: 3,
+  category: REGISTRATION_PROPERTY_CATEGORY,
+  categoryIndex: REGISTRATION_PROPERTY_CATEGORY_INDEX,
+  visibleIndex: 0,
 };
 
 export default {

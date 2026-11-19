@@ -40,19 +40,19 @@ export function promisedDeadlines(
   const result: PromisedDeadlines = { registrations: null, sensitive: null };
 
   for (const stamp of stamps) {
+    // Composition drops the retention of a free-text notice: no date.
     const { retention } = composePrivacyNotice(
       contentOf(stamp.organizationPrivacyNoticeVersionId),
       contentOf(stamp.eventPrivacyNoticeVersionId),
     );
-
-    // Free-text notices carry no structure; no period, no date.
     if (!retention || retention.months <= 0) {
       continue;
     }
 
     const lastRegisteredAt = stamp._max.createdAt ?? eventEndAt;
+    // In UTC, so the date does not depend on the server's time zone.
     const from = (anchor: RetentionAnchor) =>
-      moment(anchor === 'event_end' ? eventEndAt : lastRegisteredAt);
+      moment.utc(anchor === 'event_end' ? eventEndAt : lastRegisteredAt);
 
     const registrations = from(retention.anchor)
       .add(retention.months, 'months')
@@ -72,5 +72,8 @@ export function promisedDeadlines(
 }
 
 function later(current: Date | null, candidate: Date): Date {
-  return current && current > candidate ? current : candidate;
+  // Whole seconds, as the column stores them: a stored date then compares
+  // equal to a recomputed one, and an unchanged promise stays unchanged.
+  const rounded = new Date(Math.floor(candidate.getTime() / 1000) * 1000);
+  return current && current > rounded ? current : rounded;
 }
