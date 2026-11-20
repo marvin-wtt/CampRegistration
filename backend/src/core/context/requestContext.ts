@@ -29,6 +29,30 @@ export function getRequestContext(): RequestContext | undefined {
   return storage.getStore();
 }
 
+const memos = new WeakMap<RequestContext, Map<string, unknown>>();
+
+/**
+ * `compute()` once per request and key; outside a request, every call
+ * computes. For values several layers of one request read, so they agree.
+ */
+export function perRequest<T>(key: string, compute: () => T): T {
+  const store = storage.getStore();
+  if (!store) {
+    return compute();
+  }
+
+  let memo = memos.get(store);
+  if (!memo) {
+    memo = new Map();
+    memos.set(store, memo);
+  }
+  if (!memo.has(key)) {
+    memo.set(key, compute());
+  }
+
+  return memo.get(key) as T;
+}
+
 /** Adds values that only become known later in the chain, e.g. after authentication. */
 export function extendRequestContext(values: Partial<RequestContext>): void {
   const store = storage.getStore();

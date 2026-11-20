@@ -89,6 +89,30 @@ describe('extractPrivacyTags', () => {
     expect(tags.tagged).toEqual([{ name: 'allergies', category: 'allergies' }]);
   });
 
+  it('reads the tags on matrix columns, as SurveyJS gives them to the cells', () => {
+    const form = {
+      elements: [
+        {
+          type: 'matrixdynamic',
+          name: 'kids',
+          columns: [
+            { name: 'first_name', cellType: 'text' },
+            { name: 'meds', cellType: 'text', privacyCategory: 'medication' },
+          ],
+        },
+      ],
+    };
+    const fromSurvey = new SurveyModel(form)
+      .getAllQuestions(false, false, true)
+      .filter((question) => question.getPropertyValue('privacyCategory'))
+      .map((question) => question.name);
+
+    expect(extractPrivacyTags(form).tagged).toEqual([
+      { name: 'meds', category: 'medication' },
+    ]);
+    expect(new Set(fromSurvey)).toEqual(new Set(['meds']));
+  });
+
   it('only counts booleans as consents', () => {
     const tags = extractPrivacyTags({
       elements: [{ ...healthConsent, type: 'checkbox' }],

@@ -15,6 +15,7 @@ interface ElementJson {
   valueName?: unknown;
   elements?: unknown;
   templateElements?: unknown;
+  columns?: unknown;
   privacyCategory?: unknown;
   privacyConsent?: unknown;
   privacyConsentFor?: unknown;
@@ -57,6 +58,21 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
     return tags;
   }
 
+  const tag = (element: ElementJson, name: string) => {
+    if (
+      typeof element.privacyCategory === 'string' &&
+      element.privacyCategory
+    ) {
+      tags.tagged.push({
+        name,
+        ...(typeof element.valueName === 'string' && element.valueName
+          ? { valueName: element.valueName }
+          : {}),
+        category: element.privacyCategory,
+      });
+    }
+  };
+
   const walk = (elements: ElementJson[]) => {
     for (const element of elements) {
       const type = element.type;
@@ -69,22 +85,21 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
       if (type === 'paneldynamic') {
         walk(asElements(element.templateElements));
       }
+      // A column takes the question properties, the tag among them: SurveyJS
+      // gives it to every cell, so the purge clears the cells too.
+      if (type === 'matrixdynamic' || type === 'matrixdropdown') {
+        for (const column of asElements(element.columns)) {
+          const columnName = nameOf(column);
+          if (columnName) {
+            tag(column, columnName);
+          }
+        }
+      }
       if (!name) {
         continue;
       }
 
-      if (
-        typeof element.privacyCategory === 'string' &&
-        element.privacyCategory
-      ) {
-        tags.tagged.push({
-          name,
-          ...(typeof element.valueName === 'string' && element.valueName
-            ? { valueName: element.valueName }
-            : {}),
-          category: element.privacyCategory,
-        });
-      }
+      tag(element, name);
       if (type === 'boolean' && element.privacyConsent === true) {
         tags.consents.push({
           name,

@@ -52,10 +52,10 @@ export const eventPrivacyCompliant = async (
   req: Request,
 ): Promise<boolean | string> => {
   const event = req.modelOrFail('event');
-  const notice = await resolve(PrivacyNoticeService).getComposedNotice(
-    event.id,
-    event.organizationId,
-  );
+  // The notice the create then stamps and checks consents against.
+  const { notice } = await resolve(
+    PrivacyNoticeService,
+  ).getNoticeForRegistration(event.id, event.organizationId);
 
   return hasPrivacyIssues(formPrivacyIssues(event.form, notice))
     ? 'Registration is unavailable: the form asks for data its privacy information does not cover.'

@@ -2,6 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#core/router/ApiError';
+import { perRequest } from '#core/context/requestContext';
 import { localesForCountries } from '@camp-registration/common/locales';
 import { sanitizeHtmlContent, sanitizePlainText } from '#utils/sanitize';
 import {
@@ -327,30 +328,33 @@ export class PrivacyNoticeService extends BaseService {
   /**
    * What a registrant submitting now is shown, resolved once per registration:
    * the stamp stored with it, and the composed notice its consents are checked
-   * against — the same versions, so the check and the proof agree.
+   * against — the same versions, so the check and the proof agree. Read once
+   * per request: the route's compliance guard and the create share it.
    */
-  async getNoticeForRegistration(
+  getNoticeForRegistration(
     eventId: string,
     organizationId: string,
   ): Promise<{
     stamp: PrivacyNoticeStamp;
     notice: ComposedPrivacyNotice | null;
   }> {
-    const [organizationVersion, eventVersion, platformPolicy] =
-      await Promise.all([
-        this.latestVersion('ORGANIZATION', organizationId),
-        this.latestVersion('EVENT', eventId),
-        this.legalService.getDocument('PRIVACY_POLICY'),
-      ]);
+    return perRequest(`registration-notice:${eventId}`, async () => {
+      const [organizationVersion, eventVersion, platformPolicy] =
+        await Promise.all([
+          this.latestVersion('ORGANIZATION', organizationId),
+          this.latestVersion('EVENT', eventId),
+          this.legalService.getDocument('PRIVACY_POLICY'),
+        ]);
 
-    return {
-      stamp: {
-        organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
-        eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
-        platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
-      },
-      notice: composeVersions(organizationVersion, eventVersion),
-    };
+      return {
+        stamp: {
+          organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
+          eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
+          platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
+        },
+        notice: composeVersions(organizationVersion, eventVersion),
+      };
+    });
   }
 
   /**
