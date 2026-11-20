@@ -87,11 +87,6 @@ export default {
       'Jen pro určení, výkon nebo obhajobu právních nároků, například záznam o úrazu uchovaný pro spor s pojišťovnou.',
   },
 
-  retentionAnchor: {
-    event_end: 'po skončení akce',
-    submission: 'po odeslání přihlášky',
-  },
-
   retentionUntil: {
     period: 'po pevně danou dobu',
     consent_withdrawn: 'dokud není odvolán souhlas, na kterém stojí',

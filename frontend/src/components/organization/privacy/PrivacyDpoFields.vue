@@ -17,7 +17,9 @@
         outlined
         rounded
         :disable="!canEdit"
-        :error="dpo.name.trim() === ''"
+        :rules="[filled]"
+        lazy-rules
+        hide-bottom-space
       />
       <q-input
         v-model="dpo.email"
@@ -27,7 +29,9 @@
         outlined
         rounded
         :disable="!canEdit"
-        :error="dpo.email.trim() === ''"
+        :rules="[filled]"
+        lazy-rules
+        hide-bottom-space
       />
     </div>
   </div>
@@ -45,6 +49,9 @@ const dpo = defineModel<PrivacyDataProtectionOfficer | null>({
 defineProps<{ canEdit: boolean }>();
 
 const { t } = useI18n();
+
+// Checked once the field is left, not the moment the switch reveals it.
+const filled = (value: string) => value.trim() !== '' || t('required');
 
 const hasDpo = computed({
   get: () => dpo.value !== null,
@@ -66,28 +73,33 @@ const hasDpo = computed({
 hasDpo: 'We have a data protection officer'
 name: 'Name'
 email: 'Email'
+required: 'Required'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 hasDpo: 'Datenschutzbeauftragte Person vorhanden'
 name: 'Name'
 email: 'E-Mail'
+required: 'Pflichtangabe'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 hasDpo: 'Nous avons un délégué à la protection des données'
 name: 'Nom'
 email: 'E-mail'
+required: 'Obligatoire'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 hasDpo: 'Máme pověřence pro ochranu osobních údajů'
 name: 'Jméno'
 email: 'E-mail'
+required: 'Povinný údaj'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 hasDpo: 'Mamy inspektora ochrony danych'
 name: 'Imię i nazwisko'
 email: 'E-mail'
+required: 'Pole wymagane'
 </i18n>

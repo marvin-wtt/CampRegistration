@@ -115,10 +115,11 @@
         <q-step
           :name="1"
           :title="t('step.controller.title')"
-          :caption="t('step.controller.caption')"
+          :caption="sectionCaption('controller', t('step.controller.caption'))"
           icon="badge"
           header-nav
-          :done="step > 1"
+          :error="shownGaps('controller').length > 0"
+          :done="step > 1 && sectionGaps('controller').length === 0"
         >
           <p class="text-body2">{{ t('step.controller.hint') }}</p>
 
@@ -160,6 +161,12 @@
             class="q-mt-sm"
             :to="{ name: 'management.organization.settings' }"
           />
+
+          <privacy-dpo-fields
+            v-model="content.dpo"
+            :can-edit
+            class="q-mt-md"
+          />
           <q-stepper-navigation>
             <m-btn
               :label="t('action.next')"
@@ -177,7 +184,7 @@
           :caption="sectionCaption('purposes', t('step.purposes.caption'))"
           icon="checklist"
           header-nav
-          :error="hasVisitedBeyond(2) && sectionGaps('purposes').length > 0"
+          :error="shownGaps('purposes').length > 0"
           :done="step > 2 && sectionGaps('purposes').length === 0"
         >
           <p class="text-body2">{{ t('step.purposes.hint') }}</p>
@@ -350,7 +357,7 @@
           :caption="sectionCaption('data', t('step.data.caption'))"
           icon="inventory_2"
           header-nav
-          :error="hasVisitedBeyond(3) && sectionGaps('data').length > 0"
+          :error="shownGaps('data').length > 0"
           :done="step > 3 && sectionGaps('data').length === 0"
         >
           <p class="text-body2">{{ t('step.data.hint') }}</p>
@@ -509,7 +516,7 @@
           :caption="sectionCaption('recipients', t('step.recipients.caption'))"
           icon="share"
           header-nav
-          :error="hasVisitedBeyond(4) && sectionGaps('recipients').length > 0"
+          :error="shownGaps('recipients').length > 0"
           :done="step > 4 && sectionGaps('recipients').length === 0"
         >
           <p class="text-body2">{{ t('step.recipients.hint') }}</p>
@@ -637,7 +644,7 @@
           :caption="sectionCaption('retention', t('step.retention.caption'))"
           icon="schedule"
           header-nav
-          :error="hasVisitedBeyond(5) && sectionGaps('retention').length > 0"
+          :error="shownGaps('retention').length > 0"
           :done="step > 5 && sectionGaps('retention').length === 0"
         >
           <privacy-retention-step
@@ -799,6 +806,7 @@ import PrivacyPreviewDialog from '@/components/privacy/PrivacyPreviewDialog.vue'
 import PrivacyPublishCard from '@/components/privacy/PrivacyPublishCard.vue';
 import SpecialCategoryBasisField from '@/components/privacy/SpecialCategoryBasisField.vue';
 import PrivacyRetentionStep from '@/components/organization/privacy/PrivacyRetentionStep.vue';
+import PrivacyDpoFields from '@/components/organization/privacy/PrivacyDpoFields.vue';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
@@ -915,6 +923,7 @@ function sectionGaps(section: PrivacyNoticeSection) {
 
 /** Which step edits a section, so a caption can stay quiet until it is opened. */
 const SECTION_STEPS: Record<PrivacyNoticeSection, number> = {
+  controller: 1,
   purposes: 2,
   data: 3,
   recipients: 4,
@@ -922,10 +931,20 @@ const SECTION_STEPS: Record<PrivacyNoticeSection, number> = {
   free_text: 0,
 };
 
-function sectionCaption(section: PrivacyNoticeSection, fallback: string) {
-  const gaps = sectionGaps(section);
+/**
+ * A section's gaps as the stepper shows them: once the author has moved past
+ * its step, and not while they are on it, filling it in.
+ */
+function shownGaps(section: PrivacyNoticeSection) {
+  const at = SECTION_STEPS[section];
 
-  return gaps.length > 0 && hasVisitedBeyond(SECTION_STEPS[section])
+  return step.value !== at && hasVisitedBeyond(at) ? sectionGaps(section) : [];
+}
+
+function sectionCaption(section: PrivacyNoticeSection, fallback: string) {
+  const gaps = shownGaps(section);
+
+  return gaps.length > 0
     ? gaps.map((gap) => gt(`privacy.gap.${gap}`)).join(' · ')
     : fallback;
 }
@@ -1347,6 +1366,17 @@ $field-max-narrow: 28rem;
   :deep(.q-field) {
     max-width: $field-max;
   }
+
+  // Rounded like the card, so the hover highlight doesn't cut a square into it.
+  :deep(.q-stepper__tab) {
+    border-radius: 12px;
+  }
+
+  // Quasar gives a step's content no top padding: the first outlined field's
+  // floating label would touch the highlighted header above it.
+  :deep(.q-stepper__step-inner) {
+    padding-top: 12px;
+  }
 }
 </style>
 
@@ -1368,7 +1398,7 @@ freeText:
 step:
   controller:
     title: 'Who you are'
-    caption: 'Taken from your organisation'
+    caption: 'Your organisation and data protection officer'
     hint: 'This is taken from your organisation profile and shown to every registrant.'
     edit: 'Edit organisation'
     notSet: 'Not set'
@@ -1394,7 +1424,7 @@ step:
     hint: 'Some are already ticked because of the purposes you chose — adjust anything that does not fit.'
   retention:
     title: 'How long you keep it, and where it goes'
-    caption: 'Retention, transfers, DPO'
+    caption: 'Retention periods, transfers outside the EEA, automated decisions'
   additional:
     title: 'Anything else'
     caption: 'Optional free text'
@@ -1463,7 +1493,7 @@ freeText:
 step:
   controller:
     title: 'Verantwortliche Stelle'
-    caption: 'Aus der Organisation übernommen'
+    caption: 'Organisation und Datenschutzbeauftragte Person'
     hint: 'Diese Angaben stammen aus dem Profil der Organisation und werden jeder anmeldenden Person angezeigt.'
     edit: 'Organisation bearbeiten'
     notSet: 'Nicht hinterlegt'
@@ -1489,7 +1519,7 @@ step:
     hint: 'Einiges ist bereits angehakt, weil es zu den gewählten Zwecken gehört – passe an, was nicht zutrifft.'
   retention:
     title: 'Speicherdauer und Übermittlung'
-    caption: 'Speicherdauer, Übermittlung, Datenschutzbeauftragte'
+    caption: 'Löschfristen, Übermittlung außerhalb des EWR, automatisierte Entscheidungen'
   additional:
     title: 'Sonstiges'
     caption: 'Optionaler Freitext'
@@ -1558,7 +1588,7 @@ freeText:
 step:
   controller:
     title: 'Qui vous êtes'
-    caption: 'Repris de votre organisation'
+    caption: 'Votre organisation et le délégué à la protection des données'
     hint: "Ces informations proviennent du profil de votre organisation et sont affichées à chaque personne qui s'inscrit."
     edit: "Modifier l'organisation"
     notSet: 'Non renseigné'
@@ -1584,7 +1614,7 @@ step:
     hint: 'Certaines cases sont déjà cochées en raison des finalités retenues — ajustez ce qui ne convient pas.'
   retention:
     title: 'Durée de conservation et transferts'
-    caption: 'Conservation, transferts, DPO'
+    caption: 'Durées, transferts hors de l’EEE, décisions automatisées'
   additional:
     title: 'Autres informations'
     caption: 'Texte libre facultatif'
@@ -1653,7 +1683,7 @@ freeText:
 step:
   controller:
     title: 'Kdo jste'
-    caption: 'Převzato z vaší organizace'
+    caption: 'Vaše organizace a pověřenec'
     hint: 'Tyto údaje pocházejí z profilu vaší organizace a zobrazí se každému, kdo se přihlašuje.'
     edit: 'Upravit organizaci'
     notSet: 'Nevyplněno'
@@ -1679,7 +1709,7 @@ step:
     hint: 'Něco je už zaškrtnuté, protože to patří ke zvoleným účelům – uprav, co nesedí.'
   retention:
     title: 'Doba uchování a předávání'
-    caption: 'Uchování, předávání, pověřenec'
+    caption: 'Lhůty, předávání mimo EHP, automatizovaná rozhodnutí'
   additional:
     title: 'Cokoli dalšího'
     caption: 'Volitelný volný text'
@@ -1748,7 +1778,7 @@ freeText:
 step:
   controller:
     title: 'Kim jesteście'
-    caption: 'Pobrane z Waszej organizacji'
+    caption: 'Wasza organizacja i inspektor ochrony danych'
     hint: 'Te dane pochodzą z profilu Waszej organizacji i są pokazywane każdej osobie zgłaszającej się.'
     edit: 'Edytuj organizację'
     notSet: 'Nie podano'
@@ -1774,7 +1804,7 @@ step:
     hint: 'Część jest już zaznaczona, bo wynika z wybranych celów – dostosuj to, co nie pasuje.'
   retention:
     title: 'Okres przechowywania i przekazywanie'
-    caption: 'Przechowywanie, przekazywanie, IOD'
+    caption: 'Okresy, przekazywanie poza EOG, zautomatyzowane decyzje'
   additional:
     title: 'Coś jeszcze'
     caption: 'Opcjonalny tekst'

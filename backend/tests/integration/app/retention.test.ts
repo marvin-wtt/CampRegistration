@@ -41,9 +41,8 @@ const FORM = {
 const notice = completePrivacyNoticeContent({
   retention: {
     months: RETENTION_MONTHS,
-    anchor: 'event_end',
     exceptions: [],
-    specialCategories: { weeks: SENSITIVE_WEEKS, anchor: 'event_end' },
+    specialCategories: { weeks: SENSITIVE_WEEKS },
   },
 });
 

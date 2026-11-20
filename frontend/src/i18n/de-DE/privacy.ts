@@ -90,11 +90,6 @@ export default {
       'Nur zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen, etwa ein Unfallbericht für einen Versicherungsstreit.',
   },
 
-  retentionAnchor: {
-    event_end: 'nach Ende der Veranstaltung',
-    submission: 'nach Absenden der Anmeldung',
-  },
-
   retentionUntil: {
     period: 'für eine feste Dauer',
     consent_withdrawn: 'bis die zugrunde liegende Einwilligung widerrufen wird',

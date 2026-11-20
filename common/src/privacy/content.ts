@@ -8,11 +8,7 @@ import type {
   SpecialCategoryBasisKey,
 } from './catalogue.js';
 import type { PrivacyNoticeExclusions } from './exclusions.js';
-import {
-  ALWAYS_RECIPIENT_KEYS,
-  RETENTION_ANCHORS,
-  TRANSFER_SAFEGUARDS,
-} from './catalogue.js';
+import { ALWAYS_RECIPIENT_KEYS, TRANSFER_SAFEGUARDS } from './catalogue.js';
 
 /**
  * How the notice was written.
@@ -67,8 +63,6 @@ export interface PrivacyRecipientEntry {
   allEvents?: boolean | null;
 }
 
-export type RetentionAnchor = (typeof RETENTION_ANCHORS)[number];
-
 /**
  * Something the baseline period does not cover, e.g. invoices a tax law says to
  * keep for ten years.
@@ -87,8 +81,7 @@ interface PrivacyRetentionExceptionBase {
 }
 
 /**
- * An exception that still ends on a date — a longer period, possibly counted
- * from somewhere else.
+ * An exception that still ends on a date — a longer period.
  *
  * `until` is optional rather than required because exceptions existed before
  * there was anything to distinguish: a version published back then has no
@@ -98,7 +91,6 @@ interface PrivacyRetentionExceptionBase {
 export interface PrivacyRetentionPeriodException extends PrivacyRetentionExceptionBase {
   until?: 'period';
   months: number;
-  anchor: RetentionAnchor;
 }
 
 /**
@@ -124,7 +116,6 @@ export interface PrivacyRetentionConsentException extends PrivacyRetentionExcept
    * existed have none; the completeness check requires it.
    */
   months?: number;
-  anchor?: RetentionAnchor;
 }
 
 export type PrivacyRetentionException =
@@ -136,9 +127,15 @@ export function isConsentBoundException(
   return exception.until === 'consent_withdrawn';
 }
 
+/**
+ * Every period counts from the end of the event: the data is needed until the
+ * event is over, and a date counted from each registration could fall due
+ * before the event even takes place. Versions published while a period could
+ * also count from submission store an `anchor`; none in use chose another
+ * value, so it is ignored.
+ */
 export interface PrivacyRetention {
   months: number;
-  anchor: RetentionAnchor;
   /**
    * Empty for the great majority of events: one baseline period is the whole
    * answer, and the author never has to categorise anything.
@@ -154,7 +151,6 @@ export interface PrivacyRetention {
 
 export interface PrivacySpecialCategoryRetention {
   weeks: number;
-  anchor: RetentionAnchor;
 }
 
 /** Weeks a sensitive-data period may not exceed, given the main period. */
@@ -277,9 +273,8 @@ export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
     // the number they could already see to clear the completeness gap.
     retention: {
       months: 24,
-      anchor: 'event_end',
       exceptions: [],
-      specialCategories: { weeks: 4, anchor: 'event_end' },
+      specialCategories: { weeks: 4 },
     },
     thirdCountryTransfers: { enabled: false, countries: [] },
     dpo: null,

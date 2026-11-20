@@ -153,10 +153,7 @@ export class RetentionService extends BaseService {
 
     return {
       periods,
-      estimates: promisedDeadlines([periods], {
-        eventEnd: dateInTimeZone(event.endAt, event.timezone),
-        firstRegistration: null,
-      }),
+      estimates: promisedDeadlines([periods], eventEndDate(event)),
     };
   }
 
@@ -358,13 +355,20 @@ export class RetentionService extends BaseService {
 
   /** The earliest date each kind was promised to be deleted by. */
   private async promised(event: RetentionEvent): Promise<DeadlineDates> {
-    const stamps = await this.prisma.registration.groupBy({
-      by: ['organizationPrivacyNoticeVersionId', 'eventPrivacyNoticeVersionId'],
+    // Each pair of notice versions the registrants were shown, once.
+    const stamps = await this.prisma.registration.findMany({
       where: {
         eventId: event.id,
         organizationPrivacyNoticeVersionId: { not: null },
       },
-      _min: { createdAt: true },
+      distinct: [
+        'organizationPrivacyNoticeVersionId',
+        'eventPrivacyNoticeVersionId',
+      ],
+      select: {
+        organizationPrivacyNoticeVersionId: true,
+        eventPrivacyNoticeVersionId: true,
+      },
     });
 
     const contentOf = await this.stampedContent(
@@ -384,19 +388,7 @@ export class RetentionService extends BaseService {
       ),
     );
 
-    // Counted from the event's first registration, whichever notice it saw:
-    // never later than each notice's own first one, and deleting early is
-    // allowed.
-    const first = stamps
-      .map((stamp) => stamp._min.createdAt)
-      .filter((date) => date !== null)
-      .sort((a, b) => a.getTime() - b.getTime())
-      .at(0);
-
-    return promisedDeadlines(periods, {
-      eventEnd: dateInTimeZone(event.endAt, event.timezone),
-      firstRegistration: first ? dateInTimeZone(first, event.timezone) : null,
-    });
+    return promisedDeadlines(periods, eventEndDate(event));
   }
 
   /** Resolves every stamped version in one query, as a lookup by id. */
@@ -426,6 +418,11 @@ const RETENTION_EVENT_SELECT = {
 export type RetentionEventWithName = Prisma.EventGetPayload<{
   select: typeof RETENTION_EVENT_SELECT;
 }>;
+
+/** The day the event ends, in its time zone: what every period counts from. */
+function eventEndDate(event: Pick<Event, 'endAt' | 'timezone'>): string {
+  return dateInTimeZone(event.endAt, event.timezone);
+}
 
 /** A form without special-category questions holds no sensitive data. */
 function asksSensitive(event: Pick<Event, 'form'>): boolean {

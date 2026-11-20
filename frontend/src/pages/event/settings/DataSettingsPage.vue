@@ -26,9 +26,6 @@
             {{
               t('periods.registrations', {
                 months: retention.periods.registrations.months,
-                anchor: gt(
-                  `privacy.retentionAnchor.${retention.periods.registrations.anchor}`,
-                ),
               })
             }}
           </div>
@@ -40,15 +37,9 @@
               'weeks' in retention.periods.sensitive
                 ? t('periods.sensitive', {
                     weeks: retention.periods.sensitive.weeks,
-                    anchor: gt(
-                      `privacy.retentionAnchor.${retention.periods.sensitive.anchor}`,
-                    ),
                   })
                 : t('periods.sensitiveMonths', {
                     months: retention.periods.sensitive.months,
-                    anchor: gt(
-                      `privacy.retentionAnchor.${retention.periods.sensitive.anchor}`,
-                    ),
                   })
             }}
           </div>
@@ -331,7 +322,6 @@ import { usePermissions } from '@/composables/permissions';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { t, d } = useI18n();
-const { t: gt } = useI18n({ useScope: 'global' });
 const quasar = useQuasar();
 const router = useRouter();
 const { to } = useObjectTranslation();
@@ -398,11 +388,8 @@ interface Row {
 /** Without a deadline yet: what the current notice would give. */
 function estimate(kind: EventRetentionDeadlineKind): string {
   const estimated = retention.value?.estimates[kind];
-  if (estimated) {
-    return t('date.estimate', { date: d(parseLocalDate(estimated), 'date') });
-  }
-  return retention.value?.periods[kind]?.anchor === 'submission'
-    ? t('date.afterSubmission')
+  return estimated
+    ? t('date.estimate', { date: d(parseLocalDate(estimated), 'date') })
     : t('date.unknown');
 }
 
@@ -572,9 +559,9 @@ subtitle: 'How long this event keeps registration data, and deleting it.'
 periods:
   title: 'Retention periods'
   summary: 'Set in your organisation’s privacy notice. Each registration keeps the periods it was shown.'
-  registrations: 'Registration data: {months} months {anchor}'
-  sensitive: 'Health and other sensitive details: {weeks} weeks {anchor}'
-  sensitiveMonths: 'Health and other sensitive details: {months} months {anchor}'
+  registrations: 'Registration data: {months} months after the event ends'
+  sensitive: 'Health and other sensitive details: {weeks} weeks after the event ends'
+  sensitiveMonths: 'Health and other sensitive details: {months} months after the event ends'
   none: 'The privacy notice states no period.'
   edit: 'Change in the organisation’s privacy settings'
 delete:
@@ -608,7 +595,6 @@ kind:
   registrations: 'All registration data'
 date:
   estimate: 'Expected deadline: {date}'
-  afterSubmission: 'Deadline counted from each registration'
   unknown: 'No deadline'
 postponedBy: 'Postponed by {name}: {reason}'
 action:
@@ -638,9 +624,9 @@ subtitle: 'Wie lange diese Veranstaltung Anmeldedaten aufbewahrt und wie du sie 
 periods:
   title: 'Speicherfristen'
   summary: 'Festgelegt in den Datenschutzinformationen eurer Organisation. Jede Anmeldung behält die Fristen, die ihr gezeigt wurden.'
-  registrations: 'Anmeldedaten: {months} Monate {anchor}'
-  sensitive: 'Gesundheitsangaben und andere sensible Daten: {weeks} Wochen {anchor}'
-  sensitiveMonths: 'Gesundheitsangaben und andere sensible Daten: {months} Monate {anchor}'
+  registrations: 'Anmeldedaten: {months} Monate nach Ende der Veranstaltung'
+  sensitive: 'Gesundheitsangaben und andere sensible Daten: {weeks} Wochen nach Ende der Veranstaltung'
+  sensitiveMonths: 'Gesundheitsangaben und andere sensible Daten: {months} Monate nach Ende der Veranstaltung'
   none: 'Die Datenschutzinformationen nennen keine Frist.'
   edit: 'In den Datenschutzeinstellungen der Organisation ändern'
 delete:
@@ -674,7 +660,6 @@ kind:
   registrations: 'Alle Anmeldedaten'
 date:
   estimate: 'Voraussichtliche Frist: {date}'
-  afterSubmission: 'Frist zählt ab jeder Anmeldung'
   unknown: 'Keine Frist'
 postponedBy: 'Verschoben von {name}: {reason}'
 action:
@@ -704,9 +689,9 @@ subtitle: 'Combien de temps cet événement conserve les données d’inscriptio
 periods:
   title: 'Durées de conservation'
   summary: 'Fixées dans les informations sur la protection des données de ton organisation. Chaque inscription garde les durées qui lui ont été présentées.'
-  registrations: 'Données d’inscription : {months} mois {anchor}'
-  sensitive: 'Données de santé et autres données sensibles : {weeks} semaines {anchor}'
-  sensitiveMonths: 'Données de santé et autres données sensibles : {months} mois {anchor}'
+  registrations: 'Données d’inscription : {months} mois après la fin de l’événement'
+  sensitive: 'Données de santé et autres données sensibles : {weeks} semaines après la fin de l’événement'
+  sensitiveMonths: 'Données de santé et autres données sensibles : {months} mois après la fin de l’événement'
   none: 'Les informations sur la protection des données n’indiquent aucune durée.'
   edit: 'Modifier dans les paramètres de confidentialité de l’organisation'
 delete:
@@ -740,7 +725,6 @@ kind:
   registrations: 'Toutes les données d’inscription'
 date:
   estimate: 'Délai prévu : {date}'
-  afterSubmission: 'Délai compté à partir de chaque inscription'
   unknown: 'Aucun délai'
 postponedBy: 'Reporté par {name} : {reason}'
 action:
@@ -770,9 +754,9 @@ subtitle: 'Jak długo to wydarzenie przechowuje dane zgłoszeń i jak je usuną�
 periods:
   title: 'Okresy przechowywania'
   summary: 'Ustalone w informacjach o ochronie danych Twojej organizacji. Każde zgłoszenie zachowuje okresy, które mu pokazano.'
-  registrations: 'Dane zgłoszeń: {months} mies. {anchor}'
-  sensitive: 'Dane o zdrowiu i inne dane wrażliwe: {weeks} tyg. {anchor}'
-  sensitiveMonths: 'Dane o zdrowiu i inne dane wrażliwe: {months} mies. {anchor}'
+  registrations: 'Dane zgłoszeń: {months} mies. po zakończeniu wydarzenia'
+  sensitive: 'Dane o zdrowiu i inne dane wrażliwe: {weeks} tyg. po zakończeniu wydarzenia'
+  sensitiveMonths: 'Dane o zdrowiu i inne dane wrażliwe: {months} mies. po zakończeniu wydarzenia'
   none: 'Informacje o ochronie danych nie podają okresu.'
   edit: 'Zmień w ustawieniach prywatności organizacji'
 delete:
@@ -806,7 +790,6 @@ kind:
   registrations: 'Wszystkie dane zgłoszeń'
 date:
   estimate: 'Przewidywany termin: {date}'
-  afterSubmission: 'Termin liczony od każdego zgłoszenia'
   unknown: 'Brak terminu'
 postponedBy: 'Przesunął(-ęła) {name}: {reason}'
 action:
@@ -836,9 +819,9 @@ subtitle: 'Jak dlouho tato akce uchovává údaje z přihlášek a jak je smazat
 periods:
   title: 'Lhůty uchování'
   summary: 'Stanoveny v informacích o ochraně osobních údajů vaší organizace. Každá přihláška si ponechává lhůty, které jí byly ukázány.'
-  registrations: 'Údaje z přihlášek: {months} měsíců {anchor}'
-  sensitive: 'Zdravotní a další citlivé údaje: {weeks} týdnů {anchor}'
-  sensitiveMonths: 'Zdravotní a další citlivé údaje: {months} měsíců {anchor}'
+  registrations: 'Údaje z přihlášek: {months} měsíců po skončení akce'
+  sensitive: 'Zdravotní a další citlivé údaje: {weeks} týdnů po skončení akce'
+  sensitiveMonths: 'Zdravotní a další citlivé údaje: {months} měsíců po skončení akce'
   none: 'Informace o ochraně osobních údajů neuvádějí žádnou lhůtu.'
   edit: 'Změnit v nastavení ochrany údajů organizace'
 delete:
@@ -872,7 +855,6 @@ kind:
   registrations: 'Všechny údaje z přihlášek'
 date:
   estimate: 'Předpokládaná lhůta: {date}'
-  afterSubmission: 'Lhůta se počítá od každé přihlášky'
   unknown: 'Bez lhůty'
 postponedBy: 'Odložil(a) {name}: {reason}'
 action:

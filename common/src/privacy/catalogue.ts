@@ -178,15 +178,12 @@ export const ADVANCED_SPECIAL_CATEGORY_BASIS_KEYS = [
 export const DEFAULT_SPECIAL_CATEGORY_BASIS: SpecialCategoryBasisKey =
   'explicit_consent';
 
-export const RETENTION_ANCHORS = ['event_end', 'submission'] as const;
-
 /**
  * What ends a retention entry. The baseline is always a period; an exception
  * may instead run until the consent it rests on is withdrawn.
  *
- * Kept alongside the anchors rather than inside `content.ts` because the
- * authoring UI renders it as a list, exactly as it renders every other
- * catalogue vocabulary.
+ * Kept here rather than inside `content.ts` because the authoring UI renders
+ * it as a list, exactly as it renders every other catalogue vocabulary.
  */
 export const RETENTION_UNTIL = ['period', 'consent_withdrawn'] as const;
 

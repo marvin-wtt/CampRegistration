@@ -21,12 +21,6 @@ export const RETENTION_DUE_SOON_DAYS = 30;
 
 export type DeadlineDates = Record<EventRetentionDeadlineKind, string | null>;
 
-/** The dates a period is counted from; null where there is none yet. */
-export interface RetentionAnchors {
-  eventEnd: string;
-  firstRegistration: string | null;
-}
-
 /**
  * The periods a notice's retention states. Notices published before the
  * sensitive period existed promised nothing shorter for sensitive answers, so
@@ -41,7 +35,7 @@ export function retentionPeriods(
     return { registrations: null, sensitive: null };
   }
 
-  const main = { months: retention.months, anchor: retention.anchor };
+  const main = { months: retention.months };
   const special = retention.specialCategories;
 
   return {
@@ -49,26 +43,23 @@ export function retentionPeriods(
     sensitive: !asksSensitive
       ? null
       : special
-        ? { weeks: special.weeks, anchor: special.anchor }
+        ? { weeks: special.weeks }
         : main,
   };
 }
 
+/** A period counted from the day the event ends. */
 function deadlineOf(
   period: RetentionPeriods['sensitive'],
-  anchors: RetentionAnchors,
+  eventEnd: string,
 ): string | null {
-  const from =
-    period?.anchor === 'event_end'
-      ? anchors.eventEnd
-      : anchors.firstRegistration;
-  if (!period || !from) {
+  if (!period) {
     return null;
   }
 
   return 'months' in period
-    ? addToDate(from, { months: period.months })
-    : addToDate(from, { days: period.weeks * 7 });
+    ? addToDate(eventEnd, { months: period.months })
+    : addToDate(eventEnd, { days: period.weeks * 7 });
 }
 
 /**
@@ -80,11 +71,11 @@ function deadlineOf(
  */
 export function promisedDeadlines(
   periods: RetentionPeriods[],
-  anchors: RetentionAnchors,
+  eventEnd: string,
 ): DeadlineDates {
   const earliest = (kind: EventRetentionDeadlineKind) =>
     periods
-      .map((entry) => deadlineOf(entry[kind], anchors))
+      .map((entry) => deadlineOf(entry[kind], eventEnd))
       .filter((date) => date !== null)
       .sort()[0] ?? null;
 

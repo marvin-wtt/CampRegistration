@@ -88,11 +88,6 @@ export default {
       'Tylko w celu ustalenia, dochodzenia lub obrony roszczeń, na przykład protokół wypadku zachowany na potrzeby sporu z ubezpieczycielem.',
   },
 
-  retentionAnchor: {
-    event_end: 'po zakończeniu wydarzenia',
-    submission: 'po przesłaniu zgłoszenia',
-  },
-
   retentionUntil: {
     period: 'przez określony czas',
     consent_withdrawn: 'do wycofania zgody, na której się opierają',

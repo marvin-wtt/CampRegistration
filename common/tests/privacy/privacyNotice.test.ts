@@ -25,9 +25,8 @@ function completeContent(): PrivacyNoticeContent {
     recipients: [{ key: 'platform_operator' }],
     retention: {
       months: 24,
-      anchor: 'event_end',
       exceptions: [],
-      specialCategories: { weeks: 4, anchor: 'event_end' },
+      specialCategories: { weeks: 4 },
     },
   };
 }
@@ -130,7 +129,7 @@ describe('privacyNoticeCompleteness', () => {
 
   it('rejects a non-positive retention period', () => {
     const content = completeContent();
-    content.retention = { months: 0, anchor: 'event_end', exceptions: [] };
+    content.retention = { months: 0, exceptions: [] };
 
     expect(privacyNoticeCompleteness(content).gaps).toContain('retention');
   });
@@ -143,7 +142,7 @@ describe('privacyNoticeCompleteness', () => {
   it('accepts an exception scoped to a purpose from the catalogue', () => {
     const content = completeContent();
     content.retention!.exceptions = [
-      { scope: 'payment_and_invoicing', months: 120, anchor: 'event_end' },
+      { scope: 'payment_and_invoicing', months: 120 },
     ];
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
@@ -151,9 +150,7 @@ describe('privacyNoticeCompleteness', () => {
 
   it('requires a name for an exception the author invented', () => {
     const content = completeContent();
-    content.retention!.exceptions = [
-      { scope: customKey('1'), months: 36, anchor: 'event_end' },
-    ];
+    content.retention!.exceptions = [{ scope: customKey('1'), months: 36 }];
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
       'retention_exception',
@@ -165,9 +162,7 @@ describe('privacyNoticeCompleteness', () => {
 
   it('rejects an exception with no period', () => {
     const content = completeContent();
-    content.retention!.exceptions = [
-      { scope: 'insurance', months: 0, anchor: 'event_end' },
-    ];
+    content.retention!.exceptions = [{ scope: 'insurance', months: 0 }];
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
       'retention_exception',
@@ -178,10 +173,9 @@ describe('privacyNoticeCompleteness', () => {
     const content = completeContent();
     content.retention = {
       months: 24,
-      anchor: 'event_end',
       // @ts-expect-error legacy shape: exceptions used to be free text
       exceptions: { en: 'Tax records' },
-      specialCategories: { weeks: 4, anchor: 'event_end' },
+      specialCategories: { weeks: 4 },
     };
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
@@ -352,7 +346,7 @@ describe('isEmptyAddendum', () => {
     );
     expect(
       isEmptyAddendum({
-        retention: { months: 12, anchor: 'event_end', exceptions: [] },
+        retention: { months: 12, exceptions: [] },
       }),
     ).toBe(false);
   });
@@ -381,7 +375,7 @@ describe('composePrivacyNotice', () => {
       purposes: [
         { key: 'registration_administration', legalBasis: 'legal_obligation' },
       ],
-      retention: { months: 6, anchor: 'submission', exceptions: [] },
+      retention: { months: 6, exceptions: [] },
     });
 
     expect(composed.purposes).toEqual([
@@ -389,10 +383,9 @@ describe('composePrivacyNotice', () => {
     ]);
     expect(composed.retention).toEqual({
       months: 6,
-      anchor: 'submission',
       exceptions: [],
       // Not restated by the event, so the organization's period applies.
-      specialCategories: { weeks: 4, anchor: 'event_end' },
+      specialCategories: { weeks: 4 },
     });
   });
 
@@ -401,12 +394,10 @@ describe('composePrivacyNotice', () => {
       ...completeContent(),
       retention: {
         months: 24,
-        anchor: 'event_end',
         exceptions: [
           {
             scope: 'payment_and_invoicing',
             months: 120,
-            anchor: 'event_end',
           },
         ],
       },
@@ -415,10 +406,7 @@ describe('composePrivacyNotice', () => {
     const composed = composePrivacyNotice(organization, {
       retention: {
         months: 6,
-        anchor: 'submission',
-        exceptions: [
-          { scope: 'photo_publication', months: 36, anchor: 'event_end' },
-        ],
+        exceptions: [{ scope: 'photo_publication', months: 36 }],
       },
     });
 
@@ -436,12 +424,10 @@ describe('composePrivacyNotice', () => {
       ...completeContent(),
       retention: {
         months: 24,
-        anchor: 'event_end',
         exceptions: [
           {
             scope: 'payment_and_invoicing',
             months: 120,
-            anchor: 'event_end',
           },
         ],
       },
@@ -450,15 +436,12 @@ describe('composePrivacyNotice', () => {
     const composed = composePrivacyNotice(organization, {
       retention: {
         months: 24,
-        anchor: 'event_end',
-        exceptions: [
-          { scope: 'payment_and_invoicing', months: 84, anchor: 'event_end' },
-        ],
+        exceptions: [{ scope: 'payment_and_invoicing', months: 84 }],
       },
     });
 
     expect(composed.retention?.exceptions).toEqual([
-      { scope: 'payment_and_invoicing', months: 84, anchor: 'event_end' },
+      { scope: 'payment_and_invoicing', months: 84 },
     ]);
   });
 
@@ -655,7 +638,6 @@ describe('addendumGaps', () => {
       addendumGaps(completeContent(), {
         retention: {
           months: 24,
-          anchor: 'event_end',
           exceptions: [
             {
               scope: 'registration_administration',
@@ -683,7 +665,6 @@ describe('privacyNoticeCompleteness — sensitive data retention', () => {
     const content = completeContent();
     content.retention!.specialCategories = {
       weeks: maxSpecialCategoryWeeks(24) + 1,
-      anchor: 'event_end',
     };
 
     expect(privacyNoticeCompleteness(content).gaps).toEqual([
@@ -695,15 +676,13 @@ describe('privacyNoticeCompleteness — sensitive data retention', () => {
     const composed = composePrivacyNotice(completeContent(), {
       retention: {
         months: 24,
-        anchor: 'event_end',
         exceptions: [],
-        specialCategories: { weeks: 2, anchor: 'event_end' },
+        specialCategories: { weeks: 2 },
       },
     });
 
     expect(composed.retention?.specialCategories).toEqual({
       weeks: 2,
-      anchor: 'event_end',
     });
   });
 

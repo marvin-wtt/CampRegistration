@@ -96,11 +96,6 @@ export default {
       'Only for establishing, exercising or defending a legal claim, such as an accident report kept for an insurance dispute.',
   },
 
-  retentionAnchor: {
-    event_end: 'after the event ends',
-    submission: 'after you submit the registration',
-  },
-
   retentionUntil: {
     period: 'for a fixed period',
     consent_withdrawn: 'until the consent behind it is withdrawn',

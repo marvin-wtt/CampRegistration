@@ -29,8 +29,7 @@ function organization(): PrivacyNoticeContent {
     ],
     retention: {
       months: 24,
-      anchor: 'event_end',
-      exceptions: [{ scope: 'insurance', months: 120, anchor: 'event_end' }],
+      exceptions: [{ scope: 'insurance', months: 120 }],
     },
     thirdCountryTransfers: {
       enabled: true,

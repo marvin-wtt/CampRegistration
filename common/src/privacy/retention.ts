@@ -1,10 +1,9 @@
-import type { RetentionAnchor } from './content.js';
-
 /**
  * The retention workflow (docs/privacy.md, 8): one deadline per kind of an
  * event's registration data, reminded about and shown, never acted on
  * automatically. What must be kept beyond it is the organizer's decision.
- * Every date here is a calendar date (`YYYY-MM-DD`) in the event's time zone.
+ * Every date here is a calendar date (`YYYY-MM-DD`) in the event's time zone,
+ * and every period counts from the end of the event.
  */
 export const EVENT_RETENTION_DEADLINE_KINDS = [
   'sensitive',
@@ -52,15 +51,12 @@ export interface RetentionPostponeData {
  */
 export interface RetentionPeriods {
   /** Null for a free-text notice or none at all. */
-  registrations: { months: number; anchor: RetentionAnchor } | null;
+  registrations: { months: number } | null;
   /**
    * Null when the form asks nothing sensitive. In months when an older
    * notice states no sensitive period, so the main one applies.
    */
-  sensitive:
-    | { weeks: number; anchor: RetentionAnchor }
-    | { months: number; anchor: RetentionAnchor }
-    | null;
+  sensitive: { weeks: number } | { months: number } | null;
 }
 
 /** What the event's data settings show and act on. */
@@ -69,7 +65,7 @@ export interface EventRetention {
   deadlines: EventRetentionDeadline[];
   /**
    * The date the current notice would give a kind that has no deadline yet;
-   * null where it cannot tell (counted from submission, or no period).
+   * null when it states no period.
    */
   estimates: Record<EventRetentionDeadlineKind, string | null>;
   periods: RetentionPeriods;

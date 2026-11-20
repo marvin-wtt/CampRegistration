@@ -5,7 +5,6 @@ import {
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_PURPOSE_KEYS,
   PRIVACY_RECIPIENT_KEYS,
-  RETENTION_ANCHORS,
   SPECIAL_CATEGORY_BASIS_KEYS,
   TRANSFER_SAFEGUARDS,
   type EventPrivacyNoticeUpdateData,
@@ -70,15 +69,13 @@ const RetentionPeriodExceptionSchema = z.object({
   // Statutory retention is what exceptions exist for, and tax law reaches ten
   // years — so the ceiling here is higher than the baseline's.
   months: z.int().min(1).max(600),
-  anchor: z.enum(RETENTION_ANCHORS),
 });
 
 /** Ends with the withdrawal, and at the latest after `months`. */
-const RetentionConsentExceptionSchema = z.strictObject({
+const RetentionConsentExceptionSchema = z.object({
   ...RetentionExceptionBase,
   until: z.literal('consent_withdrawn'),
   months: z.int().min(1).max(600).optional(),
-  anchor: z.enum(RETENTION_ANCHORS).optional(),
 });
 
 // Consent first: the period branch accepts a missing `until`, so it would
@@ -88,16 +85,17 @@ const RetentionExceptionSchema = z.union([
   RetentionPeriodExceptionSchema,
 ]);
 
+// Every period counts from the event end. Content from versions that still
+// carry an `anchor` is stripped of it, as of any key nothing reads, so it is
+// never stored again.
 const RetentionSchema = z.object({
   // A event that keeps every registration for a decade has a storage-limitation
   // problem, not a configuration need; anything longer belongs in an exception.
   months: z.int().min(1).max(240),
-  anchor: z.enum(RETENTION_ANCHORS),
   exceptions: z.array(RetentionExceptionSchema).max(25),
   specialCategories: z
     .object({
       weeks: z.int().min(1).max(960),
-      anchor: z.enum(RETENTION_ANCHORS),
     })
     .nullish(),
 });

@@ -8,7 +8,7 @@ import {
   retentionPeriods,
 } from '#app/retention/retention.deadlines';
 
-const anchors = { eventEnd: '2026-08-15', firstRegistration: '2026-03-01' };
+const eventEnd = '2026-08-15';
 
 const periods = (retention: object, asksSensitive = true) =>
   retentionPeriods(
@@ -21,14 +21,8 @@ const periods = (retention: object, asksSensitive = true) =>
 describe('promisedDeadlines', () => {
   it('counts from the event end', () => {
     const result = promisedDeadlines(
-      [
-        periods({
-          months: 6,
-          anchor: 'event_end',
-          specialCategories: { weeks: 4, anchor: 'event_end' },
-        }),
-      ],
-      anchors,
+      [periods({ months: 6, specialCategories: { weeks: 4 } })],
+      eventEnd,
     );
 
     expect(result).toEqual({
@@ -37,80 +31,52 @@ describe('promisedDeadlines', () => {
     });
   });
 
-  it('counts from the first registration', () => {
-    const result = promisedDeadlines(
-      [periods({ months: 6, anchor: 'submission' })],
-      anchors,
-    );
-
-    expect(result.registrations).toBe('2026-09-01');
-  });
-
-  it('has no date counted from submission before anyone registered', () => {
-    const result = promisedDeadlines(
-      [periods({ months: 6, anchor: 'submission' })],
-      { ...anchors, firstRegistration: null },
-    );
-
-    expect(result).toEqual({ registrations: null, sensitive: null });
-  });
-
   it('keeps the earliest promise across notices', () => {
     const result = promisedDeadlines(
-      [
-        periods({ months: 12, anchor: 'event_end' }),
-        periods({ months: 3, anchor: 'event_end' }),
-      ],
-      anchors,
+      [periods({ months: 12 }), periods({ months: 3 })],
+      eventEnd,
     );
 
     expect(result.registrations).toBe('2026-11-15');
   });
 
   it('puts sensitive answers under the main period for older notices', () => {
-    const result = promisedDeadlines(
-      [periods({ months: 6, anchor: 'event_end' })],
-      anchors,
-    );
+    const result = promisedDeadlines([periods({ months: 6 })], eventEnd);
 
     expect(result.sensitive).toBe(result.registrations);
   });
 
   it('never lets the sensitive date pass the general one', () => {
     const result = promisedDeadlines(
-      [
-        periods({ months: 1, anchor: 'submission' }),
-        periods({
-          months: 12,
-          anchor: 'event_end',
-          specialCategories: { weeks: 8, anchor: 'event_end' },
-        }),
-      ],
-      anchors,
+      [periods({ months: 1, specialCategories: { weeks: 8 } })],
+      eventEnd,
     );
 
     expect(result).toEqual({
-      registrations: '2026-04-01',
-      sensitive: '2026-04-01',
+      registrations: '2026-09-15',
+      sensitive: '2026-09-15',
     });
   });
 
   it('has no sensitive date for a form without sensitive questions', () => {
-    const result = promisedDeadlines(
-      [periods({ months: 6, anchor: 'event_end' }, false)],
-      anchors,
-    );
+    const result = promisedDeadlines([periods({ months: 6 }, false)], eventEnd);
 
     expect(result.sensitive).toBeNull();
   });
 
   it('promises nothing without a period', () => {
-    const result = promisedDeadlines(
-      [periods({ months: 0, anchor: 'event_end' })],
-      anchors,
-    );
+    const result = promisedDeadlines([periods({ months: 0 })], eventEnd);
 
     expect(result).toEqual({ registrations: null, sensitive: null });
+  });
+
+  it('ignores the anchor older versions still store', () => {
+    const result = promisedDeadlines(
+      [periods({ months: 6, anchor: 'event_end' })],
+      eventEnd,
+    );
+
+    expect(result.registrations).toBe('2027-02-15');
   });
 });
 

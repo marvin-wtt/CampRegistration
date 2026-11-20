@@ -189,9 +189,8 @@ describe('privacy notices', () => {
           content: completePrivacyNoticeContent({
             retention: {
               months: 6,
-              anchor: 'submission',
               exceptions: [],
-              specialCategories: { weeks: 4, anchor: 'event_end' },
+              specialCategories: { weeks: 4 },
             },
           }),
         })
@@ -206,11 +205,50 @@ describe('privacy notices', () => {
 
       expect(versions).toHaveLength(2);
       expect(versions[0]?.content).toMatchObject({
-        retention: { months: 24, anchor: 'event_end' },
+        retention: { months: 24 },
       });
       expect(versions[1]?.content).toMatchObject({
-        retention: { months: 6, anchor: 'submission' },
+        retention: { months: 6 },
       });
+    });
+
+    it('should accept and drop the anchor older versions still store', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+      const base = completePrivacyNoticeContent();
+
+      // As the editor sends back content loaded from an older version.
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: {
+            ...base,
+            purposes: [
+              ...base.purposes,
+              { key: 'photo_publication', legalBasis: 'consent' },
+            ],
+            retention: {
+              months: 24,
+              anchor: 'event_end',
+              exceptions: [
+                {
+                  scope: 'photo_publication',
+                  until: 'consent_withdrawn',
+                  months: 36,
+                  anchor: 'event_end',
+                },
+              ],
+              specialCategories: { weeks: 4, anchor: 'event_end' },
+            },
+          },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const version = await prisma.privacyNoticeVersion.findFirstOrThrow({
+        where: { scope: 'ORGANIZATION', scopeId: organization.id },
+      });
+      expect(JSON.stringify(version.content)).not.toContain('anchor');
     });
 
     it('should not append a version when nothing changed', async () => {
@@ -245,9 +283,8 @@ describe('privacy notices', () => {
           content: completePrivacyNoticeContent({
             retention: {
               months: 6,
-              anchor: 'submission',
               exceptions: [],
-              specialCategories: { weeks: 4, anchor: 'event_end' },
+              specialCategories: { weeks: 4 },
             },
           }),
         })
@@ -710,13 +747,11 @@ describe('privacy notices', () => {
           privacyNotice: completePrivacyNoticeContent({
             retention: {
               months: 24,
-              anchor: 'event_end',
-              specialCategories: { weeks: 4, anchor: 'event_end' },
+              specialCategories: { weeks: 4 },
               exceptions: [
                 {
                   scope: 'payment_and_invoicing',
                   months: 120,
-                  anchor: 'event_end',
                 },
               ],
             },
@@ -733,11 +768,8 @@ describe('privacy notices', () => {
           content: {
             retention: {
               months: 24,
-              anchor: 'event_end',
-              specialCategories: { weeks: 4, anchor: 'event_end' },
-              exceptions: [
-                { scope: 'photo_publication', months: 36, anchor: 'event_end' },
-              ],
+              specialCategories: { weeks: 4 },
+              exceptions: [{ scope: 'photo_publication', months: 36 }],
             },
           },
         })
@@ -815,9 +847,8 @@ describe('privacy notices', () => {
           content: completePrivacyNoticeContent({
             retention: {
               months: 1,
-              anchor: 'submission',
               exceptions: [],
-              specialCategories: { weeks: 4, anchor: 'event_end' },
+              specialCategories: { weeks: 4 },
             },
           }),
         })
@@ -831,7 +862,7 @@ describe('privacy notices', () => {
 
       // The proof of what this person was shown must survive later edits.
       expect(registration.organizationPrivacyNotice?.content).toMatchObject({
-        retention: { months: 24, anchor: 'event_end' },
+        retention: { months: 24 },
       });
     });
   });

@@ -220,9 +220,10 @@ clone rules in `PrivacyNoticeService`.
 ### Authoring
 
 - **[implemented]** Organization wizard (`OrganizationPrivacyPage.vue`), six steps:
-  controller (read from the organization record), data, purposes, recipients,
-  retention (also transfers, DPO, automated decisions —
-  `PrivacyRetentionStep.vue`), additional text. The stepper marks the step a gap
+  controller (read from the organization record, plus the optional data
+  protection officer — `PrivacyDpoFields.vue`), data, purposes, recipients,
+  retention (also transfers and automated decisions — `PrivacyRetentionStep.vue`),
+  additional text. The stepper marks the step a gap
   belongs to (`PRIVACY_NOTICE_GAP_SECTIONS`).
 - **[implemented]** Ticking a purpose adds its preset basis, categories and
   recipients (`PRIVACY_PURPOSE_PRESETS`); unticking never removes them again.
@@ -360,6 +361,43 @@ Findings, most important first:
   group (see `country-groups.md` for why group-dependent consent is fragile).
 - **[review]** Where it is unclear whether a national rule applies, explicit consent
   for everyone is the fallback.
+
+### Church data protection law (Art. 91)
+
+Churches that had comprehensive data protection rules when the GDPR took effect may
+keep applying them (Art. 91). In Germany that is the Catholic Church's **KDG**
+(Gesetz über den Kirchlichen Datenschutz) and the Protestant Church's **DSG-EKD**.
+Church bodies — parishes, dioceses, Landeskirchen, and often their charities —
+are governed by them instead of the GDPR and the BDSG, and answer to a church
+supervisory authority. Parish youth camps and confirmation retreats are a core use
+of the platform, so today's notice is wrong for them in two places: it cites GDPR
+articles, and it names the state authority.
+
+- **[planned]** An organization setting, the data protection framework: `gdpr`
+  (default), `kdg` or `dsg_ekd`, offered only where the organization's country has
+  church frameworks (Germany). Declared by the organization, never inferred: only
+  church bodies themselves fall under KDG or DSG-EKD, while independent associations
+  with a Christian background (a CVJM e.V., most scout groups) stay under the GDPR,
+  and neither the country nor the name tells them apart.
+- **[planned]** Each framework is a data record, not a branch in the renderer:
+  - a citation table from every GDPR provision the notice cites (Art. 6(1)(a)–(f),
+    7(3), 9(2), 13–21, 77) to the framework's own paragraph;
+  - how the supervisory authority is found: for KDG one of the regional Catholic
+    data protection authorities, chosen by diocese; for DSG-EKD the EKD data
+    protection commissioner and its regional office.
+    The notice keeps its structure and reads only citations and authority from the
+    record. The same mechanism covers other countries' church frameworks later (e.g.
+    the Polish Catholic Church's general decree).
+- **[planned]** The DPO step (step 1, `PrivacyDpoFields.vue`) explains the
+  framework's own rule on when a DPO is required, instead of the BDSG one.
+- **[planned]** The notice version records the framework it was published under, so
+  the proof of information (section 2) stays exact if an organization changes it.
+- **[gap]** Until then a church body can only use a free-text notice, and the
+  structured parts outside it — the supervisory authority from
+  `Organization.country` — still name the state authority. A per-organization
+  override of the authority is the minimal stop-gap.
+- **[review]** The citation tables and the authority list must come from legal
+  review; no paragraph number is shipped unverified.
 
 ## 5. Consent (Art. 7, 9(2)(a))
 
@@ -827,15 +865,19 @@ keep data.
 
 ### Periods in the notice
 
-- **[implemented]** The notice states a retention period (anchored at event end or
-  submission) plus exceptions, which either run for their own period or until
+- **[implemented]** Every period counts from the end of the event: the data is
+  needed until the event is over, and a period counted from each registration
+  could fall due before the event even takes place. Counting from submission was
+  dropped (no published notice used it); older versions still store an `anchor`,
+  which is ignored, and publishing strips it.
+- **[implemented]** The notice states a retention period plus exceptions, which either run for their own period or until
   consent is withdrawn — the latter only for purposes resting on consent
   (`retention_exception_consent_basis` gap).
-- **[implemented]** Consent-bound exceptions also state a maximum period (`months`,
-  `anchor`), required by the completeness check (`retention_exception`). The
+- **[implemented]** Consent-bound exceptions also state a maximum period (`months`),
+  required by the completeness check (`retention_exception`). The
   newsletter subscription is unaffected — it lives in `NewsletterSubscriber`, ended
   by unsubscribing.
-- **[implemented]** `retention.specialCategories: { weeks, anchor }` is how long
+- **[implemented]** `retention.specialCategories: { weeks }` is how long
   sensitive answers are kept, stated to registrants only when the notice lists a
   special category. Required on every builder notice
   (`special_category_retention`), not only on one declaring a special category:
@@ -853,15 +895,13 @@ keep data.
   the general one whenever it is computed, also when either is postponed, so it
   always stays the earlier.
 - Deadlines are calendar dates (`YYYY-MM-DD`) in the event's time zone, counted
-  from the day the event ends or the day of the first registration. They are
+  from the day the event ends. They are
   computed whenever needed and never stored: nothing has to be kept in sync with
   the notices, and nothing has to compare a stored date with a recomputed one.
 - They come from the notice versions stamped on the registrations, not from
   today's notice: a period is a promise made to a person at a particular moment.
   The earliest promise per kind wins (`retention.deadlines.ts`): deleting early is
-  allowed, keeping data longer than promised is not. A period counted from
-  submission runs from the event's first registration, whichever notice it saw:
-  never later than a notice's own first registration. A form without
+  allowed, keeping data longer than promised is not. A form without
   special-category questions has no sensitive deadline; notices from before the
   sensitive period put sensitive answers under the main period. Free-text notices
   promise no date (composition drops their retention). Events whose registrations
@@ -1050,7 +1090,10 @@ keep data.
    organization notice?
 7. Do emergency contacts need Art. 14 information, or does Art. 14(5) apply?
 8. Is the right to object presented separately enough for Art. 21(4)?
-9. Should church organizations' notices cite KDG / DSG-EKD and their authorities?
+9. Church frameworks (section 4, "Church data protection law"): the KDG and DSG-EKD
+   paragraph for each GDPR provision the notice cites, the competent church
+   authority per diocese / Landeskirche, and whether a church body's own
+   charities (Caritas, Diakonie) always fall under the church framework.
 10. Does the platform need its own DPIA as processor, or is it the organizers' duty
     alone?
 

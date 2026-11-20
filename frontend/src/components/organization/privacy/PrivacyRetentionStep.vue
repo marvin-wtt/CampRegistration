@@ -7,23 +7,12 @@
         :label="t('field.retentionMonths')"
         :min="1"
         :max="240"
+        :suffix="t('field.afterEvent')"
         dense
         outlined
         rounded
         :disable="!canEdit"
-        class="col-12 col-sm-4"
-      />
-      <q-select
-        v-model="retentionAnchor"
-        :options="retentionAnchorOptions"
-        :label="t('field.retentionAnchor')"
-        emit-value
-        map-options
-        dense
-        outlined
-        rounded
-        :disable="!canEdit"
-        class="col-12 col-sm-8"
+        class="col-12 col-sm-6"
       />
     </div>
 
@@ -51,19 +40,8 @@
           :error-message="
             t('retention.special.tooLong', { max: maxSpecialWeeks })
           "
-          class="col-12 col-sm-4"
-        />
-        <q-select
-          v-model="specialAnchor"
-          :options="retentionAnchorOptions"
-          :label="t('field.retentionAnchor')"
-          emit-value
-          map-options
-          dense
-          outlined
-          rounded
-          :disable="!canEdit"
-          class="col-12 col-sm-8"
+          :suffix="t('field.afterEvent')"
+          class="col-12 col-sm-6"
         />
       </div>
     </div>
@@ -85,7 +63,7 @@
         class="inset-card retention-exception q-mb-sm"
       >
         <q-card-section class="q-pa-sm column q-gutter-y-xs">
-          <!-- Scope, period and anchor read as one sentence, so they sit
+          <!-- Scope, end and period read as one sentence, so they sit
              on one line and the delete button aligns with them. -->
           <div class="row q-col-gutter-sm items-start no-wrap">
             <div class="col row q-col-gutter-sm items-start">
@@ -135,24 +113,10 @@
                 rounded
                 hide-bottom-space
                 :disable="!canEdit"
-                :error="!((exception.months ?? 0) > 0)"
-                class="col-5 col-sm-4"
-              />
-              <q-select
-                :model-value="exception.anchor ?? retentionAnchor"
-                :options="retentionAnchorOptions"
-                :label="t('field.retentionAnchor')"
-                emit-value
-                map-options
-                dense
-                outlined
-                rounded
-                hide-bottom-space
-                :disable="!canEdit"
-                class="col-7 col-sm-8"
-                @update:model-value="
-                  (anchor: RetentionAnchor) => (exception.anchor = anchor)
-                "
+                :rules="[atLeastOneMonth]"
+                lazy-rules
+                :suffix="t('field.afterEvent')"
+                class="col-12 col-sm-6"
               />
             </div>
             <m-btn
@@ -236,7 +200,12 @@
             outlined
             rounded
             :disable="!canEdit"
-            :error="content.thirdCountryTransfers.countries.length === 0"
+            :rules="[
+              (countries: string[]) =>
+                countries.length > 0 || t('missing.countries'),
+            ]"
+            lazy-rules
+            hide-bottom-space
           />
           <q-select
             v-model="content.thirdCountryTransfers.safeguard"
@@ -248,39 +217,11 @@
             outlined
             rounded
             :disable="!canEdit"
-            :error="!content.thirdCountryTransfers.safeguard"
-          />
-        </div>
-      </div>
-
-      <div>
-        <q-toggle
-          v-model="hasDpo"
-          :label="t('field.hasDpo')"
-          :disable="!canEdit"
-        />
-        <div
-          v-if="content.dpo"
-          class="column q-gutter-y-sm toggle-fields"
-        >
-          <q-input
-            v-model="content.dpo.name"
-            :label="t('field.dpoName')"
-            dense
-            outlined
-            rounded
-            :disable="!canEdit"
-            :error="content.dpo.name.trim() === ''"
-          />
-          <q-input
-            v-model="content.dpo.email"
-            type="email"
-            :label="t('field.dpoEmail')"
-            dense
-            outlined
-            rounded
-            :disable="!canEdit"
-            :error="content.dpo.email.trim() === ''"
+            :rules="[
+              (safeguard: unknown) => !!safeguard || t('missing.safeguard'),
+            ]"
+            lazy-rules
+            hide-bottom-space
           />
         </div>
       </div>
@@ -309,7 +250,10 @@
             outlined
             rounded
             :disable="!canEdit"
-            :error="!hasAutomatedDetails"
+            :rules="[
+              () => hasAutomatedDetails || t('missing.automatedDetails'),
+            ]"
+            lazy-rules
             @update:model-value="
               (v) =>
                 (content.automatedDecisionMakingDetails = asTranslatable(v))
@@ -326,7 +270,6 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
-  RETENTION_ANCHORS,
   RETENTION_UNTIL,
   TRANSFER_SAFEGUARDS,
   customKey,
@@ -338,7 +281,6 @@ import {
   retentionExceptions,
   type PrivacyNoticeContent,
   type PrivacyRetentionException,
-  type RetentionAnchor,
   type RetentionUntil,
 } from '@camp-registration/common/privacy';
 import type { Translatable } from '@camp-registration/common/entities';
@@ -360,13 +302,6 @@ function asTranslatable(value: unknown): Translatable | null {
   return (value ?? null) as Translatable | null;
 }
 
-const retentionAnchorOptions = computed(() =>
-  RETENTION_ANCHORS.map((key) => ({
-    value: key,
-    label: gt(`privacy.retentionAnchor.${key}`),
-  })),
-);
-
 const safeguardOptions = computed(() =>
   TRANSFER_SAFEGUARDS.map((key) => ({
     value: key,
@@ -381,20 +316,13 @@ const retentionMonths = computed({
   },
 });
 
-const retentionAnchor = computed({
-  get: () => content.value.retention?.anchor ?? 'event_end',
-  set: (anchor: RetentionAnchor) => {
-    ensureRetention().anchor = anchor;
-  },
-});
-
 const maxSpecialWeeks = computed(() =>
   maxSpecialCategoryWeeks(retentionMonths.value),
 );
 
 function ensureSpecial() {
   const retention = ensureRetention();
-  retention.specialCategories ??= { weeks: 4, anchor: retention.anchor };
+  retention.specialCategories ??= { weeks: 4 };
   return retention.specialCategories;
 }
 
@@ -402,14 +330,6 @@ const specialWeeks = computed({
   get: () => content.value.retention?.specialCategories?.weeks ?? 0,
   set: (weeks: number) => {
     ensureSpecial().weeks = weeks;
-  },
-});
-
-const specialAnchor = computed({
-  get: () =>
-    content.value.retention?.specialCategories?.anchor ?? retentionAnchor.value,
-  set: (anchor: RetentionAnchor) => {
-    ensureSpecial().anchor = anchor;
   },
 });
 
@@ -441,11 +361,7 @@ const exceptionScopeOptions = computed(() => [
 ]);
 
 function ensureRetention() {
-  content.value.retention ??= {
-    months: 24,
-    anchor: 'event_end',
-    exceptions: [],
-  };
+  content.value.retention ??= { months: 24, exceptions: [] };
   content.value.retention.exceptions = retentionExceptions(
     content.value.retention,
   );
@@ -457,7 +373,6 @@ function addException() {
   retention.exceptions.push({
     scope: content.value.purposes[0]?.key ?? customKey('1'),
     months: 120,
-    anchor: retention.anchor,
   });
 }
 
@@ -493,8 +408,8 @@ function setExceptionUntil(index: number, until: RetentionUntil) {
 
   retention.exceptions[index] =
     until === 'consent_withdrawn'
-      ? { scope, label, reason, until, months: 60, anchor: retention.anchor }
-      : { scope, label, reason, months: 120, anchor: retention.anchor };
+      ? { scope, label, reason, until, months: 60 }
+      : { scope, label, reason, months: 120 };
 }
 
 const consentPurposeKeys = computed(
@@ -510,6 +425,12 @@ const consentPurposeKeys = computed(
  * Mirrors the `retention_exception_consent_basis` gap so the author sees it on
  * the field that causes it, rather than only as a line in the summary.
  */
+// Empty fields are checked once left, not the moment a switch or a new row
+// reveals them; invalid values (too many weeks, a wrong scope) show at once.
+function atLeastOneMonth(months: number | null | undefined) {
+  return (months ?? 0) > 0 || t('missing.months');
+}
+
 function consentScopeInvalid(exception: PrivacyRetentionException): boolean {
   return (
     isConsentBoundException(exception) &&
@@ -520,13 +441,6 @@ function consentScopeInvalid(exception: PrivacyRetentionException): boolean {
 function removeException(index: number) {
   ensureRetention().exceptions.splice(index, 1);
 }
-
-const hasDpo = computed({
-  get: () => content.value.dpo !== null,
-  set: (on: boolean) => {
-    content.value.dpo = on ? { name: '', email: '' } : null;
-  },
-});
 
 const hasAutomatedDetails = computed(
   () =>
@@ -541,14 +455,11 @@ field:
   retentionWeeks: 'Weeks'
   retentionMaxMonths: 'At most (months)'
   retentionMonths: 'Months'
-  retentionAnchor: 'Counted from'
+  afterEvent: 'after the event ends'
   transfersEnabled: 'Data is transferred outside the EEA'
   transferCountries: 'Destination countries'
   transferCountriesHint: 'Type a country code and press Enter'
   transferSafeguard: 'Safeguard'
-  hasDpo: 'We have a data protection officer'
-  dpoName: 'Name'
-  dpoEmail: 'Email'
   automated: 'We use automated decision-making or profiling'
   automatedDetails: 'Explain the logic and its consequences'
   automatedDetailsHint: 'Art. 13(2)(f) requires meaningful information about the logic involved and what it means for the person.'
@@ -569,6 +480,11 @@ retention:
     add: 'Add an exception'
 action:
   remove: 'Remove'
+missing:
+  months: 'At least one month'
+  countries: 'Add at least one country'
+  safeguard: 'Choose a safeguard'
+  automatedDetails: 'Explain the logic and its consequences'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -576,14 +492,11 @@ field:
   retentionWeeks: 'Wochen'
   retentionMaxMonths: 'Höchstens (Monate)'
   retentionMonths: 'Monate'
-  retentionAnchor: 'Gerechnet ab'
+  afterEvent: 'nach Ende der Veranstaltung'
   transfersEnabled: 'Daten werden außerhalb des EWR übermittelt'
   transferCountries: 'Zielländer'
   transferCountriesHint: 'Ländercode eingeben und Enter drücken'
   transferSafeguard: 'Garantie'
-  hasDpo: 'Datenschutzbeauftragte Person vorhanden'
-  dpoName: 'Name'
-  dpoEmail: 'E-Mail'
   automated: 'Automatisierte Entscheidungsfindung oder Profiling findet statt'
   automatedDetails: 'Logik und Folgen erläutern'
   automatedDetailsHint: 'Art. 13 Abs. 2 lit. f DSGVO verlangt aussagekräftige Informationen über die Logik und darüber, was sie für die betroffene Person bedeutet.'
@@ -604,6 +517,11 @@ retention:
     add: 'Ausnahme hinzufügen'
 action:
   remove: 'Entfernen'
+missing:
+  months: 'Mindestens ein Monat'
+  countries: 'Gib mindestens ein Land an'
+  safeguard: 'Wähle eine Garantie'
+  automatedDetails: 'Erläutere Logik und Folgen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -611,14 +529,11 @@ field:
   retentionWeeks: 'Semaines'
   retentionMaxMonths: 'Au plus (mois)'
   retentionMonths: 'Mois'
-  retentionAnchor: 'À compter de'
+  afterEvent: 'après la fin de l’événement'
   transfersEnabled: "Les données sont transférées hors de l'EEE"
   transferCountries: 'Pays de destination'
   transferCountriesHint: 'Saisissez un code pays puis appuyez sur Entrée'
   transferSafeguard: 'Garantie'
-  hasDpo: 'Nous avons un délégué à la protection des données'
-  dpoName: 'Nom'
-  dpoEmail: 'E-mail'
   automated: 'Nous utilisons la décision automatisée ou le profilage'
   automatedDetails: 'Expliquer la logique et ses conséquences'
   automatedDetailsHint: "L'art. 13, § 2, f, RGPD exige des informations utiles sur la logique sous-jacente et sur ce qu'elle implique pour la personne."
@@ -639,6 +554,11 @@ retention:
     add: 'Ajouter une exception'
 action:
   remove: 'Supprimer'
+missing:
+  months: 'Au moins un mois'
+  countries: 'Ajoute au moins un pays'
+  safeguard: 'Choisis une garantie'
+  automatedDetails: 'Explique la logique et ses conséquences'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -646,14 +566,11 @@ field:
   retentionWeeks: 'Týdnů'
   retentionMaxMonths: 'Nejvýše (měsíců)'
   retentionMonths: 'Měsíců'
-  retentionAnchor: 'Počítáno od'
+  afterEvent: 'po skončení akce'
   transfersEnabled: 'Údaje se předávají mimo EHP'
   transferCountries: 'Cílové země'
   transferCountriesHint: 'Zadej kód země a stiskni Enter'
   transferSafeguard: 'Záruka'
-  hasDpo: 'Máme pověřence pro ochranu osobních údajů'
-  dpoName: 'Jméno'
-  dpoEmail: 'E-mail'
   automated: 'Používáme automatizované rozhodování nebo profilování'
   automatedDetails: 'Vysvětli logiku a její důsledky'
   automatedDetailsHint: 'Čl. 13 odst. 2 písm. f) GDPR vyžaduje smysluplné informace o použitém postupu a o tom, co znamená pro danou osobu.'
@@ -674,6 +591,11 @@ retention:
     add: 'Přidat výjimku'
 action:
   remove: 'Odebrat'
+missing:
+  months: 'Alespoň jeden měsíc'
+  countries: 'Přidej alespoň jednu zemi'
+  safeguard: 'Vyber záruku'
+  automatedDetails: 'Vysvětli logiku a její důsledky'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -681,14 +603,11 @@ field:
   retentionWeeks: 'Tygodnie'
   retentionMaxMonths: 'Najwyżej (miesiące)'
   retentionMonths: 'Miesiące'
-  retentionAnchor: 'Liczone od'
+  afterEvent: 'po zakończeniu wydarzenia'
   transfersEnabled: 'Dane są przekazywane poza EOG'
   transferCountries: 'Kraje docelowe'
   transferCountriesHint: 'Wpisz kod kraju i naciśnij Enter'
   transferSafeguard: 'Zabezpieczenie'
-  hasDpo: 'Mamy inspektora ochrony danych'
-  dpoName: 'Imię i nazwisko'
-  dpoEmail: 'E-mail'
   automated: 'Stosujemy zautomatyzowane podejmowanie decyzji lub profilowanie'
   automatedDetails: 'Wyjaśnij logikę i jej konsekwencje'
   automatedDetailsHint: 'Art. 13 ust. 2 lit. f RODO wymaga istotnych informacji o zasadach podejmowania decyzji i o tym, co oznaczają dla danej osoby.'
@@ -709,6 +628,11 @@ retention:
     add: 'Dodaj wyjątek'
 action:
   remove: 'Usuń'
+missing:
+  months: 'Co najmniej jeden miesiąc'
+  countries: 'Dodaj co najmniej jeden kraj'
+  safeguard: 'Wybierz zabezpieczenie'
+  automatedDetails: 'Wyjaśnij logikę i jej konsekwencje'
 </i18n>
 
 <style lang="scss" scoped>

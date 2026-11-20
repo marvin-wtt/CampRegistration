@@ -41,7 +41,7 @@ export type PrivacyNoticeGap =
  * would otherwise fail silently in the UI.
  */
 export type PrivacyNoticeSection =
-  'data' | 'purposes' | 'recipients' | 'retention' | 'free_text';
+  'controller' | 'data' | 'purposes' | 'recipients' | 'retention' | 'free_text';
 
 export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   PrivacyNoticeGap,
@@ -61,7 +61,7 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   special_category_retention: 'retention',
   transfer_countries: 'retention',
   transfer_safeguard: 'retention',
-  dpo_details: 'retention',
+  dpo_details: 'controller',
   automated_details: 'retention',
   free_text: 'free_text',
 };

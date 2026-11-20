@@ -85,11 +85,6 @@ export default {
       "Uniquement pour constater, exercer ou défendre un droit en justice, par exemple un constat d'accident conservé pour un litige d'assurance.",
   },
 
-  retentionAnchor: {
-    event_end: "après la fin de l'événement",
-    submission: "après l'envoi de l'inscription",
-  },
-
   retentionUntil: {
     period: 'pour une durée déterminée',
     consent_withdrawn:

@@ -88,7 +88,6 @@ function mergeRetention(
 
   return {
     months: event.months,
-    anchor: event.anchor,
     exceptions: [...exceptions.values()],
     specialCategories:
       event.specialCategories ?? base?.specialCategories ?? null,

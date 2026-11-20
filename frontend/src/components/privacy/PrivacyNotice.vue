@@ -105,9 +105,6 @@
           {{
             t('retentionSentence', {
               months: builderNotice.retention.months,
-              anchor: gt(
-                `privacy.retentionAnchor.${builderNotice.retention.anchor}`,
-              ),
             })
           }}
         </p>
@@ -115,7 +112,6 @@
           {{
             t('retentionSpecialSentence', {
               weeks: specialRetention.weeks,
-              anchor: gt(`privacy.retentionAnchor.${specialRetention.anchor}`),
             })
           }}
         </p>
@@ -132,21 +128,11 @@
               <template v-if="isConsentBoundException(exception)">
                 {{ gt('privacy.retentionUntil.consent_withdrawn')
                 }}<template v-if="exception.months">{{
-                  t('retentionAtMost', {
-                    months: exception.months,
-                    anchor: gt(
-                      `privacy.retentionAnchor.${exception.anchor ?? builderNotice.retention.anchor}`,
-                    ),
-                  })
+                  t('retentionAtMost', { months: exception.months })
                 }}</template>
               </template>
               <template v-else>
-                {{
-                  t('retentionSentenceShort', {
-                    months: exception.months,
-                    anchor: gt(`privacy.retentionAnchor.${exception.anchor}`),
-                  })
-                }}
+                {{ t('retentionSentenceShort', { months: exception.months }) }}
               </template>
               <template v-if="exception.reason">
                 ({{ to(exception.reason) }})
@@ -523,11 +509,11 @@ registrationNumber: 'Registration number'
 email: 'Email'
 phone: 'Phone'
 legitimateInterest: 'Our legitimate interest'
-retentionSentence: 'We keep your data for {months} months {anchor}.'
+retentionSentence: 'We keep your data for {months} months after the event ends.'
 retentionExceptionsIntro: 'Some of it we keep longer:'
-retentionSentenceShort: '{months} months {anchor}'
-retentionSpecialSentence: 'Health and other sensitive details are deleted {weeks} weeks {anchor}.'
-retentionAtMost: ', at the latest {months} months {anchor}'
+retentionSentenceShort: '{months} months after the event ends'
+retentionSpecialSentence: 'Health and other sensitive details are deleted {weeks} weeks after the event ends.'
+retentionAtMost: ', at the latest {months} months after the event ends'
 retentionLegalNote: 'Where the law requires data to be kept for longer — under tax, accounting or insurance rules, for example — we keep it for as long as that obligation lasts, even once the period above has passed.'
 transferSentence: 'Your data is transferred to {countries}, on the basis of {safeguard}.'
 transferCopy: 'You can request a copy of these safeguards from {email}.'
@@ -570,11 +556,11 @@ registrationNumber: 'Registernummer'
 email: 'E-Mail'
 phone: 'Telefon'
 legitimateInterest: 'Unser berechtigtes Interesse'
-retentionSentence: 'Wir speichern deine Daten {months} Monate {anchor}.'
+retentionSentence: 'Wir speichern deine Daten {months} Monate nach Ende der Veranstaltung.'
 retentionExceptionsIntro: 'Einiges davon speichern wir länger:'
-retentionSentenceShort: '{months} Monate {anchor}'
-retentionSpecialSentence: 'Gesundheitsangaben und andere sensible Daten löschen wir {weeks} Wochen {anchor}.'
-retentionAtMost: ', spätestens {months} Monate {anchor}'
+retentionSentenceShort: '{months} Monate nach Ende der Veranstaltung'
+retentionSpecialSentence: 'Gesundheitsangaben und andere sensible Daten löschen wir {weeks} Wochen nach Ende der Veranstaltung.'
+retentionAtMost: ', spätestens {months} Monate nach Ende der Veranstaltung'
 retentionLegalNote: 'Müssen Daten aufgrund gesetzlicher Vorgaben länger aufbewahrt werden – etwa nach steuer-, handels- oder versicherungsrechtlichen Vorschriften –, speichern wir sie so lange, wie diese Pflicht besteht, auch über den oben genannten Zeitraum hinaus.'
 transferSentence: 'Deine Daten werden nach {countries} übermittelt, gestützt auf {safeguard}.'
 transferCopy: 'Eine Kopie dieser Garantien kannst du bei {email} anfordern.'
@@ -617,11 +603,11 @@ registrationNumber: "Numéro d'enregistrement"
 email: 'E-mail'
 phone: 'Téléphone'
 legitimateInterest: 'Notre intérêt légitime'
-retentionSentence: 'Nous conservons vos données pendant {months} mois {anchor}.'
+retentionSentence: 'Nous conservons vos données pendant {months} mois après la fin de l’événement.'
 retentionExceptionsIntro: 'Certaines données sont conservées plus longtemps :'
-retentionSentenceShort: '{months} mois {anchor}'
-retentionSpecialSentence: 'Nous supprimons les données de santé et autres données sensibles {weeks} semaines {anchor}.'
-retentionAtMost: ', au plus tard {months} mois {anchor}'
+retentionSentenceShort: '{months} mois après la fin de l’événement'
+retentionSpecialSentence: 'Nous supprimons les données de santé et autres données sensibles {weeks} semaines après la fin de l’événement.'
+retentionAtMost: ', au plus tard {months} mois après la fin de l’événement'
 retentionLegalNote: "Lorsque la loi impose une conservation plus longue — en matière fiscale, comptable ou d'assurance, par exemple —, nous conservons les données aussi longtemps que dure cette obligation, même une fois la durée indiquée ci-dessus écoulée."
 transferSentence: 'Vos données sont transférées vers {countries}, sur la base de {safeguard}.'
 transferCopy: 'Vous pouvez demander une copie de ces garanties à {email}.'
@@ -664,11 +650,11 @@ registrationNumber: 'Registrační číslo'
 email: 'E-mail'
 phone: 'Telefon'
 legitimateInterest: 'Náš oprávněný zájem'
-retentionSentence: 'Tvoje údaje uchováváme {months} měsíců {anchor}.'
+retentionSentence: 'Tvoje údaje uchováváme {months} měsíců po skončení akce.'
 retentionExceptionsIntro: 'Něco z toho uchováváme déle:'
-retentionSentenceShort: '{months} měsíců {anchor}'
-retentionSpecialSentence: 'Zdravotní a další citlivé údaje mažeme {weeks} týdnů {anchor}.'
-retentionAtMost: ', nejpozději {months} měsíců {anchor}'
+retentionSentenceShort: '{months} měsíců po skončení akce'
+retentionSpecialSentence: 'Zdravotní a další citlivé údaje mažeme {weeks} týdnů po skončení akce.'
+retentionAtMost: ', nejpozději {months} měsíců po skončení akce'
 retentionLegalNote: 'Pokud musíme údaje uchovávat déle na základě zákona – například podle daňových, účetních nebo pojistných předpisů –, uchováváme je po celou dobu trvání této povinnosti, i po uplynutí výše uvedené lhůty.'
 transferSentence: 'Tvoje údaje jsou předávány do {countries} na základě {safeguard}.'
 transferCopy: 'Kopii těchto záruk si můžeš vyžádat na {email}.'
@@ -711,11 +697,11 @@ registrationNumber: 'Numer rejestrowy'
 email: 'E-mail'
 phone: 'Telefon'
 legitimateInterest: 'Nasz prawnie uzasadniony interes'
-retentionSentence: 'Przechowujemy Twoje dane przez {months} miesięcy {anchor}.'
+retentionSentence: 'Przechowujemy Twoje dane przez {months} miesięcy po zakończeniu wydarzenia.'
 retentionExceptionsIntro: 'Część z nich przechowujemy dłużej:'
-retentionSentenceShort: '{months} miesięcy {anchor}'
-retentionSpecialSentence: 'Dane o zdrowiu i inne dane wrażliwe usuwamy {weeks} tygodni {anchor}.'
-retentionAtMost: ', najpóźniej {months} miesięcy {anchor}'
+retentionSentenceShort: '{months} miesięcy po zakończeniu wydarzenia'
+retentionSpecialSentence: 'Dane o zdrowiu i inne dane wrażliwe usuwamy {weeks} tygodni po zakończeniu wydarzenia.'
+retentionAtMost: ', najpóźniej {months} miesięcy po zakończeniu wydarzenia'
 retentionLegalNote: 'Jeżeli przepisy wymagają dłuższego przechowywania — na przykład podatkowe, rachunkowe lub ubezpieczeniowe — przechowujemy dane tak długo, jak trwa ten obowiązek, także po upływie wskazanego wyżej okresu.'
 transferSentence: 'Twoje dane są przekazywane do {countries} na podstawie {safeguard}.'
 transferCopy: 'Kopię tych zabezpieczeń możesz otrzymać, pisząc na {email}.'

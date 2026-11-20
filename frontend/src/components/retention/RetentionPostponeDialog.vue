@@ -14,11 +14,11 @@
         <p class="text-body2 text-on-surface-variant q-my-none">
           {{ t('hint') }}
         </p>
-        <div class="column q-gap-xs">
+        <div class="column interval-field">
           <span class="text-label-large text-on-surface-variant">
             {{ t('interval.label') }}
           </span>
-          <div class="row q-gap-sm">
+          <div class="row interval-buttons">
             <m-btn
               v-for="months in INTERVALS"
               :key="months"
@@ -125,9 +125,17 @@ function onSubmit() {
 </script>
 
 <style scoped>
+/* Gaps, not q-gutter: its negative margin is clipped by the scroll body. */
 .postpone-body {
-  /* A gap, not q-gutter: its negative margin is clipped by the scroll body. */
   gap: 16px;
+}
+
+.interval-field {
+  gap: 8px;
+}
+
+.interval-buttons {
+  gap: 8px;
 }
 </style>
 
