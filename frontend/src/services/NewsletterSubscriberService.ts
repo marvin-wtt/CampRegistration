@@ -1,8 +1,10 @@
 import { api } from '@/services/api';
 import type {
+  NewsletterConfirmation,
   NewsletterSubscriber,
   NewsletterSubscriberCreateData,
   NewsletterSubscriberImportData,
+  NewsletterSubscriberImportResult,
 } from '@camp-registration/common/entities';
 
 export function useNewsletterSubscriberService() {
@@ -27,7 +29,7 @@ export function useNewsletterSubscriberService() {
   async function importNewsletterSubscribers(
     newsletterId: string,
     data: NewsletterSubscriberImportData,
-  ): Promise<{ added: number; skipped: number }> {
+  ): Promise<NewsletterSubscriberImportResult> {
     const response = await api.post(
       `newsletters/${newsletterId}/subscribers/import/`,
       data,
@@ -44,6 +46,27 @@ export function useNewsletterSubscriberService() {
     );
   }
 
+  async function resendNewsletterConfirmation(
+    newsletterId: string,
+    subscriberId: string,
+  ): Promise<NewsletterSubscriber> {
+    const response = await api.post(
+      `newsletters/${newsletterId}/subscribers/${subscriberId}/resend-confirmation/`,
+    );
+    return response?.data?.data;
+  }
+
+  async function fetchNewsletterConfirmation(
+    token: string,
+  ): Promise<NewsletterConfirmation> {
+    const response = await api.get(`newsletters/confirm/${token}/`);
+    return response?.data?.data;
+  }
+
+  async function confirmNewsletterSubscription(token: string): Promise<void> {
+    await api.post(`newsletters/confirm/${token}/`);
+  }
+
   async function unsubscribeByToken(token: string): Promise<void> {
     await api.delete(`newsletters/unsubscribe/${token}/`);
   }
@@ -53,6 +76,9 @@ export function useNewsletterSubscriberService() {
     createNewsletterSubscriber,
     importNewsletterSubscribers,
     deleteNewsletterSubscriber,
+    resendNewsletterConfirmation,
+    fetchNewsletterConfirmation,
+    confirmNewsletterSubscription,
     unsubscribeByToken,
   };
 }

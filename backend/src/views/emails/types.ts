@@ -61,6 +61,10 @@ export interface VerifyEmailProps extends ActionCardProps {
   accidental: string;
 }
 
+export interface NewsletterConfirmationProps extends ActionCardProps {
+  accidental: string;
+}
+
 export interface ResetPasswordProps extends ActionCardProps {
   accidental: string;
 }

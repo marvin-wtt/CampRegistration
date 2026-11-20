@@ -4,7 +4,11 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterSubscriberController } from './newsletter-subscriber.controller.js';
 import { NewsletterSubscriberService } from './newsletter-subscriber.service.js';
 import { controller } from '#core/router/bindController';
-import { newsletterManager } from '#app/newsletter/newsletter.guard';
+import {
+  newsletterManager,
+  newsletterOrganizationVerified,
+} from '#app/newsletter/newsletter.guard';
+import { and } from '#core/guard';
 import { resolve } from '#core/ioc/container';
 
 export class NewsletterSubscriberRouter extends ModuleRouter {
@@ -32,14 +36,35 @@ export class NewsletterSubscriberRouter extends ModuleRouter {
     this.router.post(
       '/',
       auth(),
-      guard(newsletterManager('newsletter.subscribers.create')),
+      guard(
+        and(
+          newsletterManager('newsletter.subscribers.create'),
+          newsletterOrganizationVerified,
+        ),
+      ),
       controller(subscriberController, 'store'),
     );
     this.router.post(
       '/import',
       auth(),
-      guard(newsletterManager('newsletter.subscribers.create')),
+      guard(
+        and(
+          newsletterManager('newsletter.subscribers.create'),
+          newsletterOrganizationVerified,
+        ),
+      ),
       controller(subscriberController, 'importFromEvent'),
+    );
+    this.router.post(
+      '/:newsletterSubscriberId/resend-confirmation',
+      auth(),
+      guard(
+        and(
+          newsletterManager('newsletter.subscribers.create'),
+          newsletterOrganizationVerified,
+        ),
+      ),
+      controller(subscriberController, 'resendConfirmation'),
     );
     this.router.delete(
       '/:newsletterSubscriberId',

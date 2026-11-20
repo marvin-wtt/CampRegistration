@@ -49,7 +49,11 @@
                   size="xs"
                 />
                 <span>
-                  {{ t('header.subscribers', { count: subscribers.length }) }}
+                  {{
+                    t('header.subscribers', {
+                      count: confirmedSubscribers.length,
+                    })
+                  }}
                 </span>
               </div>
               <div class="row items-center q-gutter-x-xs">
@@ -189,7 +193,7 @@
                         blockedReason
                           ? t('compose.blocked')
                           : t('compose.recipientInfo', {
-                              count: subscribers.length,
+                              count: confirmedSubscribers.length,
                             })
                       }}
                     </span>
@@ -487,12 +491,72 @@
                       </span>
                     </q-item-label>
                   </q-item-section>
+                  <q-item-section side>
+                    <q-chip
+                      v-if="subscriber.status === 'pending'"
+                      :label="t('subscribers.status.pending')"
+                      color="tertiary-container"
+                      text-color="on-tertiary-container"
+                      icon="schedule"
+                      size="sm"
+                      dense
+                    />
+                    <span
+                      v-else-if="quasar.screen.gt.xs"
+                      class="text-caption text-grey-6"
+                    >
+                      {{
+                        d(
+                          subscriber.confirmedAt ?? subscriber.subscribedAt,
+                          'date',
+                        )
+                      }}
+                    </span>
+                    <q-tooltip>
+                      <div>
+                        {{
+                          t('subscribers.consentedAt', {
+                            date: d(subscriber.consentedAt, 'date'),
+                          })
+                        }}
+                      </div>
+                      <div v-if="subscriber.confirmedAt">
+                        {{
+                          t('subscribers.confirmedAt', {
+                            date: d(subscriber.confirmedAt, 'date'),
+                          })
+                        }}
+                      </div>
+                      <div v-else-if="subscriber.confirmationSentAt">
+                        {{
+                          t('subscribers.confirmationSentAt', {
+                            date: d(subscriber.confirmationSentAt, 'date'),
+                          })
+                        }}
+                      </div>
+                    </q-tooltip>
+                  </q-item-section>
                   <q-item-section
-                    v-if="quasar.screen.gt.xs"
+                    v-if="
+                      subscriber.status === 'pending' &&
+                      canNewsletter('newsletter.subscribers.create') &&
+                      blockedReason === null
+                    "
                     side
-                    class="text-caption text-grey-6"
                   >
-                    {{ d(subscriber.subscribedAt, 'date') }}
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      icon="forward_to_inbox"
+                      color="primary"
+                      size="sm"
+                      @click="resendConfirmation(subscriber)"
+                    >
+                      <q-tooltip>
+                        {{ t('subscribers.action.resendConfirmation') }}
+                      </q-tooltip>
+                    </q-btn>
                   </q-item-section>
                   <q-item-section
                     v-if="canNewsletter('newsletter.subscribers.delete')"
@@ -751,13 +815,16 @@ const managers = computed<NewsletterManager[]>(() => managerStore.data ?? []);
 const subscribers = computed<NewsletterSubscriber[]>(
   () => subscriberStore.data ?? [],
 );
+const confirmedSubscribers = computed<NewsletterSubscriber[]>(() =>
+  subscribers.value.filter((subscriber) => subscriber.status === 'confirmed'),
+);
 const messages = computed<NewsletterMessage[]>(() => messageStore.data ?? []);
 
 const canSend = computed<boolean>(
   () =>
     !!sendSubject.value &&
     !!sendBody.value &&
-    subscribers.value.length > 0 &&
+    confirmedSubscribers.value.length > 0 &&
     blockedReason.value === null,
 );
 
@@ -819,10 +886,14 @@ function showImportDialog() {
         await subscriberStore.fetchData(newsletterId.value);
         quasar.notify({
           type: 'positive',
-          message: t('subscribers.importResult', result),
+          message: t('subscribers.importResult', { ...result }),
         });
       })();
     });
+}
+
+function resendConfirmation(subscriber: NewsletterSubscriber) {
+  void subscriberStore.resendConfirmation(newsletterId.value, subscriber.id);
 }
 
 function showDeleteSubscriberDialog(subscriber: NewsletterSubscriber) {
@@ -998,10 +1069,16 @@ subscribers:
   emptyHint: 'Add subscribers manually or import them from an event.'
   noResults: 'No subscribers match your search.'
   search: 'Search subscribers...'
+  status:
+    pending: 'Awaiting confirmation'
+  consentedAt: 'Consent given on {date}'
+  confirmedAt: 'Confirmed on {date}'
+  confirmationSentAt: 'Confirmation email sent on {date}'
   action:
     add: 'Add Subscriber'
     import: 'Import from Event'
-  importResult: 'Imported {added} new subscribers, {skipped} already subscribed.'
+    resendConfirmation: 'Resend confirmation email'
+  importResult: 'Invited {added} new subscribers by email, {skipped} were already on the list.'
   dialog:
     delete:
       title: 'Remove Subscriber'
@@ -1065,10 +1142,16 @@ subscribers:
   emptyHint: 'Abonnenten manuell hinzufügen oder aus einer Veranstaltung importieren.'
   noResults: 'Keine Abonnenten entsprechen deiner Suche.'
   search: 'Abonnenten suchen...'
+  status:
+    pending: 'Wartet auf Bestätigung'
+  consentedAt: 'Eingewilligt am {date}'
+  confirmedAt: 'Bestätigt am {date}'
+  confirmationSentAt: 'Bestätigungs-E-Mail gesendet am {date}'
   action:
     add: 'Abonnent hinzufügen'
     import: 'Aus Veranstaltung importieren'
-  importResult: '{added} neue Abonnenten importiert, {skipped} bereits abonniert.'
+    resendConfirmation: 'Bestätigungs-E-Mail erneut senden'
+  importResult: '{added} neue Abonnenten per E-Mail eingeladen, {skipped} waren bereits in der Liste.'
   dialog:
     delete:
       title: 'Abonnent entfernen'
@@ -1132,10 +1215,16 @@ subscribers:
   emptyHint: 'Ajoutez des abonnés manuellement ou importez-les depuis un événement.'
   noResults: 'Aucun abonné ne correspond à votre recherche.'
   search: 'Rechercher des abonnés...'
+  status:
+    pending: 'En attente de confirmation'
+  consentedAt: 'Consentement donné le {date}'
+  confirmedAt: 'Confirmé le {date}'
+  confirmationSentAt: 'E-mail de confirmation envoyé le {date}'
   action:
     add: 'Ajouter un abonné'
     import: 'Importer depuis un événement'
-  importResult: '{added} nouveaux abonnés importés, {skipped} déjà abonnés.'
+    resendConfirmation: "Renvoyer l'e-mail de confirmation"
+  importResult: '{added} nouveaux abonnés invités par e-mail, {skipped} étaient déjà dans la liste.'
   dialog:
     delete:
       title: 'Supprimer un abonné'
@@ -1199,10 +1288,16 @@ subscribers:
   emptyHint: 'Dodaj subskrybentów ręcznie lub importuj z wydarzenia.'
   noResults: 'Brak subskrybentów pasujących do wyszukiwania.'
   search: 'Szukaj subskrybentów...'
+  status:
+    pending: 'Oczekuje na potwierdzenie'
+  consentedAt: 'Zgoda wyrażona {date}'
+  confirmedAt: 'Potwierdzono {date}'
+  confirmationSentAt: 'E-mail z potwierdzeniem wysłano {date}'
   action:
     add: 'Dodaj subskrybenta'
     import: 'Importuj z wydarzenia'
-  importResult: 'Zaimportowano {added} nowych subskrybentów, {skipped} już zapisanych.'
+    resendConfirmation: 'Wyślij ponownie e-mail z potwierdzeniem'
+  importResult: 'Zaproszono e-mailem {added} nowych subskrybentów, {skipped} było już na liście.'
   dialog:
     delete:
       title: 'Usuń subskrybenta'
@@ -1266,10 +1361,16 @@ subscribers:
   emptyHint: 'Přidejte odběratele ručně nebo je importujte z akce.'
   noResults: 'Žádní odběratelé neodpovídají vašemu hledání.'
   search: 'Hledat odběratele...'
+  status:
+    pending: 'Čeká na potvrzení'
+  consentedAt: 'Souhlas udělen {date}'
+  confirmedAt: 'Potvrzeno {date}'
+  confirmationSentAt: 'Potvrzovací e-mail odeslán {date}'
   action:
     add: 'Přidat odběratele'
     import: 'Importovat z akce'
-  importResult: 'Importováno {added} nových odběratelů, {skipped} již přihlášených.'
+    resendConfirmation: 'Znovu odeslat potvrzovací e-mail'
+  importResult: 'E-mailem pozváno {added} nových odběratelů, {skipped} už bylo v seznamu.'
   dialog:
     delete:
       title: 'Odstranit odběratele'
