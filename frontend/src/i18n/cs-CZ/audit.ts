@@ -169,5 +169,23 @@ export default {
         },
       },
     },
+    adminAccessGrant: {
+      label: 'Přístup administrátora',
+      actions: {
+        granted: 'Uděleno',
+        ended: 'Ukončeno předčasně',
+      },
+      fields: {
+        scope: 'Rozsah',
+        expiresAt: 'Vyprší',
+      },
+      values: {
+        scope: {
+          event: 'Akce',
+          newsletter: 'Newsletter',
+          organization: 'Organizace',
+        },
+      },
+    },
   },
 };

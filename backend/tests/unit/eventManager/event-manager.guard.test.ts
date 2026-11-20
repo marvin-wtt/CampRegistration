@@ -3,6 +3,7 @@ import type { Request } from 'express';
 import { mock } from 'vitest-mock-extended';
 import type { Event } from '#generated/prisma/client.js';
 import * as container from '#core/ioc/container';
+import * as adminAccess from '#core/permission/admin-access';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import {
   eventManagerSelf,
@@ -67,21 +68,46 @@ describe('eventManagerSubscriber', () => {
       },
     }) as unknown as Request;
 
-  it('resolves an admin via getAdminAuthorization without a manager lookup', async () => {
-    const adminAuthorization = {
+  it('resolves an admin with an active grant via getAdminAuthorization until it expires', async () => {
+    const expiresAt = new Date(Date.now() + 60_000);
+    vi.spyOn(adminAccess, 'findActiveAdminAccess').mockResolvedValue({
+      id: 'grant-1',
+      expiresAt,
+    });
+    const permissions = new Set(Object.values(RESOURCE_VIEW_PERMISSION));
+    managerService.getAdminAuthorization.mockReturnValue({
       managerId: '',
-      permissions: new Set(Object.values(RESOURCE_VIEW_PERMISSION)),
+      permissions,
       expiresAt: null,
-    };
-    managerService.getAdminAuthorization.mockReturnValue(adminAuthorization);
+    });
 
     const result = await eventManagerSubscriber(
       fakeAdminReq({ id: 'event-1' }),
     );
 
-    expect(result).toBe(adminAuthorization);
-    expect(managerService.getAdminAuthorization).toHaveBeenCalledOnce();
+    expect(result).toEqual({
+      managerId: '',
+      permissions,
+      expiresAt,
+      revalidate: true,
+    });
     expect(managerService.getManagerAuthorization).not.toHaveBeenCalled();
+  });
+
+  it('resolves an admin without a grant like any manager', async () => {
+    vi.spyOn(adminAccess, 'findActiveAdminAccess').mockResolvedValue(null);
+    managerService.getManagerAuthorization.mockResolvedValue(null);
+
+    const result = await eventManagerSubscriber(
+      fakeAdminReq({ id: 'event-1' }),
+    );
+
+    expect(result).toBeNull();
+    expect(managerService.getAdminAuthorization).not.toHaveBeenCalled();
+    expect(managerService.getManagerAuthorization).toHaveBeenCalledWith(
+      'event-1',
+      'admin-1',
+    );
   });
 
   it('returns null when the user is not (or no longer) a manager', async () => {

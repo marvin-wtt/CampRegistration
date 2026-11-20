@@ -93,17 +93,26 @@ export const admin = (req: Request): boolean => {
   return hasAdminRole(req) && hasTwoFactor(req);
 };
 
+export const ADMIN_ACCESS_REQUIRED = 'ADMIN_ACCESS_REQUIRED';
+
+// Requests where a scoped check would have passed with an access grant.
+const adminAccessMissing = new WeakSet<Request>();
+
+export function markAdminAccessRequired(req: Request): void {
+  adminAccessMissing.add(req);
+}
+
 /**
  * Middleware to guard the access to a route.
  * Multiple guards can be combined by using the 'and', and 'or' guard.
  *
+ * Without a guard function, only administrators pass. With one, administrators
+ * are judged like everyone else: their role reaches an event, newsletter or
+ * organization only through an access grant, checked by the scoped guards.
+ *
  * @param guardFn The guard function or a wrapper function (and, or)
  */
-export const guard = (guardFn?: GuardFn) => {
-  // Always grand access to administrators
-  // When no guard is defined, only administrators have access
-  guardFn = guardFn ? or(admin, guardFn) : admin;
-
+export const guard = (guardFn: GuardFn = admin) => {
   return catchMiddlewareAsync(async (req: Request) => {
     let message = 'Insufficient permissions';
 
@@ -127,6 +136,14 @@ export const guard = (guardFn?: GuardFn) => {
         httpStatus.FORBIDDEN,
         'Administrator access requires two-factor authentication',
         { code: ADMIN_TWO_FACTOR_REQUIRED },
+      );
+    }
+
+    if (adminAccessMissing.has(req)) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Administrator access to this resource must be requested first',
+        { code: ADMIN_ACCESS_REQUIRED },
       );
     }
 

@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { NextFunction, Request, Response } from 'express';
-import { admin, ADMIN_TWO_FACTOR_REQUIRED, guard } from '#core/guard';
+import {
+  admin,
+  ADMIN_ACCESS_REQUIRED,
+  ADMIN_TWO_FACTOR_REQUIRED,
+  guard,
+  markAdminAccessRequired,
+} from '#core/guard';
 import ApiError from '#core/router/ApiError';
 
 const fakeReq = (user?: object): Request =>
@@ -56,6 +62,28 @@ describe('guard', () => {
     expect(result).toMatchObject({
       statusCode: 403,
       code: ADMIN_TWO_FACTOR_REQUIRED,
+    });
+  });
+
+  it('judges an administrator by the guard function like anyone else', async () => {
+    const result = await runGuard(
+      fakeReq({ role: 'ADMIN', twoFactor: withTwoFactor }),
+      () => false,
+    );
+
+    expect(result).toMatchObject({ statusCode: 403, code: undefined });
+  });
+
+  it('asks an administrator to request access when a scoped check needed it', async () => {
+    const req = fakeReq({ role: 'ADMIN', twoFactor: withTwoFactor });
+    const result = await runGuard(req, () => {
+      markAdminAccessRequired(req);
+      return false;
+    });
+
+    expect(result).toMatchObject({
+      statusCode: 403,
+      code: ADMIN_ACCESS_REQUIRED,
     });
   });
 

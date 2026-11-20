@@ -3,6 +3,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import {
+  AdminAccessGrantFactory,
   EventFactory,
   EventManagerFactory,
   RegistrationFactory,
@@ -160,15 +161,30 @@ describe('/api/v1/events/:eventId/events (SSE)', () => {
     expect(client.status).toBe(403);
   });
 
-  it('admits a system admin who is not a event manager and delivers permission-gated events', async () => {
+  it('refuses a system admin without an access grant', async () => {
+    const port = await listen();
+    const event = await EventFactory.create();
+    const admin = await UserFactory.create({ role: 'ADMIN' });
+
+    const client = await openStream(port, event.id, generateAccessToken(admin));
+
+    expect(client.status).toBe(403);
+  });
+
+  it('admits a system admin with an access grant and delivers permission-gated events', async () => {
     const port = await listen();
     const event = await EventFactory.create();
     const director = await createManagerWithToken(event, 'DIRECTOR');
     const admin = await UserFactory.create({ role: 'ADMIN' });
+    await AdminAccessGrantFactory.create({
+      userId: admin.id,
+      scope: 'event',
+      scopeId: event.id,
+    });
 
-    // The admin is not a manager of this event, yet the stream opens (connect
-    // bypass) and carries even the manager resource a VIEWER couldn't see —
-    // admins hold every resource view permission.
+    // The admin is not a manager of this event, yet the grant opens the stream
+    // and carries even the manager resource a VIEWER couldn't see — admins
+    // hold every resource view permission.
     const adminStream = await openStream(
       port,
       event.id,

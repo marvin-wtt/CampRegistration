@@ -3,6 +3,9 @@ import { Prisma } from '#generated/prisma/client.js';
 import prisma from '../client.js';
 import bcrypt from 'bcryptjs';
 
+/** The TOTP secret of administrators the factory creates. */
+export const ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+
 export const UserFactory = {
   build: (
     data: Partial<Prisma.UserCreateInput> = {},
@@ -13,7 +16,7 @@ export const UserFactory = {
       data.role === 'ADMIN' && !('twoFactor' in data)
         ? {
             create: {
-              secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+              secret: ADMIN_TOTP_SECRET,
               confirmedAt: new Date(),
             },
           }
