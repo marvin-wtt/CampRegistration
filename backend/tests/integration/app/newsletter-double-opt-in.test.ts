@@ -149,7 +149,9 @@ describe('newsletter double opt-in', () => {
       expect(record.locale).toBe('fr-FR');
 
       expectEmailCount(1);
-      expectEmailWith({ to: 'import@example.com' });
+      expectEmailWith({
+        to: expect.objectContaining({ address: 'import@example.com' }),
+      });
     });
 
     it('should take the earliest registration for a shared address', async () => {
@@ -200,7 +202,9 @@ describe('newsletter double opt-in', () => {
 
       expect(body.data).toEqual({ added: 1, skipped: 1 });
       expectEmailCount(1);
-      expectEmailWith({ to: 'fresh@example.com' });
+      expectEmailWith({
+        to: expect.objectContaining({ address: 'fresh@example.com' }),
+      });
     });
 
     it('should respond with `403` when the organization is not verified', async () => {
