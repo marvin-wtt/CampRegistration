@@ -316,7 +316,7 @@ model Registration {
   // The wording of each consent given, as shown, by question name — proof
   // under Art. 7(1). Null on registrations predating it; do not backfill.
   /// ![Record<string, string>]
-  consentTexts                       Json?              @map("consent_texts")
+  consentTexts                       Json?              @map("consent_texts") @db.Json
   createdAt                          DateTime           @default(now()) @map("created_at")
   updatedAt                          DateTime?          @updatedAt @map("updated_at")
 
@@ -974,24 +974,29 @@ model AuditDeletedUser {
   @@map("audit_deleted_users")
 }
 
+/// Mirrors `RETENTION_DEADLINE_KINDS` (common/src/privacy).
+enum RetentionDeadlineKind {
+  sensitive
+  registrations
+}
+
 /// When one kind of an event's data is due for deletion (docs/privacy.md, 8).
 /// Kept current by the daily retention job; nothing is deleted automatically.
 model RetentionDeadline {
-  id             String    @id @default(ulid()) @db.Char(26)
-  eventId        String    @map("event_id") @db.Char(26)
-  /// `sensitive` or `registrations`.
-  kind           String    @db.VarChar(32)
+  id             String                @id @default(ulid()) @db.Char(26)
+  eventId        String                @map("event_id") @db.Char(26)
+  kind           RetentionDeadlineKind
   /// What the notices shown to the registrants promised.
-  dueAt          DateTime  @map("due_at") @db.DateTime(0)
+  dueAt          DateTime              @map("due_at") @db.DateTime(0)
   /// A postponement: replaces `dueAt` for reminders and status.
-  postponedUntil DateTime? @map("postponed_until") @db.DateTime(0)
-  postponeReason String?   @map("postpone_reason") @db.Text
-  postponedAt    DateTime? @map("postponed_at") @db.DateTime(0)
-  postponedById  String?   @map("postponed_by_id") @db.Char(26)
+  postponedUntil DateTime?             @map("postponed_until") @db.DateTime(0)
+  postponeReason String?               @map("postpone_reason") @db.Text
+  postponedAt    DateTime?             @map("postponed_at") @db.DateTime(0)
+  postponedById  String?               @map("postponed_by_id") @db.Char(26)
   /// The most urgent reminder stage sent (days before); reset on postponing.
-  notifiedStage  Int?      @map("notified_stage")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  notifiedStage  Int?                  @map("notified_stage")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
 
   event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   postponedBy User? @relation("RetentionDeadlinePostponedBy", fields: [postponedById], references: [id], onDelete: SetNull, onUpdate: Cascade)

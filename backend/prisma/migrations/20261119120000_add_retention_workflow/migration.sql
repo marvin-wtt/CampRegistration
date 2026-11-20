@@ -10,7 +10,7 @@ ALTER TABLE `events` DROP COLUMN `retention_reminder_sent_at`,
 CREATE TABLE `retention_deadlines` (
     `id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NOT NULL,
-    `kind` VARCHAR(32) NOT NULL,
+    `kind` ENUM('sensitive', 'registrations') NOT NULL,
     `due_at` DATETIME(0) NOT NULL,
     `postponed_until` DATETIME(0) NULL,
     `postpone_reason` TEXT NULL,

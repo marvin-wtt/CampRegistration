@@ -433,7 +433,10 @@ function postpone(deadline: RetentionDeadline) {
   quasar
     .dialog({
       component: RetentionPostponeDialog,
-      componentProps: { latest: latestFor(deadline) },
+      componentProps: {
+        current: deadline.effectiveAt,
+        latest: latestFor(deadline),
+      },
     })
     .onOk((data: RetentionPostponeData) => {
       void retentionStore.postpone(deadline.kind, data).catch(() => undefined);

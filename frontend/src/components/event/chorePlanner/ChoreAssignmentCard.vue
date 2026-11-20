@@ -126,7 +126,8 @@
                   </q-item-section>
                   <q-item-section>{{ t('action.reopen') }}</q-item-section>
                 </q-item>
-                <q-separator v-if="canDelete" />
+                <!-- Only show separator when item above or below is present -->
+                <q-separator v-if="canEdit && canDelete" />
                 <q-item
                   v-if="canDelete"
                   v-close-popup

@@ -33,7 +33,7 @@ import {
   assertConsentTextsUnchanged,
 } from './registration.privacy.js';
 
-/** Registrations read per round trip when clearing sensitive answers. */
+/** Registrations read per round trip by the bulk operations. */
 const BATCH_SIZE = 100;
 
 /** The create uses relation connects throughout, so the stamp must too. */
@@ -422,25 +422,21 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationsComputedDataByEvent(event: EventWithFreePlaces) {
-    const registrations = await this.queryRegistrations(event.id);
     const formFor = registrationForms(event);
 
-    const results = registrations.map((registration) => {
-      const form = formFor(registration).load(registration.data);
-      const computedData = computedRegistrationData(form.extractEventData());
+    // A batch at a time: in parallel within one, bounded in memory overall.
+    for await (const batch of this.registrationBatchesOfEvent(event.id)) {
+      await Promise.all(
+        batch.map((registration) => {
+          const form = formFor(registration).load(registration.data);
 
-      return this.prisma.registration.update({
-        where: { id: registration.id },
-        data: {
-          ...computedData,
-        },
-        include: {
-          bed: { include: { room: true } },
-        },
-      });
-    });
-
-    await Promise.all(results);
+          return this.prisma.registration.update({
+            where: { id: registration.id },
+            data: computedRegistrationData(form.extractEventData()),
+          });
+        }),
+      );
+    }
   }
 
   /**
@@ -485,7 +481,7 @@ export class RegistrationService extends BaseService {
   }
 
   /** The event's registrations, read in batches by id. */
-  private async *registrationsOfEvent(eventId: string) {
+  private async *registrationBatchesOfEvent(eventId: string) {
     let cursor: string | undefined;
     let batch;
 
@@ -497,9 +493,18 @@ export class RegistrationService extends BaseService {
         take: BATCH_SIZE,
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       });
-      yield* batch;
+      if (batch.length > 0) {
+        yield batch;
+      }
       cursor = batch.at(-1)?.id;
     } while (batch.length === BATCH_SIZE);
+  }
+
+  /** The event's registrations one by one, read in batches. */
+  private async *registrationsOfEvent(eventId: string) {
+    for await (const batch of this.registrationBatchesOfEvent(eventId)) {
+      yield* batch;
+    }
   }
 
   /**
@@ -516,19 +521,15 @@ export class RegistrationService extends BaseService {
   }
 }
 
-function purgeState(tx: PrismaTransaction, eventId: string) {
-  return tx.event.findUniqueOrThrow({
-    where: { id: eventId },
-    select: { sensitiveDataPurgedAt: true, registrationDataPurgedAt: true },
-  });
-}
-
 /** Deleted data is never restored (docs/privacy.md, 8). */
 async function assertNotPurged(
   tx: PrismaTransaction,
   eventId: string,
 ): Promise<void> {
-  if (isRetentionPurged(await purgeState(tx, eventId))) {
+  const open = await tx.event.count({
+    where: { id: eventId, ...notRetentionPurged },
+  });
+  if (open === 0) {
     throw new ApiError(
       httpStatus.CONFLICT,
       'Registration data of this event was deleted; it takes no registrations.',

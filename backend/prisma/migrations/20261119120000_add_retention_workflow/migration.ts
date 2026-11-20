@@ -14,18 +14,11 @@ import { ulid } from 'ulidx';
  * notice versions stamped on an event's registrations, the composed retention
  * period (the event's if it set one, else the organization's) counted from the
  * event's end or the last registration under that pair; the latest wins.
- * Notices then carried no sensitive-data period, so a sensitive deadline, where
- * the form asks something sensitive, equals the general one.
+ * Only general deadlines: no form could tag a sensitive question before this
+ * release, so the live sync adds sensitive deadlines once a form does.
  */
 
 const REMINDER_STAGES = [30, 7, 1, 0];
-const SPECIAL_CATEGORIES = [
-  'health',
-  'disability_support',
-  'allergies',
-  'medication',
-  'religion',
-];
 
 interface Retention {
   months?: unknown;
@@ -56,13 +49,6 @@ function retentionOf(
     months: retention.months,
     anchor: retention.anchor === 'submission' ? 'submission' : 'event_end',
   };
-}
-
-function asksSensitive(form: unknown): boolean {
-  const json = JSON.stringify(form ?? {});
-  return SPECIAL_CATEGORIES.some((key) =>
-    json.includes(`"privacyCategory":"${key}"`),
-  );
 }
 
 /** The most urgent stage already reached, as the reminder job counts it. */
@@ -109,7 +95,7 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
 
   const events = await tx.event.findMany({
     where: { id: { in: [...new Set(stamps.map((stamp) => stamp.eventId))] } },
-    select: { id: true, endAt: true, form: true },
+    select: { id: true, endAt: true },
   });
 
   const stampsByEvent = new Map<string, typeof stamps>();
@@ -162,19 +148,13 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
       continue;
     }
 
-    const notifiedStage = reachedStage(due, now);
-    const kinds = asksSensitive(event.form)
-      ? ['sensitive', 'registrations']
-      : ['registrations'];
-    for (const kind of kinds) {
-      rows.push({
-        id: ulid(),
-        eventId: event.id,
-        kind,
-        dueAt: due,
-        notifiedStage,
-      });
-    }
+    rows.push({
+      id: ulid(),
+      eventId: event.id,
+      kind: 'registrations',
+      dueAt: due,
+      notifiedStage: reachedStage(due, now),
+    });
   }
 
   if (rows.length > 0) {

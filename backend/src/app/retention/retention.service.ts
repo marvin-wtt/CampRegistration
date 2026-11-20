@@ -39,10 +39,17 @@ const NO_POSTPONEMENT = {
   postponedById: null,
 } as const;
 
-export type RetentionEvent = Pick<
+/** What an event records about the deletion of its data. */
+export type PurgeState = Pick<
   Event,
-  'id' | 'endAt' | 'form' | 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
+  'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
 >;
+
+export type RetentionEvent = PurgeState & Pick<Event, 'id' | 'endAt' | 'form'>;
+
+/** What a deletion action reads and writes on the event. */
+type PurgeTarget = PurgeState &
+  Pick<Event, 'id' | 'registrationOpensAt' | 'registrationClosesAt'>;
 
 export type DeadlineWithPostponer = RetentionDeadline & {
   postponedBy: { name: string } | null;
@@ -50,7 +57,7 @@ export type DeadlineWithPostponer = RetentionDeadline & {
 
 /** When a kind of the event's data was deleted for good, or null. */
 export function purgedAt(
-  event: Pick<Event, 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'>,
+  event: PurgeState,
   kind: RetentionDeadlineKind,
 ): Date | null {
   // Sensitive data is a subset of the registration data.
@@ -88,6 +95,14 @@ export class RetentionService extends BaseService {
     for (const kind of RETENTION_DEADLINE_KINDS) {
       const dueAt = promised[kind];
       if (!dueAt) {
+        // No longer promised (the form stopped asking, the registrations are
+        // gone): a stale row would keep reminding. A deleted kind keeps its
+        // row as the record of what was due.
+        if (!purgedAt(event, kind)) {
+          await this.prisma.retentionDeadline.deleteMany({
+            where: { eventId: event.id, kind },
+          });
+        }
         continue;
       }
 
@@ -255,6 +270,14 @@ export class RetentionService extends BaseService {
         `The new date must lie within the next ${MAX_RETENTION_POSTPONE_MONTHS.toString()} months.`,
       );
     }
+    // Later only: an earlier date would shorten what was promised, and the next
+    // sync would discard it as overtaken.
+    if (!until.isAfter(effectiveAt(deadline))) {
+      throw new ApiError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        'The new date must lie after the current deadline.',
+      );
+    }
     assertOrdered(event, kind, until.toDate(), deadlines);
 
     await this.transaction(async (tx) => {
@@ -314,15 +337,7 @@ export class RetentionService extends BaseService {
    * entries are only detached; nothing financial points at a registration.
    * The event never takes registrations again. Idempotent.
    */
-  async purgeRegistrationData(
-    event: Pick<
-      Event,
-      | 'id'
-      | 'sensitiveDataPurgedAt'
-      | 'registrationDataPurgedAt'
-      | 'registrationClosesAt'
-    >,
-  ): Promise<number> {
+  async purgeRegistrationData(event: PurgeTarget): Promise<number> {
     // Sensitive data is a subset: deleting all of it deletes that too.
     const closing = await this.markPurged(event, [
       'sensitive',
@@ -349,13 +364,7 @@ export class RetentionService extends BaseService {
    * window, before any data is touched. Returns whether the window was closed.
    */
   private async markPurged(
-    event: Pick<
-      Event,
-      | 'id'
-      | 'sensitiveDataPurgedAt'
-      | 'registrationDataPurgedAt'
-      | 'registrationClosesAt'
-    >,
+    event: PurgeTarget,
     kinds: RetentionDeadlineKind[],
   ): Promise<boolean> {
     const now = new Date();
@@ -372,6 +381,11 @@ export class RetentionService extends BaseService {
           : {}),
         ...closing,
       },
+    });
+    // A reason may name a person or a case; once the data is gone, so is it.
+    await this.prisma.retentionDeadline.updateMany({
+      where: { eventId: event.id, kind: { in: kinds } },
+      data: { postponeReason: null },
     });
 
     return !!closing.registrationClosesAt;
@@ -405,10 +419,7 @@ export class RetentionService extends BaseService {
     });
 
     return deadlines
-      .filter(
-        (deadline) =>
-          !purgedAt(deadline.event, deadline.kind as RetentionDeadlineKind),
-      )
+      .filter((deadline) => !purgedAt(deadline.event, deadline.kind))
       .sort((a, b) => effectiveAt(a).getTime() - effectiveAt(b).getTime());
   }
 
@@ -476,12 +487,22 @@ function asksSensitive(event: Pick<Event, 'form'>): boolean {
  * event takes no registrations again, and its window should say so too.
  */
 function closeRegistration(
-  event: Pick<Event, 'registrationClosesAt'>,
+  event: Pick<Event, 'registrationOpensAt' | 'registrationClosesAt'>,
   now: Date,
-): { registrationClosesAt?: Date } {
-  return event.registrationClosesAt && event.registrationClosesAt <= now
-    ? {}
-    : { registrationClosesAt: now };
+): { registrationOpensAt?: null; registrationClosesAt?: Date } {
+  if (event.registrationClosesAt && event.registrationClosesAt <= now) {
+    return {};
+  }
+
+  // A window that never opened is dropped: closing before opening would fail
+  // the event's validation on every later save.
+  const neverOpened =
+    !!event.registrationOpensAt && event.registrationOpensAt > now;
+
+  return {
+    ...(neverOpened ? { registrationOpensAt: null } : {}),
+    registrationClosesAt: now,
+  };
 }
 
 /** The UTC calendar day of a date, as the reminder stages count days. */
@@ -501,7 +522,7 @@ function assertOrdered(
   deadlines: RetentionDeadline[],
 ): void {
   const other = deadlines.find((entry) => entry.kind !== kind);
-  if (!other || purgedAt(event, other.kind as RetentionDeadlineKind)) {
+  if (!other || purgedAt(event, other.kind)) {
     return;
   }
 

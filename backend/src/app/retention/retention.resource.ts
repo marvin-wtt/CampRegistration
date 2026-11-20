@@ -1,10 +1,8 @@
-import type { Event } from '#generated/prisma/client.js';
 import {
   retentionDeadlineStatus,
   type EventRetention,
   type RetentionPeriods,
   type RetentionDeadline,
-  type RetentionDeadlineKind,
   type RetentionOverviewEntry,
 } from '@camp-registration/common/privacy';
 import { JsonResource } from '#core/resource/JsonResource';
@@ -12,19 +10,15 @@ import {
   effectiveAt,
   purgedAt,
   type DeadlineWithPostponer,
+  type PurgeState,
 } from './retention.service.js';
-
-type PurgeState = Pick<
-  Event,
-  'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
->;
 
 function deadlineData(
   deadline: DeadlineWithPostponer,
   event: PurgeState,
   withReason: boolean,
 ): RetentionDeadline {
-  const kind = deadline.kind as RetentionDeadlineKind;
+  const kind = deadline.kind;
   const resolvedAt = purgedAt(event, kind);
 
   return {

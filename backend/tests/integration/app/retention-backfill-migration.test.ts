@@ -21,11 +21,7 @@ describe('data migration: add_retention_workflow', () => {
   });
 
   /** An event that ended `daysAgo` days ago, one stamped registration. */
-  async function pastEvent(
-    daysAgo: number,
-    months: number,
-    form: Record<string, unknown> = {},
-  ) {
+  async function pastEvent(daysAgo: number, months: number) {
     const organization = await OrganizationFactory.create(
       {},
       { privacyNotice: null },
@@ -42,7 +38,6 @@ describe('data migration: add_retention_workflow', () => {
       organization: { connect: { id: organization.id } },
       startAt: moment(endAt).subtract(7, 'days').toDate(),
       endAt,
-      form,
     });
     await RegistrationFactory.create({
       event: { connect: { id: event.id } },
@@ -54,9 +49,7 @@ describe('data migration: add_retention_workflow', () => {
 
   it('records past deadlines as already reminded, so deploying sends nothing', async () => {
     const overdue = await pastEvent(400, 6);
-    const dueSoon = await pastEvent(178, 6, {
-      elements: [{ type: 'comment', name: 'a', privacyCategory: 'allergies' }],
-    });
+    const dueSoon = await pastEvent(178, 6);
 
     await run();
     await resolve(RetentionReminderService).run();
@@ -74,10 +67,9 @@ describe('data migration: add_retention_workflow', () => {
       expect.arrayContaining([
         { eventId: overdue.id, kind: 'registrations', notifiedStage: 0 },
         { eventId: dueSoon.id, kind: 'registrations', notifiedStage: 7 },
-        { eventId: dueSoon.id, kind: 'sensitive', notifiedStage: 7 },
       ]),
     );
-    expect(deadlines).toHaveLength(3);
+    expect(deadlines).toHaveLength(2);
     expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 

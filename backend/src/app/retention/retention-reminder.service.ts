@@ -3,10 +3,7 @@ import moment from 'moment';
 import { BaseService } from '#core/base/BaseService';
 import logger from '#core/logger';
 import { permissionRegistry } from '#core/permission/permission.registry';
-import {
-  RETENTION_REMINDER_STAGES,
-  type RetentionDeadlineKind,
-} from '@camp-registration/common/privacy';
+import { RETENTION_REMINDER_STAGES } from '@camp-registration/common/privacy';
 import {
   RetentionService,
   effectiveAt,
@@ -71,7 +68,7 @@ export class RetentionReminderService extends BaseService {
     });
 
     for (const deadline of deadlines) {
-      const kind = deadline.kind as RetentionDeadlineKind;
+      const kind = deadline.kind;
       if (purgedAt(deadline.event, kind)) {
         continue;
       }
@@ -98,10 +95,15 @@ export class RetentionReminderService extends BaseService {
           continue;
         }
 
-        await this.prisma.retentionDeadline.update({
-          where: { id: deadline.id },
+        // Claimed before enqueuing, so overlapping runs never send twice. A
+        // failed enqueue drops this stage (logged); the next one still comes.
+        const { count } = await this.prisma.retentionDeadline.updateMany({
+          where: { id: deadline.id, notifiedStage: deadline.notifiedStage },
           data: { notifiedStage: stage },
         });
+        if (count === 0) {
+          continue;
+        }
 
         await RetentionDeadlineMessage.enqueueBulk(
           recipients.map(({ audience, user }): RetentionDeadlinePayload => ({

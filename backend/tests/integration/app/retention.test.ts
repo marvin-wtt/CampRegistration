@@ -15,6 +15,7 @@ import { mailer } from '../utils/mailer.js';
 import { generateAccessToken } from './utils/token.js';
 import { resolve } from '#core/ioc/container';
 import { RetentionReminderService } from '#app/retention/retention-reminder.service';
+import type { RetentionDeadlineKind } from '@camp-registration/common/privacy';
 
 const RETENTION_MONTHS = 24;
 const SENSITIVE_WEEKS = 4;
@@ -88,7 +89,7 @@ async function eventDue(
 
 const run = () => resolve(RetentionReminderService).run();
 
-const deadline = (eventId: string, kind: string) =>
+const deadline = (eventId: string, kind: RetentionDeadlineKind) =>
   prisma.retentionDeadline.findUniqueOrThrow({
     where: { eventId_kind: { eventId, kind } },
   });
@@ -145,6 +146,37 @@ describe('retention workflow', () => {
       expect(body.data.deadlines.map((d: { kind: string }) => d.kind)).toEqual([
         'registrations',
       ]);
+    });
+
+    it('should drop the sensitive deadline once the form stops asking', async () => {
+      const { event, token } = await eventDue(100);
+      const show = () =>
+        request()
+          .get(`/api/v1/events/${event.id}/retention`)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+      await show();
+
+      await prisma.event.update({
+        where: { id: event.id },
+        data: {
+          form: {
+            pages: [
+              { name: 'p', elements: [{ type: 'text', name: 'first_name' }] },
+            ],
+          },
+        },
+      });
+      const { body } = await show();
+
+      expect(body.data.deadlines.map((d: { kind: string }) => d.kind)).toEqual([
+        'registrations',
+      ]);
+      expect(
+        await prisma.retentionDeadline.count({
+          where: { eventId: event.id, kind: 'sensitive' },
+        }),
+      ).toBe(0);
     });
   });
 
@@ -244,6 +276,18 @@ describe('retention workflow', () => {
         token,
         'registrations',
         moment.utc().add(13, 'months').format('YYYY-MM-DD'),
+      ).expect(422);
+    });
+
+    it('should refuse a date before the current deadline', async () => {
+      const { event, token } = await eventDue(100);
+      await run();
+
+      await postpone(
+        event.id,
+        token,
+        'registrations',
+        moment.utc().add(1, 'months').format('YYYY-MM-DD'),
       ).expect(422);
     });
 
@@ -478,6 +522,41 @@ describe('retention workflow', () => {
         .send({ registrationClosesAt: moment().add(1, 'month').toISOString() })
         .auth(token, { type: 'bearer' })
         .expect(409);
+    });
+
+    it('should drop a window that never opened, so the event stays editable', async () => {
+      const { event, token } = await eventDue(-1);
+      await prisma.event.update({
+        where: { id: event.id },
+        data: {
+          registrationOpensAt: moment().add(1, 'month').toDate(),
+          registrationClosesAt: moment().add(2, 'months').toDate(),
+        },
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
+        .send({ confirm: true })
+        .auth(token, { type: 'bearer' })
+        .expect(204);
+
+      const stored = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(stored.registrationOpensAt).toBeNull();
+      expect(stored.registrationClosesAt!.getTime()).toBeLessThanOrEqual(
+        Date.now(),
+      );
+
+      // The edit page sends the window along with every save.
+      await request()
+        .patch(`/api/v1/events/${event.id}`)
+        .send({
+          registrationOpensAt: null,
+          registrationClosesAt: stored.registrationClosesAt!.toISOString(),
+        })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
     });
 
     it('should require an explicit confirmation', async () => {
