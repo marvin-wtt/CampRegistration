@@ -822,7 +822,12 @@ keep data.
 - "Delete sensitive data" clears the answers of special-category questions in all
   registrations, model-based (`clearSpecialCategoryAnswers`, as for the email
   filter), and detaches files uploaded to them; the file cleanup removes those.
-  Consent answers stay as proof of what was agreed.
+  Consent answers stay as proof of what was agreed. It reads the current form's
+  tags: answers to a question removed or untagged since are no longer treated as
+  sensitive and fall under the general deadline, which "Delete all
+  registrations" covers. Tracking every key ever tagged was rejected: a second
+  source of truth beside the form, and storage rules of our own for comments
+  and nested panels.
 - "Delete all registrations" deletes every registration. Bed assignments, files and
   audit entries are only detached (`SetNull`); a registration's mail delivery log
   and chore assignments go with it. Nothing financial references a registration;
@@ -856,12 +861,10 @@ keep data.
     (`PurgedTableCell`, whatever the column's `renderAs`); they are neither
     sortable nor searchable, print as "— deleted —" and export as "Deleted".
     The edit and view forms lock those questions and say why.
-  - After deleting everything, participants and contact show
-    `RegistrationDataPurgedState` (their nav icons switch to `auto_delete`), the
-    room and chore planners stay viewable with a banner but take no
-    assignments, the program planner drops birthdays, the dashboard shows a
-    banner and no shortcuts, and the event card shows "Data deleted" instead of
-    the registration status and capacity.
+  - After deleting everything, participants, contact and the room and chore
+    planners show `RegistrationDataPurgedState`, the program planner drops
+    birthdays, the dashboard shows a banner and no shortcuts, and the event card
+    shows "Data deleted" instead of the registration status and capacity.
 - One audit entry per action (`retention` entity: `sensitive_purged`,
   `registrations_purged` with the count; `postponed` with the date). No personal
   data and no reason text. The existing two-year audit retention applies.

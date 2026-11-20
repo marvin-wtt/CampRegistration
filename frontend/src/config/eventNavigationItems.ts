@@ -6,8 +6,6 @@ interface EventNavigationItemBase {
   routeName: string;
   permission?: PermissionRequirement<'event'>;
   separated?: boolean;
-  /** Holds nothing once the registrations are deleted (docs/privacy.md, 8). */
-  registrationsOnly?: boolean;
 }
 
 export type EventNavigationItemDef = EventNavigationItemBase &
@@ -35,7 +33,6 @@ export const EVENT_NAVIGATION_ITEMS: EventNavigationItemDef[] = [
     icon: 'groups',
     permission: 'event.registrations.view',
     routeName: 'management.event.participants',
-    registrationsOnly: true,
   },
   {
     name: 'contact',
@@ -43,7 +40,6 @@ export const EVENT_NAVIGATION_ITEMS: EventNavigationItemDef[] = [
     permission: { any: ['event.messages.create', 'event.messages.view'] },
     routeName: 'management.event.contact',
     hideable: true,
-    registrationsOnly: true,
   },
   {
     name: 'program_planner',

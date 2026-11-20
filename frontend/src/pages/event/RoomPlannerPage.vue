@@ -5,7 +5,15 @@
     padding
     class="room-planner row justify-center"
   >
-    <div class="planner-content col-12 col-md-11 col-lg-10 column no-wrap">
+    <registration-data-purged-state
+      v-if="registrationsPurged"
+      class="col-12"
+    />
+
+    <div
+      v-else
+      class="planner-content col-12 col-md-11 col-lg-10 column no-wrap"
+    >
       <page-header
         :title="t('title')"
         :subtitle="t('subtitle')"
@@ -21,7 +29,7 @@
         </template>
         <template #actions>
           <m-btn
-            v-if="canAssign"
+            v-if="can('event.rooms.beds.edit')"
             icon="tune"
             square
             round
@@ -123,15 +131,9 @@
         </template>
       </page-header>
 
-      <purged-banner
-        v-if="registrationsPurged"
-        kind="assignments"
-        class="q-mb-md"
-      />
-
-      <!-- Occupancy stats; without registrations they would claim all done. -->
+      <!-- Occupancy stats -->
       <div
-        v-else-if="!loading && rooms.length > 0"
+        v-if="!loading && rooms.length > 0"
         class="stats-row row items-center"
       >
         <div class="stat-chip">
@@ -261,7 +263,7 @@
           :people="availablePeople"
           :editable="can('event.rooms.edit')"
           :deletable="can('event.rooms.delete')"
-          :assignable="canAssign"
+          :assignable="can('event.rooms.beds.edit')"
           :skip-gender-filter="settings.skipGenderFilter"
           :skip-role-filter="settings.skipRoleFilter"
           @edit="editRoom(room)"
@@ -304,7 +306,7 @@ import type {
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from '@/composables/permissions';
 import { useRegistrationsPurged } from '@/composables/registrationsPurged';
-import PurgedBanner from '@/components/privacy/PurgedBanner.vue';
+import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useEventSettings } from '@/composables/eventSettings';
@@ -320,9 +322,6 @@ const roomStore = useRoomStore();
 const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 const registrationsPurged = useRegistrationsPurged();
-const canAssign = computed<boolean>(
-  () => can('event.rooms.beds.edit') && !registrationsPurged.value,
-);
 
 const addLoading = ref(false);
 

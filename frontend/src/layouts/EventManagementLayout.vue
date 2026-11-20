@@ -37,7 +37,6 @@ import { useRealtimeStore } from '@/stores/realtime-store';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
 import { provideNavigationSettings } from '@/composables/eventNavigationSettings';
-import { useRegistrationsPurged } from '@/composables/registrationsPurged';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -84,18 +83,11 @@ const eventName = computed<string | undefined>(() => {
   return name ? to(name) : undefined;
 });
 
-// Kept after a deletion, so the page can say where the data went; the icon
-// marks it beforehand.
-const registrationsPurged = useRegistrationsPurged();
-
 const items = computed<NavigationItemProps<'event'>[]>(() =>
   EVENT_NAVIGATION_ITEMS.map((def) => ({
     name: def.name,
     label: t(def.name),
-    icon:
-      def.registrationsOnly && registrationsPurged.value
-        ? 'auto_delete'
-        : def.icon,
+    icon: def.icon,
     permission: def.permission,
     to: { name: def.routeName },
     separated: def.separated,
