@@ -59,7 +59,7 @@
           </div>
         </template>
 
-        <template v-else>
+        <template v-else-if="state === 'invalid'">
           <q-icon
             name="error_outline"
             color="negative"
@@ -67,11 +67,35 @@
             class="q-mb-md"
           />
           <div class="text-h6 text-weight-medium q-mb-sm">
-            {{ t('error.title') }}
+            {{ t('invalid.title') }}
           </div>
           <div class="text-body2 text-on-surface-variant">
+            {{ t('invalid.message') }}
+          </div>
+        </template>
+
+        <!-- The link may still be fine: offer a retry, not a dead end. -->
+        <template v-else>
+          <q-icon
+            name="cloud_off"
+            color="negative"
+            size="4rem"
+            class="q-mb-md"
+          />
+          <div class="text-h6 text-weight-medium q-mb-sm">
+            {{ t('error.title') }}
+          </div>
+          <div class="text-body2 text-on-surface-variant q-mb-lg">
             {{ t('error.message') }}
           </div>
+          <m-btn
+            :label="t('error.retry')"
+            :loading="submitting"
+            icon="refresh"
+            primary
+            no-caps
+            @click="retry"
+          />
         </template>
       </q-card-section>
     </q-card>
@@ -83,7 +107,7 @@ import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { useAPIService } from '@/services/APIService';
+import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import type { NewsletterConfirmation } from '@camp-registration/common/entities';
 
 const { t } = useI18n();
@@ -91,7 +115,9 @@ const route = useRoute();
 const api = useAPIService();
 
 const token = route.params.token as string;
-const state = ref<'loading' | 'ready' | 'confirmed' | 'error'>('loading');
+const state = ref<'loading' | 'ready' | 'confirmed' | 'invalid' | 'error'>(
+  'loading',
+);
 const confirmation = ref<NewsletterConfirmation>();
 const submitting = ref(false);
 
@@ -99,8 +125,8 @@ async function load() {
   try {
     confirmation.value = await api.fetchNewsletterConfirmation(token);
     state.value = confirmation.value.confirmed ? 'confirmed' : 'ready';
-  } catch {
-    state.value = 'error';
+  } catch (error) {
+    state.value = failureState(error);
   }
 }
 
@@ -110,11 +136,27 @@ async function confirm() {
     await api.requestCsrfToken();
     await api.confirmNewsletterSubscription(token);
     state.value = 'confirmed';
-  } catch {
-    state.value = 'error';
+  } catch (error) {
+    state.value = failureState(error);
   } finally {
     submitting.value = false;
   }
+}
+
+function failureState(error: unknown): 'invalid' | 'error' {
+  return isAPIServiceError(error) && error.response?.status === 404
+    ? 'invalid'
+    : 'error';
+}
+
+// Retries what failed: loading the details, or the confirmation itself.
+function retry() {
+  if (confirmation.value) {
+    void confirm();
+    return;
+  }
+  state.value = 'loading';
+  void load();
 }
 
 void load();
@@ -128,9 +170,13 @@ ready:
 confirmed:
   title: 'Subscription confirmed'
   message: 'Thank you! You will now receive this newsletter. Every email contains a link to unsubscribe.'
-error:
+invalid:
   title: 'Confirmation failed'
   message: 'The confirmation link is invalid or has expired. Ask the sender to add you again.'
+error:
+  title: 'Something went wrong'
+  message: 'We could not reach the server. Your link is still valid, please try again.'
+  retry: 'Try again'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -141,9 +187,13 @@ ready:
 confirmed:
   title: 'Abonnement bestätigt'
   message: 'Danke! Du erhältst ab jetzt diesen Newsletter. Jede E-Mail enthält einen Link zum Abmelden.'
-error:
+invalid:
   title: 'Bestätigung fehlgeschlagen'
   message: 'Der Bestätigungslink ist ungültig oder abgelaufen. Bitte den Absender, dich erneut hinzuzufügen.'
+error:
+  title: 'Etwas ist schiefgelaufen'
+  message: 'Der Server war nicht erreichbar. Dein Link ist weiterhin gültig, bitte versuche es erneut.'
+  retry: 'Erneut versuchen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -154,9 +204,13 @@ ready:
 confirmed:
   title: 'Abonnement confirmé'
   message: 'Merci ! Tu recevras désormais cette newsletter. Chaque e-mail contient un lien de désinscription.'
-error:
+invalid:
   title: 'Échec de la confirmation'
   message: 'Le lien de confirmation est invalide ou a expiré. Demande à l’expéditeur de t’ajouter à nouveau.'
+error:
+  title: 'Une erreur est survenue'
+  message: 'Impossible de joindre le serveur. Ton lien reste valable, réessaie.'
+  retry: 'Réessayer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -167,9 +221,13 @@ ready:
 confirmed:
   title: 'Subskrypcja potwierdzona'
   message: 'Dziękujemy! Od teraz będziesz otrzymywać ten newsletter. Każdy e-mail zawiera link do wypisania się.'
-error:
+invalid:
   title: 'Potwierdzenie nie powiodło się'
   message: 'Link potwierdzający jest nieprawidłowy lub wygasł. Poproś nadawcę o ponowne dodanie.'
+error:
+  title: 'Coś poszło nie tak'
+  message: 'Nie udało się połączyć z serwerem. Twój link jest nadal ważny, spróbuj ponownie.'
+  retry: 'Spróbuj ponownie'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -180,9 +238,13 @@ ready:
 confirmed:
   title: 'Odběr potvrzen'
   message: 'Děkujeme! Od teď budeš dostávat tento newsletter. Každý e-mail obsahuje odkaz pro odhlášení.'
-error:
+invalid:
   title: 'Potvrzení se nezdařilo'
   message: 'Potvrzovací odkaz je neplatný nebo vypršel. Požádej odesílatele, aby tě přidal znovu.'
+error:
+  title: 'Něco se pokazilo'
+  message: 'Nepodařilo se spojit se serverem. Tvůj odkaz je stále platný, zkus to prosím znovu.'
+  retry: 'Zkusit znovu'
 </i18n>
 
 <style scoped>

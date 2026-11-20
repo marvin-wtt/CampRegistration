@@ -340,6 +340,18 @@
               name="subscribers"
               class="newsletter-panel newsletter-panel--contained"
             >
+              <!-- Adding sends confirmation mails, so it waits for verification. -->
+              <organization-unverified-notice
+                v-if="
+                  newsletter && canNewsletter('newsletter.subscribers.create')
+                "
+                class="q-mb-md"
+                subject="newsletter"
+                :organization-id="newsletter.organizationId"
+                :organization-name="newsletter.organizationName"
+                :verification-status="newsletter.organizationVerificationStatus"
+              />
+
               <!-- Toolbar + Search -->
               <div class="row items-center no-wrap q-gutter-sm q-mb-md">
                 <q-input
@@ -357,6 +369,7 @@
                 </q-input>
                 <q-btn
                   v-if="canNewsletter('newsletter.subscribers.create')"
+                  :disable="blockedReason !== null"
                   outline
                   color="primary"
                   icon="file_upload"
@@ -375,6 +388,7 @@
                 </q-btn>
                 <q-btn
                   v-if="canNewsletter('newsletter.subscribers.create')"
+                  :disable="blockedReason !== null"
                   color="primary"
                   icon="person_add"
                   :label="
@@ -424,6 +438,7 @@
                 </div>
                 <q-btn
                   v-if="canNewsletter('newsletter.subscribers.create')"
+                  :disable="blockedReason !== null"
                   color="primary"
                   icon="person_add"
                   :label="t('subscribers.action.add')"
@@ -544,19 +559,28 @@
                     "
                     side
                   >
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      icon="forward_to_inbox"
-                      color="primary"
-                      size="sm"
-                      @click="resendConfirmation(subscriber)"
-                    >
+                    <!-- A disabled button shows no tooltip; the wrapper does. -->
+                    <div>
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="forward_to_inbox"
+                        color="primary"
+                        size="sm"
+                        :disable="resendAvailableAt(subscriber) !== null"
+                        @click="resendConfirmation(subscriber)"
+                      />
                       <q-tooltip>
-                        {{ t('subscribers.action.resendConfirmation') }}
+                        {{
+                          resendAvailableAt(subscriber)
+                            ? t('subscribers.resendAvailableAt', {
+                                time: d(resendAvailableAt(subscriber)!, 'time'),
+                              })
+                            : t('subscribers.action.resendConfirmation')
+                        }}
                       </q-tooltip>
-                    </q-btn>
+                    </div>
                   </q-item-section>
                   <q-item-section
                     v-if="canNewsletter('newsletter.subscribers.delete')"
@@ -679,7 +703,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useNewsletterManagerStore } from '@/stores/newsletter-manager-store';
@@ -702,6 +726,7 @@ import type {
   NewsletterSubscriberCreateData,
   NewsletterSubscriberImportData,
 } from '@camp-registration/common/entities';
+import { NEWSLETTER_CONFIRMATION_RESEND_COOLDOWN_MS } from '@camp-registration/common/entities';
 import type {
   NewsletterManagerRole,
   NewsletterPermission,
@@ -762,9 +787,16 @@ const compact = computed<boolean>(() => quasar.screen.lt.sm);
 
 const newsletterId = computed(() => route.params.newsletterId as string);
 
-onMounted(async () => {
-  await loadNewsletter();
-});
+const notFound = ref(false);
+
+// Re-evaluates the resend cooldowns without a reload.
+const now = ref(Date.now());
+const clock = setInterval(() => {
+  now.value = Date.now();
+}, 30_000);
+onBeforeUnmount(() => clearInterval(clock));
+
+void loadNewsletter();
 
 // Fetch only what the user may read. Re-runs when the profile lands, since the
 // auth guard lets a page through while the profile is still loading.
@@ -789,6 +821,9 @@ async function loadNewsletter() {
   if (!newsletter.value) {
     await newsletterStore.fetchById(newsletterId.value);
   }
+  // `fetchById` swallows its failure, so an unknown or forbidden id only shows
+  // as a newsletter that never arrived.
+  notFound.value = !newsletter.value && !newsletterStore.error;
 }
 
 const userEmail = computed<string | undefined>(() => {
@@ -834,7 +869,9 @@ const canSend = computed<boolean>(
  * in here replaced the entire page with an error for anyone holding a partial
  * permission set.
  */
-const error = computed<string | null>(() => newsletterStore.error ?? null);
+const error = computed<string | null>(
+  () => newsletterStore.error ?? (notFound.value ? t('notFound') : null),
+);
 
 const sanitizedBodies = computed<Record<string, string>>(() =>
   Object.fromEntries(
@@ -890,6 +927,18 @@ function showImportDialog() {
         });
       })();
     });
+}
+
+/** When the resend cooldown ends, or `null` once resending is allowed. */
+function resendAvailableAt(subscriber: NewsletterSubscriber): Date | null {
+  if (!subscriber.confirmationSentAt) {
+    return null;
+  }
+  const at =
+    new Date(subscriber.confirmationSentAt).getTime() +
+    NEWSLETTER_CONFIRMATION_RESEND_COOLDOWN_MS;
+
+  return at > now.value ? new Date(at) : null;
 }
 
 function resendConfirmation(subscriber: NewsletterSubscriber) {
@@ -1027,6 +1076,7 @@ function confirmSend() {
 </script>
 
 <i18n lang="yaml" locale="en">
+notFound: 'This newsletter does not exist or you do not have access to it.'
 tab:
   compose: 'Compose'
   history: 'History'
@@ -1074,6 +1124,7 @@ subscribers:
   consentedAt: 'Consent given on {date}'
   confirmedAt: 'Confirmed on {date}'
   confirmationSentAt: 'Confirmation email sent on {date}'
+  resendAvailableAt: 'Resending is possible again at {time}'
   action:
     add: 'Add Subscriber'
     import: 'Import from Event'
@@ -1100,6 +1151,7 @@ managers:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+notFound: 'Diesen Newsletter gibt es nicht oder du hast keinen Zugriff darauf.'
 tab:
   compose: 'Verfassen'
   history: 'Verlauf'
@@ -1147,6 +1199,7 @@ subscribers:
   consentedAt: 'Eingewilligt am {date}'
   confirmedAt: 'Bestätigt am {date}'
   confirmationSentAt: 'Bestätigungs-E-Mail gesendet am {date}'
+  resendAvailableAt: 'Erneutes Senden ist ab {time} Uhr möglich'
   action:
     add: 'Abonnent hinzufügen'
     import: 'Aus Veranstaltung importieren'
@@ -1173,6 +1226,7 @@ managers:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+notFound: "Cette newsletter n'existe pas ou tu n'y as pas accès."
 tab:
   compose: 'Rédiger'
   history: 'Historique'
@@ -1220,6 +1274,7 @@ subscribers:
   consentedAt: 'Consentement donné le {date}'
   confirmedAt: 'Confirmé le {date}'
   confirmationSentAt: 'E-mail de confirmation envoyé le {date}'
+  resendAvailableAt: 'Renvoi possible à partir de {time}'
   action:
     add: 'Ajouter un abonné'
     import: 'Importer depuis un événement'
@@ -1246,6 +1301,7 @@ managers:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+notFound: 'Ten newsletter nie istnieje lub nie masz do niego dostępu.'
 tab:
   compose: 'Utwórz'
   history: 'Historia'
@@ -1293,6 +1349,7 @@ subscribers:
   consentedAt: 'Zgoda wyrażona {date}'
   confirmedAt: 'Potwierdzono {date}'
   confirmationSentAt: 'E-mail z potwierdzeniem wysłano {date}'
+  resendAvailableAt: 'Ponowne wysłanie będzie możliwe o {time}'
   action:
     add: 'Dodaj subskrybenta'
     import: 'Importuj z wydarzenia'
@@ -1319,6 +1376,7 @@ managers:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+notFound: 'Tento newsletter neexistuje nebo k němu nemáš přístup.'
 tab:
   compose: 'Napsat'
   history: 'Historie'
@@ -1366,6 +1424,7 @@ subscribers:
   consentedAt: 'Souhlas udělen {date}'
   confirmedAt: 'Potvrzeno {date}'
   confirmationSentAt: 'Potvrzovací e-mail odeslán {date}'
+  resendAvailableAt: 'Znovu odeslat bude možné v {time}'
   action:
     add: 'Přidat odběratele'
     import: 'Importovat z akce'

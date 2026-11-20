@@ -2,6 +2,9 @@ import type { Identifiable } from './Identifiable.js';
 
 export type NewsletterSubscriberStatus = 'pending' | 'confirmed';
 
+/** Minimum wait between two confirmation mails to the same subscriber. */
+export const NEWSLETTER_CONFIRMATION_RESEND_COOLDOWN_MS = 60 * 60 * 1000;
+
 export interface NewsletterSubscriber extends Identifiable {
   email: string;
   name: string | null;

@@ -40,6 +40,8 @@ export interface ActionCardProps extends BaseEmailProps {
   greeting: string;
   teamName: string;
   url: string;
+  /** Small print under the button, e.g. what to do if the mail was unexpected. */
+  accidental?: string;
 }
 
 export interface MessageBouncedProps extends ActionCardProps {
@@ -58,10 +60,6 @@ export interface FeedbackProps extends BaseEmailProps {
 }
 
 export interface VerifyEmailProps extends ActionCardProps {
-  accidental: string;
-}
-
-export interface NewsletterConfirmationProps extends ActionCardProps {
   accidental: string;
 }
 

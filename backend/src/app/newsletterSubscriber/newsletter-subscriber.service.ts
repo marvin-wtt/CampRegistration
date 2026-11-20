@@ -1,13 +1,14 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import crypto from 'crypto';
-import type { NewsletterSubscriberImportResult } from '@camp-registration/common/entities';
+import {
+  NEWSLETTER_CONFIRMATION_RESEND_COOLDOWN_MS,
+  type NewsletterSubscriberImportResult,
+} from '@camp-registration/common/entities';
 import type { NewsletterSubscriber } from '#generated/prisma/client';
 
 /** How long a confirmation link stays valid; pending entries are then deleted. */
 export const CONFIRMATION_VALID_DAYS = 30;
-/** Minimum wait between two confirmation mails to the same address. */
-export const CONFIRMATION_RESEND_COOLDOWN_MS = 60 * 60 * 1000;
 
 function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -188,17 +189,15 @@ export class NewsletterSubscriberService extends BaseService {
     };
   }
 
+  /** Whether the cooldown since the last confirmation mail has passed. */
   canResendConfirmation(subscriber: NewsletterSubscriber): boolean {
-    if (subscriber.confirmedAt) {
-      return false;
-    }
     if (!subscriber.confirmationSentAt) {
       return true;
     }
 
     return (
       Date.now() - subscriber.confirmationSentAt.getTime() >=
-      CONFIRMATION_RESEND_COOLDOWN_MS
+      NEWSLETTER_CONFIRMATION_RESEND_COOLDOWN_MS
     );
   }
 

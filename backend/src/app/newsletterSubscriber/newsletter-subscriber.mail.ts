@@ -2,10 +2,7 @@ import { MailBase } from '#core/mail/mail.base';
 import type { Content } from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
 import { resolveActionCardText } from '#core/mail/actionCardText';
-import type {
-  LocalContext,
-  NewsletterConfirmationProps,
-} from '#views/emails/types';
+import type { ActionCardProps, LocalContext } from '#views/emails/types';
 
 export interface NewsletterConfirmationMailPayload {
   to: string;
@@ -59,13 +56,13 @@ export class NewsletterConfirmationMail extends MailBase<NewsletterConfirmationM
     );
 
     return {
-      template: 'newsletter-confirmation',
+      template: 'action-card',
       context: {
         ...resolveActionCardText(t, this.vars()),
         reason: t('footer.cause', this.vars()),
         accidental: t('text.accidental'),
         url,
-      } satisfies LocalContext<NewsletterConfirmationProps>,
+      } satisfies LocalContext<ActionCardProps>,
     };
   }
 }

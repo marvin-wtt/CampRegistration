@@ -141,8 +141,8 @@ scripts) before finishing.
 6. **InversifyJS**: every new service needs `@injectable()` and registration in `bindContainers`
 7. **Permissions**: use RBAC guards, not manual role checks (skill: `add-permission`)
 8. **Organizations**: events and newsletters need an `organizationId`; an unverified org's events are hidden and refuse
-   registrations and its newsletters refuse to send, but that is gated at the outward-facing action — don't add
-   write-time publication gates. Org `ADMIN`s hold only
+   registrations and its newsletters refuse to send or take new subscribers (each one is mailed a confirmation), but
+   that is gated at the outward-facing action — don't add write-time publication gates. Org `ADMIN`s hold only
    `ORGANIZATION_EVENT_PERMISSIONS` on their org's events and `ORGANIZATION_NEWSLETTER_PERMISSIONS` on its newsletters —
    never registrations, never subscribers
 9. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>`
