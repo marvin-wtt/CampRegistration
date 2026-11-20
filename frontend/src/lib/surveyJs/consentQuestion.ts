@@ -19,7 +19,7 @@ export function consentQuestionJson(
   survey: SurveyModel,
   categories: readonly string[],
   texts: ConsentQuestionTexts,
-): Record<string, unknown> {
+): { name: string } & Record<string, unknown> {
   const covered = extractPrivacyTags(survey.toJSON()).tagged.filter(
     (question) => categories.includes(question.category),
   );

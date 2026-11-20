@@ -46,6 +46,8 @@ export {
   consentBasedCategories,
   formPrivacyIssues,
   hasPrivacyIssues,
+  privacyIssueKind,
+  type FormPrivacyIssueKind,
   type FormPrivacyIssues,
 } from './privacyCompliance.js';
 export {

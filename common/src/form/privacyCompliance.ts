@@ -67,6 +67,22 @@ export function formPrivacyIssues(
   };
 }
 
+export type FormPrivacyIssueKind = keyof FormPrivacyIssues;
+
+/**
+ * The issue a question tagged with `category` raises, if any. Undeclared comes
+ * first: a consent cannot cover what the notice does not declare.
+ */
+export function privacyIssueKind(
+  category: string,
+  issues: FormPrivacyIssues,
+): FormPrivacyIssueKind | null {
+  if (issues.undeclared.includes(category)) {
+    return 'undeclared';
+  }
+  return issues.uncovered.includes(category) ? 'uncovered' : null;
+}
+
 export function hasPrivacyIssues(issues: FormPrivacyIssues): boolean {
   return issues.undeclared.length > 0 || issues.uncovered.length > 0;
 }

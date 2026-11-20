@@ -452,11 +452,13 @@ be tagged, and only boolean questions can be consents.
   it goes. Wording, placement and translations stay with the organizer.
 - **[implemented]** While a tagged special category has no consent covering it,
   each question tagged with it offers "Add consent question" in its box on the
-  form editor's design surface (a Creator message panel)
-  (`consentQuestionJson`, `frontend/src/lib/surveyJs/consentQuestion.ts`). It
-  appends a consent at the end, worded in all five locales from the tagged
-  categories (what, for which purpose, who receives it, voluntary, how to
-  withdraw) and asked like the presets: shown once a covered question is answered,
+  form editor's design surface (a Creator message panel,
+  `frontend/src/lib/surveyJs/privacyIssues.ts`). It appends a consent for that
+  one category at the end (`consentQuestionJson`), never for every uncovered
+  one: unrelated purposes stay separate, and an organizer may widen it to
+  related categories (`privacyConsentFor`). It is worded in all five locales
+  (what, for which purpose, who receives it, voluntary, how to withdraw) and
+  asked like the presets: shown once a covered question is answered,
   then required. A covered question inside a dynamic panel cannot be seen by a
   form-level condition, so the consent is then shown always and left optional.
   - **[review]** The generic wording names the event team as recipient and care

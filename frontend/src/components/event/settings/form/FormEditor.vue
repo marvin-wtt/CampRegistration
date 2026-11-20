@@ -9,11 +9,11 @@ import '@/lib/surveyJs/creatorSetup';
 import type { Ace } from 'ace-builds';
 import { config as aceConfig } from 'ace-builds';
 import { onBeforeUnmount, ref, watch, watchEffect } from 'vue';
+import { useRouter } from 'vue-router';
 import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
 import {
-  Action,
   Base,
   type ITheme,
   type PageModel,
@@ -29,14 +29,10 @@ import type {
   SurveyJSEventData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import {
-  formLintOptions,
-  formPrivacyIssues,
-  setVariables,
-} from '@camp-registration/common/form';
-import type { ComposedPrivacyNotice } from '@camp-registration/common/privacy';
+import { formLintOptions, setVariables } from '@camp-registration/common/form';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
-import { consentQuestionJson } from '@/lib/surveyJs/consentQuestion';
+import type { ConsentQuestionTexts } from '@/lib/surveyJs/consentQuestion';
+import { attachPrivacyIssues } from '@/lib/surveyJs/privacyIssues';
 import { APP_LOCALES } from '@/i18n/locales';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
@@ -307,120 +303,57 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
   }
 });
 
-/*
- * The registration gate (docs/privacy.md, 5): while the form asks for data its
- * privacy information does not cover, the event refuses registrations. Told
- * once per change of what is missing, not on every autosave.
- */
-const publishedNotice = ref<ComposedPrivacyNotice | null>();
-let reportedPrivacyIssues = '';
+// Each question keeping the event from taking registrations says what to do
+// (docs/privacy.md, 5); the event dashboard says it for the event as a whole.
+const router = useRouter();
+const privacyIssues = attachPrivacyIssues(creator, {
+  message: ({ kind, category, column }) => {
+    const message = t(`privacy.${kind}`, { category: categoryName(category) });
+    return column ? t('privacy.inColumn', { column, message }) : message;
+  },
+  action: (kind) =>
+    t(kind === 'uncovered' ? 'privacy.addConsent' : 'privacy.openNotice'),
+  consentTexts,
+  openPrivacySettings: () => {
+    void router.push({ name: 'management.event.settings.privacy' });
+  },
+});
 
 usePrivacyNoticeService()
   .fetchEventNotice(props.event.id)
-  .then((published) => {
-    publishedNotice.value = published.notice;
-    reportPrivacyIssues();
-  })
+  .then(({ notice }) => privacyIssues.setNotice(notice))
   .catch(() => {
     // Without the notice there is nothing to compare; the server still gates.
   });
 
-/*
- * "Add consent question": while a tagged category has no consent covering it,
- * the toolbar offers to append one, asked the way the presets ask it and
- * worded in every form locale. A start the organizer edits, not a verdict.
- */
-const consentActions = [creator.toolbar, creator.footerToolbar].map(
-  (toolbar) => {
-    const action = new Action({
-      id: 'privacy-add-consent',
-      title: t('privacy.addConsent'),
-      showTitle: true,
-      visible: false,
-      action: addConsentQuestion,
-    });
-    toolbar.actions.push(action);
-    return action;
-  },
-);
-
-function uncoveredCategories(): string[] {
-  return publishedNotice.value === undefined
-    ? []
-    : formPrivacyIssues(creator.JSON, publishedNotice.value).uncovered;
+function categoryName(category: string, locale?: string): string {
+  const key = `privacy.dataCategory.${category}`;
+  return locale ? gt(key, {}, { locale }) : gt(key);
 }
 
-function categoryNamesIn(keys: string[], locale: string): string {
-  const names = keys.map((key) =>
-    gt(`privacy.dataCategory.${key}`, {}, { locale }),
-  );
-  // Mid-sentence, except where nouns are capitalised anyway.
-  return (
-    locale === 'de'
-      ? names
-      : names.map((name) => name.charAt(0).toLowerCase() + name.slice(1))
-  ).join(', ');
-}
+/** A consent question's wording in every form locale, the presets' way. */
+function consentTexts(category: string): ConsentQuestionTexts {
+  const inEveryLocale = (text: (locale: string) => string) =>
+    Object.fromEntries(APP_LOCALES.map((locale) => [locale, text(locale)]));
+  // Mid-sentence: lowercased, except in German, where nouns keep the capital.
+  const nameIn = (locale: string) => {
+    const name = categoryName(category, locale);
+    return locale === 'de'
+      ? name
+      : name.charAt(0).toLowerCase() + name.slice(1);
+  };
 
-function addConsentQuestion() {
-  const categories = uncoveredCategories();
-  const page = creator.survey.pages.at(-1);
-  if (!categories.length || !page) {
-    return;
-  }
-
-  const texts = { title: {}, description: {}, error: {} } as Record<
-    'title' | 'description' | 'error',
-    Record<string, string>
-  >;
-  for (const locale of APP_LOCALES) {
-    const named = { categories: categoryNamesIn(categories, locale) };
-    texts.title[locale] = t('privacy.consent.title', named, { locale });
-    texts.description[locale] = t(
-      'privacy.consent.description',
-      {},
-      { locale },
-    );
-    texts.error[locale] = t('privacy.consent.error', {}, { locale });
-  }
-
-  const json = consentQuestionJson(creator.survey, categories, texts);
-  const question = page.addNewQuestion('boolean', json.name as string);
-  question.fromJSON(json);
-  creator.selectElement(question);
-}
-
-function categoryNames(keys: string[]): string {
-  return keys.map((key) => gt(`privacy.dataCategory.${key}`)).join(', ');
-}
-
-function reportPrivacyIssues() {
-  if (publishedNotice.value === undefined) {
-    return;
-  }
-
-  const issues = formPrivacyIssues(creator.JSON, publishedNotice.value);
-  const parts = [
-    issues.undeclared.length
-      ? t('privacy.undeclared', {
-          categories: categoryNames(issues.undeclared),
-        })
-      : null,
-    issues.uncovered.length
-      ? t('privacy.uncovered', { categories: categoryNames(issues.uncovered) })
-      : null,
-  ].filter((part): part is string => part !== null);
-  const message = parts.length
-    ? [t('privacy.blocked'), ...parts].join(' ')
-    : '';
-
-  if (message && message !== reportedPrivacyIssues) {
-    creator.notify(message, 'error');
-  }
-  reportedPrivacyIssues = message;
-  for (const action of consentActions) {
-    action.visible = issues.uncovered.length > 0;
-  }
+  return {
+    title: inEveryLocale((locale) =>
+      t('privacy.consent.title', { category: nameIn(locale) }, { locale }),
+    ),
+    description: inEveryLocale((locale) =>
+      t('privacy.consent.description', {}, { locale }),
+    ),
+    error: inEveryLocale((locale) =>
+      t('privacy.consent.error', {}, { locale }),
+    ),
+  };
 }
 
 creator.saveSurveyFunc = (
@@ -431,7 +364,7 @@ creator.saveSurveyFunc = (
     .saveFormFunc(creator.JSON)
     .then(() => {
       callback(saveNo, true);
-      reportPrivacyIssues();
+      privacyIssues.refresh();
     })
     .catch(() => {
       callback(saveNo, false);
@@ -644,12 +577,13 @@ mode:
   expert: 'Expert'
   condition: 'Has conditions — edit them in Standard mode'
 privacy:
-  blocked: 'Registrations are blocked.'
-  undeclared: 'The form asks for {categories}, which the privacy information does not declare.'
-  uncovered: 'No consent question covers {categories}: use “Add consent question” in the toolbar.'
+  undeclared: 'Add “{category}” to the privacy information. Until then, nobody can register.'
+  uncovered: 'Add a consent question for “{category}”. Until then, nobody can register.'
+  openNotice: 'Open privacy settings'
+  inColumn: 'Column “{column}”: {message}'
   addConsent: 'Add consent question'
   consent:
-    title: 'I agree that the information on {categories} given in this form is used to look after the participant during the event and shared with the event team.'
+    title: 'I agree that the information on {category} given in this form is used to look after the participant during the event and shared with the event team.'
     description: 'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.'
     error: 'Please agree, or leave those fields empty.'
 </i18n>
@@ -664,12 +598,13 @@ mode:
   expert: 'Experte'
   condition: 'Hat Bedingungen – im Standardmodus bearbeiten'
 privacy:
-  blocked: 'Anmeldungen sind gesperrt.'
-  undeclared: 'Das Formular fragt nach {categories}, die in den Datenschutzinformationen nicht angegeben sind.'
-  uncovered: 'Keine Einwilligungsfrage deckt {categories} ab: Nutze „Einwilligungsfrage hinzufügen“ in der Werkzeugleiste.'
+  undeclared: 'Ergänze „{category}“ in den Datenschutzinformationen. Bis dahin kann sich niemand anmelden.'
+  uncovered: 'Füge eine Einwilligungsfrage für „{category}“ hinzu. Bis dahin kann sich niemand anmelden.'
+  openNotice: 'Datenschutzeinstellungen öffnen'
+  inColumn: 'Spalte „{column}“: {message}'
   addConsent: 'Einwilligungsfrage hinzufügen'
   consent:
-    title: 'Ich willige ein, dass die Angaben zu {categories} aus diesem Formular zur Betreuung während der Veranstaltung genutzt und an das Veranstaltungsteam weitergegeben werden.'
+    title: 'Ich willige ein, dass die Angaben zu {category} aus diesem Formular zur Betreuung während der Veranstaltung genutzt und an das Veranstaltungsteam weitergegeben werden.'
     description: 'Freiwillig – sonst lass diese Felder leer. Jederzeit beim Veranstalter widerrufbar.'
     error: 'Bitte willige ein oder lass diese Felder leer.'
 </i18n>
@@ -684,12 +619,13 @@ mode:
   expert: 'Expert'
   condition: 'Contient des conditions – modifiables en mode standard'
 privacy:
-  blocked: 'Les inscriptions sont bloquées.'
-  undeclared: 'Le formulaire demande {categories}, que les informations sur la protection des données ne mentionnent pas.'
-  uncovered: 'Aucune question de consentement ne couvre {categories} : utilise « Ajouter une question de consentement » dans la barre d’outils.'
+  undeclared: 'Ajoute « {category} » aux informations sur la protection des données. D’ici là, personne ne peut s’inscrire.'
+  uncovered: 'Ajoute une question de consentement pour « {category} ». D’ici là, personne ne peut s’inscrire.'
+  openNotice: 'Ouvrir les paramètres de confidentialité'
+  inColumn: 'Colonne « {column} » : {message}'
   addConsent: 'Ajouter une question de consentement'
   consent:
-    title: 'J’accepte que les informations sur {categories} données dans ce formulaire servent à la prise en charge du participant pendant l’événement et soient transmises à l’équipe.'
+    title: 'J’accepte que les informations sur {category} données dans ce formulaire servent à la prise en charge du participant pendant l’événement et soient transmises à l’équipe.'
     description: 'Facultatif – sinon laisse ces champs vides. Révocable à tout moment auprès de l’organisateur.'
     error: 'Donne ton accord ou laisse ces champs vides.'
 </i18n>
@@ -704,12 +640,13 @@ mode:
   expert: 'Ekspert'
   condition: 'Ma warunki – edytuj je w trybie standardowym'
 privacy:
-  blocked: 'Rejestracje są zablokowane.'
-  undeclared: 'Formularz pyta o {categories}, których nie wymieniono w informacjach o ochronie danych.'
-  uncovered: 'Żadne pytanie o zgodę nie obejmuje {categories}: użyj „Dodaj pytanie o zgodę” na pasku narzędzi.'
+  undeclared: 'Dodaj kategorię „{category}” do informacji o ochronie danych. Do tego czasu nikt nie może się zarejestrować.'
+  uncovered: 'Dodaj pytanie o zgodę obejmujące kategorię „{category}”. Do tego czasu nikt nie może się zarejestrować.'
+  openNotice: 'Otwórz ustawienia prywatności'
+  inColumn: 'Kolumna „{column}”: {message}'
   addConsent: 'Dodaj pytanie o zgodę'
   consent:
-    title: 'Zgadzam się na wykorzystanie podanych w tym formularzu informacji ({categories}) do opieki nad uczestnikiem podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia.'
+    title: 'Zgadzam się na wykorzystanie podanych w tym formularzu informacji ({category}) do opieki nad uczestnikiem podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia.'
     description: 'Dobrowolne – w przeciwnym razie pozostaw te pola puste. Zgodę można w każdej chwili wycofać u organizatora.'
     error: 'Wyraź zgodę lub pozostaw te pola puste.'
 </i18n>
@@ -724,12 +661,13 @@ mode:
   expert: 'Expert'
   condition: 'Obsahuje podmínky – upravte je ve standardním režimu'
 privacy:
-  blocked: 'Registrace jsou zablokované.'
-  undeclared: 'Formulář se ptá na {categories}, které informace o ochraně údajů neuvádějí.'
-  uncovered: 'Žádná otázka na souhlas nepokrývá {categories}: použij „Přidat otázku na souhlas“ na panelu nástrojů.'
+  undeclared: 'Doplň kategorii „{category}“ do informací o ochraně údajů. Do té doby se nikdo nemůže registrovat.'
+  uncovered: 'Přidej otázku na souhlas pro kategorii „{category}“. Do té doby se nikdo nemůže registrovat.'
+  openNotice: 'Otevřít nastavení ochrany údajů'
+  inColumn: 'Sloupec „{column}“: {message}'
   addConsent: 'Přidat otázku na souhlas'
   consent:
-    title: 'Souhlasím, aby údaje ({categories}) z tohoto formuláře byly použity k péči o účastníka během akce a předány týmu akce.'
+    title: 'Souhlasím, aby údaje ({category}) z tohoto formuláře byly použity k péči o účastníka během akce a předány týmu akce.'
     description: 'Dobrovolné – jinak nech tato pole prázdná. Souhlas lze kdykoli odvolat u pořadatele.'
     error: 'Dej souhlas, nebo nech tato pole prázdná.'
 </i18n>
