@@ -606,8 +606,13 @@ function assertRegistrationStaysClosed(
     return;
   }
 
+  // The controller passes every field, so an absent one arrives as undefined
+  // at runtime, whatever the type says; spread as is, it would erase the
+  // stored value and misjudge the status.
   const changes = Object.fromEntries(
-    Object.entries(data).filter(([, value]) => value !== undefined),
+    Object.entries(data as Record<string, unknown>).filter(
+      ([, value]) => value !== undefined,
+    ),
   );
   if (eventRegistrationStatus({ ...before, ...changes }) !== 'closed') {
     throw new ApiError(
