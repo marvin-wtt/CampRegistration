@@ -272,11 +272,8 @@ onUnmounted(() => {
 });
 
 watch(
-  [
-    () => event.value?.registrationOpensAt,
-    () => event.value?.registrationClosesAt,
-  ],
-  ([openAt, closeAt]) => startRegistrationOpenTimer(openAt, closeAt),
+  () => event.value?.registrationOpensAt,
+  (opensAt) => startRegistrationOpenTimer(opensAt),
 );
 
 useMeta(() => {
@@ -556,34 +553,26 @@ function updateBgColor(color: string | undefined) {
   bgColor.value = color;
 }
 
-function startRegistrationOpenTimer(
-  opensAt: string | null | undefined,
-  closesAt: string | null | undefined,
-) {
+// setTimeout fires immediately beyond this; a page open that long gets
+// reloaded anyway.
+const MAX_TIMEOUT = 2 ** 31 - 1;
+
+// Shows the form once registration opens. Closing is left to the server, so a
+// form being filled in is never pulled away.
+function startRegistrationOpenTimer(opensAt: string | null | undefined) {
   stopRegistrationOpenTimer();
-
-  const offset = 1000;
-
-  for (const timestamp of [opensAt, closesAt]) {
-    if (!timestamp) {
-      continue;
-    }
-
-    const delay = new Date(timestamp).getTime() - Date.now();
-    // Use negative offset to avoid data race between the status and the timestamp
-    if (delay < -offset) {
-      continue;
-    }
-
-    openTimer = setTimeout(
-      () => {
-        void loadEvent();
-      },
-      Math.max(delay, 0) + offset,
-    );
-
+  if (!opensAt) {
     return;
   }
+
+  // Refetch a moment late, so the server's status has already flipped.
+  const offset = 1000;
+  const delay = new Date(opensAt).getTime() - Date.now() + offset;
+  if (delay < 0 || delay > MAX_TIMEOUT) {
+    return;
+  }
+
+  openTimer = setTimeout(() => void loadEvent(), delay);
 }
 
 function stopRegistrationOpenTimer() {
