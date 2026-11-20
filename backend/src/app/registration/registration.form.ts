@@ -13,6 +13,7 @@ import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
 import {
   answeredSpecialCategoryQuestions,
   clearSpecialCategoryAnswers,
+  consentAnswers,
   consentTexts,
   isSpecialCategory,
   unconsentedQuestions,
@@ -289,6 +290,20 @@ export class RegistrationForm {
    */
   givenConsentTexts(): Record<string, string> {
     return consentTexts(this.survey, { givenOnly: true });
+  }
+
+  /**
+   * The columns the consents imply (docs/privacy.md, 5): `newsletterConsent`
+   * from the consent asked for the newsletter, null when the form never asks.
+   * Any yes counts — the newsletter goes to the registration's address.
+   */
+  consentColumns(): { newsletterConsent: boolean | null } {
+    const answers = consentAnswers(this.survey, 'newsletter');
+
+    return {
+      newsletterConsent:
+        answers.length > 0 ? answers.some((value) => value === true) : null,
+    };
   }
 
   /** Questions answered without the consent their category rests on. */

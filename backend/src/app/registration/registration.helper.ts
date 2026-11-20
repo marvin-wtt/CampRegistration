@@ -1,4 +1,5 @@
 import type { Prisma } from '#generated/prisma/client.js';
+import type { RegistrationForm } from '#app/registration/registration.form';
 
 /**
  * Field namespace on `File` rows for custom registration files
@@ -133,15 +134,6 @@ export class RegistrationEventDataHelper {
   lastName(): string | undefined {
     return this.stringValue('last_name');
   }
-
-  newsletterConsent(): boolean | undefined {
-    const key = 'newsletter_consent';
-    if (!(key in this.dataByTags)) {
-      return undefined;
-    }
-
-    return this.dataByTags[key].some((v) => v === true);
-  }
 }
 
 /**
@@ -168,6 +160,19 @@ export function computedRegistrationData(
     phoneNumbers: helper.phoneNumbers() ?? [],
     role: helper.role() ?? null,
     gender: helper.gender() ?? null,
-    newsletterConsent: helper.newsletterConsent() ?? null,
+  };
+}
+
+/**
+ * Every column a registration's answers imply: the `eventDataType` ones and
+ * those its consents imply. What every write and the seeder store, so none can
+ * leave one out.
+ */
+export function registrationColumns(
+  form: RegistrationForm,
+): Partial<Prisma.RegistrationCreateInput> {
+  return {
+    ...computedRegistrationData(form.extractEventData()),
+    ...form.consentColumns(),
   };
 }

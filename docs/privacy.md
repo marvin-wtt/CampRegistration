@@ -370,7 +370,8 @@ Findings, most important first:
   `consent_forward_list_participants`, `consent_privacy` (photos), `newsletter` and
   `confirmation_guardian` (`backend/src/app/event/presets/camp/form.ts`).
 - **[implemented]** Newsletter consent is the only consent mapped to a column:
-  `eventDataType: 'newsletter_consent'` → `Registration.newsletterConsent`.
+  the consent with the purpose `newsletter` → `Registration.newsletterConsent`
+  (see "Consent purposes" below).
 - **[implemented]** The presets tag their questions and ask for consent before
   health data (Phase 2, below). Events created earlier keep their saved forms.
 - **[implemented]** Consent is enforced for every event (Phase 3, below).
@@ -403,12 +404,15 @@ be tagged, and only boolean questions can be consents.
   newsletter, health.
 - `privacyConsentFor` on a consent question, optional: the special categories it
   unlocks. Only these feed the registration gate and the submission check.
+- `privacyConsentPurpose` on a consent question: the catalogue purposes it is
+  asked for (see "Consent purposes" below).
 - The `privacy` prefix keeps the names out of SurveyJS's way: a native property of
   the same name would be removed when ours is registered. A test
   (`common/tests/unit/form/propertyNames.test.ts`) fails if SurveyJS ever defines
   one of the platform's property names.
-- Not `eventDataType`: it holds one value and maps to registration columns, and the
-  newsletter question already uses it (`newsletter_consent`).
+- Not `eventDataType`: it holds one value and maps plain answers to registration
+  columns. Consent is the privacy tags' alone, newsletter consent included (see
+  "Consent purposes" below).
 - `privacyConsent` and `privacyConsentFor` stay separate so a consent that is not
   about a special category (the carpool list shares contact data) does not gate
   every contact question.
@@ -466,6 +470,48 @@ be tagged, and only boolean questions can be consents.
   and conditions (Art. 7(2)).
 - **[review]** Where exactly "closely related" ends is a legal judgment; the default
   texts follow one-purpose-per-consent.
+
+**Consent purposes — one source of truth** **[implemented]**
+
+A newsletter consent used to need two properties that had to agree:
+`eventDataType: 'newsletter_consent'` filled the column the import reads, and
+`privacyConsent` kept the wording as proof. One without the other imported
+subscribers whose consent could not be shown (Art. 7(1)). The purpose makes that
+state impossible to express, instead of validating it in the editor or refusing
+registrations over a configuration mistake.
+
+- `privacyConsentPurpose` (multiple values, `PRIVACY_PURPOSE_KEYS`) names what a
+  consent is asked for: `newsletter`, `photo_publication`, `transport`,
+  `medical_care`, `catering`, … More than one only for closely related purposes
+  (see "Scope of one consent"): the camp's health consent is `medical_care` and
+  `catering`.
+- Purpose and `privacyConsentFor` answer different questions. The purpose says
+  why consent is asked; `privacyConsentFor` says which special-category answers it
+  unlocks. A newsletter consent unlocks no data; what a purpose collects is up to
+  each organization's notice, so one cannot be derived from the other.
+- Form editor: "Purpose" appears once a question is marked as consent. "Unlocks
+  sensitive data" appears only while the form tags a special category, offering
+  just the categories it tags — newsletter, photo and carpool consents never show
+  it.
+- `eventDataType: 'newsletter_consent'` is removed. A consent whose purposes
+  include `newsletter` is the newsletter consent; a purpose on a question without
+  `privacyConsent` has no effect.
+- `Registration.newsletterConsent` stays, with the same meaning: `true` agreed,
+  `false` declined, `null` never asked. Any yes counts when the question repeats
+  in a dynamic panel — the newsletter goes to the registration's address, not to
+  each entry.
+- It is derived next to the consent wording (`RegistrationForm.consentColumns`),
+  not in `computedRegistrationData`, which maps `eventDataType` answers only.
+  `registrationColumns` combines both for every write and the seeder, so no write
+  path can skip it.
+- The data migration `20261120120000_newsletter_consent_purpose` rewrites saved
+  forms: a boolean tagged `newsletter_consent` becomes `privacyConsent: true` with
+  `privacyConsentPurpose: ['newsletter']`. Stored registrations need no change;
+  recomputing gives the same value.
+- Every preset consent names its purpose, and "Add consent question" tags its
+  generic wording `medical_care`.
+- **[review]** Only catalogue purposes can be chosen; an organization's custom
+  purposes cannot be named on a consent yet.
 
 **Proof (Art. 7(1))**
 
@@ -929,6 +975,9 @@ keep data.
   alone, is removed. People who agreed elsewhere can still be added by hand with the
   existing confirmation. Justified by Art. 6(1)(a) and the ePrivacy rules on email
   marketing.
+- **[implemented]** `newsletterConsent` comes from the consent whose purposes include
+  `newsletter`, so every imported subscriber has its consent wording stored
+  (section 5, "Consent purposes").
 
 ## 12. Requirements overview
 
@@ -953,7 +1002,7 @@ keep data.
 | Erasure                                | 17                | Manager deletion, orphan file cleanup                    | implemented           |
 | Objection shown separately             | 21(4)             | List item plus note                                      | review                |
 | Children                               | 8                 | Guardian confirmation in preset                          | implemented / review  |
-| Newsletter consent                     | 6(1)(a), ePrivacy | Form column; import only with recorded consent           | implemented           |
+| Newsletter consent                     | 6(1)(a), ePrivacy | Consent purpose; import only with recorded consent       | implemented           |
 | Processor agreement                    | 28                | Outside the app                                          | gap                   |
 | DPIA                                   | 35                | Outside the app (organizer)                              | review                |
 
@@ -1076,6 +1125,14 @@ reads tags after the tagging itself.
 19. ~~Keyword hint in the form editor~~ — dropped, see section 5.
 20. Translation completeness per locale. Tightens completeness like item 12; release
     both together with one announcement to organizers.
+
+**Phase 7 — consent purposes** (section 5, done)
+
+21. `privacyConsentPurpose`, and "Unlocks sensitive data" shown only while the
+    form tags a special category.
+22. `newsletterConsent` derived from the newsletter purpose beside the consent
+    wording; `eventDataType: 'newsletter_consent'` removed; presets updated; a data
+    migration of saved forms.
 
 **Waiting for legal review:** Art. 9(2)(g) and its legal reference, the "necessary
 for participation" option, self-service withdrawal, platform policy versioning,

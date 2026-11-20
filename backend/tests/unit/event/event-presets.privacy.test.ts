@@ -4,7 +4,10 @@ import {
   uncoveredConsentCategories,
 } from '@camp-registration/common/form';
 import { EVENT_PRESET_NAMES } from '@camp-registration/common/entities';
-import { SPECIAL_CATEGORY_DATA_KEYS } from '@camp-registration/common/privacy';
+import {
+  PRIVACY_PURPOSE_KEYS,
+  SPECIAL_CATEGORY_DATA_KEYS,
+} from '@camp-registration/common/privacy';
 import { EVENT_PRESETS } from '#app/event/presets/index';
 import { SurveyModel } from 'survey-core';
 
@@ -75,4 +78,25 @@ describe('event preset privacy tags', () => {
       expect(consent?.hasErrors(false)).toBe(false);
     },
   );
+
+  it.each(EVENT_PRESET_NAMES)(
+    '%s form names a catalogue purpose on every consent',
+    (name) => {
+      const purposes = new Set<string>(PRIVACY_PURPOSE_KEYS);
+
+      for (const consent of extractPrivacyTags(EVENT_PRESETS[name].form)
+        .consents) {
+        expect(consent.purposes.length, consent.name).toBeGreaterThan(0);
+        expect(consent.purposes.every((key) => purposes.has(key))).toBe(true);
+      }
+    },
+  );
+
+  it('camp form asks for the newsletter through its consent purpose', () => {
+    const consents = extractPrivacyTags(EVENT_PRESETS.camp.form).consents;
+
+    expect(
+      consents.find((consent) => consent.purposes.includes('newsletter'))?.name,
+    ).toBe('newsletter');
+  });
 });

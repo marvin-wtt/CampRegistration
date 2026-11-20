@@ -22,6 +22,7 @@ describe('consentQuestionJson', () => {
       type: 'boolean',
       name: 'consent_privacy_data',
       privacyConsent: true,
+      privacyConsentPurpose: ['medical_care'],
       privacyConsentFor: ['allergies'],
       title: { default: 'I agree.', ...texts.title },
       description: { default: 'Voluntary.', ...texts.description },

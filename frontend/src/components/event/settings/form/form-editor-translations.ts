@@ -16,6 +16,7 @@ type PropertyKey =
   | 'price'
   | 'privacyCategory'
   | 'privacyConsent'
+  | 'privacyConsentPurpose'
   | 'privacyConsentFor';
 
 type LocaleSection = {
@@ -31,6 +32,7 @@ type LocaleSection = {
     groupCountryMatch: Record<GroupCountryMatch, string>;
     // The catalogue's own labels, so a tag reads as it does in the notice.
     privacyCategory: Record<string, string>;
+    privacyConsentPurpose: Record<string, string>;
     privacyConsentFor: Record<string, string>;
   };
 };
@@ -53,7 +55,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         privacyCategory: 'Datenschutz-Kategorie',
         privacyConsent: 'Einwilligung',
-        privacyConsentFor: 'Einwilligung gilt für',
+        privacyConsentPurpose: 'Zweck der Einwilligung',
+        privacyConsentFor: 'Gibt sensible Daten frei',
         eventDataType: 'Daten-Tag',
         groupCountryMatch: 'Abgleich mit der Gruppe',
         price: 'Preis',
@@ -64,6 +67,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Welche Art personenbezogener Daten diese Frage erhebt, wie in den Datenschutzinformationen aufgeführt. Fragen zu Gesundheit, Allergien, Medikamenten, Behinderung oder Religion brauchen eine Rechtsgrundlage, meist eine Einwilligungsfrage. Nur so markierte Fragen werden als sensibel behandelt – die Plattform erkennt sensible Angaben nicht von selbst. Prüfe auch Freitextfelder.',
         privacyConsent:
           'Diese Frage holt eine Einwilligung ein. Ihr Wortlaut wird mit jeder Anmeldung gespeichert, als Nachweis, wozu die Person eingewilligt hat.',
+        privacyConsentPurpose:
+          'Wofür diese Einwilligung eingeholt wird, wie in den Datenschutzinformationen aufgeführt. Beim Newsletter-Versand können Anmeldungen, die zustimmen, in einen Newsletter übernommen werden.',
         privacyConsentFor:
           'Die sensiblen Daten, für die diese Einwilligung gilt. Antworten auf Fragen mit diesen Kategorien setzen sie voraus.',
         showPaymentTotal:
@@ -85,6 +90,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pv: {
         privacyCategory: privacyDe.dataCategory,
+        privacyConsentPurpose: privacyDe.purpose,
         privacyConsentFor: privacyDe.dataCategory,
         showPaymentTotal: {
           nonZero: 'Wenn nicht null',
@@ -113,7 +119,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         privacyCategory: 'Privacy category',
         privacyConsent: 'Consent',
-        privacyConsentFor: 'Consent covers',
+        privacyConsentPurpose: 'Consent purpose',
+        privacyConsentFor: 'Unlocks sensitive data',
         eventDataType: 'Data Tag',
         groupCountryMatch: 'Match with group',
         price: 'Price',
@@ -124,6 +131,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'What kind of personal data this question collects, as listed in the privacy information. Questions about health, allergies, medication, disability or religion need a legal basis, usually a consent question. Only questions marked here are treated as sensitive – the platform does not detect sensitive answers by itself. Check free-text fields too.',
         privacyConsent:
           'This question asks for consent. Its wording is stored with each registration as proof of what the person agreed to.',
+        privacyConsentPurpose:
+          'What this consent is asked for, as listed in the privacy information. For the newsletter, registrations that agree can be imported into a newsletter.',
         privacyConsentFor:
           'The sensitive data this consent covers. Answers to questions tagged with these categories require it.',
         showPaymentTotal:
@@ -145,6 +154,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pv: {
         privacyCategory: privacyEn.dataCategory,
+        privacyConsentPurpose: privacyEn.purpose,
         privacyConsentFor: privacyEn.dataCategory,
         showPaymentTotal: {
           nonZero: 'When not zero',
@@ -172,7 +182,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         privacyCategory: 'Catégorie de données personnelles',
         privacyConsent: 'Consentement',
-        privacyConsentFor: 'Le consentement couvre',
+        privacyConsentPurpose: 'Finalité du consentement',
+        privacyConsentFor: 'Débloque les données sensibles',
         eventDataType: 'Étiquette de données',
         groupCountryMatch: 'Correspondance avec le groupe',
         price: 'Prix',
@@ -183,6 +194,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Le type de données personnelles que cette question collecte, tel que décrit dans les informations sur la protection des données. Les questions sur la santé, les allergies, les médicaments, le handicap ou la religion nécessitent une base légale, le plus souvent une question de consentement. Seules les questions marquées ici sont traitées comme sensibles : la plateforme ne détecte pas d’elle-même les données sensibles. Vérifie aussi les champs de texte libre.',
         privacyConsent:
           'Cette question demande un consentement. Son libellé est enregistré avec chaque inscription, comme preuve de ce que la personne a accepté.',
+        privacyConsentPurpose:
+          'Ce pour quoi ce consentement est demandé, tel que décrit dans les informations sur la protection des données. Pour la newsletter, les inscriptions qui acceptent peuvent être importées dans une newsletter.',
         privacyConsentFor:
           'Les données sensibles couvertes par ce consentement. Les réponses aux questions de ces catégories le requièrent.',
         showPaymentTotal:
@@ -204,6 +217,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pv: {
         privacyCategory: privacyFr.dataCategory,
+        privacyConsentPurpose: privacyFr.purpose,
         privacyConsentFor: privacyFr.dataCategory,
         showPaymentTotal: {
           nonZero: 'Si non nul',
@@ -232,7 +246,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         privacyCategory: 'Kategoria danych osobowych',
         privacyConsent: 'Zgoda',
-        privacyConsentFor: 'Zgoda obejmuje',
+        privacyConsentPurpose: 'Cel zgody',
+        privacyConsentFor: 'Odblokowuje dane wrażliwe',
         eventDataType: 'Tag danych',
         groupCountryMatch: 'Zgodność z grupą',
         price: 'Cena',
@@ -243,6 +258,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Jakiego rodzaju dane osobowe zbiera to pytanie, zgodnie z informacjami o ochronie danych. Pytania o zdrowie, alergie, leki, niepełnosprawność lub religię wymagają podstawy prawnej, zwykle pytania o zgodę. Tylko oznaczone tu pytania są traktowane jako wrażliwe – platforma sama nie wykrywa danych wrażliwych. Sprawdź też pola tekstowe.',
         privacyConsent:
           'To pytanie prosi o zgodę. Jego treść jest zapisywana przy każdym zgłoszeniu jako dowód tego, na co dana osoba się zgodziła.',
+        privacyConsentPurpose:
+          'W jakim celu prosisz o tę zgodę, zgodnie z informacjami o ochronie danych. W przypadku newslettera zgłoszenia, które wyrażą zgodę, można zaimportować do newslettera.',
         privacyConsentFor:
           'Dane wrażliwe, których dotyczy ta zgoda. Odpowiedzi na pytania z tych kategorii jej wymagają.',
         showPaymentTotal:
@@ -264,6 +281,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pv: {
         privacyCategory: privacyPl.dataCategory,
+        privacyConsentPurpose: privacyPl.purpose,
         privacyConsentFor: privacyPl.dataCategory,
         showPaymentTotal: {
           nonZero: 'Gdy niezerowa',
@@ -292,7 +310,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         privacyCategory: 'Kategorie osobních údajů',
         privacyConsent: 'Souhlas',
-        privacyConsentFor: 'Souhlas pokrývá',
+        privacyConsentPurpose: 'Účel souhlasu',
+        privacyConsentFor: 'Odemyká citlivé údaje',
         eventDataType: 'Datový štítek',
         groupCountryMatch: 'Shoda se skupinou',
         price: 'Cena',
@@ -303,6 +322,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Jaký druh osobních údajů tato otázka shromažďuje, jak je uvedeno v informacích o ochraně údajů. Otázky na zdraví, alergie, léky, zdravotní postižení nebo náboženství potřebují právní základ, obvykle otázku na souhlas. Jako citlivé se zachází jen s takto označenými otázkami – platforma citlivé údaje sama nerozpozná. Zkontroluj i pole pro volný text.',
         privacyConsent:
           'Tato otázka žádá o souhlas. Její znění se ukládá ke každé přihlášce jako doklad, s čím osoba souhlasila.',
+        privacyConsentPurpose:
+          'K čemu se tento souhlas vyžaduje, jak je uvedeno v informacích o ochraně osobních údajů. U newsletteru lze přihlášky, které souhlasí, importovat do newsletteru.',
         privacyConsentFor:
           'Citlivé údaje, na které se tento souhlas vztahuje. Odpovědi na otázky s těmito kategoriemi ho vyžadují.',
         showPaymentTotal:
@@ -324,6 +345,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pv: {
         privacyCategory: privacyCs.dataCategory,
+        privacyConsentPurpose: privacyCs.purpose,
         privacyConsentFor: privacyCs.dataCategory,
         showPaymentTotal: {
           nonZero: 'Když není nulová',

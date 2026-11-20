@@ -742,6 +742,7 @@ export const summerCampForm = {
           type: 'boolean',
           name: 'consent_health',
           privacyConsent: true,
+          privacyConsentPurpose: ['medical_care', 'catering'],
           privacyConsentFor: ['health', 'allergies'],
           // Asked last and only once health data was entered — "no known
           // allergies" counts. Then agreed to, never preselected, or the
@@ -859,6 +860,7 @@ export const summerCampForm = {
           type: 'boolean',
           name: 'consent_forward_list_participants',
           privacyConsent: true,
+          privacyConsentPurpose: ['transport'],
           title: {
             en: 'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
             de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer des Events weitergeleitet werden dürfen.',
@@ -873,6 +875,7 @@ export const summerCampForm = {
           type: 'boolean',
           name: 'consent_privacy',
           privacyConsent: true,
+          privacyConsentPurpose: ['photo_publication'],
           title: {
             en: 'I agree that photographs of the participant, {first_name} {last_name}, may be taken and made available to the organizer for the purpose of media coverage and advertising.',
             de: 'Ich stimme zu, dass von dem Teilnehmenden, {first_name} {last_name} Aufnahmen erstellt werden dürfen und dem Veranstalter zum Zwecke der Berichterstattung in Medien und für Werbezwecke zur Verfügung gestellt werden.',

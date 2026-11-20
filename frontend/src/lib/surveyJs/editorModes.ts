@@ -238,6 +238,7 @@ const REGISTRATION_PROPERTIES = [
   'price',
   'privacyCategory',
   'privacyConsent',
+  'privacyConsentPurpose',
   'privacyConsentFor',
 ];
 

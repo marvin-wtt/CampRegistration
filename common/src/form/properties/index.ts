@@ -5,6 +5,7 @@ import { PropertyDefinition } from './ProptertyDefinition.js';
 import {
   privacyConsent,
   privacyConsentFor,
+  privacyConsentPurpose,
   privacyCategory,
 } from './privacy.js';
 
@@ -16,6 +17,7 @@ const properties: PropertyDefinition[] = [
   showPaymentTotal,
   privacyCategory,
   privacyConsent,
+  privacyConsentPurpose,
   privacyConsentFor,
 ];
 

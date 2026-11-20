@@ -14,9 +14,9 @@ import {
 } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
-  computedRegistrationData,
   CUSTOM_FILE_FIELD_PREFIX,
   customFileSlots,
+  registrationColumns,
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
@@ -151,8 +151,7 @@ export class RegistrationService extends BaseService {
     );
 
     const formData = form.data;
-    const eventData = form.extractEventData();
-    const computedData = computedRegistrationData(eventData);
+    const computedData = registrationColumns(form);
     // Stored whether or not anyone is asked to pay: the form showed it, so it
     // is what this person agreed to, at its group's price.
     const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
@@ -319,7 +318,7 @@ export class RegistrationService extends BaseService {
         sensitive = form.sensitiveAnswers().length > 0;
         // Stored as the form leaves it, like a new registration.
         formData = form.data;
-        computedData = computedRegistrationData(form.extractEventData());
+        computedData = registrationColumns(form);
         formFileIds = form.getFileIds();
       }
       if (data.customFiles) {
@@ -448,7 +447,7 @@ export class RegistrationService extends BaseService {
 
           return this.prisma.registration.update({
             where: { id: registration.id },
-            data: computedRegistrationData(form.extractEventData()),
+            data: registrationColumns(form),
           });
         }),
       );
@@ -493,7 +492,7 @@ export class RegistrationService extends BaseService {
     // before the transaction, which then only writes.
     const data = form.withoutSensitiveAnswers();
     const fileIds = form.getFileIds();
-    const computedData = computedRegistrationData(form.extractEventData());
+    const computedData = registrationColumns(form);
 
     const written = await this.transaction(async (tx) => {
       const { count } = await tx.registration.updateMany({

@@ -19,7 +19,6 @@ describe('computedRegistrationData', () => {
         phone: ['+49 151 23456789'],
         role: ['participant'],
         gender: ['f'],
-        newsletter_consent: [true],
       }),
     ).toEqual({
       firstName: 'Ann',
@@ -33,7 +32,6 @@ describe('computedRegistrationData', () => {
       phoneNumbers: ['+49 151 23456789'],
       role: 'participant',
       gender: 'f',
-      newsletterConsent: true,
     });
   });
 
@@ -50,7 +48,6 @@ describe('computedRegistrationData', () => {
       phoneNumbers: [],
       role: null,
       gender: null,
-      newsletterConsent: null,
     });
   });
 
@@ -138,15 +135,6 @@ describe('computedRegistrationData', () => {
     ).toMatchObject({
       phoneNumbers: ['+49 151 23456789', '+33 6 12 34 56 78'],
     });
-  });
-
-  it('records newsletter consent only when one answer agreed', () => {
-    expect(
-      computedRegistrationData({ newsletter_consent: [false, true] }),
-    ).toMatchObject({ newsletterConsent: true });
-    expect(
-      computedRegistrationData({ newsletter_consent: [false, 'yes'] }),
-    ).toMatchObject({ newsletterConsent: false });
   });
 
   // The group is chosen before the form, so the answers never decide it.

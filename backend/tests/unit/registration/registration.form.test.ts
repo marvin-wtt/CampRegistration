@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FunctionFactory, SurveyModel } from 'survey-core';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { RegistrationForm } from '#app/registration/registration.form';
+import { registrationColumns } from '#app/registration/registration.helper';
 
 // `setVariables` reads these off the event to expose them as survey variables.
 function eventWith(elements: object[], freePlaces = 10): EventWithFreePlaces {
@@ -472,5 +473,72 @@ describe('RegistrationForm.getFileIds', () => {
     });
 
     expect(form.getFileIds()).toEqual(['file-1', 'file-2', 'file-3']);
+  });
+});
+
+describe('RegistrationForm.consentColumns', () => {
+  const newsletter = {
+    type: 'boolean',
+    name: 'newsletter',
+    privacyConsent: true,
+    privacyConsentPurpose: ['newsletter'],
+  };
+  const columnsFor = (elements: object[], data: unknown) =>
+    new RegistrationForm(eventWith(elements), null).load(data).consentColumns();
+
+  it('records the newsletter consent asked for its purpose', () => {
+    expect(columnsFor([newsletter], { newsletter: true })).toEqual({
+      newsletterConsent: true,
+    });
+    expect(columnsFor([newsletter], { newsletter: false })).toEqual({
+      newsletterConsent: false,
+    });
+    expect(columnsFor([newsletter], {})).toEqual({ newsletterConsent: false });
+  });
+
+  it('is null when the form never asks', () => {
+    expect(
+      columnsFor(
+        [{ ...newsletter, privacyConsentPurpose: ['photo_publication'] }],
+        { newsletter: true },
+      ),
+    ).toEqual({ newsletterConsent: null });
+  });
+
+  it('ignores a purpose on a question that is no consent', () => {
+    expect(
+      columnsFor([{ ...newsletter, privacyConsent: false }], {
+        newsletter: true,
+      }),
+    ).toEqual({ newsletterConsent: null });
+  });
+
+  it('counts any yes of a consent repeated in a dynamic panel', () => {
+    const kids = {
+      type: 'paneldynamic',
+      name: 'kids',
+      templateElements: [newsletter],
+    };
+
+    expect(
+      columnsFor([kids], {
+        kids: [{ newsletter: false }, { newsletter: true }],
+      }),
+    ).toEqual({ newsletterConsent: true });
+  });
+
+  it('is stored with the eventDataType columns', () => {
+    const form = new RegistrationForm(
+      eventWith([
+        { type: 'text', name: 'first_name', eventDataType: 'first_name' },
+        newsletter,
+      ]),
+      null,
+    ).load({ first_name: 'Ann', newsletter: true });
+
+    expect(registrationColumns(form)).toMatchObject({
+      firstName: 'Ann',
+      newsletterConsent: true,
+    });
   });
 });

@@ -23,6 +23,7 @@ interface ElementJson {
   privacyCategory?: unknown;
   privacyConsent?: unknown;
   privacyConsentFor?: unknown;
+  privacyConsentPurpose?: unknown;
 }
 
 export interface PrivacyTaggedQuestion {
@@ -48,6 +49,8 @@ export interface ConsentQuestion {
   name: string;
   /** The special categories it unlocks; empty for a consent about other things. */
   categories: string[];
+  /** What it is asked for: catalogue purposes such as `newsletter`. */
+  purposes: string[];
 }
 
 export interface FormPrivacyTags {
@@ -61,6 +64,12 @@ function asElements(value: unknown): ElementJson[] {
         (element): element is ElementJson =>
           !!element && typeof element === 'object',
       )
+    : [];
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((key): key is string => typeof key === 'string')
     : [];
 }
 
@@ -133,11 +142,8 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
       if (type === 'boolean' && element.privacyConsent === true) {
         tags.consents.push({
           name,
-          categories: Array.isArray(element.privacyConsentFor)
-            ? element.privacyConsentFor.filter(
-                (key): key is string => typeof key === 'string',
-              )
-            : [],
+          categories: strings(element.privacyConsentFor),
+          purposes: strings(element.privacyConsentPurpose),
         });
       }
     }
@@ -165,6 +171,17 @@ export function specialCategoryAnswerKeys(form: unknown): Set<string> {
   );
 }
 
+/** The special categories the form's questions are tagged with. */
+export function taggedSpecialCategories(form: unknown): string[] {
+  return [
+    ...new Set(
+      extractPrivacyTags(form)
+        .tagged.map((question) => question.category)
+        .filter(isSpecialCategory),
+    ),
+  ];
+}
+
 /**
  * Categories that rely on consent, are collected by a tagged question, and
  * have no consent question covering them.
@@ -188,11 +205,35 @@ export function uncoveredConsentCategories(
 }
 
 function categoriesOf(question: Question): string[] {
-  const value: unknown = question.getPropertyValue('privacyConsentFor');
+  return strings(question.getPropertyValue('privacyConsentFor'));
+}
 
-  return Array.isArray(value)
-    ? value.filter((key): key is string => typeof key === 'string')
-    : [];
+function isConsentQuestion(question: Question): boolean {
+  return (
+    question.getType() === 'boolean' &&
+    question.getPropertyValue('privacyConsent') === true
+  );
+}
+
+/**
+ * The answers of every consent asked for `purpose`, one per copy of the
+ * question — a dynamic panel holds one per entry. Empty when the form never
+ * asks for it.
+ */
+export function consentAnswers(
+  survey: SurveyModel,
+  purpose: string,
+): unknown[] {
+  return survey
+    .getAllQuestions(false, false, true)
+    .filter(
+      (question) =>
+        isConsentQuestion(question) &&
+        strings(question.getPropertyValue('privacyConsentPurpose')).includes(
+          purpose,
+        ),
+    )
+    .map((question) => question.value as unknown);
 }
 
 /**
@@ -202,10 +243,7 @@ function categoriesOf(question: Question): string[] {
 function consentedCategories(questions: Question[]): Set<string> {
   const byName = new Map<string, Question[]>();
   for (const question of questions) {
-    if (
-      question.getType() === 'boolean' &&
-      question.getPropertyValue('privacyConsent') === true
-    ) {
+    if (isConsentQuestion(question)) {
       const name = question.getValueName();
       byName.set(name, [...(byName.get(name) ?? []), question]);
     }
@@ -283,8 +321,7 @@ export function consentTexts(
   // its wording is proof like any other.
   for (const question of survey.getAllQuestions(false, false, true)) {
     if (
-      question.getType() !== 'boolean' ||
-      question.getPropertyValue('privacyConsent') !== true ||
+      !isConsentQuestion(question) ||
       (options.givenOnly && question.value !== true)
     ) {
       continue;

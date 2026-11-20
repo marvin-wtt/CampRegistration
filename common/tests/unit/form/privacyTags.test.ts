@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Serializer, SurveyModel } from 'survey-core';
 import {
+  consentAnswers,
   consentTexts,
   extractPrivacyTags,
   formPrivacyIssues,
@@ -8,6 +9,7 @@ import {
   uncoveredConsentCategories,
   clearUnconsentedAnswers,
   specialCategoryAnswerKeys,
+  taggedSpecialCategories,
   unconsentedQuestions,
 } from '../../../src/form/index.js';
 import { composePrivacyNotice } from '../../../src/privacy/index.js';
@@ -43,6 +45,29 @@ describe('privacy properties', () => {
     expect(
       Serializer.findProperty('boolean', 'privacyConsentFor'),
     ).toBeTruthy();
+    expect(
+      Serializer.findProperty('boolean', 'privacyConsentPurpose'),
+    ).toBeTruthy();
+  });
+
+  it('offer what a consent unlocks only while the form tags a special category', () => {
+    const forProperty = Serializer.findProperty('boolean', 'privacyConsentFor');
+    const consentOf = (json: object) =>
+      new SurveyModel(json).getQuestionByName('consent');
+    const consent = { type: 'boolean', name: 'consent', privacyConsent: true };
+
+    const untagged = consentOf({ elements: [consent] });
+    expect(forProperty.isVisible('', untagged)).toBe(false);
+
+    const tagged = consentOf({
+      elements: [
+        allergies,
+        { type: 'comment', name: 'notes', privacyCategory: 'contact' },
+        consent,
+      ],
+    });
+    expect(forProperty.isVisible('', tagged)).toBe(true);
+    expect(forProperty.getChoices(tagged)).toEqual(['allergies']);
   });
 
   it('survive a round trip through the survey model', () => {
@@ -70,8 +95,12 @@ describe('extractPrivacyTags', () => {
 
     expect(tags.tagged).toEqual([{ name: 'allergies', category: 'allergies' }]);
     expect(tags.consents).toEqual([
-      { name: 'consent_health', categories: ['allergies', 'medication'] },
-      { name: 'consent_photos', categories: [] },
+      {
+        name: 'consent_health',
+        categories: ['allergies', 'medication'],
+        purposes: [],
+      },
+      { name: 'consent_photos', categories: [], purposes: [] },
     ]);
   });
 
@@ -431,5 +460,70 @@ describe('formPrivacyIssues', () => {
       undeclared: [],
       uncovered: ['allergies'],
     });
+  });
+});
+
+describe('consent purposes', () => {
+  const newsletter = {
+    type: 'boolean',
+    name: 'newsletter',
+    privacyConsent: true,
+    privacyConsentPurpose: ['newsletter'],
+  };
+
+  it('are read from the saved form', () => {
+    expect(extractPrivacyTags({ elements: [newsletter] }).consents).toEqual([
+      { name: 'newsletter', categories: [], purposes: ['newsletter'] },
+    ]);
+  });
+
+  it('collect the answers of every consent asked for a purpose', () => {
+    const survey = new SurveyModel({
+      elements: [
+        newsletter,
+        photoConsent,
+        {
+          type: 'paneldynamic',
+          name: 'kids',
+          templateElements: [{ ...newsletter, name: 'kid_newsletter' }],
+        },
+      ],
+    });
+    survey.data = {
+      newsletter: false,
+      consent_photos: true,
+      kids: [{ kid_newsletter: true }, {}],
+    };
+
+    expect(consentAnswers(survey, 'newsletter')).toEqual([
+      false,
+      true,
+      undefined,
+    ]);
+    expect(consentAnswers(survey, 'photo_publication')).toEqual([]);
+  });
+
+  it('count only on a question marked as consent', () => {
+    const survey = new SurveyModel({
+      elements: [{ ...newsletter, privacyConsent: false }],
+    });
+    survey.data = { newsletter: true };
+
+    expect(consentAnswers(survey, 'newsletter')).toEqual([]);
+  });
+});
+
+describe('taggedSpecialCategories', () => {
+  it('lists the special categories the form tags, once each', () => {
+    expect(
+      taggedSpecialCategories({
+        elements: [
+          allergies,
+          { ...allergies, name: 'more_allergies' },
+          medication,
+          { type: 'text', name: 'email', privacyCategory: 'contact' },
+        ],
+      }),
+    ).toEqual(['allergies', 'medication']);
   });
 });

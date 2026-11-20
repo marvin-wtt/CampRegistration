@@ -35,6 +35,8 @@ export function consentQuestionJson(
     type: 'boolean',
     name: uniqueName(survey, 'consent_privacy_data'),
     privacyConsent: true,
+    // The generic wording asks for care during the event.
+    privacyConsentPurpose: ['medical_care'],
     privacyConsentFor: [...categories],
     title: localized(texts.title),
     description: localized(texts.description),
