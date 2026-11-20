@@ -17,6 +17,14 @@
         name="account_circle"
       />
     </q-avatar>
+    <q-badge
+      v-if="adminAccess.length"
+      :label="adminAccess.length"
+      color="error"
+      floating
+      rounded
+      data-test="admin-access-badge"
+    />
 
     <q-menu
       anchor="bottom end"
@@ -101,6 +109,45 @@
         </q-item>
 
         <q-separator spaced />
+
+        <template v-if="adminAccess.length">
+          <q-item-label header>{{ t('adminAccess.title') }}</q-item-label>
+          <q-item
+            v-for="grant in adminAccess"
+            :key="grant.id"
+            v-close-popup
+            clickable
+            :to="grantRoute(grant)"
+            active-class=""
+            exact-active-class=""
+          >
+            <q-item-section avatar>
+              <q-icon
+                name="shield"
+                color="error"
+              />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ t(`adminAccess.${grant.scope}`) }}</q-item-label>
+              <q-item-label caption>
+                {{
+                  t('adminAccess.until', { time: formatTime(grant.expiresAt) })
+                }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <m-btn
+                :label="t('adminAccess.end')"
+                size="sm"
+                text
+                no-caps
+                @click.stop.prevent="profileStore.endAdminAccess(grant.id)"
+              />
+            </q-item-section>
+          </q-item>
+
+          <q-separator spaced />
+        </template>
 
         <q-item
           v-if="administrator"
@@ -226,7 +273,11 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useQuasar, type QSelectOption, type QMenuProps } from 'quasar';
-import type { Profile } from '@camp-registration/common/entities';
+import type {
+  AdminAccessGrant,
+  Profile,
+} from '@camp-registration/common/entities';
+import type { RouteLocationRaw } from 'vue-router';
 import { useProfileStore } from '@/stores/profile-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -277,6 +328,34 @@ const loading = computed<boolean>(() => {
 const authenticated = computed<boolean>(() => {
   return profile.value !== undefined;
 });
+
+const adminAccess = computed<AdminAccessGrant[]>(
+  () => profileStore.adminAccess,
+);
+
+function grantRoute(grant: AdminAccessGrant): RouteLocationRaw {
+  switch (grant.scope) {
+    case 'event':
+      return { name: 'management.event', params: { eventId: grant.scopeId } };
+    case 'newsletter':
+      return {
+        name: 'management.newsletter',
+        params: { newsletterId: grant.scopeId },
+      };
+    case 'organization':
+      return {
+        name: 'management.organization',
+        params: { organizationId: grant.scopeId },
+      };
+  }
+}
+
+function formatTime(dateTime: string): string {
+  return new Intl.DateTimeFormat(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateTime));
+}
 
 const administrator = computed<boolean>(() => {
   return profile.value?.role === 'ADMIN';
@@ -344,6 +423,13 @@ function logout() {
 </style>
 
 <i18n lang="yaml" locale="en">
+adminAccess:
+  title: 'Administrator access'
+  event: 'Event'
+  newsletter: 'Newsletter'
+  organization: 'Organization'
+  until: 'Until {time}'
+  end: 'End'
 account: 'Account'
 username: 'Signed in as'
 events: 'Events'
@@ -358,6 +444,13 @@ dark_mode: 'Dark Mode'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+adminAccess:
+  title: 'Administratorzugriff'
+  event: 'Veranstaltung'
+  newsletter: 'Newsletter'
+  organization: 'Organisation'
+  until: 'Bis {time}'
+  end: 'Beenden'
 account: 'Konto'
 username: 'Angemeldet als'
 events: 'Veranstaltungen'
@@ -372,6 +465,13 @@ dark_mode: 'Dunkelmodus'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+adminAccess:
+  title: 'Accès administrateur'
+  event: 'Événement'
+  newsletter: 'Newsletter'
+  organization: 'Organisation'
+  until: "Jusqu'à {time}"
+  end: 'Terminer'
 account: 'Compte'
 username: 'Connecté en tant que'
 events: 'Événements'
@@ -386,6 +486,13 @@ dark_mode: 'Mode sombre'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+adminAccess:
+  title: 'Dostęp administratora'
+  event: 'Wydarzenie'
+  newsletter: 'Newsletter'
+  organization: 'Organizacja'
+  until: 'Do {time}'
+  end: 'Zakończ'
 account: 'Konto'
 username: 'Zalogowany jako'
 events: 'Wydarzenia'
@@ -400,6 +507,13 @@ dark_mode: 'Tryb ciemny'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+adminAccess:
+  title: 'Přístup administrátora'
+  event: 'Akce'
+  newsletter: 'Newsletter'
+  organization: 'Organizace'
+  until: 'Do {time}'
+  end: 'Ukončit'
 account: 'Účet'
 username: 'Přihlášen jako'
 events: 'Akce'

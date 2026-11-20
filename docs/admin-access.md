@@ -112,9 +112,10 @@ Each must follow the same rule (own role, or grant), or be confirmed to expose n
 
 Two places, for two audiences:
 
-- **Per resource, for the people it concerns.** The grant entries sit in the resource's audit log, so directors,
-  newsletter owners and organization admins see who accessed their resource, when, and why, next to the changes made
-  during the grant. The audit log page gets an "Administrator access" action filter.
+- **Per event, for the people it concerns.** The grant entries sit in the event's audit log, so directors see who
+  accessed their event, when, and why, next to the changes made during the grant. The audit log's entity filter has an
+  "Administrator access" option. Newsletters and organizations have no audit log yet, so their grants are reviewed
+  centrally only.
 - **Central, for administrators.** A read-only "Administrator access" page in the administration area lists every grant:
   administrator, resource (linked), reason, start, expiry, ended early. Filters: search (administrator or reason), scope,
   active or ended. Administrators see each other's grants, which is the point: access is reviewed by peers, not only by the
@@ -149,8 +150,11 @@ to a director with full rights).
 - **No role at all:** instead of a 403 page, the resource shows "You don't manage this event" with the same request
   button.
 
-A small indicator in the app header shows the count of active grants, listing each with a link and "End". It only shows
+A badge on the profile menu shows the count of active grants; the menu lists each with a link and "End". It only shows
 status; access is requested inside the resource.
+
+The administration pages (events, newsletters, organizations) act on resources too: before unpublishing or deleting,
+they open the same request dialog unless the administrator already holds a grant or the full role there.
 
 ### 2FA
 

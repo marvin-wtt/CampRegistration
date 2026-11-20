@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, readonly, ref } from 'vue';
 import { useAPIService } from '@/services/APIService';
 import type {
+  AdminAccessGrant,
+  AdminAccessGrantCreateData,
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
+import type { PermissionScope } from '@camp-registration/common/permissions';
 import { useRouter } from 'vue-router';
 import { useAuthBus, useEventBus } from '@/composables/bus';
 import { useResource } from '@/composables/resource';
@@ -57,6 +60,41 @@ export const useProfileStore = defineStore('profile', () => {
       !profile.data.value.twoFactorEnabled,
   );
 
+  // Grants run out without a server round trip; re-check twice a minute.
+  const now = ref(Date.now());
+  setInterval(() => (now.value = Date.now()), 30_000);
+
+  const adminAccess = computed<AdminAccessGrant[]>(() =>
+    administrator.value
+      ? (profile.data.value?.adminAccess ?? []).filter(
+          (grant) =>
+            grant.endedAt === null &&
+            new Date(grant.expiresAt).getTime() > now.value,
+        )
+      : [],
+  );
+
+  function activeAdminAccess(
+    scope: PermissionScope,
+    scopeId: string | undefined,
+  ): AdminAccessGrant | undefined {
+    return adminAccess.value.find(
+      (grant) => grant.scope === scope && grant.scopeId === scopeId,
+    );
+  }
+
+  async function requestAdminAccess(
+    data: AdminAccessGrantCreateData,
+  ): Promise<void> {
+    await api.requestAdminAccess(data);
+    await fetchProfile();
+  }
+
+  async function endAdminAccess(grantId: string): Promise<void> {
+    await api.endAdminAccess(grantId);
+    await fetchProfile();
+  }
+
   async function deleteProfile(): Promise<void> {
     await profile.mutate('delete', () => api.deleteProfile(), {
       feedback: 'progress',
@@ -70,6 +108,11 @@ export const useProfileStore = defineStore('profile', () => {
     user: profile.data,
     administrator,
     administratorNeedsTwoFactor,
+    adminAccess,
+    activeAdminAccess,
+    now: readonly(now),
+    requestAdminAccess,
+    endAdminAccess,
     error: profile.error,
     isLoading: profile.isLoading,
     reset: profile.reset,

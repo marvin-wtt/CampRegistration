@@ -55,6 +55,10 @@
           </slot>
         </div>
 
+        <admin-access-button
+          v-if="adminAccess"
+          :subject="adminAccess"
+        />
         <profile-menu />
       </m-toolbar>
     </q-header>
@@ -145,8 +149,12 @@
       <!-- Rail footer: profile (desktop only — mobile uses the top bar) -->
       <div
         v-if="quasar.screen.gt.xs"
-        class="rail-footer row justify-center q-py-sm"
+        class="rail-footer column items-center q-py-sm q-gutter-y-sm"
       >
+        <admin-access-button
+          v-if="adminAccess"
+          :subject="adminAccess"
+        />
         <profile-menu />
       </div>
     </q-drawer>
@@ -157,6 +165,7 @@
     <layout-floating-controls
       v-if="showFloatingControls"
       :back-to="backRoute"
+      :admin-access="adminAccess"
     >
       <template
         v-if="slots.navigation"
@@ -169,10 +178,28 @@
     <q-page-container
       :class="{ 'q-page-container--floating-controls': showFloatingControls }"
     >
-      <router-view v-slot="{ Component }">
+      <admin-access-bar
+        v-if="adminAccess"
+        :subject="adminAccess"
+      />
+      <admin-access-required
+        v-if="adminAccess && adminAccessRequired"
+        :subject="adminAccess"
+      />
+      <router-view
+        v-else
+        v-slot="{ Component }"
+      >
         <transition name="fade">
-          <slot :component="Component">
-            <component :is="Component" />
+          <!-- Remounts the page when administrator access starts or ends. -->
+          <slot
+            :component="Component"
+            :access-key="accessKey"
+          >
+            <component
+              :is="Component"
+              :key="accessKey"
+            />
           </slot>
         </transition>
       </router-view>
@@ -192,6 +219,13 @@ import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import NavigationItemSkeleton from '@/components/NavigationItemSkeleton.vue';
 import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.vue';
+import AdminAccessButton from '@/components/administration/access/AdminAccessButton.vue';
+import AdminAccessBar from '@/components/administration/access/AdminAccessBar.vue';
+import AdminAccessRequired from '@/components/administration/access/AdminAccessRequired.vue';
+import {
+  type AdminAccessSubject,
+  useAdminAccess,
+} from '@/composables/adminAccess';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -204,12 +238,20 @@ const {
   backTo,
   loading = false,
   title = '',
+  adminAccess,
 } = defineProps<{
   navigationItems?: NavigationItemProps[];
+  /** The event, newsletter or organization an administrator may request access to. */
+  adminAccess?: AdminAccessSubject | undefined;
   backTo?: RouteLocationRaw | undefined;
   title?: string | undefined;
   loading?: boolean;
 }>();
+
+const { required: adminAccessRequired, grant: adminGrant } = useAdminAccess(
+  () => adminAccess,
+);
+const accessKey = computed<string>(() => adminGrant.value?.id ?? 'own');
 
 useMeta(() => {
   return {

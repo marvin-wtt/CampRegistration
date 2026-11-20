@@ -1,5 +1,8 @@
 <template>
-  <general-layout :title="title">
+  <general-layout
+    :title="title"
+    :admin-access="adminAccessSubject"
+  >
     <template #toolbar>
       <workspace-switcher />
     </template>
@@ -18,6 +21,7 @@ import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useRoute } from 'vue-router';
+import type { AdminAccessSubject } from '@/composables/adminAccess';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -28,6 +32,12 @@ const newsletterId = computed<string | undefined>(() => {
   const value = route.params.newsletterId;
   return Array.isArray(value) ? value[0] : value;
 });
+
+const adminAccessSubject = computed<AdminAccessSubject | undefined>(() =>
+  newsletterId.value
+    ? { scope: 'newsletter', id: newsletterId.value }
+    : undefined,
+);
 
 const title = computed<string>(() => {
   const id = newsletterId.value;

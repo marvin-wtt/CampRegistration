@@ -3,6 +3,7 @@
     :navigation-items="navigationItems"
     :title="title"
     :loading="permissionsLoading"
+    :admin-access="adminAccessSubject"
   >
     <template #toolbar>
       <workspace-switcher />
@@ -12,17 +13,17 @@
       <workspace-switcher rail />
     </template>
 
-    <template #default="{ component }">
+    <template #default="{ component, accessKey }">
       <component
         :is="component"
-        :key="eventKey"
+        :key="`${eventKey}:${accessKey}`"
       />
     </template>
   </general-layout>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -37,6 +38,10 @@ import { useRealtimeStore } from '@/stores/realtime-store';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
 import { provideNavigationSettings } from '@/composables/eventNavigationSettings';
+import {
+  type AdminAccessSubject,
+  useAdminAccess,
+} from '@/composables/adminAccess';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -67,6 +72,23 @@ const eventKey = computed<string | undefined>(() => {
   const eventId = route.params.eventId;
   return Array.isArray(eventId) ? eventId[0] : eventId;
 });
+
+const adminAccessSubject = computed<AdminAccessSubject | undefined>(() =>
+  eventKey.value ? { scope: 'event', id: eventKey.value } : undefined,
+);
+const { required: adminAccessRequired, grant: adminGrant } =
+  useAdminAccess(adminAccessSubject);
+
+// What the event loaded with no longer matches the permissions.
+watch(
+  () => adminGrant.value?.id,
+  () => {
+    if (route.params.eventId) {
+      void eventDetailStore.reload();
+      realtimeStore.reopen();
+    }
+  },
+);
 
 const title = computed<string>(() => {
   return eventName.value ?? t('title');
@@ -111,7 +133,7 @@ const permissionsLoading = computed<boolean>(() => {
 // falls back to the floating switcher rather than showing links that could not
 // resolve without a eventId.
 const navigationItems = computed<NavigationItemProps<'event'>[]>(() => {
-  if (!route.params.eventId) {
+  if (!route.params.eventId || adminAccessRequired.value) {
     return [];
   }
 

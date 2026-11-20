@@ -3,6 +3,7 @@
     :title="title"
     :navigation-items="navigationItems"
     :loading="isLoading"
+    :admin-access="adminAccessSubject"
   >
     <template #toolbar>
       <workspace-switcher />
@@ -33,6 +34,10 @@ import { useOrganizationDetailsStore } from '@/stores/organization-details-store
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import type { NavigationItemProps } from '@/components/NavigationItemProps';
 import type { OrganizationPermission } from '@camp-registration/common/permissions';
+import {
+  type AdminAccessSubject,
+  useAdminAccess,
+} from '@/composables/adminAccess';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -43,6 +48,23 @@ const { canAccessOrg } = useOrganizationPermissions();
 
 const organizationId = computed(
   () => route.params.organizationId as string | undefined,
+);
+
+const adminAccessSubject = computed<AdminAccessSubject | undefined>(() =>
+  organizationId.value
+    ? { scope: 'organization', id: organizationId.value }
+    : undefined,
+);
+const { required: adminAccessRequired, grant: adminGrant } =
+  useAdminAccess(adminAccessSubject);
+
+watch(
+  () => adminGrant.value?.id,
+  () => {
+    if (organizationId.value) {
+      void organizationStore.reload();
+    }
+  },
 );
 
 const title = computed(() =>
@@ -58,7 +80,7 @@ interface OrganizationNavigationItem {
 }
 
 const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
-  if (!organizationId.value) {
+  if (!organizationId.value || adminAccessRequired.value) {
     return [];
   }
 
