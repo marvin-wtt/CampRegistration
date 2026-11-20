@@ -62,13 +62,35 @@ export const or = (...guardFns: GuardFn[]): GuardFn => {
   };
 };
 
-export const admin = (req: Request): boolean | string => {
+export const ADMIN_TWO_FACTOR_REQUIRED = 'ADMIN_2FA_REQUIRED';
+
+const hasAdminRole = (req: Request): boolean => {
   return (
     req.user !== undefined &&
     'role' in req.user &&
     typeof req.user.role === 'string' &&
     req.user.role.toLowerCase() === 'admin'
   );
+};
+
+// `req.user` is loaded with `twoFactor.confirmedAt` by the JWT strategy.
+const hasTwoFactor = (req: Request): boolean => {
+  const twoFactor: unknown =
+    req.user !== undefined && 'twoFactor' in req.user
+      ? req.user.twoFactor
+      : null;
+
+  return (
+    typeof twoFactor === 'object' &&
+    twoFactor !== null &&
+    'confirmedAt' in twoFactor &&
+    twoFactor.confirmedAt != null
+  );
+};
+
+// The administrator role grants nothing without two-factor authentication.
+export const admin = (req: Request): boolean => {
+  return hasAdminRole(req) && hasTwoFactor(req);
 };
 
 /**
@@ -96,6 +118,16 @@ export const guard = (guardFn?: GuardFn) => {
 
     if (req.isUnauthenticated()) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated');
+    }
+
+    // Tells an administrator why their role didn't apply, so the client can
+    // send them to the setup instead of showing a bare 403.
+    if (hasAdminRole(req) && !hasTwoFactor(req)) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Administrator access requires two-factor authentication',
+        { code: ADMIN_TWO_FACTOR_REQUIRED },
+      );
     }
 
     throw new ApiError(httpStatus.FORBIDDEN, message);

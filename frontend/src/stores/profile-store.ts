@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { computed } from 'vue';
 import { useAPIService } from '@/services/APIService';
 import type {
   Profile,
@@ -43,6 +44,19 @@ export const useProfileStore = defineStore('profile', () => {
     });
   }
 
+  // Mirrors the backend: the role grants nothing without two-factor auth.
+  const administrator = computed<boolean>(
+    () =>
+      profile.data.value?.role === 'ADMIN' &&
+      profile.data.value.twoFactorEnabled,
+  );
+
+  const administratorNeedsTwoFactor = computed<boolean>(
+    () =>
+      profile.data.value?.role === 'ADMIN' &&
+      !profile.data.value.twoFactorEnabled,
+  );
+
   async function deleteProfile(): Promise<void> {
     await profile.mutate('delete', () => api.deleteProfile(), {
       feedback: 'progress',
@@ -54,6 +68,8 @@ export const useProfileStore = defineStore('profile', () => {
 
   return {
     user: profile.data,
+    administrator,
+    administratorNeedsTwoFactor,
     error: profile.error,
     isLoading: profile.isLoading,
     reset: profile.reset,

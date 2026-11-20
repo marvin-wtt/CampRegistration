@@ -39,6 +39,20 @@ describe('/api/v1/admin/overview', () => {
         .expect(403);
     });
 
+    it('should respond with `403` and ADMIN_2FA_REQUIRED for an admin without 2FA', async () => {
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+        twoFactor: undefined,
+      });
+
+      const { body } = await request()
+        .get('/api/v1/admin/overview')
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(403);
+
+      expect(body.errorCode).toBe('ADMIN_2FA_REQUIRED');
+    });
+
     it('should respond with `200` status code and the overview shape for admin', async () => {
       const { accessToken } = await createAdminWithToken();
 

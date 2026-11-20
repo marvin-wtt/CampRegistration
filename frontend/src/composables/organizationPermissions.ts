@@ -18,7 +18,7 @@ export function useOrganizationPermissions() {
 
   const { can, canAny, canFor, cannot, canAccess } =
     createScopePermissions<'organization'>({
-      isAdmin: () => user.value?.role === 'ADMIN',
+      isAdmin: () => profileStore.administrator,
       granted: (organizationId) =>
         (user.value?.organizationAccess ?? []).find(
           (value) => value.organizationId === organizationId,

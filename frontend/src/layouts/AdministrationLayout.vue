@@ -10,6 +10,13 @@
     <template #navigation>
       <workspace-switcher rail />
     </template>
+
+    <template
+      v-if="administratorNeedsTwoFactor"
+      #default
+    >
+      <administrator-two-factor-required />
+    </template>
   </general-layout>
 </template>
 
@@ -20,10 +27,14 @@ import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore } from '@/stores/profile-store';
+import { storeToRefs } from 'pinia';
+import AdministratorTwoFactorRequired from '@/components/administration/AdministratorTwoFactorRequired.vue';
 
 const { t } = useI18n();
 
 const authStore = useAuthStore();
+const { administratorNeedsTwoFactor } = storeToRefs(useProfileStore());
 
 onMounted(async () => {
   await authStore.init();

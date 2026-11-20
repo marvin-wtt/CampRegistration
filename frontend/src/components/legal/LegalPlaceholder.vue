@@ -34,16 +34,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
-const { user } = storeToRefs(useProfileStore());
 
-const isAdmin = computed<boolean>(() => user.value?.role === 'ADMIN');
+const { administrator: isAdmin } = storeToRefs(useProfileStore());
 </script>
 
 <i18n lang="yaml" locale="en">

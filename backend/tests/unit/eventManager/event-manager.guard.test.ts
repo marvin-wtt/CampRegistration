@@ -60,7 +60,11 @@ describe('eventManagerSubscriber', () => {
     ({
       authUserId: () => 'admin-1',
       modelOrFail: () => event,
-      user: { id: 'admin-1', role: 'ADMIN' },
+      user: {
+        id: 'admin-1',
+        role: 'ADMIN',
+        twoFactor: { confirmedAt: new Date() },
+      },
     }) as unknown as Request;
 
   it('resolves an admin via getAdminAuthorization without a manager lookup', async () => {

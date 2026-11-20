@@ -77,7 +77,7 @@ export async function scopeAccess<S extends PermissionScope>(
   scope: S,
   permission: ScopePermission<S>,
 ): Promise<ScopeAccess> {
-  if (admin(req) === true) {
+  if (admin(req)) {
     return 'all';
   }
 

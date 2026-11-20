@@ -19,7 +19,7 @@ export function useNewsletterPermissions() {
 
   const { can, canAny, canFor, cannot, canAccess } =
     createScopePermissions<'newsletter'>({
-      isAdmin: () => user.value?.role === 'ADMIN',
+      isAdmin: () => profileStore.administrator,
       granted: (newsletterId) =>
         (user.value?.newsletterAccess ?? []).find(
           (value) => value.newsletterId === newsletterId,
