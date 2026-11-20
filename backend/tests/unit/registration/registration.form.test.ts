@@ -27,7 +27,7 @@ const errorsFor = (
   event: EventWithFreePlaces,
   data: unknown,
   locale?: string,
-) => new RegistrationForm(event, { locale }).load(data).dataErrors();
+) => new RegistrationForm(event, null, locale).load(data).dataErrors();
 
 describe('RegistrationForm.dataErrors', async () => {
   it('accepts data that fits the form', async () => {
@@ -90,7 +90,7 @@ describe('RegistrationForm.dataErrors', async () => {
     const groupErrors = (groupCountryMatch: string | undefined, data: object) =>
       new RegistrationForm(
         eventWith([{ type: 'country', name: 'country', groupCountryMatch }]),
-        { group: 'fr' },
+        'fr',
       )
         .load(data)
         .dataErrors();
@@ -395,7 +395,7 @@ describe('RegistrationForm.dataErrors', async () => {
       0,
     );
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       first_name: 'Jhon',
       waiting_list: false,
     });
@@ -414,7 +414,7 @@ describe('RegistrationForm.extractEventData', () => {
       { type: 'text', name: 'notes' },
     ]);
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       first_name: 'Jhon',
       email: 'jhon@example.com',
       notes: 'untagged',
@@ -443,7 +443,7 @@ describe('RegistrationForm.extractEventData', () => {
       },
     ]);
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       contacts: [
         { name: 'Mom', phone: '+49 123' },
         { name: 'Dad', phone: '+49 456' },
@@ -466,7 +466,7 @@ describe('RegistrationForm.getFileIds', () => {
       { type: 'file', name: 'empty' },
     ]);
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       passport: 'file-1',
       documents: ['file-2', 'file-3'],
     });

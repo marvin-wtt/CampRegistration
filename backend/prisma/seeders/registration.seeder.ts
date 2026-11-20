@@ -201,7 +201,8 @@ export class RegistrationSeeder {
   ): Partial<Prisma.RegistrationCreateInput> {
     const form = new RegistrationForm(
       { ...this.event, freePlaces: freePlacesFor(this.event, waitingList) },
-      { locale, group },
+      group,
+      locale,
     ).load(data);
 
     return {

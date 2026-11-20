@@ -13,6 +13,7 @@ import { eventAuditPolicy } from '#app/event/event.audit';
 import {
   calculateFreePlaces,
   isRetentionPurged,
+  notRetentionPurged,
   type FreePlaces,
 } from '#app/event/event.util';
 import {
@@ -182,11 +183,8 @@ export class EventService extends BaseService {
     now: Date,
   ): Prisma.EventWhereInput {
     const noWindow = { registrationOpensAt: null, registrationClosesAt: null };
-    // Mirrors `isRetentionPurged`: such an event is closed for good.
-    const notPurged = {
-      sensitiveDataPurgedAt: null,
-      registrationDataPurgedAt: null,
-    };
+    // A purged event is closed for good.
+    const notPurged = notRetentionPurged;
 
     switch (status) {
       case 'upcoming':

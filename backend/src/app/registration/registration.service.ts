@@ -1,6 +1,6 @@
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
-import { isRetentionPurged } from '#app/event/event.util';
+import { isRetentionPurged, notRetentionPurged } from '#app/event/event.util';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
@@ -8,7 +8,10 @@ import {
   assertAmountWithinLimit,
   assertPriceUnchanged,
 } from './registration.price-check.js';
-import { RegistrationForm } from '#app/registration/registration.form';
+import {
+  RegistrationForm,
+  registrationForms,
+} from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
   computedRegistrationData,
@@ -30,25 +33,8 @@ import {
   assertConsentTextsUnchanged,
 } from './registration.privacy.js';
 
-/**
- * The stored consent texts plus those of consents given since: a consent a
- * manager records later (on paper) is copied as the form shows it now, and a
- * text already stored is never replaced. Undefined when nothing changes.
- */
-function newlyGivenConsentTexts(
-  before: Pick<Registration, 'data' | 'consentTexts'>,
-  given: Record<string, string>,
-): Record<string, string> | undefined {
-  const previousData = before.data;
-  const stored = before.consentTexts ?? {};
-  const added = Object.entries(given).filter(
-    ([name]) => previousData[name] !== true && !(name in stored),
-  );
-
-  return added.length > 0
-    ? { ...stored, ...Object.fromEntries(added) }
-    : undefined;
-}
+/** Registrations read per round trip when clearing sensitive answers. */
+const BATCH_SIZE = 100;
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -147,10 +133,9 @@ export class RegistrationService extends BaseService {
     // single-group event.
     const { group } = data;
 
-    const form = new RegistrationForm(event, {
-      locale: data.locale,
-      group,
-    }).load(data.data);
+    const form = new RegistrationForm(event, group, data.locale).load(
+      data.data,
+    );
 
     const formData = form.data;
     const eventData = form.extractEventData();
@@ -307,29 +292,19 @@ export class RegistrationService extends BaseService {
 
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
       let formFileIds: string[] | undefined;
-      let consentTexts: Record<string, string> | undefined;
-      let formData = data.data;
+      let sensitive = false;
 
       if (data.data) {
         // Read as the form it was answered in: the group's `{event.*}` values
         // and the locale can change what the form shows and computes.
-        const form = new RegistrationForm(event, {
-          locale: before.locale,
-          group: data.group ?? before.group,
-        }).load(data.data);
-        // Sensitive answers deleted for good never come back through an edit.
-        // Re-read inside the transaction, in case a deletion runs right now.
-        if (isRetentionPurged(await purgeState(tx, event.id))) {
-          formData = form.withoutSensitiveAnswers();
-        }
+        const form = new RegistrationForm(
+          event,
+          data.group ?? before.group,
+          before.locale,
+        ).load(data.data);
+        sensitive = form.sensitiveAnswers().length > 0;
         computedData = computedRegistrationData(form.extractEventData());
         formFileIds = form.getFileIds();
-
-        // No consent check here: only managers edit, and what they record
-        // (say, allergies a parent phoned in) may rest on consent given
-        // outside the form. That is the organizer's responsibility; the audit
-        // log records the edit. Registrants' own submissions are checked.
-        consentTexts = newlyGivenConsentTexts(before, form.givenConsentTexts());
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
@@ -366,11 +341,16 @@ export class RegistrationService extends BaseService {
         : undefined;
 
       const after = await tx.registration.update({
-        where: { id: registrationId },
+        where: {
+          id: registrationId,
+          // Sensitive answers deleted for good never come back through an edit
+          // (docs/privacy.md, 8). Part of the write, so a deletion that started
+          // since is caught too.
+          ...(sensitive ? { event: notRetentionPurged } : {}),
+        },
         data: {
           ...computedData,
-          data: formData,
-          consentTexts,
+          data: data.data,
           customData: data.customData,
           status: data.status,
           group: data.group,
@@ -443,18 +423,7 @@ export class RegistrationService extends BaseService {
 
   async updateRegistrationsComputedDataByEvent(event: EventWithFreePlaces) {
     const registrations = await this.queryRegistrations(event.id);
-
-    // One form per (locale, group) a registration was answered in.
-    const forms = new Map<string, RegistrationForm>();
-    const formFor = ({ locale, group }: Registration) => {
-      const key = `${locale}|${group ?? ''}`;
-      let form = forms.get(key);
-      if (!form) {
-        form = new RegistrationForm(event, { locale, group });
-        forms.set(key, form);
-      }
-      return form;
-    };
+    const formFor = registrationForms(event);
 
     const results = registrations.map((registration) => {
       const form = formFor(registration).load(registration.data);
@@ -472,6 +441,78 @@ export class RegistrationService extends BaseService {
     });
 
     await Promise.all(results);
+  }
+
+  /**
+   * Clears the answers to special-category questions in every registration of
+   * the event and detaches the files uploaded to them; the file cleanup removes
+   * those. No mails, no audit entry per registration. Returns how many changed.
+   */
+  async clearSensitiveAnswers(event: EventWithFreePlaces): Promise<number> {
+    const formFor = registrationForms(event);
+    let cleared = 0;
+
+    for await (const registration of this.registrationsOfEvent(event.id)) {
+      const form = formFor(registration).load(registration.data);
+      if (form.sensitiveAnswers().length === 0) {
+        continue;
+      }
+
+      // From here on the form holds the cleared response: the computed
+      // columns and files are read from it, so no copy of an answer stays.
+      // Computed before the transaction, which then only writes.
+      const data = form.withoutSensitiveAnswers();
+      const fileIds = form.getFileIds();
+      const computedData = computedRegistrationData(form.extractEventData());
+
+      await this.transaction(async (tx) => {
+        await this.fileService.detachFilesExcept(
+          tx,
+          'registrationId',
+          registration.id,
+          fileIds,
+          { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
+        );
+        await tx.registration.update({
+          where: { id: registration.id },
+          data: { ...computedData, data },
+        });
+      });
+      cleared++;
+    }
+
+    return cleared;
+  }
+
+  /** The event's registrations, read in batches by id. */
+  private async *registrationsOfEvent(eventId: string) {
+    let cursor: string | undefined;
+    let batch;
+
+    do {
+      batch = await this.prisma.registration.findMany({
+        where: { eventId },
+        select: { id: true, data: true, locale: true, group: true },
+        orderBy: { id: 'asc' },
+        take: BATCH_SIZE,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      });
+      yield* batch;
+      cursor = batch.at(-1)?.id;
+    } while (batch.length === BATCH_SIZE);
+  }
+
+  /**
+   * Deletes every registration of the event in one statement. Bed assignments,
+   * files and audit entries are only detached. No mails, no audit entry per
+   * registration. Returns how many were deleted.
+   */
+  async deleteRegistrationsForEvent(eventId: string): Promise<number> {
+    const { count } = await this.prisma.registration.deleteMany({
+      where: { eventId },
+    });
+
+    return count;
   }
 }
 

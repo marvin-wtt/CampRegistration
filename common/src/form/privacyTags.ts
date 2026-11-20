@@ -258,6 +258,19 @@ export function isSpecialCategory(category: unknown): boolean {
   return SPECIAL_CATEGORIES.has(category);
 }
 
+/** Questions tagged with a special category that hold an answer. */
+export function answeredSpecialCategoryQuestions(
+  survey: SurveyModel,
+): Question[] {
+  return survey
+    .getAllQuestions(false, false, true)
+    .filter(
+      (question) =>
+        isSpecialCategory(question.getPropertyValue('privacyCategory')) &&
+        !question.isEmpty(),
+    );
+}
+
 /**
  * Clears every answer to a question tagged with a special category, through
  * SurveyJS itself: it knows where a value lives — "Other" text and comments,

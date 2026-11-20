@@ -488,10 +488,10 @@ be tagged, and only boolean questions can be consents.
   filled in (`{first_name}`), through the shared `consentTexts`
   (`common/src/form/privacyTags.ts`). The description is included because it
   often carries the legally relevant part ("voluntary, can be revoked at any time").
-- **[implemented]** Copied when a consent answer becomes `true` — at submission,
-  or when a manager records a consent given on paper (timed by its audit entry, not
-  `createdAt`). A stored text is never replaced. A withdrawal leaves it in place: it
-  still shows what was consented to, and the audit log shows the withdrawal.
+- **[implemented]** Copied at submission only, the one moment the form witnesses
+  the consent. Manager edits never touch it: a consent given or withdrawn later
+  (on paper, by email) is proven by that record, and the audit log shows the
+  change. A withdrawal leaves the stored text in place, as what was consented to.
 
 **Stale forms — compare the consent texts, like the price**
 
@@ -830,9 +830,10 @@ keep data.
   cascade.
 - Both need `event.registrations.delete`, warn to keep a copy of anything legally
   required first, and require typing the event name (`SafeDeleteDialog`); the
-  request carries `confirm: true`. Both run in batches and are idempotent. The
+  request carries `confirm: true`. The sensitive deletion runs in batches,
+  deleting all registrations is one statement; both are idempotent. The
   deletion is recorded and registration closed before any data is touched, so no
-  registration can arrive while it runs. Registration create and edit re-read the deletion state inside their transaction, so one racing a deletion is refused or stripped. An interrupted deletion of all registrations is visible (marked deleted, registrations left) and the page offers to complete it; an interrupted sensitive-data deletion is completed by calling the endpoint again.
+  registration can arrive while it runs. A registration create re-reads the deletion state inside its transaction; an edit carrying sensitive answers is written only on the condition that the event is not purged, so one racing a deletion is refused. An interrupted deletion of all registrations is visible (marked deleted, registrations left) and the page offers to complete it; an interrupted sensitive-data deletion is completed by calling the endpoint again.
 - The event records the deletion for good: `sensitiveDataPurgedAt`,
   `registrationDataPurgedAt` (which implies the former). Nothing clears them, and
   deleted data is never treated as restorable. A deadline whose data is deleted is
@@ -842,14 +843,15 @@ keep data.
   would bring back what was deleted. The deletion also ends an open or scheduled
   registration window, and the window cannot be changed afterwards (409; the editor
   and the event card disable it). Registrants only see the event as closed. The
-  data page warns while registration is open or the event has not ended. After the sensitive deletion an edit cannot
-  store sensitive answers again. After deleting everything, the dashboard hides the
+  data page warns while registration is open or the event has not ended. After the sensitive deletion an edit carrying
+  sensitive answers is refused (400), never
+  silently stripped: the manager learns the input was not kept. After deleting everything, the dashboard hides the
   cards built on registrations and the participants page says the data is gone.
 - **[implemented]** What was deleted is shown as deleted, never as empty. The
   texts give the reason ("for data protection reasons"), not the date; the data
   page and the audit log keep that.
   - After the sensitive deletion, table columns on special-category answers
-    (`usePurgedFields`, from the current form's tags as the server strips edits)
+    (`usePurgedFields`, from the current form's tags as the server checks edits)
     are hatched on screen and their cells show a dashed, italic "Deleted" chip
     (`PurgedTableCell`, whatever the column's `renderAs`); they are neither
     sortable nor searchable, print as "— deleted —" and export as "Deleted".

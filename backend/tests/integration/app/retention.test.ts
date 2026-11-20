@@ -335,6 +335,42 @@ describe('retention workflow', () => {
       expect(stored.data).toEqual({ passport: passport.id });
     });
 
+    it('should clear the column copy of a sensitive answer', async () => {
+      const { event, registration, token } = await eventDue(-1, {
+        form: {
+          pages: [
+            {
+              name: 'page',
+              elements: [
+                {
+                  type: 'text',
+                  name: 'gender',
+                  eventDataType: 'gender',
+                  privacyCategory: 'health',
+                },
+              ],
+            },
+          ],
+        },
+      });
+      await prisma.registration.update({
+        where: { id: registration.id },
+        data: { data: { gender: 'female' }, gender: 'female' },
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
+        .send({ confirm: true })
+        .auth(token, { type: 'bearer' })
+        .expect(204);
+
+      const stored = await prisma.registration.findUniqueOrThrow({
+        where: { id: registration.id },
+      });
+      expect(stored.data).toEqual({});
+      expect(stored.gender).toBeNull();
+    });
+
     it('should clear sensitive answers and close registrations for good', async () => {
       const { event, registration, token } = await eventDue(-1);
 
@@ -361,6 +397,32 @@ describe('retention workflow', () => {
         .auth(token, { type: 'bearer' })
         .expect(200);
       expect(retention.body.data.deadlines[0].status).toBe('resolved');
+    });
+
+    it('should refuse an edit that brings sensitive answers back', async () => {
+      const { event, registration, token } = await eventDue(-1);
+      await request()
+        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
+        .send({ confirm: true })
+        .auth(token, { type: 'bearer' })
+        .expect(204);
+      const url = `/api/v1/events/${event.id}/registrations/${registration.id}`;
+
+      await request()
+        .patch(url)
+        .send({ data: { first_name: 'Ada', allergies: 'Peanuts' } })
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+
+      await request()
+        .patch(url)
+        .send({ data: { first_name: 'Grace' } })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      const stored = await prisma.registration.findUniqueOrThrow({
+        where: { id: registration.id },
+      });
+      expect(stored.data).toEqual({ first_name: 'Grace' });
     });
 
     it('should delete all registrations and imply the sensitive purge', async () => {

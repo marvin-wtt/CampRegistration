@@ -12,7 +12,7 @@ import {
   zonedInstant,
 } from '@camp-registration/common/utils';
 import { localeForCountry } from '@camp-registration/common/locales';
-import type { Event, Registration } from '#generated/prisma/client';
+import type { Event, Prisma, Registration } from '#generated/prisma/client';
 
 /**
  * The event's fields resolved for templates: text in the reader's `locale`,
@@ -141,3 +141,9 @@ export function isRetentionPurged(
 ): boolean {
   return !!event.sensitiveDataPurgedAt || !!event.registrationDataPurgedAt;
 }
+
+/** `isRetentionPurged` as a query filter, for events not purged. */
+export const notRetentionPurged = {
+  sensitiveDataPurgedAt: null,
+  registrationDataPurgedAt: null,
+} as const satisfies Prisma.EventWhereInput;

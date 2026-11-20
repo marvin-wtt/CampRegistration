@@ -195,7 +195,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       // `freePlaces` only feeds `visibleIf`, which moves no stored answer.
       this.mailAnswers = new RegistrationForm(
         { ...event, freePlaces: 0 },
-        { locale: registration.locale, group: registration.group },
+        registration.group,
+        registration.locale,
       )
         .load(registration.data)
         .withoutSensitiveAnswers();

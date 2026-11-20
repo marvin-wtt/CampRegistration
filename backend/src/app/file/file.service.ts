@@ -175,6 +175,40 @@ export class FileService extends BaseService {
     return fileRelationIdFieldsUndefined;
   }
 
+  /**
+   * Detaches the owner's files not in `keepIds`; the unassigned-file cleanup
+   * removes them. Files in `excludeFieldPrefix` are managed by another sync
+   * (e.g. custom-data files during a form-data sync) and stay.
+   */
+  async detachFilesExcept(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    keepIds: string[],
+    options?: { excludeFieldPrefix?: string },
+  ): Promise<void> {
+    await tx.file.updateMany({
+      where: {
+        [ownerKey]: ownerId,
+        id: { notIn: keepIds.length ? keepIds : ['__none__'] }, // avoid `notIn: []` edge cases
+        // A plain NOT would skip files without a field: SQL's NOT on NULL is
+        // NULL, not true.
+        ...(options?.excludeFieldPrefix
+          ? {
+              OR: [
+                { field: null },
+                { NOT: { field: { startsWith: options.excludeFieldPrefix } } },
+              ],
+            }
+          : {}),
+      },
+      data: {
+        [ownerKey]: null,
+        field: null,
+      },
+    });
+  }
+
   async syncFilesForOwner(
     tx: PrismaTransaction,
     ownerKey: FileOwnerKey,
@@ -183,24 +217,9 @@ export class FileService extends BaseService {
     sessionId: string,
     options?: { excludeFieldPrefix?: string },
   ) {
-    // 1) Detach removed ones
-    await tx.file.updateMany({
-      where: {
-        [ownerKey]: ownerId,
-        id: { notIn: fileIds.length ? fileIds : ['__none__'] }, // avoid `notIn: []` edge cases
-        // Files in an excluded field namespace are managed by a different
-        // sync (e.g. custom-data files during a form-data sync).
-        ...(options?.excludeFieldPrefix
-          ? { NOT: { field: { startsWith: options.excludeFieldPrefix } } }
-          : {}),
-      },
-      data: {
-        [ownerKey]: null,
-        field: null,
-      },
-    });
+    await this.detachFilesExcept(tx, ownerKey, ownerId, fileIds, options);
 
-    // 2) Build connect filter
+    // Build connect filter
     // Allow connecting if already connected to this owner OR unreferenced temp with matching field
     const connect = fileIds.map((id) => ({
       id,

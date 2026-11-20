@@ -5,7 +5,7 @@ import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
 import logger from '#core/logger';
 import { AuditService } from '#app/audit/audit.service';
-import { RegistrationForm } from '#app/registration/registration.form';
+import { RegistrationService } from '#app/registration/registration.service';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import type { Event, RetentionDeadline } from '#generated/prisma/client.js';
 import { getRequestContext } from '#core/context/requestContext';
@@ -28,9 +28,6 @@ import {
   type ContentLookup,
   type NoticeStamp,
 } from './retention.deadlines.js';
-
-/** Registrations handled per database round trip by the deletion actions. */
-const BATCH_SIZE = 100;
 
 /** Days of new registrations or edits after which the daily job re-syncs. */
 const SYNC_LOOKBACK_DAYS = 7;
@@ -78,6 +75,8 @@ export class RetentionService extends BaseService {
     @inject(AuditService) private readonly audit: AuditService,
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(RegistrationService)
+    private readonly registrationService: RegistrationService,
   ) {
     super();
   }
@@ -297,55 +296,7 @@ export class RetentionService extends BaseService {
     // Marked and closed first: from here on no registration, public or by a
     // manager, can bring sensitive answers back while the loop runs.
     const closing = await this.markPurged(event, ['sensitive']);
-
-    let cleared = 0;
-    let cursor: string | undefined;
-
-    for (;;) {
-      const registrations = await this.prisma.registration.findMany({
-        where: { eventId: event.id },
-        select: { id: true, data: true, locale: true, group: true },
-        orderBy: { id: 'asc' },
-        take: BATCH_SIZE,
-        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-      });
-      if (registrations.length === 0) {
-        break;
-      }
-      cursor = registrations.at(-1)?.id;
-
-      for (const registration of registrations) {
-        const form = new RegistrationForm(event, {
-          locale: registration.locale,
-          group: registration.group,
-        }).load(registration.data);
-        const filesBefore = form.getFileIds();
-        const data = form.withoutSensitiveAnswers();
-        const filesAfter = new Set(form.getFileIds());
-
-        if (JSON.stringify(data) === JSON.stringify(registration.data)) {
-          continue;
-        }
-
-        const removedFiles = filesBefore.filter((id) => !filesAfter.has(id));
-        await this.transaction(async (tx) => {
-          await tx.registration.update({
-            where: { id: registration.id },
-            data: { data },
-          });
-          if (removedFiles.length > 0) {
-            await tx.file.updateMany({
-              where: {
-                id: { in: removedFiles },
-                registrationId: registration.id,
-              },
-              data: { registrationId: null },
-            });
-          }
-        });
-        cleared++;
-      }
-    }
+    const cleared = await this.registrationService.clearSensitiveAnswers(event);
 
     await this.audit.record({
       action: 'sensitive_purged',
@@ -378,22 +329,9 @@ export class RetentionService extends BaseService {
       'registrations',
     ]);
 
-    let deleted = 0;
-    for (;;) {
-      const batch = await this.prisma.registration.findMany({
-        where: { eventId: event.id },
-        select: { id: true },
-        take: BATCH_SIZE,
-      });
-      if (batch.length === 0) {
-        break;
-      }
-
-      const result = await this.prisma.registration.deleteMany({
-        where: { id: { in: batch.map(({ id }) => id) } },
-      });
-      deleted += result.count;
-    }
+    const deleted = await this.registrationService.deleteRegistrationsForEvent(
+      event.id,
+    );
 
     await this.audit.record({
       action: 'registrations_purged',

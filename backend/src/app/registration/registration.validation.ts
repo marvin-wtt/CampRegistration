@@ -75,7 +75,7 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           return;
         }
 
-        const form = new RegistrationForm(event, { locale, group }).load(data);
+        const form = new RegistrationForm(event, group, locale).load(data);
 
         for (const error of await form.dataErrors()) {
           ctx.addIssue({

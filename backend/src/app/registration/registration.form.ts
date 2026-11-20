@@ -11,6 +11,7 @@ import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
 import {
+  answeredSpecialCategoryQuestions,
   clearSpecialCategoryAnswers,
   consentTexts,
   isSpecialCategory,
@@ -177,6 +178,32 @@ function flattenAnswers(
 }
 
 /**
+ * One form per group and locale of an event, for code that walks many of its
+ * registrations: building the survey is the costly part, loading a response
+ * into it is not.
+ */
+export function registrationForms(event: EventWithFreePlaces) {
+  const forms = new Map<string, RegistrationForm>();
+
+  return ({
+    group,
+    locale,
+  }: {
+    group: string | null;
+    locale: string;
+  }): RegistrationForm => {
+    const key = `${group ?? ''}|${locale}`;
+    let form = forms.get(key);
+    if (!form) {
+      form = new RegistrationForm(event, group, locale);
+      forms.set(key, form);
+    }
+
+    return form;
+  };
+}
+
+/**
  * An event's registration form, loaded with one response at a time. The survey
  * is built once per instance, so code that walks many registrations of one
  * event loads each of them into the same form.
@@ -185,17 +212,18 @@ export class RegistrationForm {
   private readonly survey: SurveyModel;
   private issues: IDataIssue[] = [];
 
-  // `group` is the group the form is answered for. Without one, only a
-  // single-group event knows it — enough to read the answers back.
+  // `group` is the group the form is answered for: it can change what the
+  // form shows and computes. Null only a single-group event can resolve.
   constructor(
     event: EventWithFreePlaces,
-    options?: { locale?: string; group?: string | null | undefined },
+    group: string | null,
+    locale = 'en-US',
   ) {
     this.survey = new SurveyModel(event.form);
 
     // SurveyJS resolves `de-DE` to its `de` strings, but not `de_DE`.
-    this.survey.locale = (options?.locale ?? 'en-US').replace('_', '-');
-    setVariables(this.survey, event, { group: options?.group });
+    this.survey.locale = locale.replace('_', '-');
+    setVariables(this.survey, event, { group });
   }
 
   /** Replaces the response the form holds, running the form's logic on it. */
@@ -270,9 +298,17 @@ export class RegistrationForm {
     );
   }
 
+  /** Special-category questions this response answers. */
+  sensitiveAnswers(): string[] {
+    return answeredSpecialCategoryQuestions(this.survey).map((question) =>
+      question.getValueName(),
+    );
+  }
+
   /**
-   * The response without answers to special-category questions, for mails
-   * (docs/privacy.md, 6). Clears them in this form, so read nothing after it.
+   * The response without answers to special-category questions (docs/privacy.md,
+   * 6 and 8). Clears them in this form: what is read afterwards is the cleared
+   * response, until the next `load`.
    */
   withoutSensitiveAnswers(): Record<string, unknown> {
     clearSpecialCategoryAnswers(this.survey);

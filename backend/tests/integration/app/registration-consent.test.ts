@@ -155,7 +155,7 @@ describe('registration consent', () => {
         .expect(200);
     });
 
-    it('should copy the wording of a consent recorded later', async () => {
+    it('should not copy the wording of a consent recorded later', async () => {
       const event = await eventWith([firstName, consent, allergies]);
       const { body } = await register(event.id, {
         data: { first_name: 'Jane' },
@@ -174,7 +174,7 @@ describe('registration consent', () => {
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(200);
 
-      expect(response.body.data.consentTexts).toHaveProperty('consent_health');
+      expect(response.body.data.consentTexts).toBeNull();
     });
   });
 });

@@ -83,10 +83,7 @@ function answersFor(
 ): Map<string, FormAnswer> {
   // `freePlaces` only feeds `visibleIf` expressions, which do not affect how an
   // answer is labelled or displayed — a mail payload carries no place count.
-  const form = new RegistrationForm(
-    { ...event, freePlaces: 0 },
-    { locale, group },
-  );
+  const form = new RegistrationForm({ ...event, freePlaces: 0 }, group, locale);
 
   form.load(data);
 

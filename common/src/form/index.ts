@@ -27,6 +27,7 @@ export { formLintOptions } from './lint.js';
 export { extractEventData } from './eventData.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
+  answeredSpecialCategoryQuestions,
   clearSpecialCategoryAnswers,
   clearUnconsentedAnswers,
   consentTexts,
