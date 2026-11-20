@@ -1,31 +1,31 @@
--- The retention workflow (docs/privacy.md, 8): one deadline row per kind of
--- data replaces the single reminder flag, and the event records for good when
--- its data was deleted.
+-- The retention workflow (docs/privacy.md, 8): deadlines are computed from the
+-- stamped notices; the table keeps only postponements and reminders sent, and
+-- the event records for good when its data was deleted.
 -- AlterTable
 ALTER TABLE `events` DROP COLUMN `retention_reminder_sent_at`,
     ADD COLUMN `registration_data_purged_at` DATETIME(0) NULL,
     ADD COLUMN `sensitive_data_purged_at` DATETIME(0) NULL;
 
 -- CreateTable
-CREATE TABLE `event_retention_deadlines` (
+CREATE TABLE `event_retention_states` (
     `id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NOT NULL,
     `kind` ENUM('sensitive', 'registrations') NOT NULL,
-    `due_at` DATETIME(0) NOT NULL,
-    `postponed_until` DATETIME(0) NULL,
+    `postponed_until` CHAR(10) NULL,
     `postpone_reason` TEXT NULL,
     `postponed_at` DATETIME(0) NULL,
     `postponed_by_id` CHAR(26) NULL,
-    `notified_stage` INTEGER NULL,
+    `reminded_for` CHAR(10) NULL,
+    `reminded_stage` INTEGER NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `event_retention_deadlines_event_id_kind_key`(`event_id`, `kind`),
+    UNIQUE INDEX `event_retention_states_event_id_kind_key`(`event_id`, `kind`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `event_retention_deadlines` ADD CONSTRAINT `event_retention_deadlines_event_id_fkey` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `event_retention_states` ADD CONSTRAINT `event_retention_states_event_id_fkey` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `event_retention_deadlines` ADD CONSTRAINT `event_retention_deadlines_postponed_by_id_fkey` FOREIGN KEY (`postponed_by_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `event_retention_states` ADD CONSTRAINT `event_retention_states_postponed_by_id_fkey` FOREIGN KEY (`postponed_by_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

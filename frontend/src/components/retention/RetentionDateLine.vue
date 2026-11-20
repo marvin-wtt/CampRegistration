@@ -6,6 +6,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { EventRetentionDeadline } from '@camp-registration/common/privacy';
+import { parseLocalDate } from '@/utils/date';
 
 // What a deadline says about its date: deleted on, postponed until, or due by;
 // `fallback` where there is no deadline yet.
@@ -17,19 +18,21 @@ const { deadline, purgedAt, fallback } = defineProps<{
 
 const { t, d } = useI18n();
 
+// Deadlines are calendar dates; parsed as such, no time zone moves them.
+const day = (date: string) => d(parseLocalDate(date), 'date');
+
 const text = computed(() => {
-  const deleted = purgedAt ?? deadline?.resolvedAt ?? null;
-  if (deleted) {
-    return t('date.deleted', { date: d(deleted, 'date') });
+  if (purgedAt) {
+    return t('date.deleted', { date: d(purgedAt, 'date') });
   }
   if (deadline?.postponement) {
     return t('date.postponed', {
-      date: d(deadline.postponement.until, 'date'),
-      original: d(deadline.dueAt, 'date'),
+      date: day(deadline.postponement.until),
+      original: day(deadline.dueAt),
     });
   }
   if (deadline) {
-    return t('date.due', { date: d(deadline.dueAt, 'date') });
+    return t('date.due', { date: day(deadline.dueAt) });
   }
   return fallback ?? '';
 });

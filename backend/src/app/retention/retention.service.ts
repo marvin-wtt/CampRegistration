@@ -1,15 +1,15 @@
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
-import moment from 'moment';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
-import logger from '#core/logger';
 import { AuditService } from '#app/audit/audit.service';
 import { RegistrationService } from '#app/registration/registration.service';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import type {
   Event,
-  EventRetentionDeadline,
+  EventRetentionState,
+  Prisma,
 } from '#generated/prisma/client.js';
 import { getRequestContext } from '#core/context/requestContext';
 import {
@@ -17,29 +17,29 @@ import {
   isSpecialCategory,
 } from '@camp-registration/common/form';
 import {
-  MAX_RETENTION_POSTPONE_MONTHS,
+  composePrivacyNotice,
   EVENT_RETENTION_DEADLINE_KINDS,
-  type PrivacyNoticeContent,
   type EventRetentionDeadlineKind,
+  type EventRetentionDeadlineStatus,
+  type PrivacyNoticeContent,
   type RetentionPeriods,
   type RetentionPostponeData,
 } from '@camp-registration/common/privacy';
-import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import {
+  currentDateInTimeZone,
+  dateInTimeZone,
+} from '@camp-registration/common/utils';
+import {
+  deadlineStatus,
+  effectiveDeadlines,
+  postponeRange,
   promisedDeadlines,
-  type ContentLookup,
-  type NoticeStamp,
+  retentionPeriods,
+  type DeadlineDates,
 } from './retention.deadlines.js';
 
-/** Events read per round trip by the daily sync. */
-const SYNC_BATCH_SIZE = 50;
-
-const NO_POSTPONEMENT = {
-  postponedUntil: null,
-  postponeReason: null,
-  postponedAt: null,
-  postponedById: null,
-} as const;
+/** Events read per round trip when walking all of them. */
+const BATCH_SIZE = 50;
 
 /** What an event records about the deletion of its data. */
 export type PurgeState = Pick<
@@ -47,32 +47,40 @@ export type PurgeState = Pick<
   'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
 >;
 
-export type RetentionEvent = PurgeState & Pick<Event, 'id' | 'endAt' | 'form'>;
+export type RetentionEvent = PurgeState &
+  Pick<Event, 'id' | 'endAt' | 'timezone' | 'form'>;
 
-export type DeadlineWithPostponer = EventRetentionDeadline & {
+export type RetentionState = EventRetentionState & {
   postponedBy: { name: string } | null;
 };
+
+/** A deadline whose data is not deleted yet, as of today. */
+export interface Deadline {
+  kind: EventRetentionDeadlineKind;
+  dueAt: string;
+  effectiveAt: string;
+  status: EventRetentionDeadlineStatus;
+  postponeRange: { min: string; max: string } | null;
+  /** Its postponement and the reminders sent, once there was either. */
+  state: RetentionState | null;
+}
 
 /** When a kind of the event's data was deleted for good, or null. */
 export function purgedAt(
   event: PurgeState,
   kind: EventRetentionDeadlineKind,
 ): Date | null {
-  // Sensitive data is a subset of the registration data.
   return kind === 'sensitive'
-    ? (event.sensitiveDataPurgedAt ?? event.registrationDataPurgedAt)
+    ? event.sensitiveDataPurgedAt
     : event.registrationDataPurgedAt;
 }
 
-export function effectiveAt(deadline: EventRetentionDeadline): Date {
-  return deadline.postponedUntil ?? deadline.dueAt;
-}
-
 /**
- * The retention workflow (docs/privacy.md, 8). Deadlines come from the notices
- * shown to the registrants; deleting is a manager's explicit action and is
- * never done automatically. What has to be kept beyond a deadline is the
- * organizer's judgment, recorded as a postponement.
+ * The retention workflow (docs/privacy.md, 8). Deadlines are computed from the
+ * notices shown to the registrants whenever they are needed; deleting is a
+ * manager's explicit action and is never done automatically. What has to be
+ * kept beyond a deadline is the organizer's judgment, recorded as a
+ * postponement.
  */
 @injectable()
 export class RetentionService extends BaseService {
@@ -86,176 +94,67 @@ export class RetentionService extends BaseService {
     super();
   }
 
-  /** Brings the event's deadline rows in line with what was promised. */
-  async syncEvent(event: RetentionEvent): Promise<void> {
-    const promised = await this.promised(event);
+  /** The event's open deadlines, sensitive first as it falls due first. */
+  async deadlines(
+    event: RetentionEvent,
+    now: Date = new Date(),
+  ): Promise<Deadline[]> {
+    const [promised, states] = await Promise.all([
+      this.promised(event),
+      this.prisma.eventRetentionState.findMany({
+        where: { eventId: event.id },
+        include: { postponedBy: { select: { name: true } } },
+      }),
+    ]);
+    const stateOf = (kind: EventRetentionDeadlineKind) =>
+      states.find((state) => state.kind === kind) ?? null;
 
-    for (const kind of EVENT_RETENTION_DEADLINE_KINDS) {
+    const effective = effectiveDeadlines(promised, {
+      sensitive: stateOf('sensitive')?.postponedUntil ?? null,
+      registrations: stateOf('registrations')?.postponedUntil ?? null,
+    });
+    const today = currentDateInTimeZone(event.timezone, now);
+
+    return EVENT_RETENTION_DEADLINE_KINDS.flatMap((kind): Deadline[] => {
       const dueAt = promised[kind];
-      if (!dueAt) {
-        // No longer promised (the form stopped asking, the registrations are
-        // gone): a stale row would keep reminding. A deleted kind keeps its
-        // row as the record of what was due.
-        if (!purgedAt(event, kind)) {
-          await this.prisma.eventRetentionDeadline.deleteMany({
-            where: { eventId: event.id, kind },
-          });
-        }
-        continue;
+      const effectiveAt = effective[kind];
+      if (!dueAt || !effectiveAt || purgedAt(event, kind)) {
+        return [];
       }
 
-      const existing = await this.prisma.eventRetentionDeadline.findUnique({
-        where: { eventId_kind: { eventId: event.id, kind } },
-      });
-      if (!existing) {
-        // Two syncs may race here (a page view and the daily job).
-        await this.prisma.eventRetentionDeadline.createMany({
-          data: [{ eventId: event.id, kind, dueAt }],
-          skipDuplicates: true,
-        });
-        continue;
-      }
-      if (existing.dueAt.getTime() === dueAt.getTime()) {
-        continue;
-      }
-
-      // A postponement the new promise reaches has nothing left to postpone.
-      const overtaken =
-        existing.postponedUntil !== null && existing.postponedUntil <= dueAt;
-      const effective = overtaken ? dueAt : (existing.postponedUntil ?? dueAt);
-
-      await this.prisma.eventRetentionDeadline.update({
-        where: { id: existing.id },
-        data: {
+      return [
+        {
+          kind,
           dueAt,
-          ...(overtaken ? NO_POSTPONEMENT : {}),
-          // Reminders already sent stay sent unless the day they were for moved:
-          // stages count days, so a shift within the day changes nothing.
-          ...(utcDay(effective) !== utcDay(effectiveAt(existing))
-            ? { notifiedStage: null }
-            : {}),
+          effectiveAt,
+          status: deadlineStatus(effectiveAt, today),
+          postponeRange: postponeRange(kind, effective, today),
+          state: stateOf(kind),
         },
-      });
-    }
-  }
-
-  /**
-   * Syncs every event that can have a deadline or still has a row, so a
-   * reminder never goes out for a stale date or for registrations deleted
-   * since. Opening an event's retention page syncs it too.
-   */
-  async syncAll(): Promise<void> {
-    let cursor: string | undefined;
-    let events;
-
-    // In batches: the set only grows (nothing is deleted automatically) and
-    // each event brings its whole form.
-    do {
-      events = await this.prisma.event.findMany({
-        where: {
-          registrationDataPurgedAt: null,
-          OR: [
-            {
-              registrations: {
-                some: { organizationPrivacyNoticeVersionId: { not: null } },
-              },
-            },
-            { retentionDeadlines: { some: {} } },
-          ],
-          // By id, not a cursor row: that one may be deleted between batches.
-          ...(cursor ? { id: { gt: cursor } } : {}),
-        },
-        select: {
-          id: true,
-          endAt: true,
-          form: true,
-          sensitiveDataPurgedAt: true,
-          registrationDataPurgedAt: true,
-        },
-        orderBy: { id: 'asc' },
-        take: SYNC_BATCH_SIZE,
-      });
-
-      for (const event of events) {
-        try {
-          await this.syncEvent(event);
-        } catch (error: unknown) {
-          // One event's broken notice must not stop the others.
-          logger.error(`Failed to sync retention of event ${event.id}:`, error);
-        }
-      }
-      cursor = events.at(-1)?.id;
-    } while (events.length === SYNC_BATCH_SIZE);
-  }
-
-  async deadlines(eventId: string): Promise<DeadlineWithPostponer[]> {
-    return this.prisma.eventRetentionDeadline.findMany({
-      where: { eventId },
-      include: { postponedBy: { select: { name: true } } },
-      // Enum order: sensitive first, as it falls due first.
-      orderBy: { kind: 'asc' },
+      ];
     });
   }
 
-  /** What the event's current notice states, for new registrations. */
+  /**
+   * What the event's current notice states, for new registrations, and the
+   * deadlines it would give where none exists yet.
+   */
   async currentPeriods(
     event: RetentionEvent & { organizationId: string },
-  ): Promise<RetentionPeriods> {
+  ): Promise<{ periods: RetentionPeriods; estimates: DeadlineDates }> {
     const notice = await this.privacyNoticeService.getComposedNotice(
       event.id,
       event.organizationId,
     );
-    // Composition drops the retention of a free-text notice.
-    const retention = notice?.retention;
-    if (!retention || retention.months <= 0) {
-      return { registrations: null, sensitive: null };
-    }
+    const periods = retentionPeriods(notice?.retention, asksSensitive(event));
 
-    const special = retention.specialCategories;
-    const main = { months: retention.months, anchor: retention.anchor };
     return {
-      registrations: main,
-      sensitive: !asksSensitive(event)
-        ? null
-        : special
-          ? { weeks: special.weeks, anchor: special.anchor }
-          : // Older notices: sensitive answers fall under the main period.
-            main,
+      periods,
+      estimates: promisedDeadlines([periods], {
+        eventEnd: dateInTimeZone(event.endAt, event.timezone),
+        firstRegistration: null,
+      }),
     };
-  }
-
-  async purgeState(eventId: string) {
-    return this.prisma.event.findUniqueOrThrow({
-      where: { id: eventId },
-      select: { sensitiveDataPurgedAt: true, registrationDataPurgedAt: true },
-    });
-  }
-
-  /**
-   * Marked as deleted, but the run that clears the answers never got to its
-   * closing audit entry (interrupted, or refused after repeated conflicts).
-   */
-  async sensitivePurgeIncomplete(
-    event: PurgeState & Pick<Event, 'id'>,
-  ): Promise<boolean> {
-    // Deleting everything covers it: that has its own incomplete state.
-    if (!event.sensitiveDataPurgedAt || event.registrationDataPurgedAt) {
-      return false;
-    }
-
-    const finished = await this.prisma.auditLog.count({
-      where: {
-        eventId: event.id,
-        entityType: 'retention',
-        action: 'sensitive_purged',
-        createdAt: { gte: event.sensitiveDataPurgedAt },
-      },
-    });
-    return finished === 0;
-  }
-
-  async registrationCount(eventId: string): Promise<number> {
-    return this.prisma.registration.count({ where: { eventId } });
   }
 
   /**
@@ -271,53 +170,41 @@ export class RetentionService extends BaseService {
       throw new ApiError(httpStatus.CONFLICT, 'This data was already deleted.');
     }
 
-    const deadlines = await this.prisma.eventRetentionDeadline.findMany({
-      where: { eventId: event.id },
-    });
-    const deadline = deadlines.find((entry) => entry.kind === kind);
+    const deadline = (await this.deadlines(event)).find(
+      (entry) => entry.kind === kind,
+    );
     if (!deadline) {
       throw new ApiError(httpStatus.NOT_FOUND, 'No such retention deadline.');
     }
 
-    const until = moment.utc(data.until, 'YYYY-MM-DD', true);
-    const today = moment.utc().startOf('day');
-    if (
-      !until.isValid() ||
-      !until.isAfter(today) ||
-      until.isAfter(today.clone().add(MAX_RETENTION_POSTPONE_MONTHS, 'months'))
-    ) {
+    const range = deadline.postponeRange;
+    if (!range || data.until < range.min || data.until > range.max) {
       throw new ApiError(
         httpStatus.UNPROCESSABLE_ENTITY,
-        `The new date must lie within the next ${MAX_RETENTION_POSTPONE_MONTHS.toString()} months.`,
+        range
+          ? `The new date must lie between ${range.min} and ${range.max}.`
+          : 'This deadline cannot be postponed any further.',
       );
     }
-    // Later only: an earlier date would shorten what was promised, and the next
-    // sync would discard it as overtaken.
-    if (!until.isAfter(effectiveAt(deadline))) {
-      throw new ApiError(
-        httpStatus.UNPROCESSABLE_ENTITY,
-        'The new date must lie after the current deadline.',
-      );
-    }
-    assertOrdered(event, kind, until.toDate(), deadlines);
 
     await this.transaction(async (tx) => {
-      await tx.eventRetentionDeadline.update({
-        where: { id: deadline.id },
-        data: {
-          postponedUntil: until.toDate(),
-          postponeReason: data.reason,
-          postponedAt: new Date(),
-          postponedById: this.actorId(),
-          notifiedStage: null,
-        },
+      const postponement = {
+        postponedUntil: data.until,
+        postponeReason: data.reason,
+        postponedAt: new Date(),
+        postponedById: getRequestContext()?.userId ?? null,
+      };
+      const state = await tx.eventRetentionState.upsert({
+        where: { eventId_kind: { eventId: event.id, kind } },
+        create: { eventId: event.id, kind, ...postponement },
+        update: postponement,
       });
 
       // The reason may name a person or a case, so only the date is logged.
       await this.audit.record({
         action: 'postponed',
         entityType: 'retention',
-        entityId: deadline.id,
+        entityId: state.id,
         eventId: event.id,
         details: {
           context: { kind },
@@ -330,15 +217,16 @@ export class RetentionService extends BaseService {
   /**
    * Clears the answers to special-category questions in every registration
    * and detaches files uploaded to them (the file cleanup removes those).
-   * Idempotent: a rerun finds nothing left to clear.
+   * Idempotent: a rerun, after an interruption, finishes the job.
    */
   async purgeSensitiveData(event: EventWithFreePlaces): Promise<number> {
     if (event.registrationDataPurgedAt) {
       return 0;
     }
 
-    // Marked first: from here on the event takes no registrations, and no
-    // edit can bring sensitive answers back while the loop runs.
+    // Recorded first, on its own: from here on the event takes no
+    // registrations, and no edit can bring sensitive answers back while the
+    // registrations are cleared one by one.
     await this.markPurged(event, ['sensitive']);
     const cleared = await this.registrationService.clearSensitiveAnswers(event);
 
@@ -354,45 +242,42 @@ export class RetentionService extends BaseService {
   }
 
   /**
-   * Deletes every registration of the event. Bed assignments, files and audit
-   * entries are only detached; nothing financial points at a registration.
-   * The event never takes registrations again. Idempotent.
+   * Deletes every registration of the event, all at once or not at all. Bed
+   * assignments, files and audit entries are only detached; nothing financial
+   * points at a registration. The event never takes registrations again.
    */
   async purgeRegistrationData(
     event: PurgeState & Pick<Event, 'id'>,
   ): Promise<number> {
-    // Sensitive data is a subset: deleting all of it deletes that too.
-    await this.markPurged(event, ['sensitive', 'registrations']);
+    return this.transaction(async () => {
+      // Sensitive data is a subset: deleting all of it deletes that too.
+      await this.markPurged(event, EVENT_RETENTION_DEADLINE_KINDS);
+      const deleted =
+        await this.registrationService.deleteRegistrationsForEvent(event.id);
 
-    const deleted = await this.registrationService.deleteRegistrationsForEvent(
-      event.id,
-    );
+      await this.audit.record({
+        action: 'registrations_purged',
+        entityType: 'retention',
+        entityId: event.id,
+        eventId: event.id,
+        details: { values: { count: deleted } },
+      });
 
-    await this.audit.record({
-      action: 'registrations_purged',
-      entityType: 'retention',
-      entityId: event.id,
-      eventId: event.id,
-      details: { values: { count: deleted } },
+      return deleted;
     });
-
-    return deleted;
   }
 
   /**
-   * Records the deletion for good, before any data is touched. The event's
-   * registration status reads it and stays closed from then on
-   * (`eventRegistrationStatus`); the window itself is left as it was.
+   * Records the deletion for good. The event's registration status reads it
+   * and stays closed from then on (`eventRegistrationStatus`).
    */
   private async markPurged(
     event: PurgeState & Pick<Event, 'id'>,
-    kinds: EventRetentionDeadlineKind[],
+    kinds: readonly EventRetentionDeadlineKind[],
   ): Promise<void> {
-    // Whole seconds, as the columns store them: MySQL would round up past the
-    // closing audit entry, and the deletion would read as incomplete.
-    const now = new Date(Math.floor(Date.now() / 1000) * 1000);
+    const now = new Date();
 
-    await this.prisma.event.update({
+    await this.db.event.update({
       where: { id: event.id },
       data: {
         ...(kinds.includes('sensitive')
@@ -404,8 +289,8 @@ export class RetentionService extends BaseService {
       },
     });
     // A reason may name a person or a case; once the data is gone, so is it.
-    await this.prisma.eventRetentionDeadline.updateMany({
-      where: { eventId: event.id, kind: { in: kinds } },
+    await this.db.eventRetentionState.updateMany({
+      where: { eventId: event.id, kind: { in: [...kinds] } },
       data: { postponeReason: null },
     });
   }
@@ -415,27 +300,49 @@ export class RetentionService extends BaseService {
    * kinds only, never registration data.
    */
   async openDeadlines(organizationId: string) {
-    const deadlines = await this.prisma.eventRetentionDeadline.findMany({
-      where: { event: { registrationDataPurgedAt: null, organizationId } },
-      include: {
-        postponedBy: { select: { name: true } },
-        event: {
-          select: {
-            id: true,
-            name: true,
-            sensitiveDataPurgedAt: true,
-            registrationDataPurgedAt: true,
-          },
-        },
-      },
-    });
+    const entries: (Deadline & { event: RetentionEventWithName })[] = [];
+    for await (const event of this.eventsWithRegistrations({
+      organizationId,
+    })) {
+      for (const deadline of await this.deadlines(event)) {
+        entries.push({ ...deadline, event });
+      }
+    }
 
-    return deadlines
-      .filter((deadline) => !purgedAt(deadline.event, deadline.kind))
-      .sort((a, b) => effectiveAt(a).getTime() - effectiveAt(b).getTime());
+    return entries.sort((a, b) => a.effectiveAt.localeCompare(b.effectiveAt));
   }
 
-  private async promised(event: RetentionEvent) {
+  /**
+   * Every event that can have an open deadline: registrations under a stamped
+   * notice, not all deleted. Read in batches by id, as each brings its form.
+   */
+  async *eventsWithRegistrations(
+    where: Prisma.EventWhereInput = {},
+  ): AsyncGenerator<RetentionEventWithName> {
+    let cursor: string | undefined;
+    let batch: RetentionEventWithName[];
+
+    do {
+      batch = await this.prisma.event.findMany({
+        where: {
+          ...where,
+          registrationDataPurgedAt: null,
+          registrations: {
+            some: { organizationPrivacyNoticeVersionId: { not: null } },
+          },
+          ...(cursor ? { id: { gt: cursor } } : {}),
+        },
+        select: RETENTION_EVENT_SELECT,
+        orderBy: { id: 'asc' },
+        take: BATCH_SIZE,
+      });
+      yield* batch;
+      cursor = batch.at(-1)?.id;
+    } while (batch.length === BATCH_SIZE);
+  }
+
+  /** The earliest date each kind was promised to be deleted by. */
+  private async promised(event: RetentionEvent): Promise<DeadlineDates> {
     const stamps = await this.prisma.registration.groupBy({
       by: ['organizationPrivacyNoticeVersionId', 'eventPrivacyNoticeVersionId'],
       where: {
@@ -445,83 +352,69 @@ export class RetentionService extends BaseService {
       _min: { createdAt: true },
     });
 
-    const promised = promisedDeadlines(
-      stamps,
-      await this.stampedContent(stamps),
-      event.endAt,
+    const contentOf = await this.stampedContent(
+      stamps.flatMap((stamp) => [
+        stamp.organizationPrivacyNoticeVersionId,
+        stamp.eventPrivacyNoticeVersionId,
+      ]),
+    );
+    const asks = asksSensitive(event);
+    const periods = stamps.map((stamp) =>
+      retentionPeriods(
+        composePrivacyNotice(
+          contentOf(stamp.organizationPrivacyNoticeVersionId),
+          contentOf(stamp.eventPrivacyNoticeVersionId),
+        ).retention,
+        asks,
+      ),
     );
 
-    return {
-      registrations: promised.registrations,
-      // Never later than the general deadline: it is a subset of that data.
-      sensitive:
-        asksSensitive(event) && promised.sensitive
-          ? earlier(promised.sensitive, promised.registrations)
-          : null,
-    } satisfies Record<EventRetentionDeadlineKind, Date | null>;
+    // Counted from the event's first registration, whichever notice it saw:
+    // never later than each notice's own first one, and deleting early is
+    // allowed.
+    const first = stamps
+      .map((stamp) => stamp._min.createdAt)
+      .filter((date) => date !== null)
+      .sort((a, b) => a.getTime() - b.getTime())
+      .at(0);
+
+    return promisedDeadlines(periods, {
+      eventEnd: dateInTimeZone(event.endAt, event.timezone),
+      firstRegistration: first ? dateInTimeZone(first, event.timezone) : null,
+    });
   }
 
   /** Resolves every stamped version in one query, as a lookup by id. */
-  private async stampedContent(stamps: NoticeStamp[]): Promise<ContentLookup> {
-    const ids = stamps
-      .flatMap((stamp) => [
-        stamp.organizationPrivacyNoticeVersionId,
-        stamp.eventPrivacyNoticeVersionId,
-      ])
-      .filter((id) => id !== null);
-
+  private async stampedContent(ids: (string | null)[]) {
     const versions = await this.prisma.privacyNoticeVersion.findMany({
-      where: { id: { in: [...new Set(ids)] } },
+      where: { id: { in: [...new Set(ids.filter((id) => id !== null))] } },
       select: { id: true, content: true },
     });
-
     const byId = new Map<string, PrivacyNoticeContent>(
       versions.map(({ id, content }) => [id, content]),
     );
 
-    return (id) => (id ? (byId.get(id) ?? null) : null);
-  }
-
-  private actorId(): string | null {
-    return getRequestContext()?.userId ?? null;
+    return (id: string | null) => (id ? (byId.get(id) ?? null) : null);
   }
 }
+
+const RETENTION_EVENT_SELECT = {
+  id: true,
+  name: true,
+  endAt: true,
+  timezone: true,
+  form: true,
+  sensitiveDataPurgedAt: true,
+  registrationDataPurgedAt: true,
+} as const satisfies Prisma.EventSelect;
+
+export type RetentionEventWithName = Prisma.EventGetPayload<{
+  select: typeof RETENTION_EVENT_SELECT;
+}>;
 
 /** A form without special-category questions holds no sensitive data. */
 function asksSensitive(event: Pick<Event, 'form'>): boolean {
   return extractPrivacyTags(event.form).tagged.some((tag) =>
     isSpecialCategory(tag.category),
   );
-}
-
-/** The UTC calendar day of a date, as the reminder stages count days. */
-function utcDay(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-/** Sensitive deadline ≤ general deadline, also after postponing either. */
-function assertOrdered(
-  event: PurgeState,
-  kind: EventRetentionDeadlineKind,
-  until: Date,
-  deadlines: EventRetentionDeadline[],
-): void {
-  const other = deadlines.find((entry) => entry.kind !== kind);
-  if (!other || purgedAt(event, other.kind)) {
-    return;
-  }
-
-  const otherAt = effectiveAt(other);
-  const outOfOrder = kind === 'sensitive' ? until > otherAt : until < otherAt;
-
-  if (outOfOrder) {
-    throw new ApiError(
-      httpStatus.UNPROCESSABLE_ENTITY,
-      'The sensitive data deadline must not lie after the registration data deadline.',
-    );
-  }
-}
-
-function earlier(date: Date, bound: Date | null): Date {
-  return bound && bound < date ? bound : date;
 }

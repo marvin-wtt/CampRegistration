@@ -4,6 +4,7 @@ import type { RetentionAnchor } from './content.js';
  * The retention workflow (docs/privacy.md, 8): one deadline per kind of an
  * event's registration data, reminded about and shown, never acted on
  * automatically. What must be kept beyond it is the organizer's decision.
+ * Every date here is a calendar date (`YYYY-MM-DD`) in the event's time zone.
  */
 export const EVENT_RETENTION_DEADLINE_KINDS = [
   'sensitive',
@@ -16,56 +17,32 @@ export type EventRetentionDeadlineKind =
 /** How far ahead one postponement may move a deadline. */
 export const MAX_RETENTION_POSTPONE_MONTHS = 12;
 
-/** Days before the deadline a reminder goes out; 0 is the deadline itself. */
-export const RETENTION_REMINDER_STAGES = [30, 0] as const;
-
-/** Days before the deadline from which it counts as due soon. */
-export const RETENTION_DUE_SOON_DAYS = 30;
-
-export type EventRetentionDeadlineStatus =
-  'upcoming' | 'due_soon' | 'overdue' | 'resolved';
-
-export function eventRetentionDeadlineStatus(
-  effectiveAt: Date,
-  resolvedAt: Date | null,
-  now: Date = new Date(),
-): EventRetentionDeadlineStatus {
-  if (resolvedAt) {
-    return 'resolved';
-  }
-  if (effectiveAt.getTime() < now.getTime()) {
-    return 'overdue';
-  }
-  const dueSoonFrom =
-    effectiveAt.getTime() - RETENTION_DUE_SOON_DAYS * 24 * 60 * 60 * 1000;
-
-  return now.getTime() >= dueSoonFrom ? 'due_soon' : 'upcoming';
-}
+export type EventRetentionDeadlineStatus = 'upcoming' | 'due_soon' | 'overdue';
 
 export interface RetentionPostponement {
   until: string;
   /** Only shown to the event's managers; overviews leave it out. */
   reason?: string;
+  /** ISO 8601. */
   postponedAt: string;
   postponedBy: string | null;
 }
 
+/** A deadline whose data is not deleted yet. */
 export interface EventRetentionDeadline {
-  id: string;
-  eventId: string;
   kind: EventRetentionDeadlineKind;
-  /** What the notices shown to the registrants promised. */
+  /** The earliest date the notices shown to the registrants promised. */
   dueAt: string;
   /** `postponement.until` if postponed, else `dueAt`. */
   effectiveAt: string;
   status: EventRetentionDeadlineStatus;
   postponement: RetentionPostponement | null;
-  resolvedAt: string | null;
+  /** The dates a postponement may choose from; null when none is left. */
+  postponeRange: { min: string; max: string } | null;
 }
 
 export interface RetentionPostponeData {
   reason: string;
-  /** `YYYY-MM-DD`. */
   until: string;
 }
 
@@ -88,18 +65,20 @@ export interface RetentionPeriods {
 
 /** What the event's data settings show and act on. */
 export interface EventRetention {
+  /** Open deadlines; a kind without registrations or deleted has none. */
   deadlines: EventRetentionDeadline[];
+  /**
+   * The date the current notice would give a kind that has no deadline yet;
+   * null where it cannot tell (counted from submission, or no period).
+   */
+  estimates: Record<EventRetentionDeadlineKind, string | null>;
   periods: RetentionPeriods;
-  /** When each kind was deleted for good; the server's one rule for it. */
+  /** When each kind was deleted for good (ISO 8601). */
   purged: Record<EventRetentionDeadlineKind, string | null>;
-  /** The sensitive deletion was marked but did not finish: run it again. */
-  sensitivePurgeIncomplete: boolean;
-  registrationCount: number;
 }
 
 /** A row of the organization overview: no personal data. */
 export interface RetentionOverviewEntry {
-  deadlineId: string;
   eventId: string;
   eventName: string | Record<string, string>;
   kind: EventRetentionDeadlineKind;

@@ -1,102 +1,82 @@
-import {
-  eventRetentionDeadlineStatus,
-  type EventRetention,
-  type RetentionPeriods,
-  type EventRetentionDeadline,
-  type RetentionOverviewEntry,
+import type {
+  EventRetention,
+  EventRetentionDeadline,
+  RetentionOverviewEntry,
+  RetentionPeriods,
 } from '@camp-registration/common/privacy';
 import { JsonResource } from '#core/resource/JsonResource';
+import type { DeadlineDates } from './retention.deadlines.js';
 import {
-  effectiveAt,
   purgedAt,
-  type DeadlineWithPostponer,
+  type Deadline,
   type PurgeState,
+  type RetentionEventWithName,
 } from './retention.service.js';
 
 function deadlineData(
-  deadline: DeadlineWithPostponer,
-  event: PurgeState,
+  deadline: Deadline,
   withReason: boolean,
 ): EventRetentionDeadline {
-  const kind = deadline.kind;
-  const resolvedAt = purgedAt(event, kind);
+  const { state } = deadline;
+  // A postponement the promise has since reached moves nothing.
+  const postponed = deadline.effectiveAt > deadline.dueAt ? state : null;
 
   return {
-    id: deadline.id,
-    eventId: deadline.eventId,
-    kind,
-    dueAt: deadline.dueAt.toISOString(),
-    effectiveAt: effectiveAt(deadline).toISOString(),
-    status: eventRetentionDeadlineStatus(effectiveAt(deadline), resolvedAt),
-    postponement:
-      deadline.postponedUntil && deadline.postponedAt
-        ? {
-            until: deadline.postponedUntil.toISOString(),
-            ...(withReason && deadline.postponeReason
-              ? { reason: deadline.postponeReason }
-              : {}),
-            postponedAt: deadline.postponedAt.toISOString(),
-            postponedBy: deadline.postponedBy?.name ?? null,
-          }
-        : null,
-    resolvedAt: resolvedAt?.toISOString() ?? null,
+    kind: deadline.kind,
+    dueAt: deadline.dueAt,
+    effectiveAt: deadline.effectiveAt,
+    status: deadline.status,
+    postponement: postponed?.postponedAt
+      ? {
+          until: deadline.effectiveAt,
+          ...(withReason && postponed.postponeReason
+            ? { reason: postponed.postponeReason }
+            : {}),
+          postponedAt: postponed.postponedAt.toISOString(),
+          postponedBy: postponed.postponedBy?.name ?? null,
+        }
+      : null,
+    postponeRange: deadline.postponeRange,
   };
 }
 
 export class EventRetentionResource extends JsonResource<
   {
     event: PurgeState;
-    sensitivePurgeIncomplete: boolean;
-    deadlines: DeadlineWithPostponer[];
-    registrationCount: number;
+    deadlines: Deadline[];
     periods: RetentionPeriods;
+    estimates: DeadlineDates;
     /** The reason may name a person; only those who can act see it. */
     withReason: boolean;
   },
   EventRetention
 > {
   transform(): EventRetention {
-    const {
-      event,
-      sensitivePurgeIncomplete,
-      deadlines,
-      registrationCount,
-      periods,
-      withReason,
-    } = this.data;
+    const { event, deadlines, periods, estimates, withReason } = this.data;
 
     return {
       deadlines: deadlines.map((deadline) =>
-        deadlineData(deadline, event, withReason),
+        deadlineData(deadline, withReason),
       ),
+      estimates,
+      periods,
       purged: {
         sensitive: purgedAt(event, 'sensitive')?.toISOString() ?? null,
         registrations: purgedAt(event, 'registrations')?.toISOString() ?? null,
       },
-      sensitivePurgeIncomplete,
-      periods,
-      registrationCount,
     };
   }
 }
 
-type OverviewDeadline = DeadlineWithPostponer & {
-  event: PurgeState & {
-    id: string;
-    name: string | Record<string, string>;
-  };
-};
-
 export class RetentionOverviewResource extends JsonResource<
-  OverviewDeadline,
+  Deadline & { event: RetentionEventWithName },
   RetentionOverviewEntry
 > {
   transform(): RetentionOverviewEntry {
     const { event } = this.data;
-    const deadline = deadlineData(this.data, event, false);
+    const deadline = deadlineData(this.data, false);
 
     return {
-      deadlineId: deadline.id,
       eventId: event.id,
       eventName: event.name,
       kind: deadline.kind,

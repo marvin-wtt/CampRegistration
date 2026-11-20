@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  addToDate,
   clampDate,
   currentDateInTimeZone,
+  daysBetween,
 } from '../../../src/utils/calendarDate.js';
 
 describe('calendarDate', () => {
@@ -41,6 +43,26 @@ describe('calendarDate', () => {
     it('reads the calendar date in the given timezone, not UTC', () => {
       expect(currentDateInTimeZone('Europe/Berlin')).toBe('2026-07-02');
       expect(currentDateInTimeZone('America/New_York')).toBe('2026-07-01');
+    });
+  });
+
+  describe('addToDate', () => {
+    it('adds months and days', () => {
+      expect(addToDate('2026-08-15', { months: 6 })).toBe('2027-02-15');
+      expect(addToDate('2026-08-15', { days: 28 })).toBe('2026-09-12');
+    });
+
+    it('clamps to the last day of a shorter month', () => {
+      expect(addToDate('2026-01-31', { months: 1 })).toBe('2026-02-28');
+      expect(addToDate('2028-01-31', { months: 1 })).toBe('2028-02-29');
+    });
+  });
+
+  describe('daysBetween', () => {
+    it('counts whole days, negative backwards', () => {
+      expect(daysBetween('2026-12-30', '2027-01-02')).toBe(3);
+      expect(daysBetween('2027-01-02', '2026-12-30')).toBe(-3);
+      expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2);
     });
   });
 });

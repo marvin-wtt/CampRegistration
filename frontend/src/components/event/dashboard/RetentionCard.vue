@@ -46,7 +46,7 @@
     >
       <div
         v-for="deadline in retention.deadlines"
-        :key="deadline.id"
+        :key="deadline.kind"
         class="deadline rounded-lg"
         :data-test="`retention-${deadline.kind}`"
       >
@@ -85,6 +85,7 @@ import RetentionDateLine from '@/components/retention/RetentionDateLine.vue';
 import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
 import { useEventRetentionStore } from '@/stores/event-retention-store';
 import { usePermissions } from '@/composables/permissions';
+import { parseLocalDate } from '@/utils/date';
 
 const { t, d } = useI18n();
 const { canAccess } = usePermissions();
@@ -101,12 +102,12 @@ const canManage = computed(() =>
 
 void retentionStore.fetchData();
 
+// Only open deadlines are listed: none left, yet something deleted, is done.
 const allResolved = computed(
   () =>
-    !!retention.value?.deadlines.length &&
-    retention.value.deadlines.every(
-      (deadline) => deadline.status === 'resolved',
-    ),
+    !!retention.value &&
+    retention.value.deadlines.length === 0 &&
+    Object.values(retention.value.purged).some((date) => date !== null),
 );
 
 const headerTone = computed(() => {
@@ -118,14 +119,14 @@ const headerTone = computed(() => {
 });
 
 const caption = computed(() => {
-  const open = retention.value?.deadlines.filter(
-    (deadline) => deadline.status !== 'resolved',
-  );
-  if (!open?.length) {
+  // The sensitive deadline comes first and is never the later one.
+  const next = retention.value?.deadlines[0];
+  if (!next) {
     return allResolved.value ? t('caption.done') : undefined;
   }
-  const next = open[0];
-  return next ? t('caption.next', { date: d(next.effectiveAt, 'date') }) : '';
+  return t('caption.next', {
+    date: d(parseLocalDate(next.effectiveAt), 'date'),
+  });
 });
 </script>
 

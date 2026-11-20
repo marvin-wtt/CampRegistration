@@ -25,19 +25,19 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
 
-  eventRoles                       EventManager[]
-  tokens                           Token[]
-  newsletterManagers               NewsletterManager[]
-  sentNewsletterMessages           NewsletterMessage[]
-  sentMessages                     Message[]
-  organizationMembers              OrganizationMember[]
-  reviewedOrganizations            Organization[]           @relation("OrganizationReviewer")
-  twoFactor                        UserTwoFactor?
-  paidExpenses                     Expense[]                @relation("ExpensePaidBy")
-  createdExpenses                  Expense[]                @relation("ExpenseCreatedBy")
-  receivedPayouts                  Payout[]                 @relation("PayoutRecipient")
-  createdPayouts                   Payout[]                 @relation("PayoutCreatedBy")
-  postponedEventRetentionDeadlines EventRetentionDeadline[] @relation("EventRetentionDeadlinePostponedBy")
+  eventRoles                    EventManager[]
+  tokens                        Token[]
+  newsletterManagers            NewsletterManager[]
+  sentNewsletterMessages        NewsletterMessage[]
+  sentMessages                  Message[]
+  organizationMembers           OrganizationMember[]
+  reviewedOrganizations         Organization[]        @relation("OrganizationReviewer")
+  twoFactor                     UserTwoFactor?
+  paidExpenses                  Expense[]             @relation("ExpensePaidBy")
+  createdExpenses               Expense[]             @relation("ExpenseCreatedBy")
+  receivedPayouts               Payout[]              @relation("PayoutRecipient")
+  createdPayouts                Payout[]              @relation("PayoutCreatedBy")
+  postponedEventRetentionStates EventRetentionState[] @relation("EventRetentionStatePostponedBy")
 
   @@map("users")
 }
@@ -195,9 +195,7 @@ model Event {
   createdAt                DateTime?        @default(now()) @map("created_at")
   updatedAt                DateTime?        @updatedAt @map("updated_at")
 
-  organization         Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
-  // Deleting an event deletes all of these. The list shown before deleting
-  // (`EVENT_EFFECTS`, DataSettingsPage.vue) must follow when one is added.
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
   eventManager         EventManager[]
   registrations        Registration[]
   rooms                Room[]
@@ -216,7 +214,7 @@ model Event {
   expenses             Expense[]
   payouts              Payout[]
   finance              EventFinance?
-  retentionDeadlines   EventRetentionDeadline[]
+  retentionStates      EventRetentionState[]
 
   @@index([organizationId], map: "events_organization_id_index")
   @@map("events")
@@ -980,27 +978,28 @@ enum EventRetentionDeadlineKind {
   registrations
 }
 
-/// When one kind of an event's data is due for deletion (docs/privacy.md, 8).
-/// Kept current by the daily retention job; nothing is deleted automatically.
-model EventRetentionDeadline {
+/// What an event's deadline of one kind cannot be computed from: its
+/// postponement and the reminders sent (docs/privacy.md, 8). The deadline
+/// itself is derived from the stamped notices whenever it is needed. Dates are
+/// calendar dates (`YYYY-MM-DD`) in the event's time zone.
+model EventRetentionState {
   id             String                     @id @default(ulid()) @db.Char(26)
   eventId        String                     @map("event_id") @db.Char(26)
   kind           EventRetentionDeadlineKind
-  /// What the notices shown to the registrants promised.
-  dueAt          DateTime                   @map("due_at") @db.DateTime(0)
-  /// A postponement: replaces `dueAt` for reminders and status.
-  postponedUntil DateTime?                  @map("postponed_until") @db.DateTime(0)
+  postponedUntil String?                    @map("postponed_until") @db.Char(10)
   postponeReason String?                    @map("postpone_reason") @db.Text
   postponedAt    DateTime?                  @map("postponed_at") @db.DateTime(0)
   postponedById  String?                    @map("postponed_by_id") @db.Char(26)
-  /// The most urgent reminder stage sent (days before); reset on postponing.
-  notifiedStage  Int?                       @map("notified_stage")
+  /// The deadline the last reminder was for: a moved deadline is reminded anew.
+  remindedFor    String?                    @map("reminded_for") @db.Char(10)
+  /// The most urgent stage sent for `remindedFor` (days before).
+  remindedStage  Int?                       @map("reminded_stage")
   createdAt      DateTime                   @default(now()) @map("created_at")
   updatedAt      DateTime                   @updatedAt @map("updated_at")
 
   event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postponedBy User? @relation("EventRetentionDeadlinePostponedBy", fields: [postponedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  postponedBy User? @relation("EventRetentionStatePostponedBy", fields: [postponedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@unique([eventId, kind])
-  @@map("event_retention_deadlines")
+  @@map("event_retention_states")
 }

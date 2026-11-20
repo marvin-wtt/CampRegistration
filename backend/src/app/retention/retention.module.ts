@@ -32,7 +32,6 @@ export class RetentionModule implements AppModule {
   }
 
   registerJobs(scheduler: JobScheduler): void {
-    // Syncs the deadlines first, so the reminders read today's dates.
     scheduler.schedule('retention-reminder', '30 6 * * *', () =>
       resolve(RetentionReminderService).run(),
     );

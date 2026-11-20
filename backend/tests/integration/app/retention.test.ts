@@ -16,6 +16,12 @@ import { generateAccessToken } from './utils/token.js';
 import { resolve } from '#core/ioc/container';
 import { RetentionReminderService } from '#app/retention/retention-reminder.service';
 import type { EventRetentionDeadlineKind } from '@camp-registration/common/privacy';
+import {
+  addToDate,
+  currentDateInTimeZone,
+  dateInTimeZone,
+  zonedInstant,
+} from '@camp-registration/common/utils';
 
 const RETENTION_MONTHS = 24;
 const SENSITIVE_WEEKS = 4;
@@ -57,14 +63,17 @@ async function eventDue(
     organization.id,
     notice,
   );
-  const endAt = moment()
-    .add(days, 'days')
-    .subtract(RETENTION_MONTHS, 'months')
-    .toDate();
+  // Noon of the day that puts the deadline `days` away, in the event's zone.
+  const timezone = 'Europe/Berlin';
+  const endDay = addToDate(inDays({ timezone }, days), {
+    months: -RETENTION_MONTHS,
+  });
+  const endAt = zonedInstant(`${endDay}T12:00:00`, timezone);
   const event = await EventFactory.create({
     organization: { connect: { id: organization.id } },
     startAt: moment(endAt).subtract(7, 'days').toDate(),
     endAt,
+    timezone,
     form,
   });
   const registration = await RegistrationFactory.create({
@@ -89,10 +98,14 @@ async function eventDue(
 
 const run = () => resolve(RetentionReminderService).run();
 
-const deadline = (eventId: string, kind: EventRetentionDeadlineKind) =>
-  prisma.eventRetentionDeadline.findUniqueOrThrow({
+const state = (eventId: string, kind: EventRetentionDeadlineKind) =>
+  prisma.eventRetentionState.findUnique({
     where: { eventId_kind: { eventId, kind } },
   });
+
+/** Today, moved by `days`, in the event's time zone. */
+const inDays = (event: { timezone: string }, days: number) =>
+  addToDate(currentDateInTimeZone(event.timezone), { days });
 
 const mailsTo = (email: string) =>
   (
@@ -117,16 +130,17 @@ describe('retention workflow', () => {
         .auth(token, { type: 'bearer' })
         .expect(200);
 
+      const eventEnd = dateInTimeZone(event.endAt, event.timezone);
       const [sensitive, registrations] = body.data.deadlines;
-      expect(sensitive.kind).toBe('sensitive');
-      expect(registrations.kind).toBe('registrations');
-      expect(moment(sensitive.dueAt).diff(moment(event.endAt), 'weeks')).toBe(
-        SENSITIVE_WEEKS,
-      );
-      expect(new Date(sensitive.dueAt) <= new Date(registrations.dueAt)).toBe(
-        true,
-      );
-      expect(body.data.registrationCount).toBe(1);
+      expect(sensitive).toMatchObject({
+        kind: 'sensitive',
+        dueAt: addToDate(eventEnd, { days: SENSITIVE_WEEKS * 7 }),
+      });
+      expect(registrations).toMatchObject({
+        kind: 'registrations',
+        dueAt: addToDate(eventEnd, { months: RETENTION_MONTHS }),
+        status: 'upcoming',
+      });
     });
 
     it('should have no sensitive deadline for a form without sensitive questions', async () => {
@@ -172,16 +186,11 @@ describe('retention workflow', () => {
       expect(body.data.deadlines.map((d: { kind: string }) => d.kind)).toEqual([
         'registrations',
       ]);
-      expect(
-        await prisma.eventRetentionDeadline.count({
-          where: { eventId: event.id, kind: 'sensitive' },
-        }),
-      ).toBe(0);
     });
   });
 
   describe('reminders', () => {
-    it('should send each stage once and nothing beyond 30 days', async () => {
+    it('should send each stage once, nothing beyond 30 days or long overdue', async () => {
       // Without sensitive questions only the general deadline exists.
       const far = await eventDue(200, {
         form: {
@@ -196,12 +205,28 @@ describe('retention workflow', () => {
       await run();
 
       // The sensitive deadline passed long ago, the general one is 10 days off.
-      expect(mailsTo(user.email)).toHaveLength(2);
-      expect((await deadline(event.id, 'registrations')).notifiedStage).toBe(
-        30,
-      );
-      expect((await deadline(event.id, 'sensitive')).notifiedStage).toBe(0);
+      expect(mailsTo(user.email)).toHaveLength(1);
+      expect(await state(event.id, 'registrations')).toMatchObject({
+        remindedFor: inDays(event, 10),
+        remindedStage: 30,
+      });
+      expect(await state(event.id, 'sensitive')).toBeNull();
       expect(mailsTo(far.user.email)).toHaveLength(0);
+    });
+
+    it('should still remind of a deadline passed within the last week', async () => {
+      const { event, user } = await eventDue(-3, {
+        form: {
+          pages: [
+            { name: 'p', elements: [{ type: 'text', name: 'first_name' }] },
+          ],
+        },
+      });
+
+      await run();
+
+      expect(mailsTo(user.email)).toHaveLength(1);
+      expect((await state(event.id, 'registrations'))?.remindedStage).toBe(0);
     });
 
     it('should stop once the data is deleted', async () => {
@@ -231,18 +256,28 @@ describe('retention workflow', () => {
         .auth(token, { type: 'bearer' });
 
     it('should move the deadline and restart its reminders', async () => {
-      const { event, token } = await eventDue(5);
+      const { event, token, user } = await eventDue(5, {
+        form: {
+          pages: [
+            { name: 'p', elements: [{ type: 'text', name: 'first_name' }] },
+          ],
+        },
+      });
       await run();
-      const until = moment.utc().add(3, 'months').format('YYYY-MM-DD');
+      const until = inDays(event, 20);
 
-      await postpone(event.id, token, until).expect(200);
+      const { body } = await postpone(event.id, token, until).expect(200);
 
-      const updated = await deadline(event.id, 'registrations');
-      expect(moment.utc(updated.postponedUntil).format('YYYY-MM-DD')).toBe(
-        until,
-      );
-      expect(updated.postponeReason).toBe('Open insurance claim');
-      expect(updated.notifiedStage).toBeNull();
+      expect(body.data.deadlines[0]).toMatchObject({
+        effectiveAt: until,
+        postponement: { until, reason: 'Open insurance claim' },
+      });
+      const updated = await state(event.id, 'registrations');
+      expect(updated?.postponedUntil).toBe(until);
+
+      // A new date, so its reminders start over.
+      await run();
+      expect(mailsTo(user.email)).toHaveLength(2);
 
       const audit = await prisma.auditLog.findFirstOrThrow({
         where: { eventId: event.id, action: 'postponed' },
@@ -252,7 +287,6 @@ describe('retention workflow', () => {
 
     it('should refuse a date more than 12 months ahead', async () => {
       const { event, token } = await eventDue(5);
-      await run();
 
       await postpone(
         event.id,
@@ -263,7 +297,6 @@ describe('retention workflow', () => {
 
     it('should refuse a date before the current deadline', async () => {
       const { event, token } = await eventDue(100);
-      await run();
 
       await postpone(
         event.id,
@@ -274,7 +307,6 @@ describe('retention workflow', () => {
 
     it('should require a reason', async () => {
       const { event, token } = await eventDue(5);
-      await run();
 
       await postpone(
         event.id,
@@ -286,7 +318,6 @@ describe('retention workflow', () => {
 
     it('should refuse managers who cannot delete registrations', async () => {
       const { event, token } = await eventDue(5, { role: 'COUNSELOR' });
-      await run();
 
       await postpone(
         event.id,
@@ -407,7 +438,10 @@ describe('retention workflow', () => {
         .get(`/api/v1/events/${event.id}/retention`)
         .auth(token, { type: 'bearer' })
         .expect(200);
-      expect(retention.body.data.deadlines[0].status).toBe('resolved');
+      expect(retention.body.data.purged.sensitive).not.toBeNull();
+      expect(
+        retention.body.data.deadlines.map((d: { kind: string }) => d.kind),
+      ).toEqual(['registrations']);
     });
 
     it('should refuse an edit that brings sensitive answers back', async () => {
@@ -540,7 +574,6 @@ describe('retention workflow', () => {
   describe('overviews', () => {
     it('should list open deadlines for organization members', async () => {
       const { event, organization } = await eventDue(10);
-      await run();
       const member = await UserFactory.create();
       await prisma.organizationMember.create({
         data: {

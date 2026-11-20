@@ -11,7 +11,7 @@ export interface EventRetentionDeadlinePayload {
   /** A manager who can delete registrations, and so act on it. */
   recipient: { name: string | null; email: string; locale: string | null };
   kind: EventRetentionDeadlineKind;
-  /** ISO 8601 — the payload crosses a queue. */
+  /** `YYYY-MM-DD`, in the event's time zone. */
   effectiveAt: string;
   /** Days before the deadline; 0 on or after it. */
   stage: number;
@@ -79,11 +79,14 @@ export class EventRetentionDeadlineMessage extends MailBase<EventRetentionDeadli
       // Nested into the texts: `$t(retention:kind.{{kindKey}})`.
       kindKey: kind,
       days: daysLeft,
+      // A calendar date: formatted in UTC, where it is midnight, so no zone
+      // moves it to another day.
       date: new Intl.DateTimeFormat(locale, {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-      }).format(new Date(effectiveAt)),
+        timeZone: 'UTC',
+      }).format(new Date(`${effectiveAt}T00:00:00Z`)),
     };
   }
 }

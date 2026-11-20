@@ -207,6 +207,7 @@ export class EventService extends BaseService {
           OR: [
             { ...noWindow, startAt: { lte: now } },
             { registrationClosesAt: { lte: now } },
+            // Registrations are closed for good after retention purges
             { sensitiveDataPurgedAt: { not: null } },
             { registrationDataPurgedAt: { not: null } },
           ],

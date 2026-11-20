@@ -26,9 +26,7 @@ export class RetentionController extends BaseController {
 
   async show(req: Request, res: Response) {
     await req.validate(validator.show);
-    const event = req.modelOrFail('event');
 
-    await this.retentionService.syncEvent(event);
     res.resource(await this.eventRetention(req));
   }
 
@@ -69,34 +67,25 @@ export class RetentionController extends BaseController {
   }
 
   private async eventRetention(req: Request) {
-    // Re-read: an action may just have changed the purge state.
-    const eventId = req.modelOrFail('event').id;
+    const event = req.modelOrFail('event');
     const userId = req.authUserId();
-    const [event, periods, deadlines, registrationCount, withReason] =
-      await Promise.all([
-        this.retentionService.purgeState(eventId),
-        this.retentionService.currentPeriods(req.modelOrFail('event')),
-        this.retentionService.deadlines(eventId),
-        this.retentionService.registrationCount(eventId),
-        userId
-          ? this.eventManagerService.eventManagerHasPermission(
-              eventId,
-              userId,
-              'event.registrations.delete',
-            )
-          : false,
-      ]);
+    const [deadlines, { periods, estimates }, withReason] = await Promise.all([
+      this.retentionService.deadlines(event),
+      this.retentionService.currentPeriods(event),
+      userId
+        ? this.eventManagerService.eventManagerHasPermission(
+            event.id,
+            userId,
+            'event.registrations.delete',
+          )
+        : false,
+    ]);
 
     return new EventRetentionResource({
       event,
-      sensitivePurgeIncomplete:
-        await this.retentionService.sensitivePurgeIncomplete({
-          id: eventId,
-          ...event,
-        }),
       deadlines,
-      registrationCount,
       periods,
+      estimates,
       withReason,
     });
   }

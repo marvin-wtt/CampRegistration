@@ -18,18 +18,18 @@
 import { useI18n } from 'vue-i18n';
 import type { EventRetentionDeadlineStatus } from '@camp-registration/common/privacy';
 
+type Status = EventRetentionDeadlineStatus | 'resolved';
+
 defineProps<{
-  status: EventRetentionDeadlineStatus;
+  /** `resolved` once the data is deleted. */
+  status: Status;
   /** Adds "postponed" where the date shown is not what was promised. */
   postponed?: boolean;
 }>();
 
 const { t } = useI18n();
 
-const ROLES: Record<
-  EventRetentionDeadlineStatus,
-  { color: string; textColor: string }
-> = {
+const ROLES: Record<Status, { color: string; textColor: string }> = {
   upcoming: {
     color: 'surface-container-highest',
     textColor: 'on-surface-variant',

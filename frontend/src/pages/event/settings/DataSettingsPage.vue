@@ -170,7 +170,7 @@
                 class="data-row__actions"
               >
                 <m-btn
-                  v-if="row.deadline"
+                  v-if="row.deadline?.postponeRange"
                   :label="t('action.postpone')"
                   icon="event_repeat"
                   text
@@ -188,18 +188,17 @@
                   @click="purge(row.kind)"
                 />
               </div>
-              <!-- Marked deleted, yet not finished: an interrupted run,
-                   which running it again completes. -->
               <div
-                v-else-if="canDeleteData && row.incomplete"
+                v-else-if="canDeleteData && row.rerun"
                 class="data-row__actions"
               >
                 <m-btn
-                  :label="t('action.complete')"
-                  icon="delete_forever"
+                  :label="t('action.rerun')"
+                  icon="replay"
                   error
+                  text
                   no-caps
-                  :data-test="`retention-complete-${row.kind}`"
+                  :data-test="`retention-rerun-${row.kind}`"
                   @click="purge(row.kind)"
                 />
               </div>
@@ -292,6 +291,7 @@ import type {
   EventRetentionDeadlineStatus,
   RetentionPostponeData,
 } from '@camp-registration/common/privacy';
+import { parseLocalDate } from '@/utils/date';
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import PrivacySection from '@/components/privacy/PrivacySection.vue';
@@ -360,32 +360,25 @@ const earlyWarnings = computed<('registration' | 'event')[]>(() => {
 interface Row {
   kind: EventRetentionDeadlineKind;
   deadline: EventRetentionDeadline | null;
-  status: EventRetentionDeadlineStatus | null;
+  status: EventRetentionDeadlineStatus | 'resolved' | null;
   purged: boolean;
   purgedAt: string | null;
-  /** Marked deleted, yet not finished: an interrupted run. */
-  incomplete: boolean;
+  /**
+   * Sensitive data deleted while the registrations remain: running it again
+   * finishes a deletion that was interrupted, and changes nothing otherwise.
+   */
+  rerun: boolean;
 }
 
 /** Without a deadline yet: what the current notice would give. */
 function estimate(kind: EventRetentionDeadlineKind): string {
-  const periods = retention.value?.periods;
-  const endAt = event.value?.endAt;
-  const period =
-    kind === 'sensitive' ? periods?.sensitive : periods?.registrations;
-  if (!period || !endAt) {
-    return t('date.unknown');
+  const estimated = retention.value?.estimates[kind];
+  if (estimated) {
+    return t('date.estimate', { date: d(parseLocalDate(estimated), 'date') });
   }
-  if (period.anchor !== 'event_end') {
-    return t('date.afterSubmission');
-  }
-  const date = new Date(endAt);
-  if ('months' in period) {
-    date.setMonth(date.getMonth() + period.months);
-  } else {
-    date.setDate(date.getDate() + period.weeks * 7);
-  }
-  return t('date.estimate', { date: d(date, 'date') });
+  return retention.value?.periods[kind]?.anchor === 'submission'
+    ? t('date.afterSubmission')
+    : t('date.unknown');
 }
 
 const rows = computed<Row[]>(() => {
@@ -401,7 +394,6 @@ const rows = computed<Row[]>(() => {
 
   return kinds.map((kind) => {
     const deadline = deadlines.find((entry) => entry.kind === kind) ?? null;
-    // The server's rule for what counts as deleted, not a copy of it.
     const purgedAt = retention.value?.purged[kind] ?? null;
 
     return {
@@ -410,32 +402,24 @@ const rows = computed<Row[]>(() => {
       status: purgedAt ? 'resolved' : (deadline?.status ?? null),
       purged: !!purgedAt,
       purgedAt,
-      incomplete:
-        kind === 'registrations'
-          ? !!purgedAt && (retention.value?.registrationCount ?? 0) > 0
-          : !!retention.value?.sensitivePurgeIncomplete,
+      rerun:
+        kind === 'sensitive' &&
+        !!purgedAt &&
+        !retention.value?.purged.registrations,
     };
   });
 });
 
-/** The general deadline caps the sensitive one: it holds a subset. */
-function latestFor(deadline: EventRetentionDeadline): string | null {
-  if (deadline.kind !== 'sensitive') {
-    return null;
-  }
-  const general = retention.value?.deadlines.find(
-    (entry) => entry.kind === 'registrations' && entry.status !== 'resolved',
-  );
-  return general ? general.effectiveAt.slice(0, 10) : null;
-}
-
 function postpone(deadline: EventRetentionDeadline) {
+  if (!deadline.postponeRange) {
+    return;
+  }
   quasar
     .dialog({
       component: RetentionPostponeDialog,
       componentProps: {
         current: deadline.effectiveAt,
-        latest: latestFor(deadline),
+        ...deadline.postponeRange,
       },
     })
     .onOk((data: RetentionPostponeData) => {
@@ -603,7 +587,7 @@ date:
   unknown: 'No deadline'
 postponedBy: 'Postponed by {name}: {reason}'
 action:
-  complete: 'Complete the deletion'
+  rerun: 'Run the deletion again'
   postpone: 'Postpone'
   delete:
     sensitive: 'Delete sensitive data'
@@ -667,7 +651,7 @@ date:
   unknown: 'Keine Frist'
 postponedBy: 'Verschoben von {name}: {reason}'
 action:
-  complete: 'Löschung abschließen'
+  rerun: 'Löschung erneut ausführen'
   postpone: 'Verschieben'
   delete:
     sensitive: 'Sensible Daten löschen'
@@ -731,7 +715,7 @@ date:
   unknown: 'Aucun délai'
 postponedBy: 'Reporté par {name} : {reason}'
 action:
-  complete: 'Terminer la suppression'
+  rerun: 'Relancer la suppression'
   postpone: 'Reporter'
   delete:
     sensitive: 'Supprimer les données sensibles'
@@ -795,7 +779,7 @@ date:
   unknown: 'Brak terminu'
 postponedBy: 'Przesunął(-ęła) {name}: {reason}'
 action:
-  complete: 'Dokończ usuwanie'
+  rerun: 'Uruchom usuwanie ponownie'
   postpone: 'Przesuń'
   delete:
     sensitive: 'Usuń dane wrażliwe'
@@ -859,7 +843,7 @@ date:
   unknown: 'Bez lhůty'
 postponedBy: 'Odložil(a) {name}: {reason}'
 action:
-  complete: 'Dokončit mazání'
+  rerun: 'Spustit mazání znovu'
   postpone: 'Odložit'
   delete:
     sensitive: 'Smazat citlivé údaje'

@@ -1,98 +1,185 @@
-import moment from 'moment';
+import { addToDate, daysBetween } from '@camp-registration/common/utils';
 import {
-  composePrivacyNotice,
-  RETENTION_REMINDER_STAGES,
-  type PrivacyNoticeContent,
-  type RetentionAnchor,
+  MAX_RETENTION_POSTPONE_MONTHS,
+  type EventRetentionDeadlineKind,
+  type EventRetentionDeadlineStatus,
+  type PrivacyRetention,
+  type RetentionPeriods,
 } from '@camp-registration/common/privacy';
 
+/** Days before the deadline a reminder goes out; 0 is the deadline itself. */
+export const RETENTION_REMINDER_STAGES = [30, 0] as const;
+
 /**
- * One pair of notice versions an event's registrations were stamped with, and
- * the first registration that pair covers: the earliest promise it made.
+ * Days past the deadline a missed reminder still goes out. Older ones only
+ * show as overdue, so deploying the workflow mails nothing about old events.
  */
-export interface NoticeStamp {
-  organizationPrivacyNoticeVersionId: string | null;
-  eventPrivacyNoticeVersionId: string | null;
-  _min: { createdAt: Date | null };
+export const RETENTION_REMINDER_GRACE_DAYS = 7;
+
+/** Days before the deadline from which it counts as due soon. */
+export const RETENTION_DUE_SOON_DAYS = 30;
+
+export type DeadlineDates = Record<EventRetentionDeadlineKind, string | null>;
+
+/** The dates a period is counted from; null where there is none yet. */
+export interface RetentionAnchors {
+  eventEnd: string;
+  firstRegistration: string | null;
 }
 
-/** Looks a stamped version's content up by id. */
-export type ContentLookup = (id: string | null) => PrivacyNoticeContent | null;
+/**
+ * The periods a notice's retention states. Notices published before the
+ * sensitive period existed promised nothing shorter for sensitive answers, so
+ * the main period applies to them.
+ */
+export function retentionPeriods(
+  retention: PrivacyRetention | null | undefined,
+  asksSensitive: boolean,
+): RetentionPeriods {
+  // Composition drops the retention of a free-text notice: no period.
+  if (!retention || retention.months <= 0) {
+    return { registrations: null, sensitive: null };
+  }
 
-/** The earliest date each kind of data was promised to be deleted by. */
-export interface PromisedDeadlines {
-  registrations: Date | null;
-  sensitive: Date | null;
+  const main = { months: retention.months, anchor: retention.anchor };
+  const special = retention.specialCategories;
+
+  return {
+    registrations: main,
+    sensitive: !asksSensitive
+      ? null
+      : special
+        ? { weeks: special.weeks, anchor: special.anchor }
+        : main,
+  };
+}
+
+function deadlineOf(
+  period: RetentionPeriods['sensitive'],
+  anchors: RetentionAnchors,
+): string | null {
+  const from =
+    period?.anchor === 'event_end'
+      ? anchors.eventEnd
+      : anchors.firstRegistration;
+  if (!period || !from) {
+    return null;
+  }
+
+  return 'months' in period
+    ? addToDate(from, { months: period.months })
+    : addToDate(from, { days: period.weeks * 7 });
 }
 
 /**
  * What the notices shown to an event's registrants promised.
  *
- * Read from the stamped versions, not today's notice: a period is a promise
- * made to a person at a particular moment, and a later, longer period has not
- * lengthened it. One deadline per kind covers all registrants, so the earliest
- * promise wins: deleting early is allowed, keeping longer than promised is not.
+ * One deadline per kind covers all registrants, so the earliest promise wins:
+ * deleting early is allowed, keeping longer than promised is not. Sensitive
+ * data is a subset of the registration data, so its deadline is never later.
  */
 export function promisedDeadlines(
-  stamps: NoticeStamp[],
-  contentOf: ContentLookup,
-  eventEndAt: Date,
-): PromisedDeadlines {
-  const result: PromisedDeadlines = { registrations: null, sensitive: null };
+  periods: RetentionPeriods[],
+  anchors: RetentionAnchors,
+): DeadlineDates {
+  const earliest = (kind: EventRetentionDeadlineKind) =>
+    periods
+      .map((entry) => deadlineOf(entry[kind], anchors))
+      .filter((date) => date !== null)
+      .sort()[0] ?? null;
 
-  for (const stamp of stamps) {
-    // Composition drops the retention of a free-text notice: no date.
-    const { retention } = composePrivacyNotice(
-      contentOf(stamp.organizationPrivacyNoticeVersionId),
-      contentOf(stamp.eventPrivacyNoticeVersionId),
-    );
-    if (!retention || retention.months <= 0) {
-      continue;
-    }
+  const registrations = earliest('registrations');
 
-    const firstRegisteredAt = stamp._min.createdAt ?? eventEndAt;
-    // In UTC, so the date does not depend on the server's time zone.
-    const from = (anchor: RetentionAnchor) =>
-      moment.utc(anchor === 'event_end' ? eventEndAt : firstRegisteredAt);
+  return {
+    registrations,
+    sensitive: earlierOf(earliest('sensitive'), registrations),
+  };
+}
 
-    const registrations = from(retention.anchor)
-      .add(retention.months, 'months')
-      .toDate();
-    result.registrations = earliest(result.registrations, registrations);
+/**
+ * The dates in force after postponing. A postponement only ever moves a date
+ * later, so one the promise has since reached changes nothing. The sensitive
+ * date never passes the general one.
+ */
+export function effectiveDeadlines(
+  promised: DeadlineDates,
+  postponed: DeadlineDates,
+): DeadlineDates {
+  const registrations = laterOf(
+    promised.registrations,
+    postponed.registrations,
+  );
 
-    // Notices published before the sensitive period existed promised nothing
-    // shorter, so their sensitive answers fall under the main period.
-    const special = retention.specialCategories;
-    const sensitive = special
-      ? from(special.anchor).add(special.weeks, 'weeks').toDate()
-      : registrations;
-    result.sensitive = earliest(result.sensitive, sensitive);
+  return {
+    registrations,
+    sensitive: earlierOf(
+      laterOf(promised.sensitive, postponed.sensitive),
+      registrations,
+    ),
+  };
+}
+
+export function deadlineStatus(
+  effectiveAt: string,
+  today: string,
+): EventRetentionDeadlineStatus {
+  const daysLeft = daysBetween(today, effectiveAt);
+  if (daysLeft < 0) {
+    return 'overdue';
   }
 
-  return result;
+  return daysLeft <= RETENTION_DUE_SOON_DAYS ? 'due_soon' : 'upcoming';
 }
 
-function earliest(current: Date | null, candidate: Date): Date {
-  // Whole seconds, as the column stores them: a stored date then compares
-  // equal to a recomputed one, and an unchanged promise stays unchanged.
-  const rounded = new Date(Math.floor(candidate.getTime() / 1000) * 1000);
-  return current && current < rounded ? current : rounded;
+/**
+ * The dates a postponement may choose: after both today and the date in
+ * force, within the next months, and for sensitive data not past the general
+ * date. Null when that leaves nothing.
+ */
+export function postponeRange(
+  kind: EventRetentionDeadlineKind,
+  effective: DeadlineDates,
+  today: string,
+): { min: string; max: string } | null {
+  const current = effective[kind];
+  if (!current) {
+    return null;
+  }
+
+  const min = addToDate(current > today ? current : today, { days: 1 });
+  const limit = addToDate(today, { months: MAX_RETENTION_POSTPONE_MONTHS });
+  const max =
+    kind === 'sensitive'
+      ? (earlierOf(limit, effective.registrations) ?? limit)
+      : limit;
+
+  return min <= max ? { min, max } : null;
 }
 
-/** Whole UTC days from `now` to the deadline; negative once it passed. */
-export function daysUntil(deadline: Date, now: Date): number {
-  return moment
-    .utc(deadline)
-    .startOf('day')
-    .diff(moment.utc(now).startOf('day'), 'days');
-}
+/**
+ * The most urgent reminder stage reached, or null while further away or
+ * past the grace period.
+ */
+export function reminderStage(
+  effectiveAt: string,
+  today: string,
+): number | null {
+  const daysLeft = daysBetween(today, effectiveAt);
+  if (daysLeft < -RETENTION_REMINDER_GRACE_DAYS) {
+    return null;
+  }
 
-/** The most urgent reminder stage reached, or null while further away. */
-export function reminderStage(deadline: Date, now: Date): number | null {
-  const daysLeft = daysUntil(deadline, now);
   const reached = RETENTION_REMINDER_STAGES.filter(
     (stage) => daysLeft <= stage,
   );
 
   return reached.length > 0 ? Math.min(...reached) : null;
+}
+
+function earlierOf(date: string | null, bound: string | null): string | null {
+  return date && bound && bound < date ? bound : date;
+}
+
+function laterOf(date: string | null, other: string | null): string | null {
+  return date && other && other > date ? other : date;
 }

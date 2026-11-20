@@ -76,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -84,15 +84,17 @@ import {
   MAX_RETENTION_POSTPONE_MONTHS,
   type RetentionPostponeData,
 } from '@camp-registration/common/privacy';
+import { addToDate } from '@camp-registration/common/utils';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DateInput from '@/components/common/inputs/DateInput.vue';
 
-const props = defineProps<{
-  /** The deadline in force (ISO): a postponement only moves it later. */
+const { current, min, max } = defineProps<{
+  /** `YYYY-MM-DD`: the deadline in force. */
   current: string;
-  /** `YYYY-MM-DD`: the sensitive deadline may not move past the general one. */
-  latest?: string | null;
+  /** `YYYY-MM-DD`: the dates the server accepts, as it sent them. */
+  min: string;
+  max: string;
 }>();
 
 /** Shortcuts, counted from the deadline in force. */
@@ -104,36 +106,9 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-function isoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
+const shifted = (months: number) => addToDate(current, { months });
 
-/** The calendar day of `current`, moved by whole months or days, in UTC. */
-function fromCurrent({ months = 0, days = 0 }): string {
-  const date = new Date(`${props.current.slice(0, 10)}T00:00:00Z`);
-  date.setUTCMonth(date.getUTCMonth() + months, date.getUTCDate() + days);
-  return isoDate(date);
-}
-
-const shifted = (months: number) => fromCurrent({ months });
-
-// The day after both today and the deadline in force.
-const min = computed(() => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const afterCurrent = fromCurrent({ days: 1 });
-  const afterToday = isoDate(tomorrow);
-  return afterCurrent > afterToday ? afterCurrent : afterToday;
-});
-
-const within = (date: string) => date >= min.value && date <= max.value;
-
-const max = computed(() => {
-  const limit = new Date();
-  limit.setMonth(limit.getMonth() + MAX_RETENTION_POSTPONE_MONTHS);
-  const latest = isoDate(limit);
-  return props.latest && props.latest < latest ? props.latest : latest;
-});
+const within = (date: string) => date >= min && date <= max;
 
 const until = ref<string | null>(null);
 const reason = ref('');

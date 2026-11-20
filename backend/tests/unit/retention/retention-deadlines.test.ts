@@ -1,126 +1,205 @@
 import { describe, expect, it } from 'vitest';
 import {
-  emptyPrivacyNoticeContent,
-  type PrivacyNoticeContent,
-} from '@camp-registration/common/privacy';
-import {
-  daysUntil,
+  deadlineStatus,
+  effectiveDeadlines,
+  postponeRange,
   promisedDeadlines,
   reminderStage,
-  type NoticeStamp,
+  retentionPeriods,
 } from '#app/retention/retention.deadlines';
 
-const endAt = new Date('2026-08-15T12:00:00.000Z');
+const anchors = { eventEnd: '2026-08-15', firstRegistration: '2026-03-01' };
 
-function notice(retention: object): PrivacyNoticeContent {
-  return {
-    ...emptyPrivacyNoticeContent(),
-    retention,
-  } as PrivacyNoticeContent;
-}
-
-function stamp(id: string, firstAt: string | null): NoticeStamp {
-  return {
-    organizationPrivacyNoticeVersionId: id,
-    eventPrivacyNoticeVersionId: null,
-    _min: { createdAt: firstAt ? new Date(firstAt) : null },
-  };
-}
-
-function lookup(contents: Record<string, PrivacyNoticeContent>) {
-  return (id: string | null) => (id ? (contents[id] ?? null) : null);
-}
+const periods = (retention: object, asksSensitive = true) =>
+  retentionPeriods(
+    { exceptions: [], ...retention } as unknown as Parameters<
+      typeof retentionPeriods
+    >[0],
+    asksSensitive,
+  );
 
 describe('promisedDeadlines', () => {
   it('counts from the event end', () => {
     const result = promisedDeadlines(
-      [stamp('a', '2026-03-01T10:00:00.000Z')],
-      lookup({ a: notice({ months: 6, anchor: 'event_end', exceptions: [] }) }),
-      endAt,
-    );
-
-    expect(result.registrations?.toISOString()).toBe(
-      '2027-02-15T12:00:00.000Z',
-    );
-  });
-
-  it('counts from the first registration a version covers', () => {
-    const result = promisedDeadlines(
-      [stamp('a', '2026-03-01T10:00:00.500Z')],
-      lookup({
-        a: notice({
+      [
+        periods({
           months: 6,
-          anchor: 'submission',
-          exceptions: [],
-          specialCategories: { weeks: 4, anchor: 'submission' },
+          anchor: 'event_end',
+          specialCategories: { weeks: 4, anchor: 'event_end' },
         }),
-      }),
-      endAt,
+      ],
+      anchors,
     );
 
-    // Whole seconds, as the column stores them.
-    expect(result.registrations?.toISOString()).toBe(
-      '2026-09-01T10:00:00.000Z',
-    );
-    expect(result.sensitive?.toISOString()).toBe('2026-03-29T10:00:00.000Z');
+    expect(result).toEqual({
+      registrations: '2027-02-15',
+      sensitive: '2026-09-12',
+    });
   });
 
-  it('keeps the earliest promise across versions', () => {
+  it('counts from the first registration', () => {
     const result = promisedDeadlines(
-      [stamp('long', '2026-01-01T00:00:00.000Z'), stamp('short', null)],
-      lookup({
-        long: notice({ months: 12, anchor: 'event_end', exceptions: [] }),
-        short: notice({ months: 3, anchor: 'event_end', exceptions: [] }),
-      }),
-      endAt,
+      [periods({ months: 6, anchor: 'submission' })],
+      anchors,
     );
 
-    expect(result.registrations?.toISOString()).toBe(
-      '2026-11-15T12:00:00.000Z',
+    expect(result.registrations).toBe('2026-09-01');
+  });
+
+  it('has no date counted from submission before anyone registered', () => {
+    const result = promisedDeadlines(
+      [periods({ months: 6, anchor: 'submission' })],
+      { ...anchors, firstRegistration: null },
     );
+
+    expect(result).toEqual({ registrations: null, sensitive: null });
+  });
+
+  it('keeps the earliest promise across notices', () => {
+    const result = promisedDeadlines(
+      [
+        periods({ months: 12, anchor: 'event_end' }),
+        periods({ months: 3, anchor: 'event_end' }),
+      ],
+      anchors,
+    );
+
+    expect(result.registrations).toBe('2026-11-15');
   });
 
   it('puts sensitive answers under the main period for older notices', () => {
     const result = promisedDeadlines(
-      [stamp('a', null)],
-      lookup({ a: notice({ months: 6, anchor: 'event_end', exceptions: [] }) }),
-      endAt,
+      [periods({ months: 6, anchor: 'event_end' })],
+      anchors,
     );
 
-    expect(result.sensitive).toEqual(result.registrations);
+    expect(result.sensitive).toBe(result.registrations);
+  });
+
+  it('never lets the sensitive date pass the general one', () => {
+    const result = promisedDeadlines(
+      [
+        periods({ months: 1, anchor: 'submission' }),
+        periods({
+          months: 12,
+          anchor: 'event_end',
+          specialCategories: { weeks: 8, anchor: 'event_end' },
+        }),
+      ],
+      anchors,
+    );
+
+    expect(result).toEqual({
+      registrations: '2026-04-01',
+      sensitive: '2026-04-01',
+    });
+  });
+
+  it('has no sensitive date for a form without sensitive questions', () => {
+    const result = promisedDeadlines(
+      [periods({ months: 6, anchor: 'event_end' }, false)],
+      anchors,
+    );
+
+    expect(result.sensitive).toBeNull();
   });
 
   it('promises nothing without a period', () => {
     const result = promisedDeadlines(
-      [stamp('a', null)],
-      lookup({ a: notice({ months: 0, anchor: 'event_end', exceptions: [] }) }),
-      endAt,
+      [periods({ months: 0, anchor: 'event_end' })],
+      anchors,
     );
 
     expect(result).toEqual({ registrations: null, sensitive: null });
   });
 });
 
+describe('effectiveDeadlines', () => {
+  const promised = { registrations: '2027-02-15', sensitive: '2026-09-12' };
+
+  it('moves a postponed date later', () => {
+    expect(
+      effectiveDeadlines(promised, {
+        registrations: '2027-06-01',
+        sensitive: null,
+      }),
+    ).toEqual({ registrations: '2027-06-01', sensitive: '2026-09-12' });
+  });
+
+  it('ignores a postponement the promise has reached', () => {
+    expect(
+      effectiveDeadlines(promised, {
+        registrations: '2027-01-01',
+        sensitive: null,
+      }).registrations,
+    ).toBe('2027-02-15');
+  });
+
+  it('caps a sensitive postponement at the general date', () => {
+    expect(
+      effectiveDeadlines(
+        { registrations: '2026-11-01', sensitive: '2026-09-12' },
+        { registrations: null, sensitive: '2027-01-01' },
+      ).sensitive,
+    ).toBe('2026-11-01');
+  });
+});
+
+describe('postponeRange', () => {
+  const effective = { registrations: '2027-02-15', sensitive: '2026-09-12' };
+
+  it('starts after the date in force and ends 12 months from today', () => {
+    expect(postponeRange('registrations', effective, '2026-12-01')).toEqual({
+      min: '2027-02-16',
+      max: '2027-12-01',
+    });
+  });
+
+  it('starts tomorrow for an overdue date', () => {
+    expect(postponeRange('sensitive', effective, '2026-12-01')).toEqual({
+      min: '2026-12-02',
+      max: '2027-02-15',
+    });
+  });
+
+  it('leaves nothing for a sensitive date already at the general one', () => {
+    expect(
+      postponeRange(
+        'sensitive',
+        { registrations: '2027-02-15', sensitive: '2027-02-15' },
+        '2026-12-01',
+      ),
+    ).toBeNull();
+  });
+});
+
+describe('deadlineStatus', () => {
+  it('is due soon within 30 days and overdue only after the day', () => {
+    expect(deadlineStatus('2027-01-01', '2026-12-01')).toBe('upcoming');
+    expect(deadlineStatus('2026-12-31', '2026-12-01')).toBe('due_soon');
+    expect(deadlineStatus('2026-12-01', '2026-12-01')).toBe('due_soon');
+    expect(deadlineStatus('2026-11-30', '2026-12-01')).toBe('overdue');
+  });
+});
+
 describe('reminderStage', () => {
-  const now = new Date('2026-11-20T23:00:00.000Z');
-  const inDays = (days: number) =>
-    new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  const today = '2026-11-20';
 
   it('is null while further away than the first stage', () => {
-    expect(reminderStage(inDays(31), now)).toBeNull();
+    expect(reminderStage('2026-12-21', today)).toBeNull();
   });
 
   it('reaches the first stage 30 days ahead', () => {
-    expect(reminderStage(inDays(30), now)).toBe(30);
-    expect(reminderStage(inDays(5), now)).toBe(30);
+    expect(reminderStage('2026-12-20', today)).toBe(30);
+    expect(reminderStage('2026-11-25', today)).toBe(30);
   });
 
-  it('reaches the last stage on and after the deadline', () => {
-    expect(reminderStage(inDays(0), now)).toBe(0);
-    expect(reminderStage(inDays(-10), now)).toBe(0);
+  it('reaches the last stage on the deadline and for a week after', () => {
+    expect(reminderStage('2026-11-20', today)).toBe(0);
+    expect(reminderStage('2026-11-13', today)).toBe(0);
   });
 
-  it('counts UTC calendar days', () => {
-    expect(daysUntil(new Date('2026-11-21T00:30:00.000Z'), now)).toBe(1);
+  it('sends nothing for a deadline more than a week overdue', () => {
+    expect(reminderStage('2026-11-12', today)).toBeNull();
   });
 });

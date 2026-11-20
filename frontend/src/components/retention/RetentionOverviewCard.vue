@@ -45,7 +45,7 @@
     >
       <q-item
         v-for="entry in visible"
-        :key="entry.deadlineId"
+        :key="`${entry.eventId}-${entry.kind}`"
         :to="eventLink ? eventLink(entry) : undefined"
         :clickable="!!eventLink"
       >
@@ -54,7 +54,9 @@
           <q-item-label caption>{{ t(`kind.${entry.kind}`) }}</q-item-label>
         </q-item-section>
         <q-item-section side>
-          <q-item-label>{{ d(entry.effectiveAt, 'date') }}</q-item-label>
+          <q-item-label>{{
+            d(parseLocalDate(entry.effectiveAt), 'date')
+          }}</q-item-label>
           <retention-status-chip
             :status="entry.status"
             :postponed="entry.postponed"
@@ -80,6 +82,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { RetentionOverviewEntry } from '@camp-registration/common/privacy';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
+import { parseLocalDate } from '@/utils/date';
 
 const props = defineProps<{
   entries: RetentionOverviewEntry[];
