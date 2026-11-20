@@ -42,12 +42,7 @@ const BULK_REGISTRATION_SELECT = {
   data: true,
   locale: true,
   group: true,
-  updatedAt: true,
 } as const satisfies Prisma.RegistrationSelect;
-
-type BulkRegistration = Prisma.RegistrationGetPayload<{
-  select: typeof BULK_REGISTRATION_SELECT;
-}>;
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -463,9 +458,11 @@ export class RegistrationService extends BaseService {
     const formFor = registrationForms(event);
     let cleared = 0;
 
-    for await (const registration of this.registrationsOfEvent(event.id)) {
-      if (await this.clearSensitiveAnswersOf(formFor, registration)) {
-        cleared++;
+    for await (const batch of this.registrationBatchesOfEvent(event.id)) {
+      for (const { id } of batch) {
+        if (await this.clearSensitiveAnswersOf(formFor, id)) {
+          cleared++;
+        }
       }
     }
 
@@ -473,64 +470,47 @@ export class RegistrationService extends BaseService {
   }
 
   /**
-   * One registration of `clearSensitiveAnswers`. Written only over the version
-   * read, so an edit saved meanwhile is never overwritten: the row is read
-   * again and cleared anew. Returns whether anything was cleared.
+   * One registration of `clearSensitiveAnswers`, locked while it is read and
+   * written, so an edit saved meanwhile is neither overwritten nor lost.
+   * Returns whether anything was cleared.
    */
   private async clearSensitiveAnswersOf(
     formFor: ReturnType<typeof registrationForms>,
-    registration: BulkRegistration,
-    attempts = 3,
+    registrationId: string,
   ): Promise<boolean> {
-    const form = formFor(registration).load(registration.data);
-    if (form.sensitiveAnswers().length === 0) {
-      return false;
-    }
-
-    // From here on the form holds the cleared response: the computed columns
-    // and files are read from it, so no copy of an answer stays. Computed
-    // before the transaction, which then only writes.
-    const data = form.withoutSensitiveAnswers();
-    const fileIds = form.getFileIds();
-    const computedData = registrationColumns(form);
-
-    const written = await this.transaction(async (tx) => {
-      const { count } = await tx.registration.updateMany({
-        where: { id: registration.id, updatedAt: registration.updatedAt },
-        data: { ...computedData, data },
+    return this.transaction(async (tx) => {
+      // Locked before the read below, so that read sees the latest version.
+      await tx.$queryRaw`SELECT id FROM registrations WHERE id = ${registrationId} FOR UPDATE`;
+      const registration = await tx.registration.findUnique({
+        where: { id: registrationId },
+        select: BULK_REGISTRATION_SELECT,
       });
-      if (count === 0) {
+      if (!registration) {
         return false;
       }
 
+      const form = formFor(registration).load(registration.data);
+      if (form.sensitiveAnswers().length === 0) {
+        return false;
+      }
+
+      // From here on the form holds the cleared response: the computed columns
+      // and files are read from it, so no copy of an answer stays.
+      const data = form.withoutSensitiveAnswers();
+      await tx.registration.update({
+        where: { id: registrationId },
+        data: { ...registrationColumns(form), data },
+      });
       await this.fileService.detachFilesExcept(
         tx,
         'registrationId',
-        registration.id,
-        fileIds,
+        registrationId,
+        form.getFileIds(),
         { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
       );
+
       return true;
     });
-    if (written) {
-      return true;
-    }
-
-    if (attempts <= 1) {
-      // The deletion is idempotent: running it again finishes the job.
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'A registration kept changing during the deletion. Please run it again.',
-      );
-    }
-    const current = await this.prisma.registration.findUnique({
-      where: { id: registration.id },
-      select: BULK_REGISTRATION_SELECT,
-    });
-
-    return current
-      ? this.clearSensitiveAnswersOf(formFor, current, attempts - 1)
-      : false;
   }
 
   /** The event's registrations, read in batches by id. */
@@ -553,20 +533,14 @@ export class RegistrationService extends BaseService {
     } while (batch.length === BATCH_SIZE);
   }
 
-  /** The event's registrations one by one, read in batches. */
-  private async *registrationsOfEvent(eventId: string) {
-    for await (const batch of this.registrationBatchesOfEvent(eventId)) {
-      yield* batch;
-    }
-  }
-
   /**
-   * Deletes every registration of the event in one statement. Bed assignments,
-   * files and audit entries are only detached. No mails, no audit entry per
-   * registration. Returns how many were deleted.
+   * Deletes every registration of the event in one statement, within the
+   * caller's transaction if there is one. Bed assignments, files and audit
+   * entries are only detached. No mails, no audit entry per registration.
+   * Returns how many were deleted.
    */
   async deleteRegistrationsForEvent(eventId: string): Promise<number> {
-    const { count } = await this.prisma.registration.deleteMany({
+    const { count } = await this.db.registration.deleteMany({
       where: { eventId },
     });
 
