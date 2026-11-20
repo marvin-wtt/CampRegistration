@@ -269,7 +269,8 @@ interface Capacity {
 
 const capacity = computed<Capacity | null>(() => {
   const max = sumGroupValues(event.maxParticipants);
-  if (max <= 0) {
+  // Deleted registrations would read as free places.
+  if (max <= 0 || event.registrationDataPurgedAt) {
     return null;
   }
 
@@ -312,12 +313,28 @@ function shortDate(value: string): string {
 const CLOSING_SOON_WINDOW = 3 * 24 * 60 * 60 * 1000;
 
 interface Status {
-  kind: 'open' | 'closes' | 'opens' | 'unscheduled' | 'closed' | 'blocked';
+  kind:
+    | 'open'
+    | 'closes'
+    | 'opens'
+    | 'unscheduled'
+    | 'closed'
+    | 'blocked'
+    | 'purged';
   icon: string;
   label: string;
 }
 
 const status = computed<Status>(() => {
+  // Closed for good, whatever else holds (docs/privacy.md, 8).
+  if (event.registrationDataPurgedAt) {
+    return {
+      kind: 'purged',
+      icon: 'auto_delete',
+      label: t('purgedStatus'),
+    };
+  }
+
   // Takes precedence over the registration window: while the organization is
   // unverified the event is unlisted and refuses registrations, so showing
   // "registration open" here would be a plain untruth.
@@ -723,6 +740,14 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   color: var(--md3-on-surface-variant);
 }
 
+/* Marked like a deleted table cell. */
+.mgmt-card__status--purged {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+  border: 1px dashed var(--md3-outline);
+  font-style: italic;
+}
+
 /* Distinct from `closed`: nothing the manager configures will change it until
    the organization is verified. */
 .mgmt-card__status--blocked {
@@ -788,6 +813,7 @@ share:
 notification:
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
+purgedStatus: 'Data deleted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -821,6 +847,7 @@ share:
 notification:
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
+purgedStatus: 'Daten gelöscht'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -856,6 +883,7 @@ share:
 notification:
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
+purgedStatus: 'Données supprimées'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -889,6 +917,7 @@ share:
 notification:
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
+purgedStatus: 'Dane usunięte'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -922,4 +951,5 @@ share:
 notification:
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
+purgedStatus: 'Údaje smazány'
 </i18n>

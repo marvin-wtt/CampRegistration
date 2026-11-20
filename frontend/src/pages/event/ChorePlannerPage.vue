@@ -59,10 +59,7 @@
                   <q-item-section>{{ t('action.fairness') }}</q-item-section>
                 </q-item>
                 <q-item
-                  v-if="
-                    can('event.chore_assignments.edit') &&
-                    assignments.length > 0
-                  "
+                  v-if="canEdit && assignments.length > 0"
                   v-close-popup
                   clickable
                   @click="removePerson()"
@@ -75,10 +72,7 @@
                   </q-item-section>
                 </q-item>
                 <q-item
-                  v-if="
-                    can('event.chore_assignments.edit') &&
-                    assignments.length > 0
-                  "
+                  v-if="canEdit && assignments.length > 0"
                   v-close-popup
                   clickable
                   @click="openRebalance()"
@@ -106,6 +100,11 @@
           </m-btn>
         </template>
       </page-header>
+
+      <purged-banner
+        v-if="registrationsPurged"
+        kind="assignments"
+      />
 
       <!-- Empty state -->
       <div
@@ -470,6 +469,8 @@ import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRoomStore } from '@/stores/room-store';
 import { usePermissions } from '@/composables/permissions';
+import { useRegistrationsPurged } from '@/composables/registrationsPurged';
+import PurgedBanner from '@/components/privacy/PurgedBanner.vue';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatPersonName } from '@/utils/formatters';
@@ -564,8 +565,14 @@ const names = computed<Map<string, string>>(
     ),
 );
 
-const canCreate = computed(() => can('event.chore_assignments.create'));
-const canEdit = computed(() => can('event.chore_assignments.edit'));
+// Without registrations there is nobody left to plan.
+const registrationsPurged = useRegistrationsPurged();
+const canCreate = computed(
+  () => can('event.chore_assignments.create') && !registrationsPurged.value,
+);
+const canEdit = computed(
+  () => can('event.chore_assignments.edit') && !registrationsPurged.value,
+);
 const canDelete = computed(() => can('event.chore_assignments.delete'));
 
 const eventStart = computed(() => eventDetailsStore.data?.startAt.slice(0, 10));

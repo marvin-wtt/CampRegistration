@@ -32,6 +32,10 @@
         >
           {{ to(columnProps.col.label) }}
         </a>
+        <purged-column-icon
+          v-if="column.purged"
+          printing
+        />
       </q-th>
     </template>
 
@@ -72,6 +76,7 @@ import type {
 } from '@camp-registration/common/entities';
 
 import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
+import PurgedColumnIcon from '@/components/event/table/PurgedColumnIcon.vue';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
 import { toRef } from 'vue';

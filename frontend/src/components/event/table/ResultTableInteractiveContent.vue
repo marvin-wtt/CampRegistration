@@ -311,6 +311,7 @@
             :props="columnProps"
             :class="{
               'sticky-action': column.name === '_action' && !quasar.screen.xs,
+              'purged-column': column.purged,
             }"
             style="vertical-align: bottom"
           >
@@ -323,6 +324,7 @@
             >
               {{ to(columnProps.col.label) }}
             </a>
+            <purged-column-icon v-if="column.purged" />
           </q-th>
         </template>
 
@@ -340,6 +342,7 @@
               :props="bodyProps"
               :class="{
                 'sticky-action': col.name === '_action' && !quasar.screen.xs,
+                'purged-column': col.purged,
               }"
             >
               <table-cell-wrapper
@@ -465,6 +468,7 @@ import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
 import { useTemplateStore } from '@/stores/template-store';
 import TableTemplateIndexDialog from '@/components/event/table/dialogs/TableTemplateIndexDialog.vue';
 import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
+import PurgedColumnIcon from '@/components/event/table/PurgedColumnIcon.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
@@ -879,7 +883,7 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
     top: 0;
     z-index: 1;
 
-    background: var(--md3-surface);
+    background-color: var(--md3-surface);
     color: var(--md3-on-surface-variant);
     font-weight: 600;
   }
@@ -891,7 +895,17 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
   }
 
   :deep(tbody tr:hover td) {
-    background: var(--md3-surface-container);
+    background-color: var(--md3-surface-container);
+  }
+
+  // Deleted answers (docs/privacy.md, 8): hatched so the column never reads
+  // as data. Over the background colours above, hover included.
+  .purged-column {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--md3-outline-variant) 45%, transparent) 6px 8px
+    );
   }
 
   // Keep the actions column reachable without scrolling on wide tables
@@ -978,6 +992,7 @@ no_match:
 
 error:
   no_rows: 'There is nothing to export for the current filters.'
+purgedValue: 'Deleted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -1010,6 +1025,7 @@ no_match:
 
 error:
   no_rows: 'Für die aktuellen Filter gibt es nichts zu exportieren.'
+purgedValue: 'Gelöscht'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -1042,6 +1058,7 @@ no_match:
 
 error:
   no_rows: 'Il n’y a rien à exporter pour les filtres actuels.'
+purgedValue: 'Supprimé'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1074,6 +1091,7 @@ no_match:
 
 error:
   no_rows: 'Brak danych do wyeksportowania dla bieżących filtrów.'
+purgedValue: 'Usunięto'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1106,4 +1124,5 @@ no_match:
 
 error:
   no_rows: 'Pro aktuální filtry není nic k exportu.'
+purgedValue: 'Smazáno'
 </i18n>

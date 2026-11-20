@@ -25,6 +25,7 @@ function makeCtx(overrides: Partial<CsvFormatContext> = {}): CsvFormatContext {
     translate: (value) => (typeof value === 'string' ? value : ''),
     translateCountry: (country) => country,
     getFormSelectOptions: () => undefined,
+    purgedLabel: 'Deleted',
     ...overrides,
   };
 }

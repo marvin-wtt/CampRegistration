@@ -22,6 +22,8 @@ interface ElementJson {
 
 export interface PrivacyTaggedQuestion {
   name: string;
+  /** The key its answer is stored under, when it differs from `name`. */
+  valueName?: string;
   category: string;
 }
 
@@ -75,7 +77,13 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
         typeof element.privacyCategory === 'string' &&
         element.privacyCategory
       ) {
-        tags.tagged.push({ name, category: element.privacyCategory });
+        tags.tagged.push({
+          name,
+          ...(typeof element.valueName === 'string' && element.valueName
+            ? { valueName: element.valueName }
+            : {}),
+          category: element.privacyCategory,
+        });
       }
       if (type === 'boolean' && element.privacyConsent === true) {
         tags.consents.push({
@@ -97,6 +105,18 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
   walk(asElements(json.elements));
 
   return tags;
+}
+
+/**
+ * The keys the answers of special-category questions are stored under —
+ * those "Delete sensitive data" clears (docs/privacy.md, 8).
+ */
+export function specialCategoryAnswerKeys(form: unknown): Set<string> {
+  return new Set(
+    extractPrivacyTags(form)
+      .tagged.filter((question) => isSpecialCategory(question.category))
+      .map((question) => question.valueName ?? question.name),
+  );
 }
 
 /**

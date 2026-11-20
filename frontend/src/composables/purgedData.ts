@@ -1,0 +1,76 @@
+import { computed, type MaybeRefOrGetter, toValue } from 'vue';
+import type { EventDetails } from '@camp-registration/common/entities';
+import {
+  isSpecialCategory,
+  specialCategoryAnswerKeys,
+} from '@camp-registration/common/form';
+import type { SurveyModel } from 'survey-core';
+
+type PurgeState = Pick<
+  EventDetails,
+  'form' | 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
+>;
+
+/**
+ * Whether a registration field path (`data.allergies`, `data.kids[0].meds`)
+ * reaches one of the given answer keys.
+ */
+export function reachesAnswerKey(
+  path: string,
+  keys: ReadonlySet<string>,
+): boolean {
+  if (!path.startsWith('data.') || keys.size === 0) {
+    return false;
+  }
+
+  return path
+    .slice(5)
+    .split(/[.[\]]+/)
+    .some((segment) => keys.has(segment));
+}
+
+/**
+ * The fields whose answers "Delete sensitive data" cleared (docs/privacy.md,
+ * 8), read off the current form as the server does when checking edits.
+ */
+export function usePurgedFields(
+  event: MaybeRefOrGetter<PurgeState | null | undefined>,
+) {
+  const keys = computed<Set<string>>(() => {
+    const current = toValue(event);
+    if (
+      !current ||
+      (!current.sensitiveDataPurgedAt && !current.registrationDataPurgedAt)
+    ) {
+      return new Set();
+    }
+
+    return specialCategoryAnswerKeys(current.form);
+  });
+
+  return {
+    keys,
+    isPurged: (path: string) => reachesAnswerKey(path, keys.value),
+  };
+}
+
+/**
+ * Locks the questions whose answers were deleted and says why, so a manager
+ * doesn't type an answer the server would refuse.
+ */
+export function lockPurgedQuestions(
+  survey: SurveyModel,
+  event: PurgeState,
+  note: string,
+): void {
+  if (!event.sensitiveDataPurgedAt && !event.registrationDataPurgedAt) {
+    return;
+  }
+
+  for (const question of survey.getAllQuestions(false, false, true)) {
+    if (isSpecialCategory(question.getPropertyValue('privacyCategory'))) {
+      question.readOnly = true;
+      question.description = note;
+    }
+  }
+}

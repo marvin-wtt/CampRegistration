@@ -48,6 +48,13 @@
         :verification-status="event.organizationVerificationStatus"
       />
 
+      <!-- The cards built on registrations are left out below. -->
+      <purged-banner
+        v-if="registrationsPurged"
+        kind="registrations"
+        manage-link
+      />
+
       <!-- Configured, but refused by the privacy rules (docs/privacy.md, 5). -->
       <privacy-compliance-notice
         v-if="event"
@@ -149,6 +156,7 @@ import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue'
 import RetentionCard from '@/components/event/dashboard/RetentionCard.vue';
 import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
 import PrivacyComplianceNotice from '@/components/privacy/PrivacyComplianceNotice.vue';
+import PurgedBanner from '@/components/privacy/PurgedBanner.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -418,6 +426,8 @@ const quickActions = computed<QuickAction[]>(() =>
     ] satisfies QuickAction[]
   ).filter(
     (action) =>
+      // Both only lead to the notice that the registrations are gone.
+      !registrationsPurged.value &&
       canAccess(action.permission) &&
       (!action.navItem || isShown(action.navItem)),
   ),

@@ -1,24 +1,9 @@
 <template>
   <page-state-handler :error>
-    <!-- Deleted for good under the retention workflow (docs/privacy.md, 8). -->
-    <div
+    <registration-data-purged-state
       v-if="event?.registrationDataPurgedAt"
-      class="absolute fit column items-center justify-center q-pa-lg text-center"
-    >
-      <q-icon
-        name="auto_delete"
-        size="48px"
-        class="text-on-surface-variant"
-      />
-      <div class="text-h6 q-mt-md">{{ t('purged.title') }}</div>
-      <p class="text-body2 text-on-surface-variant purged-text">
-        {{
-          t('purged.message', {
-            date: d(event.registrationDataPurgedAt, 'date'),
-          })
-        }}
-      </p>
-    </div>
+      class="absolute fit"
+    />
     <result-table-interactive
       v-else
       class="absolute fit"
@@ -43,6 +28,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
 import { extractFormFields } from '@camp-registration/common/form';
 import type {
@@ -66,7 +52,6 @@ const route = useRoute();
 const { getStringQueryParam } = useRouteQueryParams();
 const quasar = useQuasar();
 const { locale } = useI18n({ useScope: 'global' });
-const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 
 // Started during setup, not awaited: the stores flag themselves loading before
@@ -183,39 +168,3 @@ function onTemplatesPrint({ templateIds, groups }: PrintTablesSelection) {
   });
 }
 </script>
-
-<style scoped>
-.purged-text {
-  max-width: 28rem;
-}
-</style>
-
-<i18n lang="yaml" locale="en">
-purged:
-  title: 'Registration data deleted'
-  message: 'All registrations of this event were deleted on {date} under its retention period. The event takes no new registrations.'
-</i18n>
-
-<i18n lang="yaml" locale="de">
-purged:
-  title: 'Anmeldedaten gelöscht'
-  message: 'Alle Anmeldungen dieser Veranstaltung wurden am {date} gemäß ihrer Speicherfrist gelöscht. Die Veranstaltung nimmt keine neuen Anmeldungen an.'
-</i18n>
-
-<i18n lang="yaml" locale="fr">
-purged:
-  title: 'Données d’inscription supprimées'
-  message: 'Toutes les inscriptions de cet événement ont été supprimées le {date} conformément à leur durée de conservation. L’événement n’accepte plus de nouvelles inscriptions.'
-</i18n>
-
-<i18n lang="yaml" locale="pl">
-purged:
-  title: 'Dane zgłoszeń usunięte'
-  message: 'Wszystkie zgłoszenia tego wydarzenia zostały usunięte {date} zgodnie z okresem przechowywania. Wydarzenie nie przyjmuje nowych zgłoszeń.'
-</i18n>
-
-<i18n lang="yaml" locale="cs">
-purged:
-  title: 'Údaje z přihlášek smazány'
-  message: 'Všechny přihlášky této akce byly smazány {date} podle lhůty uchování. Akce nepřijímá nové přihlášky.'
-</i18n>

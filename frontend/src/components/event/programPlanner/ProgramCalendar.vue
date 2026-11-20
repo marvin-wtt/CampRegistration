@@ -426,7 +426,10 @@ const { settings } = useProgramPlannerSettings();
 const registrationsStore = useRegistrationsStore();
 const { birthdaysOn } = useEventBirthdays(() => event);
 watch(
-  () => settings.showBirthdays && can('event.registrations.view'),
+  () =>
+    settings.showBirthdays &&
+    can('event.registrations.view') &&
+    !event.registrationDataPurgedAt,
   (shown) => {
     if (shown) {
       void registrationsStore.fetchData();

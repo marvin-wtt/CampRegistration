@@ -158,6 +158,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
+import { lockPurgedQuestions } from '@/composables/purgedData';
 import { computed, onBeforeMount, ref, toRef, watch, watchEffect } from 'vue';
 import { CustomError, SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
@@ -392,6 +393,7 @@ if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
 }
+lockPurgedQuestions(model, props.eventDetails, t('purgedNote'));
 
 // After loading data: assigning `model.data` fires no change event. Managers
 // never see the Complete button, so neither needs the total.
@@ -705,6 +707,7 @@ complete:
   exploreEvents: 'Explore other events'
 consentMissing:
   question: 'This answer can only be saved with your consent. Please agree to the consent question, or remove the answer.'
+purgedNote: "Sensitive data was deleted for data protection reasons and can't be added again."
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -742,6 +745,7 @@ complete:
   exploreEvents: 'Weitere Veranstaltungen entdecken'
 consentMissing:
   question: 'Diese Angabe kann nur mit deiner Einwilligung gespeichert werden. Bitte stimme der Einwilligung zu oder entferne die Angabe.'
+purgedNote: 'Sensible Daten wurden aus Datenschutzgründen gelöscht und können nicht erneut erfasst werden.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -779,6 +783,7 @@ complete:
   exploreEvents: "Découvrir d'autres événements"
 consentMissing:
   question: 'Cette réponse ne peut être enregistrée qu’avec ton consentement. Donne ton consentement ou supprime la réponse.'
+purgedNote: 'Les données sensibles ont été supprimées pour des raisons de protection des données et ne peuvent plus être saisies.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -816,6 +821,7 @@ complete:
   exploreEvents: 'Odkryj inne wydarzenia'
 consentMissing:
   question: 'Tę odpowiedź można zapisać tylko za Twoją zgodą. Wyraź zgodę albo usuń odpowiedź.'
+purgedNote: 'Dane wrażliwe zostały usunięte ze względu na ochronę danych i nie można ich ponownie wprowadzić.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -853,6 +859,7 @@ complete:
   exploreEvents: 'Prozkoumat další akcey'
 consentMissing:
   question: 'Tuto odpověď lze uložit jen s tvým souhlasem. Udělej souhlas, nebo odpověď odstraň.'
+purgedNote: 'Citlivé údaje byly smazány z důvodu ochrany osobních údajů a nelze je znovu zadat.'
 </i18n>
 
 <style lang="scss">

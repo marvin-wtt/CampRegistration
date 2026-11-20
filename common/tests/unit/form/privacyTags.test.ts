@@ -7,6 +7,7 @@ import {
   hasPrivacyIssues,
   uncoveredConsentCategories,
   clearUnconsentedAnswers,
+  specialCategoryAnswerKeys,
   unconsentedQuestions,
 } from '../../../src/form/index.js';
 import { composePrivacyNotice } from '../../../src/privacy/index.js';
@@ -94,6 +95,30 @@ describe('extractPrivacyTags', () => {
     });
 
     expect(tags.consents).toEqual([]);
+  });
+});
+
+describe('specialCategoryAnswerKeys', () => {
+  it('lists the answer keys of special-category questions only', () => {
+    const form = {
+      pages: [
+        {
+          elements: [
+            allergies,
+            { type: 'text', name: 'diet', privacyCategory: 'dietary' },
+            {
+              type: 'paneldynamic',
+              name: 'children',
+              templateElements: [{ ...medication, valueName: 'meds' }],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(specialCategoryAnswerKeys(form)).toEqual(
+      new Set(['allergies', 'meds']),
+    );
   });
 });
 

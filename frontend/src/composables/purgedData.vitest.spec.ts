@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { SurveyModel } from 'survey-core';
+import '@camp-registration/common/form';
+import type { EventDetails } from '@camp-registration/common/entities';
+import { lockPurgedQuestions, reachesAnswerKey } from './purgedData';
+
+describe('reachesAnswerKey', () => {
+  const keys = new Set(['allergies', 'meds']);
+
+  it('matches form answers, also nested ones', () => {
+    expect(reachesAnswerKey('data.allergies', keys)).toBe(true);
+    expect(reachesAnswerKey('data.kids[0].meds', keys)).toBe(true);
+    expect(reachesAnswerKey('data.kids.meds', keys)).toBe(true);
+  });
+
+  it('ignores other answers and data outside the form', () => {
+    expect(reachesAnswerKey('data.name', keys)).toBe(false);
+    expect(reachesAnswerKey('customData.allergies', keys)).toBe(false);
+    expect(reachesAnswerKey('allergies', keys)).toBe(false);
+  });
+});
+
+describe('lockPurgedQuestions', () => {
+  const form = {
+    elements: [
+      { type: 'text', name: 'name' },
+      { type: 'comment', name: 'allergies', privacyCategory: 'allergies' },
+    ],
+  };
+
+  function lock(sensitiveDataPurgedAt: string | null) {
+    const survey = new SurveyModel(form);
+    lockPurgedQuestions(
+      survey,
+      {
+        form: form as unknown as EventDetails['form'],
+        sensitiveDataPurgedAt,
+        registrationDataPurgedAt: null,
+      },
+      'Deleted',
+    );
+    return survey;
+  }
+
+  it('locks and explains special-category questions after the deletion', () => {
+    const survey = lock('2026-11-01T00:00:00.000Z');
+
+    expect(survey.getQuestionByName('allergies').readOnly).toBe(true);
+    expect(survey.getQuestionByName('allergies').description).toBe('Deleted');
+    expect(survey.getQuestionByName('name').readOnly).toBe(false);
+  });
+
+  it('changes nothing before it', () => {
+    expect(lock(null).getQuestionByName('allergies').readOnly).toBe(false);
+  });
+});

@@ -32,6 +32,7 @@ export {
   consentTexts,
   isSpecialCategory,
   extractPrivacyTags,
+  specialCategoryAnswerKeys,
   uncoveredConsentCategories,
   unconsentedQuestions,
   type ConsentQuestion,

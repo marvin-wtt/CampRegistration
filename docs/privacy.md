@@ -845,6 +845,21 @@ keep data.
   data page warns while registration is open or the event has not ended. After the sensitive deletion an edit cannot
   store sensitive answers again. After deleting everything, the dashboard hides the
   cards built on registrations and the participants page says the data is gone.
+- **[implemented]** What was deleted is shown as deleted, never as empty. The
+  texts give the reason ("for data protection reasons"), not the date; the data
+  page and the audit log keep that.
+  - After the sensitive deletion, table columns on special-category answers
+    (`usePurgedFields`, from the current form's tags as the server strips edits)
+    are hatched on screen and their cells show a dashed, italic "Deleted" chip
+    (`PurgedTableCell`, whatever the column's `renderAs`); they are neither
+    sortable nor searchable, print as "— deleted —" and export as "Deleted".
+    The edit and view forms lock those questions and say why.
+  - After deleting everything, participants and contact show
+    `RegistrationDataPurgedState` (their nav icons switch to `auto_delete`), the
+    room and chore planners stay viewable with a banner but take no
+    assignments, the program planner drops birthdays, the dashboard shows a
+    banner and no shortcuts, and the event card shows "Data deleted" instead of
+    the registration status and capacity.
 - One audit entry per action (`retention` entity: `sensitive_purged`,
   `registrations_purged` with the count; `postponed` with the date). No personal
   data and no reason text. The existing two-year audit retention applies.

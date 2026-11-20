@@ -21,7 +21,7 @@
         </template>
         <template #actions>
           <m-btn
-            v-if="can('event.rooms.beds.edit')"
+            v-if="canAssign"
             icon="tune"
             square
             round
@@ -123,9 +123,15 @@
         </template>
       </page-header>
 
-      <!-- Occupancy stats -->
+      <purged-banner
+        v-if="registrationsPurged"
+        kind="assignments"
+        class="q-mb-md"
+      />
+
+      <!-- Occupancy stats; without registrations they would claim all done. -->
       <div
-        v-if="!loading && rooms.length > 0"
+        v-else-if="!loading && rooms.length > 0"
         class="stats-row row items-center"
       >
         <div class="stat-chip">
@@ -255,7 +261,7 @@
           :people="availablePeople"
           :editable="can('event.rooms.edit')"
           :deletable="can('event.rooms.delete')"
-          :assignable="can('event.rooms.beds.edit')"
+          :assignable="canAssign"
           :skip-gender-filter="settings.skipGenderFilter"
           :skip-role-filter="settings.skipRoleFilter"
           @edit="editRoom(room)"
@@ -297,6 +303,8 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from '@/composables/permissions';
+import { useRegistrationsPurged } from '@/composables/registrationsPurged';
+import PurgedBanner from '@/components/privacy/PurgedBanner.vue';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useEventSettings } from '@/composables/eventSettings';
@@ -311,6 +319,10 @@ const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomStore();
 const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
+const registrationsPurged = useRegistrationsPurged();
+const canAssign = computed<boolean>(
+  () => can('event.rooms.beds.edit') && !registrationsPurged.value,
+);
 
 const addLoading = ref(false);
 
