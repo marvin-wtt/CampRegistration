@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import i18n, { initI18n } from '#core/i18n/i18n.client';
-import { RETENTION_DEADLINE_KINDS } from '@camp-registration/common/privacy';
+import { EVENT_RETENTION_DEADLINE_KINDS } from '@camp-registration/common/privacy';
 
 /**
  * The retention mail names the kind of data by i18next nesting: the payload
@@ -17,12 +17,7 @@ describe('retention reminder translations', () => {
   // this mail fails here.
   const locales = ['en', 'de', 'fr', 'cs', 'pl'] as const;
 
-  // Organization admins only hear on the deadline itself.
-  const variants = [
-    'manager.upcoming',
-    'manager.due',
-    'organization.due',
-  ] as const;
+  const variants = ['manager.upcoming', 'manager.due'] as const;
 
   const vars = (kindKey: string) => ({
     event: { name: 'Summer Camp' },
@@ -35,7 +30,7 @@ describe('retention reminder translations', () => {
     for (const variant of variants) {
       const t = i18n.getFixedT(locale, 'retention', `email.${variant}`);
 
-      for (const kind of RETENTION_DEADLINE_KINDS) {
+      for (const kind of EVENT_RETENTION_DEADLINE_KINDS) {
         for (const key of [
           'subject',
           'preview',
@@ -55,7 +50,7 @@ describe('retention reminder translations', () => {
   });
 
   it.each(locales)('names the kind of data in %s', (locale) => {
-    for (const kind of RETENTION_DEADLINE_KINDS) {
+    for (const kind of EVENT_RETENTION_DEADLINE_KINDS) {
       const sentence = i18n.getFixedT(
         locale,
         'retention',

@@ -5,12 +5,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { RetentionDeadline } from '@camp-registration/common/privacy';
+import type { EventRetentionDeadline } from '@camp-registration/common/privacy';
 
 // What a deadline says about its date: deleted on, postponed until, or due by;
 // `fallback` where there is no deadline yet.
 const { deadline, purgedAt, fallback } = defineProps<{
-  deadline: RetentionDeadline | null;
+  deadline: EventRetentionDeadline | null;
   purgedAt?: string | null | undefined;
   fallback?: string | undefined;
 }>();

@@ -9,15 +9,15 @@ import {
   effectiveAt,
   purgedAt,
 } from './retention.service.js';
+import { daysUntil, reminderStage } from './retention.deadlines.js';
 import {
-  RetentionDeadlineMessage,
-  type RetentionDeadlinePayload,
+  EventRetentionDeadlineMessage,
+  type EventRetentionDeadlinePayload,
 } from './retention.messages.js';
 
 /**
- * Reminds the managers who can delete registrations 30, 7 and 1 day before a
- * deadline, and on the deadline itself, when the organization's admins hear
- * about it too. Deadlines whose data is deleted get nothing more.
+ * Reminds the managers who can delete registrations 30 days before a deadline
+ * and on the deadline itself. Deadlines whose data is deleted get nothing more.
  */
 @injectable()
 export class RetentionReminderService extends BaseService {
@@ -41,7 +41,7 @@ export class RetentionReminderService extends BaseService {
 
     // Only what can be due: within reach of the first stage, and not yet
     // reminded on the deadline itself.
-    const deadlines = await this.prisma.retentionDeadline.findMany({
+    const deadlines = await this.prisma.eventRetentionDeadline.findMany({
       where: {
         event: { registrationDataPurgedAt: null },
         OR: [{ notifiedStage: null }, { notifiedStage: { gt: 0 } }],
@@ -59,7 +59,6 @@ export class RetentionReminderService extends BaseService {
           select: {
             id: true,
             name: true,
-            organizationId: true,
             sensitiveDataPurgedAt: true,
             registrationDataPurgedAt: true,
           },
@@ -83,11 +82,7 @@ export class RetentionReminderService extends BaseService {
       }
 
       try {
-        const recipients = await this.recipients(
-          deadline.event.id,
-          deadline.event.organizationId,
-          stage,
-        );
+        const recipients = await this.recipients(deadline.event.id);
         if (recipients.length === 0) {
           logger.warn(
             `Event ${deadline.event.id} has nobody to remind of its retention deadline.`,
@@ -97,7 +92,7 @@ export class RetentionReminderService extends BaseService {
 
         // Claimed before enqueuing, so overlapping runs never send twice. A
         // failed enqueue drops this stage (logged); the next one still comes.
-        const { count } = await this.prisma.retentionDeadline.updateMany({
+        const { count } = await this.prisma.eventRetentionDeadline.updateMany({
           where: { id: deadline.id, notifiedStage: deadline.notifiedStage },
           data: { notifiedStage: stage },
         });
@@ -105,18 +100,14 @@ export class RetentionReminderService extends BaseService {
           continue;
         }
 
-        await RetentionDeadlineMessage.enqueueBulk(
-          recipients.map(({ audience, user }): RetentionDeadlinePayload => ({
-            event: {
-              id: deadline.event.id,
-              name: deadline.event.name,
-              organizationId: deadline.event.organizationId,
-            },
-            recipient: user,
-            audience,
+        await EventRetentionDeadlineMessage.enqueueBulk(
+          recipients.map((recipient): EventRetentionDeadlinePayload => ({
+            event: { id: deadline.event.id, name: deadline.event.name },
+            recipient,
             kind,
             effectiveAt: effectiveAt(deadline).toISOString(),
             stage,
+            daysLeft: Math.max(0, daysUntil(effectiveAt(deadline), now)),
           })),
         );
       } catch (error: unknown) {
@@ -128,16 +119,8 @@ export class RetentionReminderService extends BaseService {
     }
   }
 
-  /**
-   * The managers allowed to delete registrations, since they can act; on the
-   * deadline also the organization's admins, who cannot see the data but
-   * answer for the organization.
-   */
-  private async recipients(
-    eventId: string,
-    organizationId: string,
-    stage: number,
-  ) {
+  /** The managers allowed to delete registrations, since they can act. */
+  private async recipients(eventId: string) {
     const roles = Object.entries(permissionRegistry.for('event').getAll())
       .filter(([, permissions]) =>
         permissions.includes('event.registrations.delete'),
@@ -154,51 +137,6 @@ export class RetentionReminderService extends BaseService {
       select: { user: { select: { name: true, email: true, locale: true } } },
     });
 
-    const admins =
-      stage === 0
-        ? await this.prisma.organizationMember.findMany({
-            where: { organizationId, role: 'ADMIN', userId: { not: null } },
-            select: {
-              user: { select: { name: true, email: true, locale: true } },
-            },
-          })
-        : [];
-
-    // Someone who is both manager and admin gets the manager's mail only.
-    const recipients = new Map<
-      string,
-      { audience: 'manager' | 'organization'; user: Recipient }
-    >();
-    for (const [audience, members] of [
-      ['manager', managers],
-      ['organization', admins],
-    ] as const) {
-      for (const { user } of members) {
-        if (user && !recipients.has(user.email)) {
-          recipients.set(user.email, { audience, user });
-        }
-      }
-    }
-
-    return [...recipients.values()];
+    return managers.flatMap(({ user }) => (user ? [user] : []));
   }
-}
-
-interface Recipient {
-  name: string | null;
-  email: string;
-  locale: string | null;
-}
-
-/** The most urgent stage reached, or null while more than 30 days away. */
-export function reminderStage(deadline: Date, now: Date): number | null {
-  const daysLeft = moment
-    .utc(deadline)
-    .startOf('day')
-    .diff(moment.utc(now).startOf('day'), 'days');
-  const reached = RETENTION_REMINDER_STAGES.filter(
-    (stage) => daysLeft <= stage,
-  );
-
-  return reached.length > 0 ? Math.min(...reached) : null;
 }

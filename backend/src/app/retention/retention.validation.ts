@@ -1,6 +1,6 @@
 import { z, type ZodType } from 'zod';
 import {
-  RETENTION_DEADLINE_KINDS,
+  EVENT_RETENTION_DEADLINE_KINDS,
   type RetentionPostponeData,
 } from '@camp-registration/common/privacy';
 
@@ -9,7 +9,7 @@ const event = z.object({ eventId: z.ulid() });
 const show = z.object({ params: event });
 
 const postpone = z.object({
-  params: event.extend({ kind: z.enum(RETENTION_DEADLINE_KINDS) }),
+  params: event.extend({ kind: z.enum(EVENT_RETENTION_DEADLINE_KINDS) }),
   body: z.object({
     reason: z.string().trim().min(1).max(2000),
     until: z.iso.date(),

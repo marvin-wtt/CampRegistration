@@ -1,28 +1,33 @@
 import type { Prisma } from '#generated/prisma/client.js';
-import type { RetentionDeadlineKind } from '@camp-registration/common/privacy';
+import type { EventRetentionDeadlineKind } from '@camp-registration/common/privacy';
 import { MailBase } from '#core/mail/mail.base';
 import { translate } from '@camp-registration/common/utils';
 import { generateUrl } from '#utils/url';
 import { resolveActionCardText } from '#core/mail/actionCardText';
 import type { ActionCardProps, LocalContext } from '#views/emails/types';
 
-export interface RetentionDeadlinePayload {
-  event: { id: string; name: Prisma.JsonValue; organizationId: string };
+export interface EventRetentionDeadlinePayload {
+  event: { id: string; name: Prisma.JsonValue };
+  /** A manager who can delete registrations, and so act on it. */
   recipient: { name: string | null; email: string; locale: string | null };
-  /** Managers can act; organization admins are informed on the deadline. */
-  audience: 'manager' | 'organization';
-  kind: RetentionDeadlineKind;
+  kind: EventRetentionDeadlineKind;
   /** ISO 8601 — the payload crosses a queue. */
   effectiveAt: string;
   /** Days before the deadline; 0 on or after it. */
   stage: number;
+  /**
+   * The days actually left when the job decided to send, not the stage: a
+   * reminder sent late (after a postponement or a missed run) must not
+   * promise 30 days. Counted then, so a delayed delivery doesn't shift it.
+   */
+  daysLeft: number;
 }
 
 /**
  * A retention deadline is coming up or has arrived. It asks for a review and,
  * where nothing must be kept, a deletion; nothing is deleted automatically.
  */
-export class RetentionDeadlineMessage extends MailBase<RetentionDeadlinePayload> {
+export class EventRetentionDeadlineMessage extends MailBase<EventRetentionDeadlinePayload> {
   static readonly type = 'event:retention-deadline';
 
   protected to() {
@@ -36,11 +41,9 @@ export class RetentionDeadlineMessage extends MailBase<RetentionDeadlinePayload>
   }
 
   protected getTranslationOptions() {
-    const { audience, stage } = this.payload;
-
     return {
       namespace: 'retention',
-      keyPrefix: `email.${audience}.${stage === 0 ? 'due' : 'upcoming'}`,
+      keyPrefix: `email.manager.${this.payload.stage === 0 ? 'due' : 'upcoming'}`,
     };
   }
 
@@ -50,28 +53,24 @@ export class RetentionDeadlineMessage extends MailBase<RetentionDeadlinePayload>
 
   protected content() {
     const t = this.getT();
-    const { event, audience } = this.payload;
 
     return {
       template: 'action-card',
       context: {
         ...resolveActionCardText(t, this.context()),
-        url:
-          audience === 'manager'
-            ? generateUrl(['management', 'events', event.id, 'dashboard'])
-            : generateUrl([
-                'management',
-                'organizations',
-                event.organizationId,
-                'dashboard',
-              ]),
+        url: generateUrl([
+          'management',
+          'events',
+          this.payload.event.id,
+          'dashboard',
+        ]),
       } satisfies LocalContext<ActionCardProps>,
     };
   }
 
   private context() {
     const locale = this.getLocale();
-    const { event, kind, effectiveAt, stage } = this.payload;
+    const { event, kind, effectiveAt, daysLeft } = this.payload;
 
     return {
       event: {
@@ -79,7 +78,7 @@ export class RetentionDeadlineMessage extends MailBase<RetentionDeadlinePayload>
       },
       // Nested into the texts: `$t(retention:kind.{{kindKey}})`.
       kindKey: kind,
-      days: stage,
+      days: daysLeft,
       date: new Intl.DateTimeFormat(locale, {
         day: '2-digit',
         month: '2-digit',

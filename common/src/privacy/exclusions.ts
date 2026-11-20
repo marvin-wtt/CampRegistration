@@ -130,14 +130,17 @@ export function appliedExclusions(
       .map((entry) => entry.key),
   );
 
+  // Countries are typed freely, so compared case-insensitively; the result
+  // holds the organization's own spelling, which composition filters by.
   const inUse = countriesInUse(organization, addendum, recipients);
-  const organizationCountries = new Set(
-    organization.thirdCountryTransfers.countries,
+  const wanted = new Set(
+    (excluded.transferCountries ?? []).map((country) => country.toUpperCase()),
   );
   const transferCountries = new Set(
-    (excluded.transferCountries ?? []).filter(
-      (country) => organizationCountries.has(country) && !inUse.has(country),
-    ),
+    organization.thirdCountryTransfers.countries.filter((country) => {
+      const code = country.toUpperCase();
+      return wanted.has(code) && !inUse.has(code);
+    }),
   );
 
   return {
@@ -210,7 +213,7 @@ export function refusedExclusions(
   const applied = appliedExclusions(organization, addendum);
   const inUse = countriesInUse(organization, addendum, applied.recipients);
   for (const country of excluded.transferCountries ?? []) {
-    if (inUse.has(country)) {
+    if (inUse.has(country.toUpperCase())) {
       refused.push({
         part: 'transferCountries',
         key: country,
@@ -265,11 +268,16 @@ export function normalizeExclusions(
       keysOf(organization.recipients),
       keysOf(addendum.recipients),
     ) as PrivacyRecipientRef[],
-    transferCountries: keep(
-      excluded.transferCountries,
-      new Set(organization.thirdCountryTransfers.countries),
-      new Set(),
-    ),
+    // In the organization's spelling: countries are typed freely.
+    transferCountries: [
+      ...new Set(
+        (excluded.transferCountries ?? []).flatMap((country) =>
+          organization.thirdCountryTransfers.countries.filter(
+            (declared) => declared.toUpperCase() === country.toUpperCase(),
+          ),
+        ),
+      ),
+    ],
   };
 
   return { ...addendum, excluded: compact(normalized) };

@@ -1,4 +1,8 @@
-import type { Question, SurveyModel } from 'survey-core';
+import {
+  QuestionPanelDynamicModel,
+  type Question,
+  type SurveyModel,
+} from 'survey-core';
 import { SPECIAL_CATEGORY_DATA_KEYS } from '../privacy/catalogue.js';
 
 /**
@@ -25,7 +29,19 @@ export interface PrivacyTaggedQuestion {
   name: string;
   /** The key its answer is stored under, when it differs from `name`. */
   valueName?: string;
+  /**
+   * The value path of the dynamic panel or matrix holding it (`kids`; `kids.*`
+   * in a dropdown matrix, whose rows are stored by name), whose entries each
+   * hold a copy; absent at the top level.
+   */
+  within?: string;
   category: string;
+}
+
+/** A tagged question's answer key, prefixed by where it lives: `kids.meds`. */
+export function answerPath(question: PrivacyTaggedQuestion): string {
+  const key = question.valueName ?? question.name;
+  return question.within ? `${question.within}.${key}` : key;
 }
 
 export interface ConsentQuestion {
@@ -58,40 +74,54 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
     return tags;
   }
 
-  const tag = (element: ElementJson, name: string) => {
+  const valueNameOf = (element: ElementJson) =>
+    typeof element.valueName === 'string' && element.valueName
+      ? element.valueName
+      : undefined;
+
+  const tag = (element: ElementJson, name: string, within?: string) => {
     if (
       typeof element.privacyCategory === 'string' &&
       element.privacyCategory
     ) {
+      const valueName = valueNameOf(element);
       tags.tagged.push({
         name,
-        ...(typeof element.valueName === 'string' && element.valueName
-          ? { valueName: element.valueName }
-          : {}),
+        ...(valueName ? { valueName } : {}),
+        ...(within ? { within } : {}),
         category: element.privacyCategory,
       });
     }
   };
 
-  const walk = (elements: ElementJson[]) => {
+  // `within`: the value path entries of a dynamic panel or matrix live under.
+  // A plain panel stores nothing of its own, so it adds no step.
+  const walk = (elements: ElementJson[], within?: string) => {
     for (const element of elements) {
       const type = element.type;
       const name = nameOf(element);
+      const path = (key: string) => (within ? `${within}.${key}` : key);
 
       if (type === 'panel') {
-        walk(asElements(element.elements));
+        walk(asElements(element.elements), within);
         continue;
       }
-      if (type === 'paneldynamic') {
-        walk(asElements(element.templateElements));
+      if (type === 'paneldynamic' && name) {
+        walk(
+          asElements(element.templateElements),
+          path(valueNameOf(element) ?? name),
+        );
       }
       // A column takes the question properties, the tag among them: SurveyJS
       // gives it to every cell, so the purge clears the cells too.
-      if (type === 'matrixdynamic' || type === 'matrixdropdown') {
+      if ((type === 'matrixdynamic' || type === 'matrixdropdown') && name) {
+        const matrix = path(valueNameOf(element) ?? name);
+        // A dropdown matrix stores its rows by name: `kids.anna.meds`.
+        const rows = type === 'matrixdropdown' ? `${matrix}.*` : matrix;
         for (const column of asElements(element.columns)) {
           const columnName = nameOf(column);
           if (columnName) {
-            tag(column, columnName);
+            tag(column, columnName, rows);
           }
         }
       }
@@ -99,7 +129,7 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
         continue;
       }
 
-      tag(element, name);
+      tag(element, name, within);
       if (type === 'boolean' && element.privacyConsent === true) {
         tags.consents.push({
           name,
@@ -123,14 +153,15 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
 }
 
 /**
- * The keys the answers of special-category questions are stored under —
- * those "Delete sensitive data" clears (docs/privacy.md, 8).
+ * Where the answers of special-category questions are stored, as paths without
+ * entry indices (`allergies`, `kids.meds`; `kids.*.meds` for a dropdown
+ * matrix's rows) — those "Delete sensitive data" clears (docs/privacy.md, 8).
  */
 export function specialCategoryAnswerKeys(form: unknown): Set<string> {
   return new Set(
     extractPrivacyTags(form)
       .tagged.filter((question) => isSpecialCategory(question.category))
-      .map((question) => question.valueName ?? question.name),
+      .map(answerPath),
   );
 }
 
@@ -248,7 +279,9 @@ export function consentTexts(
 ): Record<string, string> {
   const texts: Record<string, string> = {};
 
-  for (const question of survey.getAllQuestions()) {
+  // Nested too: the consent gate counts a consent inside a dynamic panel, so
+  // its wording is proof like any other.
+  for (const question of survey.getAllQuestions(false, false, true)) {
     if (
       question.getType() !== 'boolean' ||
       question.getPropertyValue('privacyConsent') !== true ||
@@ -257,13 +290,32 @@ export function consentTexts(
       continue;
     }
 
-    texts[question.getValueName()] = [question.title, question.description]
+    texts[consentKey(question)] = [question.title, question.description]
       .filter((part): part is string => !!part)
-      .map((part) => survey.processText(part, true))
+      // The question's own processor: inside a dynamic panel it fills
+      // `{panel.*}` from its entry too.
+      .map((part) => question.getProcessedText(part))
       .join('\n\n');
   }
 
   return texts;
+}
+
+/**
+ * Where a consent's answer lives: its value name, or `kids[1].consent` inside
+ * a dynamic panel, where every entry has its own copy of the question; nested
+ * panels prefix their own path.
+ */
+function consentKey(question: Question): string {
+  const owner = question.parentQuestion;
+  if (owner instanceof QuestionPanelDynamicModel) {
+    const index = owner.panels.findIndex((panel) =>
+      panel.questions.includes(question),
+    );
+    return `${consentKey(owner)}[${index.toString()}].${question.getValueName()}`;
+  }
+
+  return question.getValueName();
 }
 
 const SPECIAL_CATEGORIES = new Set<unknown>(SPECIAL_CATEGORY_DATA_KEYS);

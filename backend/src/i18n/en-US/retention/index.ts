@@ -38,23 +38,5 @@ export default {
         },
       },
     },
-    organization: {
-      due: {
-        subject: 'Retention deadline reached: {{ event.name }}',
-        preview: 'Data of {{ event.name }} was due for deletion on {{ date }}',
-        text: {
-          title: 'A retention deadline has been reached',
-          information:
-            'The retention deadline for $t(retention:kind.{{kindKey}}) of {{ event.name }}, an event of your organization, is {{ date }}. Its managers have been reminded to delete the data or postpone the deadline. You can follow the status in your organization overview.',
-          button: 'Open organization',
-          greeting: 'Best regards',
-          teamName: '{{ appName }} Team',
-        },
-        footer: {
-          cause:
-            '$t(email:footer.cause) you are an administrator of this organization.',
-        },
-      },
-    },
   },
 };

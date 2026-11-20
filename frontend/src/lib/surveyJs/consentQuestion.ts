@@ -23,12 +23,11 @@ export function consentQuestionJson(
   const covered = extractPrivacyTags(survey.toJSON()).tagged.filter(
     (question) => categories.includes(question.category),
   );
-  const resolved = covered.map((question) =>
-    survey.getQuestionByName(question.name),
-  );
-  const condition = resolved.every(Boolean)
-    ? resolved
-        .map((question) => `{${question.getValueName()}} notempty`)
+  // Only top-level questions: a nested one may share its name with another,
+  // and the condition could not see it anyway.
+  const condition = covered.every((question) => !question.within)
+    ? covered
+        .map((question) => `{${question.valueName ?? question.name}} notempty`)
         .join(' or ')
     : null;
 

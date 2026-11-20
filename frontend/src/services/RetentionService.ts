@@ -1,7 +1,7 @@
 import { api } from '@/services/api';
 import type {
   EventRetention,
-  RetentionDeadlineKind,
+  EventRetentionDeadlineKind,
   RetentionOverviewEntry,
   RetentionPostponeData,
 } from '@camp-registration/common/privacy';
@@ -16,7 +16,7 @@ export function useRetentionService() {
 
   async function postponeDeadline(
     eventId: string,
-    kind: RetentionDeadlineKind,
+    kind: EventRetentionDeadlineKind,
     data: RetentionPostponeData,
   ): Promise<EventRetention> {
     const response = await api.post(
@@ -29,7 +29,7 @@ export function useRetentionService() {
 
   async function purge(
     eventId: string,
-    kind: RetentionDeadlineKind,
+    kind: EventRetentionDeadlineKind,
   ): Promise<void> {
     await api.post(`events/${eventId}/retention/${kind}/purge/`, {
       confirm: true,
@@ -46,17 +46,10 @@ export function useRetentionService() {
     return response?.data?.data;
   }
 
-  async function fetchPlatformRetention(): Promise<RetentionOverviewEntry[]> {
-    const response = await api.get('admin/retention/');
-
-    return response?.data?.data;
-  }
-
   return {
     fetchEventRetention,
     postponeDeadline,
     purge,
     fetchOrganizationRetention,
-    fetchPlatformRetention,
   };
 }

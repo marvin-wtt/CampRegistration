@@ -16,10 +16,10 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import type { RetentionDeadlineStatus } from '@camp-registration/common/privacy';
+import type { EventRetentionDeadlineStatus } from '@camp-registration/common/privacy';
 
 defineProps<{
-  status: RetentionDeadlineStatus;
+  status: EventRetentionDeadlineStatus;
   /** Adds "postponed" where the date shown is not what was promised. */
   postponed?: boolean;
 }>();
@@ -27,7 +27,7 @@ defineProps<{
 const { t } = useI18n();
 
 const ROLES: Record<
-  RetentionDeadlineStatus,
+  EventRetentionDeadlineStatus,
   { color: string; textColor: string }
 > = {
   upcoming: {

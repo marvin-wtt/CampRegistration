@@ -38,22 +38,5 @@ export default {
         },
       },
     },
-    organization: {
-      due: {
-        subject: 'Speicherfrist erreicht: {{ event.name }}',
-        preview: 'Daten von {{ event.name }} waren am {{ date }} zu löschen',
-        text: {
-          title: 'Eine Speicherfrist ist erreicht',
-          information:
-            'Die Speicherfrist für $t(retention:kind.{{kindKey}}) von {{ event.name }}, einer Veranstaltung eurer Organisation, ist der {{ date }}. Die Verantwortlichen der Veranstaltung wurden erinnert, die Daten zu löschen oder die Frist zu verschieben. Den Stand siehst du in der Übersicht eurer Organisation.',
-          button: 'Organisation öffnen',
-          greeting: 'Viele Grüße',
-          teamName: '{{ appName }} Team',
-        },
-        footer: {
-          cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
-        },
-      },
-    },
   },
 };

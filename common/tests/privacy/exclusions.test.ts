@@ -106,6 +106,28 @@ describe('composePrivacyNotice — exclusions', () => {
     expect(composed.thirdCountryTransfers.enabled).toBe(true);
   });
 
+  it('compares transfer countries without regard to case', () => {
+    const content = organization();
+    content.thirdCountryTransfers.countries = ['ch', 'us'];
+    content.recipients[3] = { key: 'insurer', country: 'ch' };
+
+    const composed = composePrivacyNotice(content, {
+      excluded: { transferCountries: ['CH', 'US'] },
+    });
+
+    // `ch` stays for the insurer located there; `us` goes.
+    expect(composed.thirdCountryTransfers.countries).toEqual(['ch']);
+    expect(
+      refusedExclusions(content, { excluded: { transferCountries: ['ch'] } }),
+    ).toEqual([
+      { part: 'transferCountries', key: 'ch', reason: 'country_in_use' },
+    ]);
+    expect(
+      normalizeExclusions(content, { excluded: { transferCountries: ['US'] } })
+        .excluded?.transferCountries,
+    ).toEqual(['us']);
+  });
+
   it('ends the transfer once no country remains', () => {
     const composed = composePrivacyNotice(organization(), {
       excluded: { recipients: ['insurer'], transferCountries: ['CH', 'US'] },

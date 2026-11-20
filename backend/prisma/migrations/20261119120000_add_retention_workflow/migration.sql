@@ -7,7 +7,7 @@ ALTER TABLE `events` DROP COLUMN `retention_reminder_sent_at`,
     ADD COLUMN `sensitive_data_purged_at` DATETIME(0) NULL;
 
 -- CreateTable
-CREATE TABLE `retention_deadlines` (
+CREATE TABLE `event_retention_deadlines` (
     `id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NOT NULL,
     `kind` ENUM('sensitive', 'registrations') NOT NULL,
@@ -20,12 +20,12 @@ CREATE TABLE `retention_deadlines` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `retention_deadlines_event_id_kind_key`(`event_id`, `kind`),
+    UNIQUE INDEX `event_retention_deadlines_event_id_kind_key`(`event_id`, `kind`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `retention_deadlines` ADD CONSTRAINT `retention_deadlines_event_id_fkey` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `event_retention_deadlines` ADD CONSTRAINT `event_retention_deadlines_event_id_fkey` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `retention_deadlines` ADD CONSTRAINT `retention_deadlines_postponed_by_id_fkey` FOREIGN KEY (`postponed_by_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `event_retention_deadlines` ADD CONSTRAINT `event_retention_deadlines_postponed_by_id_fkey` FOREIGN KEY (`postponed_by_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

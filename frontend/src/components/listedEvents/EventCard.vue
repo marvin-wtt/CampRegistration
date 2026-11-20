@@ -257,7 +257,11 @@ const priceLabel = computed<string | null>(() => {
 const closesSoonThresholdMs = 14 * 24 * 60 * 60 * 1000;
 
 const closesSoon = computed<boolean>(() => {
-  if (!props.event.registrationClosesAt) {
+  // The status, not the window: a deletion closes registration for good.
+  if (
+    props.event.registrationStatus !== 'open' ||
+    !props.event.registrationClosesAt
+  ) {
     return false;
   }
   const remaining =

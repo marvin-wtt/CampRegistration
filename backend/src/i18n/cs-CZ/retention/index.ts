@@ -36,20 +36,5 @@ export default {
         },
       },
     },
-    organization: {
-      due: {
-        subject: 'Lhůta uchování uplynula: {{ event.name }}',
-        preview: 'Údaje akce {{ event.name }} bylo třeba smazat do {{ date }}',
-        text: {
-          title: 'Lhůta uchování uplynula',
-          information:
-            'Lhůta uchování pro $t(retention:kind.{{kindKey}}) akce {{ event.name }}, kterou pořádá vaše organizace, je {{ date }}. Její správci byli upozorněni, aby údaje smazali nebo lhůtu odložili. Stav najdete v přehledu vaší organizace.',
-          button: 'Otevřít organizaci',
-          greeting: 'S pozdravem',
-          teamName: 'Tým {{ appName }}',
-        },
-        footer: { cause: '$t(email:footer.cause) spravujete tuto organizaci.' },
-      },
-    },
   },
 };

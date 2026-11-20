@@ -39,23 +39,5 @@ export default {
         },
       },
     },
-    organization: {
-      due: {
-        subject: 'Termin przechowywania minął: {{ event.name }}',
-        preview:
-          'Dane wydarzenia {{ event.name }} należało usunąć do {{ date }}',
-        text: {
-          title: 'Termin przechowywania minął',
-          information:
-            'Termin przechowywania dla: $t(retention:kind.{{kindKey}}) wydarzenia {{ event.name }} Twojej organizacji to {{ date }}. Osoby zarządzające zostały poproszone o usunięcie danych lub przesunięcie terminu. Stan sprawdzisz w przeglądzie organizacji.',
-          button: 'Otwórz organizację',
-          greeting: 'Pozdrawiamy',
-          teamName: 'Zespół {{ appName }}',
-        },
-        footer: {
-          cause: '$t(email:footer.cause) administrujesz tą organizacją.',
-        },
-      },
-    },
   },
 };

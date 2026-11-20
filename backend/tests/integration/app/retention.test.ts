@@ -15,7 +15,7 @@ import { mailer } from '../utils/mailer.js';
 import { generateAccessToken } from './utils/token.js';
 import { resolve } from '#core/ioc/container';
 import { RetentionReminderService } from '#app/retention/retention-reminder.service';
-import type { RetentionDeadlineKind } from '@camp-registration/common/privacy';
+import type { EventRetentionDeadlineKind } from '@camp-registration/common/privacy';
 
 const RETENTION_MONTHS = 24;
 const SENSITIVE_WEEKS = 4;
@@ -89,8 +89,8 @@ async function eventDue(
 
 const run = () => resolve(RetentionReminderService).run();
 
-const deadline = (eventId: string, kind: RetentionDeadlineKind) =>
-  prisma.retentionDeadline.findUniqueOrThrow({
+const deadline = (eventId: string, kind: EventRetentionDeadlineKind) =>
+  prisma.eventRetentionDeadline.findUniqueOrThrow({
     where: { eventId_kind: { eventId, kind } },
   });
 
@@ -173,7 +173,7 @@ describe('retention workflow', () => {
         'registrations',
       ]);
       expect(
-        await prisma.retentionDeadline.count({
+        await prisma.eventRetentionDeadline.count({
           where: { eventId: event.id, kind: 'sensitive' },
         }),
       ).toBe(0);
@@ -204,22 +204,6 @@ describe('retention workflow', () => {
       expect(mailsTo(far.user.email)).toHaveLength(0);
     });
 
-    it('should tell the organization admins on the deadline', async () => {
-      const { organization } = await eventDue(-1);
-      const admin = await UserFactory.create();
-      await prisma.organizationMember.create({
-        data: {
-          organizationId: organization.id,
-          userId: admin.id,
-          role: 'ADMIN',
-        },
-      });
-
-      await run();
-
-      expect(mailsTo(admin.email).length).toBeGreaterThan(0);
-    });
-
     it('should stop once the data is deleted', async () => {
       const { event, user, token } = await eventDue(-1);
 
@@ -238,12 +222,11 @@ describe('retention workflow', () => {
     const postpone = (
       eventId: string,
       token: string,
-      kind: string,
       until: string,
       reason = 'Open insurance claim',
     ) =>
       request()
-        .post(`/api/v1/events/${eventId}/retention/${kind}/postpone`)
+        .post(`/api/v1/events/${eventId}/retention/registrations/postpone`)
         .send({ reason, until })
         .auth(token, { type: 'bearer' });
 
@@ -252,7 +235,7 @@ describe('retention workflow', () => {
       await run();
       const until = moment.utc().add(3, 'months').format('YYYY-MM-DD');
 
-      await postpone(event.id, token, 'registrations', until).expect(200);
+      await postpone(event.id, token, until).expect(200);
 
       const updated = await deadline(event.id, 'registrations');
       expect(moment.utc(updated.postponedUntil).format('YYYY-MM-DD')).toBe(
@@ -274,7 +257,6 @@ describe('retention workflow', () => {
       await postpone(
         event.id,
         token,
-        'registrations',
         moment.utc().add(13, 'months').format('YYYY-MM-DD'),
       ).expect(422);
     });
@@ -286,20 +268,7 @@ describe('retention workflow', () => {
       await postpone(
         event.id,
         token,
-        'registrations',
         moment.utc().add(1, 'months').format('YYYY-MM-DD'),
-      ).expect(422);
-    });
-
-    it('should keep the sensitive deadline before the general one', async () => {
-      const { event, token } = await eventDue(5);
-      await run();
-
-      await postpone(
-        event.id,
-        token,
-        'sensitive',
-        moment.utc().add(2, 'months').format('YYYY-MM-DD'),
       ).expect(422);
     });
 
@@ -310,7 +279,6 @@ describe('retention workflow', () => {
       await postpone(
         event.id,
         token,
-        'registrations',
         moment.utc().add(1, 'months').format('YYYY-MM-DD'),
         ' ',
       ).expect(400);
@@ -323,7 +291,6 @@ describe('retention workflow', () => {
       await postpone(
         event.id,
         token,
-        'registrations',
         moment.utc().add(1, 'months').format('YYYY-MM-DD'),
       ).expect(403);
     });
@@ -494,15 +461,19 @@ describe('retention workflow', () => {
         .expect(204);
     });
 
-    it('should close an open registration and keep it closed', async () => {
+    it('should close an open registration for good, its window untouched', async () => {
       const { event, token } = await eventDue(-1);
-      await prisma.event.update({
-        where: { id: event.id },
-        data: {
-          registrationOpensAt: moment().subtract(1, 'day').toDate(),
-          registrationClosesAt: moment().add(1, 'month').toDate(),
-        },
-      });
+      const window = {
+        registrationOpensAt: moment()
+          .subtract(1, 'day')
+          .startOf('second')
+          .toDate(),
+        registrationClosesAt: moment()
+          .add(1, 'month')
+          .startOf('second')
+          .toDate(),
+      };
+      await prisma.event.update({ where: { id: event.id }, data: window });
 
       await request()
         .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
@@ -510,53 +481,31 @@ describe('retention workflow', () => {
         .auth(token, { type: 'bearer' })
         .expect(204);
 
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data.registrationStatus).toBe('closed');
       const stored = await prisma.event.findUniqueOrThrow({
         where: { id: event.id },
       });
-      expect(stored.registrationClosesAt!.getTime()).toBeLessThanOrEqual(
-        Date.now(),
-      );
+      expect(stored.registrationClosesAt).toEqual(window.registrationClosesAt);
 
-      await request()
-        .patch(`/api/v1/events/${event.id}`)
-        .send({ registrationClosesAt: moment().add(1, 'month').toISOString() })
-        .auth(token, { type: 'bearer' })
-        .expect(409);
-    });
-
-    it('should drop a window that never opened, so the event stays editable', async () => {
-      const { event, token } = await eventDue(-1);
-      await prisma.event.update({
-        where: { id: event.id },
-        data: {
-          registrationOpensAt: moment().add(1, 'month').toDate(),
-          registrationClosesAt: moment().add(2, 'months').toDate(),
-        },
-      });
-
-      await request()
-        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
-        .send({ confirm: true })
-        .auth(token, { type: 'bearer' })
-        .expect(204);
-
-      const stored = await prisma.event.findUniqueOrThrow({
-        where: { id: event.id },
-      });
-      expect(stored.registrationOpensAt).toBeNull();
-      expect(stored.registrationClosesAt!.getTime()).toBeLessThanOrEqual(
-        Date.now(),
-      );
-
-      // The edit page sends the window along with every save.
+      // The edit page sends the window along with every save: unchanged, it
+      // saves; moved, it is refused.
       await request()
         .patch(`/api/v1/events/${event.id}`)
         .send({
-          registrationOpensAt: null,
-          registrationClosesAt: stored.registrationClosesAt!.toISOString(),
+          registrationOpensAt: window.registrationOpensAt.toISOString(),
+          registrationClosesAt: window.registrationClosesAt.toISOString(),
         })
         .auth(token, { type: 'bearer' })
         .expect(200);
+      await request()
+        .patch(`/api/v1/events/${event.id}`)
+        .send({ registrationClosesAt: moment().add(2, 'months').toISOString() })
+        .auth(token, { type: 'bearer' })
+        .expect(409);
     });
 
     it('should require an explicit confirmation', async () => {
@@ -572,13 +521,13 @@ describe('retention workflow', () => {
     it('should refuse postponing what was deleted', async () => {
       const { event, token } = await eventDue(-1);
       await request()
-        .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
+        .post(`/api/v1/events/${event.id}/retention/registrations/purge`)
         .send({ confirm: true })
         .auth(token, { type: 'bearer' })
         .expect(204);
 
       await request()
-        .post(`/api/v1/events/${event.id}/retention/sensitive/postpone`)
+        .post(`/api/v1/events/${event.id}/retention/registrations/postpone`)
         .send({
           reason: 'x',
           until: moment.utc().add(1, 'days').format('YYYY-MM-DD'),
@@ -609,24 +558,6 @@ describe('retention workflow', () => {
       expect(body.data).toHaveLength(2);
       expect(body.data[0]).toMatchObject({ eventId: event.id });
       expect(JSON.stringify(body.data)).not.toContain('reason');
-    });
-
-    it('should list open deadlines only for platform administrators', async () => {
-      await eventDue(10);
-      await run();
-      const admin = await UserFactory.create({ role: 'ADMIN' });
-      const user = await UserFactory.create();
-
-      await request()
-        .get('/api/v1/admin/retention')
-        .auth(generateAccessToken(user), { type: 'bearer' })
-        .expect(403);
-      const { body } = await request()
-        .get('/api/v1/admin/retention')
-        .auth(generateAccessToken(admin), { type: 'bearer' })
-        .expect(200);
-
-      expect(body.data).toHaveLength(2);
     });
   });
 });

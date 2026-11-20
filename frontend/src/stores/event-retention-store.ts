@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import type {
   EventRetention,
-  RetentionDeadlineKind,
+  EventRetentionDeadlineKind,
   RetentionPostponeData,
 } from '@camp-registration/common/privacy';
 import { useRetentionService } from '@/services/RetentionService';
@@ -25,7 +25,10 @@ export const useEventRetentionStore = defineStore('eventRetention', () => {
     return retention.load(eventId);
   }
 
-  function postpone(kind: RetentionDeadlineKind, data: RetentionPostponeData) {
+  function postpone(
+    kind: EventRetentionDeadlineKind,
+    data: RetentionPostponeData,
+  ) {
     return retention.mutate(
       'postpone',
       (eventId) => service.postponeDeadline(eventId, kind, data),
@@ -34,7 +37,7 @@ export const useEventRetentionStore = defineStore('eventRetention', () => {
   }
 
   // The event records the purge too (`registrationDataPurgedAt`).
-  async function purge(kind: RetentionDeadlineKind) {
+  async function purge(kind: EventRetentionDeadlineKind) {
     await retention.mutate('purge', (eventId) => service.purge(eventId, kind), {
       feedback: 'progress',
       reload: true,

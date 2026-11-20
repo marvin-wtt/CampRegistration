@@ -188,8 +188,8 @@
                   @click="purge(row.kind)"
                 />
               </div>
-              <!-- Marked deleted, yet registrations remain: an interrupted
-                   run, which running it again completes. -->
+              <!-- Marked deleted, yet not finished: an interrupted run,
+                   which running it again completes. -->
               <div
                 v-else-if="canDeleteData && row.incomplete"
                 class="data-row__actions"
@@ -287,9 +287,9 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
-  RetentionDeadline,
-  RetentionDeadlineKind,
-  RetentionDeadlineStatus,
+  EventRetentionDeadline,
+  EventRetentionDeadlineKind,
+  EventRetentionDeadlineStatus,
   RetentionPostponeData,
 } from '@camp-registration/common/privacy';
 import PageHeader from '@/components/common/PageHeader.vue';
@@ -358,17 +358,17 @@ const earlyWarnings = computed<('registration' | 'event')[]>(() => {
 });
 
 interface Row {
-  kind: RetentionDeadlineKind;
-  deadline: RetentionDeadline | null;
-  status: RetentionDeadlineStatus | null;
+  kind: EventRetentionDeadlineKind;
+  deadline: EventRetentionDeadline | null;
+  status: EventRetentionDeadlineStatus | null;
   purged: boolean;
   purgedAt: string | null;
-  /** Deleted, yet registrations remain: an interrupted run. */
+  /** Marked deleted, yet not finished: an interrupted run. */
   incomplete: boolean;
 }
 
 /** Without a deadline yet: what the current notice would give. */
-function estimate(kind: RetentionDeadlineKind): string {
+function estimate(kind: EventRetentionDeadlineKind): string {
   const periods = retention.value?.periods;
   const endAt = event.value?.endAt;
   const period =
@@ -391,7 +391,7 @@ function estimate(kind: RetentionDeadlineKind): string {
 const rows = computed<Row[]>(() => {
   const deadlines = retention.value?.deadlines ?? [];
   // The sensitive row only where the form asks something sensitive.
-  const kinds: RetentionDeadlineKind[] = [
+  const kinds: EventRetentionDeadlineKind[] = [
     ...(retention.value?.periods.sensitive ||
     deadlines.some((entry) => entry.kind === 'sensitive')
       ? (['sensitive'] as const)
@@ -411,15 +411,15 @@ const rows = computed<Row[]>(() => {
       purged: !!purgedAt,
       purgedAt,
       incomplete:
-        kind === 'registrations' &&
-        !!purgedAt &&
-        (retention.value?.registrationCount ?? 0) > 0,
+        kind === 'registrations'
+          ? !!purgedAt && (retention.value?.registrationCount ?? 0) > 0
+          : !!retention.value?.sensitivePurgeIncomplete,
     };
   });
 });
 
 /** The general deadline caps the sensitive one: it holds a subset. */
-function latestFor(deadline: RetentionDeadline): string | null {
+function latestFor(deadline: EventRetentionDeadline): string | null {
   if (deadline.kind !== 'sensitive') {
     return null;
   }
@@ -429,7 +429,7 @@ function latestFor(deadline: RetentionDeadline): string | null {
   return general ? general.effectiveAt.slice(0, 10) : null;
 }
 
-function postpone(deadline: RetentionDeadline) {
+function postpone(deadline: EventRetentionDeadline) {
   quasar
     .dialog({
       component: RetentionPostponeDialog,
@@ -443,7 +443,7 @@ function postpone(deadline: RetentionDeadline) {
     });
 }
 
-function purge(kind: RetentionDeadlineKind) {
+function purge(kind: EventRetentionDeadlineKind) {
   const current = event.value;
   if (!current) {
     return;

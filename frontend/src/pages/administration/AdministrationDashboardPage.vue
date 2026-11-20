@@ -67,13 +67,6 @@
         </div>
       </div>
 
-      <!-- Operational only: organizers decide and act on their deadlines. -->
-      <retention-overview-card
-        :entries="retentionEntries"
-        :loading="retentionLoading"
-        show-organization
-      />
-
       <!-- Section launcher -->
       <div>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
@@ -98,16 +91,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw, useRouter } from 'vue-router';
 import type { AdminOverview } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import AdministrationCard from '@/components/administration/AdministrationCard.vue';
 import AdministrationStatCard from '@/components/administration/AdministrationStatCard.vue';
-import RetentionOverviewCard from '@/components/retention/RetentionOverviewCard.vue';
-import { useRetentionService } from '@/services/RetentionService';
-import type { RetentionOverviewEntry } from '@camp-registration/common/privacy';
 import { useAPIService } from '@/services/APIService';
 import { useResource } from '@/composables/resource';
 
@@ -337,22 +327,6 @@ const sections = computed(() => [
     to: { name: 'administration.legal' },
   },
 ]);
-
-const retentionEntries = ref<RetentionOverviewEntry[]>([]);
-const retentionLoading = ref(true);
-
-async function loadRetention(): Promise<void> {
-  try {
-    retentionEntries.value =
-      await useRetentionService().fetchPlatformRetention();
-  } catch {
-    // An overview, not a gate: if the lookup fails it stays empty.
-  } finally {
-    retentionLoading.value = false;
-  }
-}
-
-void loadRetention();
 </script>
 
 <style scoped lang="scss">

@@ -1,8 +1,8 @@
 import {
-  retentionDeadlineStatus,
+  eventRetentionDeadlineStatus,
   type EventRetention,
   type RetentionPeriods,
-  type RetentionDeadline,
+  type EventRetentionDeadline,
   type RetentionOverviewEntry,
 } from '@camp-registration/common/privacy';
 import { JsonResource } from '#core/resource/JsonResource';
@@ -17,7 +17,7 @@ function deadlineData(
   deadline: DeadlineWithPostponer,
   event: PurgeState,
   withReason: boolean,
-): RetentionDeadline {
+): EventRetentionDeadline {
   const kind = deadline.kind;
   const resolvedAt = purgedAt(event, kind);
 
@@ -27,7 +27,7 @@ function deadlineData(
     kind,
     dueAt: deadline.dueAt.toISOString(),
     effectiveAt: effectiveAt(deadline).toISOString(),
-    status: retentionDeadlineStatus(effectiveAt(deadline), resolvedAt),
+    status: eventRetentionDeadlineStatus(effectiveAt(deadline), resolvedAt),
     postponement:
       deadline.postponedUntil && deadline.postponedAt
         ? {
@@ -46,6 +46,7 @@ function deadlineData(
 export class EventRetentionResource extends JsonResource<
   {
     event: PurgeState;
+    sensitivePurgeIncomplete: boolean;
     deadlines: DeadlineWithPostponer[];
     registrationCount: number;
     periods: RetentionPeriods;
@@ -55,8 +56,14 @@ export class EventRetentionResource extends JsonResource<
   EventRetention
 > {
   transform(): EventRetention {
-    const { event, deadlines, registrationCount, periods, withReason } =
-      this.data;
+    const {
+      event,
+      sensitivePurgeIncomplete,
+      deadlines,
+      registrationCount,
+      periods,
+      withReason,
+    } = this.data;
 
     return {
       deadlines: deadlines.map((deadline) =>
@@ -66,6 +73,7 @@ export class EventRetentionResource extends JsonResource<
         sensitive: purgedAt(event, 'sensitive')?.toISOString() ?? null,
         registrations: purgedAt(event, 'registrations')?.toISOString() ?? null,
       },
+      sensitivePurgeIncomplete,
       periods,
       registrationCount,
     };
@@ -76,8 +84,6 @@ type OverviewDeadline = DeadlineWithPostponer & {
   event: PurgeState & {
     id: string;
     name: string | Record<string, string>;
-    organizationId: string;
-    organization: { name: string };
   };
 };
 
@@ -93,8 +99,6 @@ export class RetentionOverviewResource extends JsonResource<
       deadlineId: deadline.id,
       eventId: event.id,
       eventName: event.name,
-      organizationId: event.organizationId,
-      organizationName: event.organization.name,
       kind: deadline.kind,
       effectiveAt: deadline.effectiveAt,
       status: deadline.status,

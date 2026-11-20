@@ -20,7 +20,7 @@ describe('data migration: add_retention_workflow', () => {
     await prisma.event.deleteMany();
   });
 
-  /** An event that ended `daysAgo` days ago, one stamped registration. */
+  /** An event ending `daysAgo` days ago (negative: ahead), one stamped registration. */
   async function pastEvent(daysAgo: number, months: number) {
     const organization = await OrganizationFactory.create(
       {},
@@ -47,42 +47,63 @@ describe('data migration: add_retention_workflow', () => {
     return event;
   }
 
-  it('records past deadlines as already reminded, so deploying sends nothing', async () => {
+  it('marks the deadlines of past events as reminded, so deploying sends nothing', async () => {
     const overdue = await pastEvent(400, 6);
     const dueSoon = await pastEvent(178, 6);
+    const far = await pastEvent(10, 24);
+    const upcoming = await pastEvent(-20, 2);
 
     await run();
     await resolve(RetentionReminderService).run();
 
-    const deadlines = await prisma.retentionDeadline.findMany({
-      orderBy: { kind: 'asc' },
-    });
+    const deadlines = await prisma.eventRetentionDeadline.findMany();
     expect(
-      deadlines.map(({ eventId, kind, notifiedStage }) => ({
+      deadlines.map(({ eventId, notifiedStage }) => ({
         eventId,
-        kind,
         notifiedStage,
       })),
     ).toEqual(
-      expect.arrayContaining([
-        { eventId: overdue.id, kind: 'registrations', notifiedStage: 0 },
-        { eventId: dueSoon.id, kind: 'registrations', notifiedStage: 7 },
-      ]),
+      expect.arrayContaining(
+        [overdue, dueSoon, far].map(({ id }) => ({
+          eventId: id,
+          notifiedStage: 0,
+        })),
+      ),
     );
-    expect(deadlines).toHaveLength(2);
+    expect(deadlines).toContainEqual(
+      expect.objectContaining({ eventId: upcoming.id, notifiedStage: null }),
+    );
+    expect(deadlines).toHaveLength(4);
     expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 
-  it('leaves a far deadline to be reminded as usual', async () => {
-    const event = await pastEvent(10, 24);
+  it('agrees with the live sync for an event stamped with several notices', async () => {
+    const event = await pastEvent(400, 6);
+    // A second notice version published while registration was open, with
+    // another period: the two promises differ.
+    const longer = await PrivacyNoticeFactory.createPublished(
+      event.organizationId,
+      completePrivacyNoticeContent({
+        retention: { months: 12, anchor: 'event_end', exceptions: [] },
+      }),
+    );
+    await RegistrationFactory.create({
+      event: { connect: { id: event.id } },
+      organizationPrivacyNotice: { connect: { id: longer.id } },
+    });
 
     await run();
-
-    const deadline = await prisma.retentionDeadline.findFirstOrThrow({
+    const before = await prisma.eventRetentionDeadline.findFirstOrThrow({
       where: { eventId: event.id },
     });
-    expect(deadline.notifiedStage).toBeNull();
-    expect(deadline.dueAt.getMilliseconds()).toBe(0);
+    await resolve(RetentionReminderService).run();
+    const after = await prisma.eventRetentionDeadline.findFirstOrThrow({
+      where: { eventId: event.id },
+    });
+
+    expect(after.dueAt).toEqual(before.dueAt);
+    expect(after.notifiedStage).toBe(0);
+    expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 
   it('does nothing on a database without stamped registrations', async () => {
@@ -90,6 +111,6 @@ describe('data migration: add_retention_workflow', () => {
 
     await run();
 
-    expect(await prisma.retentionDeadline.count()).toBe(0);
+    expect(await prisma.eventRetentionDeadline.count()).toBe(0);
   });
 });

@@ -63,21 +63,3 @@ export class OrganizationRetentionRouter extends ModuleRouter {
     );
   }
 }
-
-/** Open deadlines across the platform, for administrators. */
-export class AdminRetentionRouter extends ModuleRouter {
-  protected registerBindings() {
-    // No model bindings.
-  }
-
-  protected defineRoutes() {
-    const retentionController = resolve(RetentionController);
-
-    this.router.get(
-      '/',
-      auth(),
-      guard(),
-      controller(retentionController, 'platform'),
-    );
-  }
-}

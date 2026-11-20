@@ -1,5 +1,5 @@
 <template>
-  <!-- Open retention deadlines across events: dates and kinds only, never
+  <!-- Open retention deadlines of an organization's events: dates and kinds only, never
        registration data or postponement reasons. Read-only; the event's
        managers act on them from its dashboard. -->
   <q-card
@@ -51,12 +51,7 @@
       >
         <q-item-section>
           <q-item-label>{{ to(entry.eventName) }}</q-item-label>
-          <q-item-label caption>
-            <template v-if="showOrganization"
-              >{{ entry.organizationName }} ·
-            </template>
-            {{ t(`kind.${entry.kind}`) }}
-          </q-item-label>
+          <q-item-label caption>{{ t(`kind.${entry.kind}`) }}</q-item-label>
         </q-item-section>
         <q-item-section side>
           <q-item-label>{{ d(entry.effectiveAt, 'date') }}</q-item-label>
@@ -89,7 +84,6 @@ import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue'
 const props = defineProps<{
   entries: RetentionOverviewEntry[];
   loading?: boolean;
-  showOrganization?: boolean;
   eventLink?: (entry: RetentionOverviewEntry) => RouteLocationRaw;
 }>();
 

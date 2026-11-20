@@ -27,7 +27,7 @@ export interface Registration extends Identifiable, Timestamps {
   locale: string;
   room?: Translatable | null;
   customFiles?: Record<string, string>;
-  /** The wording of each consent given, as shown, by question name. */
+  /** The wording of each consent given, as shown, by answer path (`kids[0].consent`). */
   consentTexts?: Record<string, string> | null;
 }
 
@@ -42,7 +42,7 @@ export type RegistrationCreateData = Pick<Registration, 'data'> & {
    */
   displayedTotal?: number | undefined;
   /**
-   * The consent texts the form showed, by question name. Untrusted: only
+   * The consent texts the form showed, by answer path. Untrusted: only
    * compared with the server's own rendering, which is what is stored.
    */
   displayedConsents?: Record<string, string> | undefined;

@@ -68,11 +68,6 @@ export class RetentionController extends BaseController {
     res.resource(RetentionOverviewResource.collection(deadlines));
   }
 
-  async platform(_req: Request, res: Response) {
-    const deadlines = await this.retentionService.openDeadlines();
-    res.resource(RetentionOverviewResource.collection(deadlines));
-  }
-
   private async eventRetention(req: Request) {
     // Re-read: an action may just have changed the purge state.
     const eventId = req.modelOrFail('event').id;
@@ -94,6 +89,11 @@ export class RetentionController extends BaseController {
 
     return new EventRetentionResource({
       event,
+      sensitivePurgeIncomplete:
+        await this.retentionService.sensitivePurgeIncomplete({
+          id: eventId,
+          ...event,
+        }),
       deadlines,
       registrationCount,
       periods,

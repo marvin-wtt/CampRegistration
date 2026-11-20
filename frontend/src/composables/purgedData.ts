@@ -13,7 +13,10 @@ type PurgeState = Pick<
 
 /**
  * Whether a registration field path (`data.allergies`, `data.kids[0].meds`)
- * reaches one of the given answer keys.
+ * reaches one of the given answer paths (`allergies`, `kids.meds`, `kids.*.meds`
+ * with `*` for any row name): the path itself, or anything stored beneath it.
+ * Matched as a whole path, so a top-level `notes` is not mistaken for a
+ * sensitive `kids.notes`.
  */
 export function reachesAnswerKey(
   path: string,
@@ -23,10 +26,21 @@ export function reachesAnswerKey(
     return false;
   }
 
-  return path
+  const raw = path
     .slice(5)
     .split(/[.[\]]+/)
-    .some((segment) => keys.has(segment));
+    .filter((segment) => segment);
+  // Entry indices dropped, unless a row is named like one.
+  const withoutIndices = raw.filter((segment) => !/^\d+$/.test(segment));
+
+  return [...keys].some((key) => {
+    const pattern = key.split('.');
+    return [withoutIndices, raw].some(
+      (segments) =>
+        pattern.length <= segments.length &&
+        pattern.every((part, i) => part === '*' || part === segments[i]),
+    );
+  });
 }
 
 /**

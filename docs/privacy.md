@@ -478,7 +478,8 @@ be tagged, and only boolean questions can be consents.
 | Changes after submission | The audit log (`registration.audit.ts`) — who, when, which field      |
 
 - **[implemented]** One nullable JSON column, `Registration.consentTexts`, keyed by
-  question name: `{ "consent_privacy": "I agree that photographs of …" }`
+  where the answer lives: `{ "consent_privacy": "I agree that photographs of …" }`,
+  `kids[0].consent_health` inside a dynamic panel
   (migration `20261118120000_add_registration_consent_texts`). Existing
   registrations stay `null`, like the notice stamp. Managers see it in the
   registration resource.
@@ -798,24 +799,26 @@ keep data.
 | `registrations` | all registration data, sensitive included | the notice's retention period |
 
 - Sensitive data is a subset of the registration data. Its deadline is capped at
-  the general one, and a postponement may not move it past it (nor the general one
-  before it).
+  the general one, also when either is postponed, so it always stays the earlier.
 - Deadlines come from the notice versions stamped on the registrations, not from
   today's notice: a period is a promise made to a person at a particular moment.
-  The latest promise per kind wins (`retention.deadlines.ts`). A form without
+  The earliest promise per kind wins (`retention.deadlines.ts`): deleting early is
+  allowed, keeping data longer than promised is not. A period counted from
+  submission runs from the first registration a notice version covers. A form without
   special-category questions has no sensitive deadline; notices from before the
   sensitive period put sensitive answers under the main period. Deadlines are computed in UTC (independent of the server's time zone) and stored in whole seconds, as the column holds them, so an unchanged promise compares equal. Free-text notices promise no date (composition drops their retention). Events whose registrations all predate the stamps
   (before August 2026) have no deadline: by design, the least complicated
   answer — they are deleted by hand on the data page.
-- `RetentionDeadline` holds one row per event and kind: the promised `dueAt`, a
+- `EventRetentionDeadline` holds one row per event and kind: the promised `dueAt`, a
   postponement (`postponedUntil`, `postponeReason`, who and when) and the reminder
-  stage last sent. The daily `retention-reminder` job (06:30) syncs the rows of events whose promise can have changed (new registrations or edits within 7 days) or that are about to be reminded (a deadline within 30 days), then reminds only rows within 30 days and not yet reminded on
+  stage last sent. The daily `retention-reminder` job (06:30) syncs the rows of every event not deleted that has stamped registrations or a row (a row whose registrations were deleted one by one is dropped), in batches, then reminds only rows within 30 days and not yet reminded on
   the deadline; opening the event's retention card or page syncs it too.
 - A changed promise resets the reminders only when the effective date moves to another day (stages count days): a postponement keeps its date, and one the new promise reaches is dropped.
 - **[implemented]** Deploying onto existing data sends nothing: the data
-  migration of `20261119120000_add_retention_workflow` backfills the deadlines of
-  existing events with every reminder stage already reached recorded as sent (the
-  old reminder had marked all ended events as reminded). Self-contained, it mirrors the deadline rule as it stood then (same UTC arithmetic, so the live sync finds the dates unchanged). The data-migration runner allows 30 minutes per migration instead of Prisma's 5-second default.
+  migration of `20261119120000_add_retention_workflow` creates the deadlines of
+  existing events; those of events already over are marked as fully reminded,
+  so none of them is mailed about. Upcoming events are reminded as usual. Its dates come from the live rule (`promisedDeadlines`),
+  so the first sync finds them unchanged and resets no reminder. The data-migration runner allows 30 minutes per migration instead of Prisma's 5-second default.
 
 ### Deletion [implemented]
 
@@ -838,16 +841,16 @@ keep data.
   request carries `confirm: true`. The sensitive deletion runs in batches,
   deleting all registrations is one statement; both are idempotent. The
   deletion is recorded and registration closed before any data is touched, so no
-  registration can arrive while it runs. A registration create re-reads the deletion state inside its transaction; an edit carrying sensitive answers is written only on the condition that the event is not purged, so one racing a deletion is refused. An interrupted deletion of all registrations is visible (marked deleted, registrations left) and the page offers to complete it; an interrupted sensitive-data deletion is completed by calling the endpoint again.
+  registration can arrive while it runs. A registration create re-reads the deletion state inside its transaction; an edit carrying sensitive answers is written only on the condition that the event is not purged, so one racing a deletion is refused. An interrupted deletion is visible and the page offers to complete it: for all registrations, marked deleted with registrations left; for sensitive data, marked deleted with no closing `sensitive_purged` audit entry since (an interruption, or a refusal after an edit kept conflicting). Running it again completes either.
 - The event records the deletion for good: `sensitiveDataPurgedAt`,
   `registrationDataPurgedAt` (which implies the former). Nothing clears them, and
   deleted data is never treated as restorable. A deadline whose data is deleted is
   resolved; it gets no more reminders and leaves the overviews.
 - Either timestamp closes the event for registrations permanently
   (`eventRegistrationStatus`, also for managers creating one): a new registration
-  would bring back what was deleted. The deletion also ends an open or scheduled
-  registration window, and the window cannot be changed afterwards (409; the editor
-  and the event card disable it). Registrants only see the event as closed. The
+  would bring back what was deleted. The window itself is left as it was, but it
+  cannot be changed afterwards (409; the editor and the event card disable it);
+  whatever reads whether registration is open uses that status, not the window. Registrants only see the event as closed. The
   data page warns while registration is open or the event has not ended. After the sensitive deletion an edit carrying
   sensitive answers is refused (400), never
   silently stripped: the manager learns the input was not kept. After deleting everything, the dashboard hides the
@@ -871,19 +874,21 @@ keep data.
 
 ### Postponement [implemented]
 
-- A manager with `event.registrations.delete` postpones a deadline immediately,
-  without approval: a reason and a new date, at most 12 months ahead
-  (`MAX_RETENTION_POSTPONE_MONTHS`). Postponing again is the renewal. The reminders
+- A manager with `event.registrations.delete` postpones either deadline
+  immediately, without approval: a reason and a new date after the current
+  deadline, at most 12 months ahead (`MAX_RETENTION_POSTPONE_MONTHS`); the dialog
+  offers 1, 3, 6 and 12 months from it. The sensitive deadline never moves past the general one, and the general one never before it. Postponing again is the renewal. The reminders
   start over for the new date.
 - The reason may name a person or a case, so only managers with
   `event.registrations.delete` see it; overviews and the audit log leave it out.
 
 ### Reminders and visibility [implemented]
 
-- 30, 7 and 1 day before the effective date (the postponement's, else the due
-  date) the managers holding `event.registrations.delete` get a mail; on the date
-  the organization's admins get one too (`RetentionDeadlineMessage`). Each stage is
-  sent once, and a missed run sends the most urgent stage reached.
+- 30 days before the effective date (the postponement's, else the due date) and
+  on it, the managers holding `event.registrations.delete` get a mail
+  (`EventRetentionDeadlineMessage`), naming the days actually left. Each stage is
+  sent once, claimed before it is queued, and a missed run sends the most urgent
+  stage reached.
 - Settings › "Data & deletion" (`DataSettingsPage`) holds everything
   irreversible: the periods the current notice states (`periods`, with a link to
   the organization's privacy settings, where they are set), both deletion actions
@@ -892,8 +897,7 @@ keep data.
   menu). Shown to managers with `event.registrations.delete` or `event.delete`.
 - Event dashboard (wrap-up phase): a summary of both deadlines and their status,
   linking to that page; no actions.
-- Organization dashboard and platform administration: deadlines due within 30 days
-  or overdue — event, kind, date, status. No personal data, no reasons, no actions.
+- Organization dashboard: deadlines due within 30 days or overdue — event, kind, date, status. No personal data, no reasons, no actions.
   Organization admins gain no registration access.
 
 ## 9. Data-subject rights (Art. 15–21)
@@ -1055,7 +1059,7 @@ reads tags after the tagging itself.
 12. Notice: `retention.specialCategories` with its completeness check, and the
     maximum period for consent-bound exceptions. Both tighten completeness:
     existing notices add them on their next publish.
-13. `RetentionDeadline` and the daily job (30, 7 and 1 days before, and on the
+13. `EventRetentionDeadline` and the daily job (30 days before, and on the
     date), replacing the single reminder.
 14. "Delete sensitive data" and "Delete all registrations", the purge timestamps
     and the permanent registration stop.

@@ -5,9 +5,8 @@ import { MailableRegistry } from '#core/mail/mail.registry';
 import { RetentionService } from './retention.service.js';
 import { RetentionReminderService } from './retention-reminder.service.js';
 import { RetentionController } from './retention.controller.js';
-import { RetentionDeadlineMessage } from './retention.messages.js';
+import { EventRetentionDeadlineMessage } from './retention.messages.js';
 import {
-  AdminRetentionRouter,
   EventRetentionRouter,
   OrganizationRetentionRouter,
 } from './retention.routes.js';
@@ -21,7 +20,7 @@ export class RetentionModule implements AppModule {
   }
 
   configure(): void {
-    resolve(MailableRegistry).register(RetentionDeadlineMessage);
+    resolve(MailableRegistry).register(EventRetentionDeadlineMessage);
   }
 
   registerApiRoutes(router: AppRouter): void {
@@ -30,7 +29,6 @@ export class RetentionModule implements AppModule {
       '/organizations/:organizationId/retention',
       new OrganizationRetentionRouter(),
     );
-    router.useRouter('/admin/retention', new AdminRetentionRouter());
   }
 
   registerJobs(scheduler: JobScheduler): void {

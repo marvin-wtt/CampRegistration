@@ -86,7 +86,9 @@ describe('extractPrivacyTags', () => {
       ],
     });
 
-    expect(tags.tagged).toEqual([{ name: 'allergies', category: 'allergies' }]);
+    expect(tags.tagged).toEqual([
+      { name: 'allergies', within: 'children', category: 'allergies' },
+    ]);
   });
 
   it('reads the tags on matrix columns, as SurveyJS gives them to the cells', () => {
@@ -108,9 +110,26 @@ describe('extractPrivacyTags', () => {
       .map((question) => question.name);
 
     expect(extractPrivacyTags(form).tagged).toEqual([
-      { name: 'meds', category: 'medication' },
+      { name: 'meds', within: 'kids', category: 'medication' },
     ]);
     expect(new Set(fromSurvey)).toEqual(new Set(['meds']));
+  });
+
+  it('marks the rows of a dropdown matrix, stored by name, as any row', () => {
+    const tags = extractPrivacyTags({
+      elements: [
+        {
+          type: 'matrixdropdown',
+          name: 'kids',
+          rows: ['anna', 'ben'],
+          columns: [{ name: 'meds', privacyCategory: 'medication' }],
+        },
+      ],
+    });
+
+    expect(tags.tagged).toEqual([
+      { name: 'meds', within: 'kids.*', category: 'medication' },
+    ]);
   });
 
   it('only counts booleans as consents', () => {
@@ -141,7 +160,7 @@ describe('specialCategoryAnswerKeys', () => {
     };
 
     expect(specialCategoryAnswerKeys(form)).toEqual(
-      new Set(['allergies', 'meds']),
+      new Set(['allergies', 'children.meds']),
     );
   });
 });
@@ -307,6 +326,61 @@ describe('consentTexts', () => {
     expect(Object.keys(consentTexts(model, { givenOnly: true }))).toEqual([
       'consent_health',
     ]);
+  });
+
+  it('keeps the wording of a consent in every dynamic panel entry', () => {
+    const model = new SurveyModel({
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'kids',
+          templateElements: [{ ...healthConsent, title: 'For this child.' }],
+        },
+      ],
+    });
+    model.data = {
+      kids: [{ consent_health: true }, { consent_health: false }],
+    };
+
+    expect(consentTexts(model)).toEqual({
+      'kids[0].consent_health': 'For this child.',
+      'kids[1].consent_health': 'For this child.',
+    });
+    expect(Object.keys(consentTexts(model, { givenOnly: true }))).toEqual([
+      'kids[0].consent_health',
+    ]);
+  });
+
+  it('fills the entry placeholders and keys nested panels by their path', () => {
+    const model = new SurveyModel({
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'groups',
+          templateElements: [
+            {
+              type: 'paneldynamic',
+              name: 'kids',
+              templateElements: [
+                { type: 'text', name: 'first_name' },
+                { ...healthConsent, title: 'For {panel.first_name}.' },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    model.data = {
+      groups: [
+        { kids: [{ first_name: 'Anna' }] },
+        { kids: [{ first_name: 'Ben' }] },
+      ],
+    };
+
+    expect(consentTexts(model)).toEqual({
+      'groups[0].kids[0].consent_health': 'For Anna.',
+      'groups[1].kids[0].consent_health': 'For Ben.',
+    });
   });
 });
 

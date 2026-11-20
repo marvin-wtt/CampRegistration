@@ -5,12 +5,27 @@ import type { EventDetails } from '@camp-registration/common/entities';
 import { lockPurgedQuestions, reachesAnswerKey } from './purgedData';
 
 describe('reachesAnswerKey', () => {
-  const keys = new Set(['allergies', 'meds']);
+  const keys = new Set(['allergies', 'kids.meds']);
 
   it('matches form answers, also nested ones', () => {
     expect(reachesAnswerKey('data.allergies', keys)).toBe(true);
     expect(reachesAnswerKey('data.kids[0].meds', keys)).toBe(true);
     expect(reachesAnswerKey('data.kids.meds', keys)).toBe(true);
+    expect(reachesAnswerKey('data.allergies.other', keys)).toBe(true);
+  });
+
+  it('matches whole paths, not a name that recurs elsewhere', () => {
+    expect(reachesAnswerKey('data.meds', keys)).toBe(false);
+    expect(reachesAnswerKey('data.parents[0].meds', keys)).toBe(false);
+    expect(reachesAnswerKey('data.kids', keys)).toBe(false);
+  });
+
+  it('matches the rows of a dropdown matrix by any name', () => {
+    const rows = new Set(['kids.*.meds']);
+
+    expect(reachesAnswerKey('data.kids.anna.meds', rows)).toBe(true);
+    expect(reachesAnswerKey('data.kids.1.meds', rows)).toBe(true);
+    expect(reachesAnswerKey('data.kids.anna.name', rows)).toBe(false);
   });
 
   it('ignores other answers and data outside the form', () => {
