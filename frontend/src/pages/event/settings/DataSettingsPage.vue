@@ -1,7 +1,7 @@
 <template>
   <page-state-handler
     padding
-    :loading="loading && !retention"
+    :loading
     :error
     class="row justify-center"
   >
@@ -280,14 +280,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
-  EventRetention,
   RetentionDeadline,
   RetentionDeadlineKind,
   RetentionDeadlineStatus,
@@ -300,12 +299,11 @@ import RetentionDateLine from '@/components/retention/RetentionDateLine.vue';
 import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
 import RetentionPostponeDialog from '@/components/retention/RetentionPostponeDialog.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
-import { useRetentionService } from '@/services/RetentionService';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventsStore } from '@/stores/events-store';
+import { useEventRetentionStore } from '@/stores/event-retention-store';
 import { usePermissions } from '@/composables/permissions';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { useAction } from '@/composables/action';
 
 const { t, d } = useI18n();
 const { t: gt } = useI18n({ useScope: 'global' });
@@ -313,41 +311,21 @@ const quasar = useQuasar();
 const router = useRouter();
 const { to } = useObjectTranslation();
 const { can } = usePermissions();
-const { run } = useAction();
-const service = useRetentionService();
 const eventDetailsStore = useEventDetailsStore();
 const eventsStore = useEventsStore();
+const retentionStore = useEventRetentionStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 
-const retention = ref<EventRetention | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const {
+  data: retention,
+  isLoading: loading,
+  error,
+} = storeToRefs(retentionStore);
 
 const canDeleteData = computed(() => can('event.registrations.delete'));
 
 void eventDetailsStore.fetchData();
-
-async function load(eventId: string) {
-  loading.value = true;
-  try {
-    retention.value = await service.fetchEventRetention(eventId);
-    error.value = null;
-  } catch {
-    error.value = t('request.load.error');
-  } finally {
-    loading.value = false;
-  }
-}
-
-watch(
-  () => event.value?.id,
-  (id) => {
-    if (id) {
-      void load(id);
-    }
-  },
-  { immediate: true },
-);
+void retentionStore.fetchData();
 
 // What deleting an event takes with it, in the order a manager would miss it.
 // Keep in sync with the event's cascading relations (`model Event` in
@@ -452,27 +430,13 @@ function latestFor(deadline: RetentionDeadline): string | null {
 }
 
 function postpone(deadline: RetentionDeadline) {
-  const eventId = event.value?.id;
-  if (!eventId) {
-    return;
-  }
   quasar
     .dialog({
       component: RetentionPostponeDialog,
       componentProps: { latest: latestFor(deadline) },
     })
     .onOk((data: RetentionPostponeData) => {
-      void run(
-        'postpone',
-        async () => {
-          retention.value = await service.postponeDeadline(
-            eventId,
-            deadline.kind,
-            data,
-          );
-        },
-        { feedback: 'result' },
-      ).catch(() => undefined);
+      void retentionStore.postpone(deadline.kind, data).catch(() => undefined);
     });
 }
 
@@ -493,17 +457,7 @@ function purge(kind: RetentionDeadlineKind) {
       persistent: true,
     })
     .onOk(() => {
-      void run(
-        'purge',
-        async () => {
-          await service.purge(current.id, kind);
-          await Promise.allSettled([
-            load(current.id),
-            eventDetailsStore.fetchData(current.id),
-          ]);
-        },
-        { feedback: 'progress' },
-      ).catch(() => undefined);
+      void retentionStore.purge(kind).catch(() => undefined);
     });
 }
 
@@ -651,16 +605,6 @@ action:
   delete:
     sensitive: 'Delete sensitive data'
     registrations: 'Delete all registrations'
-request:
-  load:
-    error: 'Could not load the retention deadlines'
-  postpone:
-    error: 'Could not postpone the deadline'
-    success: 'Deadline postponed'
-  purge:
-    progress: 'Deleting data…'
-    error: 'Could not delete the data'
-    success: 'Data deleted'
 effect:
   sensitive: 'Deletes the answers to health and other sensitive questions in every registration, including files uploaded to them. The rest of each registration stays. New registrations are no longer possible afterwards.'
   registrations: 'Deletes every registration of this event with its files and sensitive data. Room assignments are freed. The event can never take registrations again.'
@@ -725,16 +669,6 @@ action:
   delete:
     sensitive: 'Sensible Daten löschen'
     registrations: 'Alle Anmeldungen löschen'
-request:
-  load:
-    error: 'Die Speicherfristen konnten nicht geladen werden'
-  postpone:
-    error: 'Die Frist konnte nicht verschoben werden'
-    success: 'Frist verschoben'
-  purge:
-    progress: 'Daten werden gelöscht…'
-    error: 'Die Daten konnten nicht gelöscht werden'
-    success: 'Daten gelöscht'
 effect:
   sensitive: 'Löscht in allen Anmeldungen die Antworten auf Gesundheitsfragen und andere sensible Fragen, einschließlich dort hochgeladener Dateien. Der Rest der Anmeldungen bleibt. Neue Anmeldungen sind danach nicht mehr möglich.'
   registrations: 'Löscht alle Anmeldungen dieser Veranstaltung mit ihren Dateien und sensiblen Daten. Zimmerzuteilungen werden frei. Die Veranstaltung kann danach nie wieder Anmeldungen annehmen.'
@@ -799,16 +733,6 @@ action:
   delete:
     sensitive: 'Supprimer les données sensibles'
     registrations: 'Supprimer toutes les inscriptions'
-request:
-  load:
-    error: 'Impossible de charger les délais de conservation'
-  postpone:
-    error: 'Impossible de reporter le délai'
-    success: 'Délai reporté'
-  purge:
-    progress: 'Suppression des données…'
-    error: 'Impossible de supprimer les données'
-    success: 'Données supprimées'
 effect:
   sensitive: 'Supprime dans toutes les inscriptions les réponses aux questions de santé et autres questions sensibles, y compris les fichiers associés. Le reste des inscriptions est conservé. Les nouvelles inscriptions ne sont plus possibles ensuite.'
   registrations: 'Supprime toutes les inscriptions de cet événement avec leurs fichiers et données sensibles. Les attributions de chambres sont libérées. L’événement ne pourra plus jamais recevoir d’inscriptions.'
@@ -873,16 +797,6 @@ action:
   delete:
     sensitive: 'Usuń dane wrażliwe'
     registrations: 'Usuń wszystkie zgłoszenia'
-request:
-  load:
-    error: 'Nie udało się wczytać terminów przechowywania'
-  postpone:
-    error: 'Nie udało się przesunąć terminu'
-    success: 'Termin przesunięty'
-  purge:
-    progress: 'Usuwanie danych…'
-    error: 'Nie udało się usunąć danych'
-    success: 'Dane usunięte'
 effect:
   sensitive: 'Usuwa ze wszystkich zgłoszeń odpowiedzi na pytania o zdrowie i inne pytania wrażliwe, łącznie z przesłanymi do nich plikami. Reszta zgłoszeń pozostaje. Nowe zgłoszenia nie będą już możliwe.'
   registrations: 'Usuwa wszystkie zgłoszenia tego wydarzenia wraz z plikami i danymi wrażliwymi. Przydziały pokoi zostaną zwolnione. Wydarzenie nigdy więcej nie przyjmie zgłoszeń.'
@@ -947,16 +861,6 @@ action:
   delete:
     sensitive: 'Smazat citlivé údaje'
     registrations: 'Smazat všechny přihlášky'
-request:
-  load:
-    error: 'Lhůty uchování se nepodařilo načíst'
-  postpone:
-    error: 'Lhůtu se nepodařilo odložit'
-    success: 'Lhůta odložena'
-  purge:
-    progress: 'Mazání údajů…'
-    error: 'Údaje se nepodařilo smazat'
-    success: 'Údaje smazány'
 effect:
   sensitive: 'Smaže ve všech přihláškách odpovědi na zdravotní a další citlivé otázky, včetně k nim nahraných souborů. Zbytek přihlášek zůstane. Nové přihlášky pak již nebudou možné.'
   registrations: 'Smaže všechny přihlášky této akce s jejich soubory a citlivými údaji. Přidělení pokojů se uvolní. Akce už nikdy nebude přijímat přihlášky.'

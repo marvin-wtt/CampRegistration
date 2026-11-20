@@ -34,6 +34,13 @@
     </q-card-section>
 
     <q-card-section
+      v-else-if="error"
+      class="q-pt-none text-body2 text-error"
+    >
+      {{ t('loadError') }}
+    </q-card-section>
+
+    <q-card-section
       v-else-if="retention && retention.deadlines.length > 0"
       class="q-pt-none column q-gutter-y-sm"
     >
@@ -70,54 +77,29 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import type { EventRetention } from '@camp-registration/common/privacy';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import RetentionDateLine from '@/components/retention/RetentionDateLine.vue';
 import RetentionStatusChip from '@/components/retention/RetentionStatusChip.vue';
-import { useRetentionService } from '@/services/RetentionService';
-import { useEventDetailsStore } from '@/stores/event-details-store';
+import { useEventRetentionStore } from '@/stores/event-retention-store';
 import { usePermissions } from '@/composables/permissions';
-import { useAction } from '@/composables/action';
 
 const { t, d } = useI18n();
 const { canAccess } = usePermissions();
-const { run } = useAction();
-const service = useRetentionService();
-const eventDetailsStore = useEventDetailsStore();
-const { data: event } = storeToRefs(eventDetailsStore);
-
-const retention = ref<EventRetention | null>(null);
-const loading = ref(true);
+const retentionStore = useEventRetentionStore();
+const {
+  data: retention,
+  isLoading: loading,
+  error,
+} = storeToRefs(retentionStore);
 
 const canManage = computed(() =>
   canAccess({ any: ['event.registrations.delete', 'event.delete'] }),
 );
 
-async function load(eventId: string) {
-  loading.value = true;
-  try {
-    retention.value = await run('load', () =>
-      service.fetchEventRetention(eventId),
-    );
-  } catch {
-    retention.value = null;
-  } finally {
-    loading.value = false;
-  }
-}
-
-watch(
-  () => event.value?.id,
-  (id) => {
-    if (id) {
-      void load(id);
-    }
-  },
-  { immediate: true },
-);
+void retentionStore.fetchData();
 
 const allResolved = computed(
   () =>
@@ -165,9 +147,7 @@ kind:
   sensitive: 'Health and other sensitive details'
   registrations: 'All registration data'
 noAutomaticDeletion: 'Nothing is deleted automatically. Deleting is permanent and cannot be undone.'
-request:
-  load:
-    error: 'Could not load the retention deadlines'
+loadError: 'Could not load the retention deadlines'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -181,9 +161,7 @@ kind:
   sensitive: 'Gesundheitsangaben und andere sensible Daten'
   registrations: 'Alle Anmeldedaten'
 noAutomaticDeletion: 'Es wird nichts automatisch gelöscht. Löschen ist endgültig und kann nicht rückgängig gemacht werden.'
-request:
-  load:
-    error: 'Die Speicherfristen konnten nicht geladen werden'
+loadError: 'Die Speicherfristen konnten nicht geladen werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -197,9 +175,7 @@ kind:
   sensitive: 'Données de santé et autres données sensibles'
   registrations: 'Toutes les données d’inscription'
 noAutomaticDeletion: 'Rien n’est supprimé automatiquement. La suppression est définitive.'
-request:
-  load:
-    error: 'Impossible de charger les délais de conservation'
+loadError: 'Impossible de charger les délais de conservation'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -213,9 +189,7 @@ kind:
   sensitive: 'Dane o zdrowiu i inne dane wrażliwe'
   registrations: 'Wszystkie dane zgłoszeń'
 noAutomaticDeletion: 'Nic nie jest usuwane automatycznie. Usunięcie jest trwałe i nieodwracalne.'
-request:
-  load:
-    error: 'Nie udało się wczytać terminów przechowywania'
+loadError: 'Nie udało się wczytać terminów przechowywania'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -229,7 +203,5 @@ kind:
   sensitive: 'Zdravotní a další citlivé údaje'
   registrations: 'Všechny údaje z přihlášek'
 noAutomaticDeletion: 'Nic se nemaže automaticky. Smazání je trvalé a nelze ho vrátit.'
-request:
-  load:
-    error: 'Lhůty uchování se nepodařilo načíst'
+loadError: 'Lhůty uchování se nepodařilo načíst'
 </i18n>

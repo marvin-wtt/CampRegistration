@@ -3,6 +3,7 @@ import registration from './registration';
 import template from './template';
 import eventManager from './event-manager';
 import eventFiles from './event-files';
+import eventRetention from './event-retention';
 import auth from './auth';
 import profile from './profile';
 import programPlanner from './program-planner';
@@ -31,6 +32,7 @@ export default {
   template,
   eventManager,
   eventFiles,
+  eventRetention,
   auth,
   profile,
   programPlanner,
