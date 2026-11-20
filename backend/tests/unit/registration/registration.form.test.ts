@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FunctionFactory, SurveyModel } from 'survey-core';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { RegistrationForm } from '#app/registration/registration.form';
-import { registrationColumns } from '#app/registration/registration.helper';
+import { registrationColumns } from '#app/registration/registration.columns';
 
 // `setVariables` reads these off the event to expose them as survey variables.
 function eventWith(elements: object[], freePlaces = 10): EventWithFreePlaces {

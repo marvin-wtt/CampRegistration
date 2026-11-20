@@ -12,7 +12,15 @@ import httpStatus from 'http-status';
 import { EventService } from '#app/event/event.service';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { resolve } from '#core/ioc/container';
-import { eventRegistrationStatus } from '#app/event/event.util';
+import {
+  eventRegistrationStatus,
+  isRetentionPurged,
+} from '#app/event/event.util';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import {
+  formPrivacyIssues,
+  hasPrivacyIssues,
+} from '@camp-registration/common/form';
 
 export const eventScopeResolver: ScopeResolver<'event'> = {
   model: 'event',
@@ -45,6 +53,34 @@ export const eventOrganizationVerified = (req: Request): boolean => {
   return (
     req.modelOrFail('event').organization.verificationStatus === 'VERIFIED'
   );
+};
+
+/**
+ * Once registration data was deleted nobody registers again, managers
+ * included (docs/privacy.md, 8). The create re-checks inside its transaction.
+ */
+export const eventNotPurged = (req: Request): boolean | string =>
+  isRetentionPurged(req.modelOrFail('event'))
+    ? 'Registration data of this event was deleted; it takes no registrations.'
+    : true;
+
+/**
+ * Refuses registrations while the form asks for sensitive data its privacy
+ * notice does not cover (docs/privacy.md, section 5), from managers too: who
+ * enters the data does not change what the notice covers.
+ */
+export const eventPrivacyCompliant = async (
+  req: Request,
+): Promise<boolean | string> => {
+  const event = req.modelOrFail('event');
+  // The notice the create then stamps and checks consents against.
+  const { notice } = await resolve(
+    PrivacyNoticeService,
+  ).getNoticeForRegistration(event.id, event.organizationId);
+
+  return hasPrivacyIssues(formPrivacyIssues(event.form, notice))
+    ? 'Registration is unavailable: the form asks for data its privacy information does not cover.'
+    : true;
 };
 
 // Common guard for aoi and meta route

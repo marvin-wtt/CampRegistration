@@ -65,14 +65,17 @@ export function eventContactFor(
   };
 }
 
-export function eventRegistrationStatus(event: Event): EventRegistrationStatus {
+/**
+ * Data can only be deleted once this is `closed`, and an edit afterwards may not
+ * change that, so a purged event reads `closed` without checking for it.
+ */
+export function eventRegistrationStatus(
+  event: Pick<
+    Event,
+    'registrationOpensAt' | 'registrationClosesAt' | 'startAt' | 'timezone'
+  >,
+): EventRegistrationStatus {
   const now = new Date();
-
-  // Deleted data is never restored, and a new registration would bring back
-  // what was deleted (docs/privacy.md, 8).
-  if (isRetentionPurged(event)) {
-    return 'closed';
-  }
 
   // Without a window, registration simply hasn't been scheduled yet — unless
   // the event has already started.

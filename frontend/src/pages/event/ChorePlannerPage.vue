@@ -471,10 +471,10 @@ import { useI18n } from 'vue-i18n';
 import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { storeToRefs } from 'pinia';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRoomStore } from '@/stores/room-store';
 import { usePermissions } from '@/composables/permissions';
-import { useRegistrationsPurged } from '@/composables/registrationsPurged';
 import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -570,7 +570,7 @@ const names = computed<Map<string, string>>(
     ),
 );
 
-const registrationsPurged = useRegistrationsPurged();
+const { registrationsPurged } = storeToRefs(eventDetailsStore);
 const canCreate = computed(() => can('event.chore_assignments.create'));
 const canEdit = computed(() => can('event.chore_assignments.edit'));
 const canDelete = computed(() => can('event.chore_assignments.delete'));

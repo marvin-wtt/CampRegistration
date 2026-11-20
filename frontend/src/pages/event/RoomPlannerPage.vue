@@ -286,6 +286,7 @@
 import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
+import { storeToRefs } from 'pinia';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useRoomStore } from '@/stores/room-store';
@@ -305,7 +306,6 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from '@/composables/permissions';
-import { useRegistrationsPurged } from '@/composables/registrationsPurged';
 import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
@@ -321,7 +321,7 @@ const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomStore();
 const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
-const registrationsPurged = useRegistrationsPurged();
+const { registrationsPurged } = storeToRefs(eventDetailsStore);
 
 const addLoading = ref(false);
 

@@ -3,7 +3,7 @@ import type { Event, Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
-import { registrationColumns } from '#app/registration/registration.helper.js';
+import { registrationColumns } from '#app/registration/registration.columns.js';
 import { localeForCountry } from '@camp-registration/common/locales';
 import { computeAmountDue } from '@camp-registration/common/utils';
 import {

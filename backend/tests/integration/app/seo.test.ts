@@ -65,11 +65,6 @@ describe('GET /sitemap.xml', () => {
       },
       'VERIFIED',
     ],
-    [
-      'an event whose registration data was purged',
-      { registrationDataPurgedAt: new Date() },
-      'VERIFIED',
-    ],
   ] as const)('should omit %s', async (_label, data, verificationStatus) => {
     const event = await createEvent(data, verificationStatus);
 

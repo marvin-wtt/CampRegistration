@@ -3,16 +3,17 @@ import { auth } from '#core/auth/auth.middleware';
 import { guard } from '#core/guard';
 import { captcha } from '#core/captcha/captcha.middleware';
 import { or, and } from '#core/guard';
-import { hasEventPermission } from '#app/event/event.guard';
 import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';
 import { resolve } from '#core/ioc/container';
 import {
-  registrationOpen,
+  eventNotPurged,
   eventOrganizationVerified,
+  eventPrivacyCompliant,
+  hasEventPermission,
+  registrationOpen,
 } from '#app/event/event.guard';
-import { eventPrivacyCompliant } from '#app/registration/registration.guard';
 
 export class RegistrationRouter extends ModuleRouter {
   protected registerBindings() {
@@ -46,13 +47,14 @@ export class RegistrationRouter extends ModuleRouter {
     this.router.post(
       '/',
       guard(
-        or(
-          and(
-            registrationOpen,
-            eventOrganizationVerified,
-            eventPrivacyCompliant,
+        and(
+          eventNotPurged,
+          or(
+            and(registrationOpen, eventOrganizationVerified),
+            hasEventPermission('event.registrations.create'),
           ),
-          hasEventPermission('event.registrations.create'),
+          // Last: it reads the privacy notice.
+          eventPrivacyCompliant,
         ),
       ),
       captcha('registration'),

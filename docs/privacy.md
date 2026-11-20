@@ -604,8 +604,8 @@ notempty'`). "No known allergies" is
   the answers. Manager edits are not checked: what a manager records (allergies a
   parent phoned in) may rest on consent given outside the form, which is the
   organizer's responsibility, and the audit log records the edit — checking them
-  would also make older registrations uneditable once questions are tagged. While the form asks for a category no consent covers, the public
-  registration is refused altogether (`eventPrivacyCompliant`) and the managers see
+  would also make older registrations uneditable once questions are tagged. While the form asks for a category no consent covers, every
+  registration is refused, the managers' included (`eventPrivacyCompliant`), and the managers see
   why on the event dashboard (`PrivacyComplianceNotice`).
 - No table flag for a missing health consent: health data without consent cannot
   be stored (the form demands the consent, the server refuses answers without it),
@@ -637,11 +637,11 @@ verification:
   a tagged category relying on consent has no consent question covering it, or a
   tagged category is not declared in the composed notice
   (`formPrivacyIssues`, `common/src/form/privacyCompliance.ts`). Guard
-  `eventPrivacyCompliant` (`registration.guard.ts`), in the same chain as
-  `registrationOpen` / `eventOrganizationVerified`; like a closed registration it
-  answers anonymous requests with 401. Managers with
-  `event.registrations.create` bypass it, as they bypass the open/close dates — the
-  submission check below still applies to them.
+  `eventPrivacyCompliant` (`event.guard.ts`), composed around the
+  `registrationOpen` / `eventOrganizationVerified` chain rather than inside it:
+  managers with `event.registrations.create` bypass the open/close dates, not
+  this — who enters the data does not change what the notice covers. The public
+  page hides their "open form anyway" override while it applies.
 - **[implemented]** The public event page runs the same check and shows a
   `privacy` state ("registration is not possible at the moment") instead of a form
   that would fail. In the form editor, each question causing it says so in its
@@ -912,12 +912,15 @@ keep data.
   `registrationDataPurgedAt`; deleting everything sets both. Nothing clears them,
   and deleted data is never treated as restorable. A kind whose data is deleted
   has no deadline any more: no reminders, and it leaves the overviews.
-- Either timestamp closes the event for registrations permanently
-  (`eventRegistrationStatus`, also for managers creating one): a new registration
-  would bring back what was deleted. The window itself is left as it was, but it
-  cannot be changed afterwards (409; the editor and the event card disable it);
-  whatever reads whether registration is open uses that status, not the window. Registrants only see the event as closed. The
-  data page warns while registration is open or the event has not ended. After the sensitive deletion an edit carrying
+- Deleting needs the registration closed (`eventRegistrationStatus`; an event
+  without a window is closed once it has started), checked under the event's row
+  lock (409 otherwise, the data page disables both actions and says why). From
+  then on it stays closed: an event edit that would reopen it — the window, or
+  without one the start — is refused under the same lock (409; the editor and the
+  event card disable the window), so the status needs no deletion check of its
+  own. Nobody registers again, managers included (`eventNotPurged`, re-checked
+  inside the create's transaction): a new registration would bring back what was
+  deleted. The data page warns while the event has not ended. After the sensitive deletion an edit carrying
   sensitive answers is refused (400), never
   silently stripped: the manager learns the input was not kept. After deleting everything, the dashboard hides the
   cards built on registrations and the participants page says the data is gone.
@@ -962,7 +965,7 @@ keep data.
 - Settings › "Data & deletion" (`DataSettingsPage`) holds everything
   irreversible: the periods the current notice states (`periods`, with a link to
   the organization's privacy settings, where they are set), both deletion actions
-  — available at any time, deadline or not — with their deadline, the server's
+  — available before or after the deadline, once registration has closed — with their deadline, the server's
   estimate from the current notice where there is none yet, or postponement, and deleting the event itself (moved here from the event card's
   menu). Shown to managers with `event.registrations.delete` or `event.delete`.
 - Event dashboard (wrap-up phase): a summary of both deadlines and their status,

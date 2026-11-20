@@ -34,6 +34,10 @@ const memos = new WeakMap<RequestContext, Map<string, unknown>>();
 /**
  * `compute()` once per request and key; outside a request, every call
  * computes. For values several layers of one request read, so they agree.
+ *
+ * Never invalidated: the value lives as long as the request's async work, so
+ * cache only state the request itself does not write. Where one layer always
+ * runs before the other, pass the value explicitly instead.
  */
 export function perRequest<T>(key: string, compute: () => T): T {
   const store = storage.getStore();

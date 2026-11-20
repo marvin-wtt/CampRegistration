@@ -65,7 +65,7 @@
            right. Narrow screens: one column in the layout's order. -->
       <div
         class="dashboard-columns"
-        :class="{ 'dashboard-columns--single': sideCards.length === 0 }"
+        :class="{ 'dashboard-columns--single': columns.length === 1 }"
       >
         <div
           v-for="column in columns"
@@ -253,6 +253,8 @@ const {
   data: event,
   isLoading: eventLoading,
   error: eventError,
+  // Once all registration data is deleted, nothing built on it is shown.
+  registrationsPurged,
 } = storeToRefs(eventDetailsStore);
 const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
@@ -272,11 +274,6 @@ const loading = computed<boolean>(
 
 const error = computed<string | null>(
   () => eventError.value ?? registrationsError.value,
-);
-
-// Once all registration data is deleted, nothing built on it is shown.
-const registrationsPurged = computed<boolean>(
-  () => !!event.value?.registrationDataPurgedAt,
 );
 
 const features = computed(() => ({
@@ -375,17 +372,16 @@ const cards = computed(() =>
     })),
 );
 
-const sideCards = computed(() =>
-  cards.value.filter((card) => card.column === 'side'),
+// An empty column is left out, so the other one takes the width — e.g. no
+// main cards once all registrations are deleted.
+const columns = computed<{ name: Column; cards: typeof cards.value }[]>(() =>
+  (['main', 'side'] as const)
+    .map((name) => ({
+      name,
+      cards: cards.value.filter((card) => card.column === name),
+    }))
+    .filter((column) => column.cards.length > 0),
 );
-
-const columns = computed<{ name: Column; cards: typeof cards.value }[]>(() => [
-  {
-    name: 'main',
-    cards: cards.value.filter((card) => card.column === 'main'),
-  },
-  { name: 'side', cards: sideCards.value },
-]);
 
 // Shortcuts depend on permissions (profile and event) and the hidden nav items;
 // most managers have some, so they are skeletonized rather than left out.
@@ -491,13 +487,9 @@ const quickActions = computed<QuickAction[]>(() =>
     gap: 20px;
   }
 
-  /* Nothing on the side: the main column takes the width. */
+  /* One column left: it takes the width. */
   .dashboard-columns--single {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dashboard-columns--single .dashboard-column--side {
-    display: none;
   }
 }
 

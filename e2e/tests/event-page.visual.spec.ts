@@ -14,6 +14,8 @@ import type { Page } from '@playwright/test';
 const OPEN_EVENT = '01JHP0CXJFR4MQS8SF1HQJCY38'; // no window -> open
 const UPCOMING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA10'; // opens in 2999 -> upcoming
 const CLOSED_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA20'; // closed in 2020 -> closed
+// Open, but its form asks for data the privacy notice does not declare.
+const PRIVACY_BLOCKED_EVENT = '01JHP0CXJFR4MQS8SF1HQJCP01';
 // A well-formed but unseeded id -> 404 -> "not found".
 const MISSING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCY30';
 // Two groups (Germany, France), chosen before the form.
@@ -77,6 +79,17 @@ test.describe('event page — visual', () => {
     await settle(page);
 
     await expect(page).toHaveScreenshot('event-page-closed.png');
+  });
+
+  test('registration blocked for privacy reasons', async ({ page }) => {
+    await page.goto(`/events/${PRIVACY_BLOCKED_EVENT}/`);
+
+    await expect(
+      page.getByTestId('event-registration-status-privacy'),
+    ).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-privacy.png');
   });
 
   test('registration not found', async ({ page }) => {

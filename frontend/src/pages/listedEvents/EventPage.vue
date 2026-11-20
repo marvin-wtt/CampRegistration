@@ -175,8 +175,16 @@
           </q-list>
         </section>
 
+        <!-- The server refuses these for the event team too. -->
         <div
-          v-if="canCreateRegistrationAsManager"
+          v-if="canCreateRegistrationAsManager && managerBlocked"
+          class="text-caption text-on-surface-variant text-center"
+          data-test="registration-override-blocked"
+        >
+          {{ t(`action.override_blocked.${managerBlocked}`) }}
+        </div>
+        <div
+          v-else-if="canCreateRegistrationAsManager"
           class="column items-center q-gutter-y-xs"
         >
           <m-btn
@@ -398,6 +406,17 @@ async function loadEvent() {
     loading.value = false;
   }
 }
+
+/** Why not even the event team can register (docs/privacy.md, 5 and 8). */
+const managerBlocked = computed<'purged' | 'privacy' | null>(() => {
+  if (
+    event.value?.sensitiveDataPurgedAt ||
+    event.value?.registrationDataPurgedAt
+  ) {
+    return 'purged';
+  }
+  return privacyBlocked.value ? 'privacy' : null;
+});
 
 type RegistrationStatus =
   EventRegistrationStatus | 'unavailable' | 'not_found' | 'privacy';
@@ -671,6 +690,9 @@ group:
 action:
   open_form_anyway: 'Open form anyway'
   open_form_anyway_hint: 'Only the event team sees this'
+  override_blocked:
+    purged: 'Registration data of this event was deleted, so nobody can register any more, the event team included.'
+    privacy: 'The event team cannot register anyone either while the form asks for data the privacy notice does not cover.'
 
 date:
   opens: 'Opens on {date}'
@@ -697,6 +719,9 @@ group:
 action:
   open_form_anyway: 'Formular trotzdem öffnen'
   open_form_anyway_hint: 'Nur für das Veranstaltungsteam sichtbar'
+  override_blocked:
+    purged: 'Die Anmeldedaten dieser Veranstaltung wurden gelöscht, daher kann sich niemand mehr anmelden, auch nicht über das Veranstaltungsteam.'
+    privacy: 'Auch das Veranstaltungsteam kann niemanden anmelden, solange das Formular Daten abfragt, die die Datenschutzhinweise nicht abdecken.'
 
 date:
   opens: 'Öffnet am {date}'
@@ -723,6 +748,9 @@ group:
 action:
   open_form_anyway: 'Ouvrir le formulaire quand même'
   open_form_anyway_hint: "Visible uniquement par l'équipe de l'événement"
+  override_blocked:
+    purged: "Les données d'inscription de cet événement ont été supprimées : plus personne ne peut s'inscrire, pas même via l'équipe de l'événement."
+    privacy: "L'équipe de l'événement ne peut inscrire personne non plus tant que le formulaire demande des données que la notice de confidentialité ne couvre pas."
 
 date:
   opens: 'Ouvre le {date}'
@@ -749,6 +777,9 @@ group:
 action:
   open_form_anyway: 'Otwórz formularz mimo to'
   open_form_anyway_hint: 'Widoczne tylko dla zespołu wydarzenia'
+  override_blocked:
+    purged: 'Dane zgłoszeń tego wydarzenia zostały usunięte, więc nikt nie może się już zarejestrować, również przez zespół wydarzenia.'
+    privacy: 'Zespół wydarzenia również nie może nikogo zarejestrować, dopóki formularz pyta o dane nieobjęte informacją o prywatności.'
 
 date:
   opens: 'Otwiera się {date}'
@@ -775,6 +806,9 @@ group:
 action:
   open_form_anyway: 'Přesto otevřít formulář'
   open_form_anyway_hint: 'Viditelné pouze pro tým akce'
+  override_blocked:
+    purged: 'Údaje z přihlášek této akce byly smazány, takže se už nikdo nemůže registrovat, ani prostřednictvím týmu akce.'
+    privacy: 'Ani tým akce nemůže nikoho registrovat, dokud formulář požaduje údaje, které informace o ochraně osobních údajů nepokrývají.'
 
 date:
   opens: 'Otevírá se {date}'

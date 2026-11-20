@@ -75,6 +75,8 @@ async function eventDue(
     endAt,
     timezone,
     form,
+    // Data is only deleted once registration has closed.
+    registrationClosesAt: moment(endAt).subtract(14, 'days').toDate(),
   });
   const registration = await RegistrationFactory.create({
     event: { connect: { id: event.id } },
@@ -495,51 +497,104 @@ describe('retention workflow', () => {
         .expect(204);
     });
 
-    it('should close an open registration for good, its window untouched', async () => {
-      const { event, token } = await eventDue(-1);
-      const window = {
-        registrationOpensAt: moment()
-          .subtract(1, 'day')
-          .startOf('second')
-          .toDate(),
-        registrationClosesAt: moment()
-          .add(1, 'month')
-          .startOf('second')
-          .toDate(),
-      };
-      await prisma.event.update({ where: { id: event.id }, data: window });
+    it.each([
+      ['open', { registrationClosesAt: moment().add(1, 'month').toDate() }],
+      [
+        'upcoming',
+        {
+          registrationOpensAt: moment().add(1, 'day').toDate(),
+          registrationClosesAt: moment().add(1, 'month').toDate(),
+        },
+      ],
+      [
+        'upcoming without a window',
+        {
+          registrationOpensAt: null,
+          registrationClosesAt: null,
+          startAt: moment().add(1, 'month').toDate(),
+          endAt: moment().add(2, 'months').toDate(),
+        },
+      ],
+    ] as const)(
+      'should refuse to delete while registration is %s',
+      async (_label, window) => {
+        const { event, token } = await eventDue(-1);
+        await prisma.event.update({ where: { id: event.id }, data: window });
 
+        for (const kind of ['sensitive', 'registrations']) {
+          await request()
+            .post(`/api/v1/events/${event.id}/retention/${kind}/purge`)
+            .send({ confirm: true })
+            .auth(token, { type: 'bearer' })
+            .expect(409);
+        }
+
+        const stored = await prisma.event.findUniqueOrThrow({
+          where: { id: event.id },
+        });
+        expect(stored.sensitiveDataPurgedAt).toBeNull();
+        expect(stored.registrationDataPurgedAt).toBeNull();
+        expect(
+          await prisma.registration.count({ where: { eventId: event.id } }),
+        ).toBe(1);
+      },
+    );
+
+    it('should keep registration closed for good once data was deleted', async () => {
+      const { event, token } = await eventDue(-1);
       await request()
         .post(`/api/v1/events/${event.id}/retention/sensitive/purge`)
         .send({ confirm: true })
         .auth(token, { type: 'bearer' })
         .expect(204);
+      const url = `/api/v1/events/${event.id}`;
+      const patch = (data: object) =>
+        request().patch(url).send(data).auth(token, { type: 'bearer' });
+
+      // Reopening, or making it upcoming through the start, is refused.
+      await patch({
+        registrationClosesAt: moment().add(1, 'month').toISOString(),
+      }).expect(409);
+      await patch({
+        registrationOpensAt: null,
+        registrationClosesAt: null,
+        startAt: moment().add(1, 'month').toISOString(),
+        endAt: moment().add(2, 'months').toISOString(),
+      }).expect(409);
+
+      // The window sent unchanged with every save, or closing it earlier, is not.
+      await patch({
+        registrationClosesAt: event.registrationClosesAt?.toISOString(),
+      }).expect(200);
+      await patch({
+        registrationClosesAt: moment(event.registrationClosesAt)
+          .subtract(1, 'day')
+          .toISOString(),
+      }).expect(200);
 
       const { body } = await request()
-        .get(`/api/v1/events/${event.id}`)
+        .get(url)
         .auth(token, { type: 'bearer' })
         .expect(200);
       expect(body.data.registrationStatus).toBe('closed');
-      const stored = await prisma.event.findUniqueOrThrow({
-        where: { id: event.id },
-      });
-      expect(stored.registrationClosesAt).toEqual(window.registrationClosesAt);
+    });
 
-      // The edit page sends the window along with every save: unchanged, it
-      // saves; moved, it is refused.
+    it('should refuse registrations from managers too once data was deleted', async () => {
+      const { event, token } = await eventDue(-1);
       await request()
-        .patch(`/api/v1/events/${event.id}`)
-        .send({
-          registrationOpensAt: window.registrationOpensAt.toISOString(),
-          registrationClosesAt: window.registrationClosesAt.toISOString(),
-        })
+        .post(`/api/v1/events/${event.id}/retention/registrations/purge`)
+        .send({ confirm: true })
         .auth(token, { type: 'bearer' })
-        .expect(200);
+        .expect(204);
+
       await request()
-        .patch(`/api/v1/events/${event.id}`)
-        .send({ registrationClosesAt: moment().add(2, 'months').toISOString() })
+        .post(`/api/v1/events/${event.id}/registrations`)
+        .send({ data: { first_name: 'Ada' } })
         .auth(token, { type: 'bearer' })
-        .expect(409);
+        .expect(403);
+      expect(
+        await prisma.registration.count({ where: { eventId: event.id } }),
+      ).toBe(0);
     });
 
     it('should require an explicit confirmation', async () => {

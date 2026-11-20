@@ -80,6 +80,18 @@ describe('registration consent', () => {
 
       expect(status).not.toBe(201);
     });
+
+    it('should refuse managers too: entering the data does not cover it', async () => {
+      const event = await eventWith([firstName, allergies]);
+      const user = await UserFactory.create();
+      await prisma.eventManager.create({
+        data: { eventId: event.id, userId: user.id, role: 'DIRECTOR' },
+      });
+
+      await register(event.id, { data: { first_name: 'Jane' } })
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(403);
+    });
   });
 
   describe('submission', () => {

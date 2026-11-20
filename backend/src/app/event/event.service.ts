@@ -12,8 +12,8 @@ import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import {
   calculateFreePlaces,
+  eventRegistrationStatus,
   isRetentionPurged,
-  notRetentionPurged,
   type FreePlaces,
 } from '#app/event/event.util';
 import {
@@ -96,6 +96,17 @@ export class EventService extends BaseService {
     @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
+  }
+
+  /**
+   * Locks the event row until the caller's transaction ends and reads it
+   * afresh. Edits and data deletion take it first, so each sees the other's
+   * write before deciding on the registration status.
+   */
+  async lockForUpdate(id: string): Promise<Event> {
+    await this.db.$queryRaw`SELECT id FROM events WHERE id = ${id} FOR UPDATE`;
+
+    return this.db.event.findUniqueOrThrow({ where: { id } });
   }
 
   async getEventById(id: string) {
@@ -183,13 +194,10 @@ export class EventService extends BaseService {
     now: Date,
   ): Prisma.EventWhereInput {
     const noWindow = { registrationOpensAt: null, registrationClosesAt: null };
-    // A purged event is closed for good.
-    const notPurged = notRetentionPurged;
 
     switch (status) {
       case 'upcoming':
         return {
-          ...notPurged,
           OR: [
             { ...noWindow, startAt: { gt: now } },
             {
@@ -207,15 +215,11 @@ export class EventService extends BaseService {
           OR: [
             { ...noWindow, startAt: { lte: now } },
             { registrationClosesAt: { lte: now } },
-            // Registrations are closed for good after retention purges
-            { sensitiveDataPurgedAt: { not: null } },
-            { registrationDataPurgedAt: { not: null } },
           ],
         };
       case 'open':
         return {
           AND: [
-            notPurged,
             {
               OR: [
                 { registrationOpensAt: { not: null } },
@@ -525,11 +529,9 @@ export class EventService extends BaseService {
 
   async updateEvent(event: Event, data: EventUpdateData) {
     return this.transaction(async (tx) => {
-      const before = await tx.event.findUniqueOrThrow({
-        where: { id: event.id },
-      });
+      const before = await this.lockForUpdate(event.id);
 
-      assertRegistrationWindowKept(before, data);
+      assertRegistrationStaysClosed(before, data);
 
       const updatedEvent = await tx.event.update({
         where: { id: event.id },
@@ -593,10 +595,10 @@ const withMediaFlags = <
 
 /**
  * After registration data was deleted the event never takes registrations
- * again (docs/privacy.md, 8), so its registration window is frozen: a new one
- * would only promise what the event refuses.
+ * again (docs/privacy.md, 8), so no edit — of the window or, without one, of
+ * the start — may reopen it. Closing it further stays allowed.
  */
-function assertRegistrationWindowKept(
+function assertRegistrationStaysClosed(
   before: Event,
   data: EventUpdateData,
 ): void {
@@ -604,14 +606,10 @@ function assertRegistrationWindowKept(
     return;
   }
 
-  const changed = (
-    ['registrationOpensAt', 'registrationClosesAt'] as const
-  ).some(
-    (key) =>
-      data[key] !== undefined &&
-      (data[key]?.getTime() ?? null) !== (before[key]?.getTime() ?? null),
+  const changes = Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined),
   );
-  if (changed) {
+  if (eventRegistrationStatus({ ...before, ...changes }) !== 'closed') {
     throw new ApiError(
       httpStatus.CONFLICT,
       'Registration data of this event was deleted; its registration stays closed.',

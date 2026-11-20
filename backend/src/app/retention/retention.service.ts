@@ -4,6 +4,8 @@ import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
 import { AuditService } from '#app/audit/audit.service';
 import { RegistrationService } from '#app/registration/registration.service';
+import { EventService } from '#app/event/event.service';
+import { eventRegistrationStatus } from '#app/event/event.util';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import type {
@@ -90,6 +92,7 @@ export class RetentionService extends BaseService {
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(EventService) private readonly eventService: EventService,
   ) {
     super();
   }
@@ -227,7 +230,7 @@ export class RetentionService extends BaseService {
     // Recorded first, on its own: from here on the event takes no
     // registrations, and no edit can bring sensitive answers back while the
     // registrations are cleared one by one.
-    await this.markPurged(event, ['sensitive']);
+    await this.markPurged(event.id, ['sensitive']);
     const cleared = await this.registrationService.clearSensitiveAnswers(event);
 
     await this.audit.record({
@@ -251,7 +254,7 @@ export class RetentionService extends BaseService {
   ): Promise<number> {
     return this.transaction(async () => {
       // Sensitive data is a subset: deleting all of it deletes that too.
-      await this.markPurged(event, EVENT_RETENTION_DEADLINE_KINDS);
+      await this.markPurged(event.id, EVENT_RETENTION_DEADLINE_KINDS);
       const deleted =
         await this.registrationService.deleteRegistrationsForEvent(event.id);
 
@@ -268,30 +271,42 @@ export class RetentionService extends BaseService {
   }
 
   /**
-   * Records the deletion for good. The event's registration status reads it
-   * and stays closed from then on (`eventRegistrationStatus`).
+   * Records the deletion for good, once registration has closed: the event
+   * then never reopens it (`assertRegistrationStaysClosed`). Under the event's
+   * row lock, so an edit reopening it cannot slip in between.
    */
   private async markPurged(
-    event: PurgeState & Pick<Event, 'id'>,
+    eventId: string,
     kinds: readonly EventRetentionDeadlineKind[],
   ): Promise<void> {
-    const now = new Date();
+    await this.transaction(async (tx) => {
+      const event = await this.eventService.lockForUpdate(eventId);
+      if (eventRegistrationStatus(event) !== 'closed') {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'Close the registration before deleting its data.',
+        );
+      }
 
-    await this.db.event.update({
-      where: { id: event.id },
-      data: {
-        ...(kinds.includes('sensitive')
-          ? { sensitiveDataPurgedAt: event.sensitiveDataPurgedAt ?? now }
-          : {}),
-        ...(kinds.includes('registrations')
-          ? { registrationDataPurgedAt: event.registrationDataPurgedAt ?? now }
-          : {}),
-      },
-    });
-    // A reason may name a person or a case; once the data is gone, so is it.
-    await this.db.eventRetentionState.updateMany({
-      where: { eventId: event.id, kind: { in: [...kinds] } },
-      data: { postponeReason: null },
+      const now = new Date();
+      await tx.event.update({
+        where: { id: eventId },
+        data: {
+          ...(kinds.includes('sensitive')
+            ? { sensitiveDataPurgedAt: event.sensitiveDataPurgedAt ?? now }
+            : {}),
+          ...(kinds.includes('registrations')
+            ? {
+                registrationDataPurgedAt: event.registrationDataPurgedAt ?? now,
+              }
+            : {}),
+        },
+      });
+      // A reason may name a person or a case; once the data is gone, so is it.
+      await tx.eventRetentionState.updateMany({
+        where: { eventId, kind: { in: [...kinds] } },
+        data: { postponeReason: null },
+      });
     });
   }
 

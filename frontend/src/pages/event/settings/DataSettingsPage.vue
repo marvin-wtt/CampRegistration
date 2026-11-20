@@ -85,6 +85,30 @@
         :summary="t('delete.summary')"
         danger
       >
+        <!-- Deleting needs registration closed: it never reopens afterwards. -->
+        <div
+          v-if="canDeleteData && !registrationClosed"
+          class="danger-note bg-secondary-container text-on-secondary-container rounded-lg q-mb-sm"
+          data-test="retention-close-first"
+        >
+          <q-icon
+            name="lock_clock"
+            size="20px"
+          />
+          <div class="column items-start">
+            <span>{{ t('closeFirst.message') }}</span>
+            <m-btn
+              :label="t('closeFirst.link')"
+              :to="{ name: 'management.event.settings.edit' }"
+              text
+              primary
+              no-caps
+              rounded
+              class="q-mt-xs"
+            />
+          </div>
+        </div>
+
         <!-- Deleting early is allowed but rarely meant: say what it costs. -->
         <div
           v-if="canDeleteData && earlyWarnings.length > 0"
@@ -181,6 +205,7 @@
                 />
                 <m-btn
                   :label="t(`action.delete.${row.kind}`)"
+                  :disable="!registrationClosed"
                   icon="delete_forever"
                   error
                   no-caps
@@ -343,18 +368,18 @@ const EVENT_EFFECTS = [
 // The only things that outlive the event; keep in sync like the list above.
 const EVENT_KEEPS = ['newsletter', 'audit', 'outside'] as const;
 
-/** Why deleting now would be early: registration still possible, event on. */
-const earlyWarnings = computed<('registration' | 'event')[]>(() => {
+// The server refuses deleting until then (docs/privacy.md, 8).
+const registrationClosed = computed<boolean>(
+  () => event.value?.registrationStatus === 'closed',
+);
+
+/** Why deleting now would be early: the event is still on. */
+const earlyWarnings = computed<'event'[]>(() => {
   const current = event.value;
   if (!current || current.registrationDataPurgedAt) {
     return [];
   }
-  return [
-    ...(current.registrationStatus !== 'closed'
-      ? (['registration'] as const)
-      : []),
-    ...(new Date(current.endAt) > new Date() ? (['event'] as const) : []),
-  ];
+  return new Date(current.endAt) > new Date() ? ['event'] : [];
 });
 
 interface Row {
@@ -555,7 +580,7 @@ periods:
 delete:
   preserve: 'Before deleting, keep a copy of anything you are legally required to retain, such as invoices or records for a funding body, for example by exporting it.'
   title: 'Delete registration data'
-  summary: 'Possible at any time. Sensitive data is part of the registration data.'
+  summary: 'Possible once registration has closed, before or after the deadline. Sensitive data is part of the registration data.'
   noAutomaticDeletion: 'Nothing is deleted automatically.'
 event:
   preserve: 'Export the finances and anything else you are legally required to keep, such as receipts, payouts or registration records for a funding body, before deleting the event.'
@@ -600,8 +625,10 @@ purge:
   irreversible: 'This cannot be undone.'
   sensitive: 'Delete sensitive data?'
   registrations: 'Delete all registrations?'
+closeFirst:
+  message: 'Registration is still open or scheduled. Close it first in the event settings: data can only be deleted once registration has closed, and it then stays closed for good.'
+  link: 'Open event settings'
 early:
-  registration: 'Registration is still open or scheduled. Deleting closes it immediately and for good.'
   event: 'The event has not ended yet. Data you need during it, such as health details, would be gone.'
 </i18n>
 
@@ -619,7 +646,7 @@ periods:
 delete:
   preserve: 'Sichere vor dem Löschen alles, was du gesetzlich aufbewahren musst, etwa Rechnungen oder Nachweise für Fördermittelgeber, zum Beispiel per Export.'
   title: 'Anmeldedaten löschen'
-  summary: 'Jederzeit möglich. Sensible Daten sind Teil der Anmeldedaten.'
+  summary: 'Möglich, sobald die Anmeldung geschlossen ist – vor oder nach der Frist. Sensible Daten sind Teil der Anmeldedaten.'
   noAutomaticDeletion: 'Es wird nichts automatisch gelöscht.'
 event:
   preserve: 'Exportiere vor dem Löschen die Finanzen und alles, was du gesetzlich aufbewahren musst, etwa Belege, Auszahlungen oder Anmeldenachweise für Fördermittelgeber.'
@@ -664,8 +691,10 @@ purge:
   irreversible: 'Das kann nicht rückgängig gemacht werden.'
   sensitive: 'Sensible Daten löschen?'
   registrations: 'Alle Anmeldungen löschen?'
+closeFirst:
+  message: 'Die Anmeldung ist noch offen oder geplant. Schließe sie zuerst in den Veranstaltungseinstellungen: Daten lassen sich erst nach Anmeldeschluss löschen, danach bleibt die Anmeldung dauerhaft geschlossen.'
+  link: 'Zu den Veranstaltungseinstellungen'
 early:
-  registration: 'Die Anmeldung ist noch offen oder geplant. Löschen schließt sie sofort und dauerhaft.'
   event: 'Die Veranstaltung ist noch nicht vorbei. Daten, die ihr währenddessen braucht, etwa Gesundheitsangaben, wären danach weg.'
 </i18n>
 
@@ -683,7 +712,7 @@ periods:
 delete:
   preserve: 'Avant de supprimer, garde une copie de tout ce que tu dois conserver légalement, comme des factures ou des justificatifs pour un financeur, par exemple en l’exportant.'
   title: 'Supprimer les données d’inscription'
-  summary: 'Possible à tout moment. Les données sensibles font partie des données d’inscription.'
+  summary: 'Possible une fois les inscriptions closes, avant ou après l’échéance. Les données sensibles font partie des données d’inscription.'
   noAutomaticDeletion: 'Rien n’est supprimé automatiquement.'
 event:
   preserve: 'Avant de supprimer l’événement, exporte les finances et tout ce que tu dois conserver légalement, comme les justificatifs, les versements ou les listes d’inscription pour un financeur.'
@@ -728,8 +757,10 @@ purge:
   irreversible: 'Cette action est irréversible.'
   sensitive: 'Supprimer les données sensibles ?'
   registrations: 'Supprimer toutes les inscriptions ?'
+closeFirst:
+  message: 'Les inscriptions sont encore ouvertes ou prévues. Fermez-les d’abord dans les paramètres de l’événement : les données ne peuvent être supprimées qu’une fois les inscriptions closes, qui le restent ensuite définitivement.'
+  link: 'Ouvrir les paramètres de l’événement'
 early:
-  registration: 'Les inscriptions sont encore ouvertes ou prévues. La suppression les ferme immédiatement et définitivement.'
   event: 'L’événement n’est pas encore terminé. Les données nécessaires pendant celui-ci, comme les informations de santé, disparaîtraient.'
 </i18n>
 
@@ -747,7 +778,7 @@ periods:
 delete:
   preserve: 'Przed usunięciem zachowaj kopię wszystkiego, co musisz przechowywać z mocy prawa, np. faktur lub dokumentów dla grantodawcy, na przykład eksportując je.'
   title: 'Usuń dane zgłoszeń'
-  summary: 'Możliwe w każdej chwili. Dane wrażliwe są częścią danych zgłoszeń.'
+  summary: 'Możliwe po zamknięciu zgłoszeń, przed terminem lub po nim. Dane wrażliwe są częścią danych zgłoszeń.'
   noAutomaticDeletion: 'Nic nie jest usuwane automatycznie.'
 event:
   preserve: 'Przed usunięciem wydarzenia wyeksportuj finanse i wszystko, co musisz przechowywać z mocy prawa, np. paragony, wypłaty lub listy zgłoszeń dla grantodawcy.'
@@ -792,8 +823,10 @@ purge:
   irreversible: 'Tego nie można cofnąć.'
   sensitive: 'Usunąć dane wrażliwe?'
   registrations: 'Usunąć wszystkie zgłoszenia?'
+closeFirst:
+  message: 'Zgłoszenia są jeszcze otwarte lub zaplanowane. Najpierw zamknij je w ustawieniach wydarzenia: dane można usunąć dopiero po zamknięciu zgłoszeń, które potem pozostają zamknięte na stałe.'
+  link: 'Otwórz ustawienia wydarzenia'
 early:
-  registration: 'Zgłoszenia są jeszcze otwarte lub zaplanowane. Usunięcie zamyka je natychmiast i na stałe.'
   event: 'Wydarzenie jeszcze się nie zakończyło. Dane potrzebne w jego trakcie, np. informacje o zdrowiu, zostałyby utracone.'
 </i18n>
 
@@ -811,7 +844,7 @@ periods:
 delete:
   preserve: 'Před smazáním si uložte kopii všeho, co musíte ze zákona uchovávat, například faktury nebo doklady pro poskytovatele dotace, třeba exportem.'
   title: 'Smazat údaje z přihlášek'
-  summary: 'Možné kdykoli. Citlivé údaje jsou součástí údajů z přihlášek.'
+  summary: 'Možné po uzavření přihlašování, před termínem i po něm. Citlivé údaje jsou součástí údajů z přihlášek.'
   noAutomaticDeletion: 'Nic se nemaže automaticky.'
 event:
   preserve: 'Před smazáním akce exportujte finance a vše, co musíte ze zákona uchovávat, například doklady, výplaty nebo seznamy přihlášek pro poskytovatele dotace.'
@@ -856,7 +889,9 @@ purge:
   irreversible: 'Tuto akci nelze vrátit.'
   sensitive: 'Smazat citlivé údaje?'
   registrations: 'Smazat všechny přihlášky?'
+closeFirst:
+  message: 'Přihlašování je ještě otevřené nebo naplánované. Nejprve ho uzavřete v nastavení akce: údaje lze smazat až po uzavření přihlašování, které pak zůstane uzavřené natrvalo.'
+  link: 'Otevřít nastavení akce'
 early:
-  registration: 'Přihlašování je ještě otevřené nebo naplánované. Smazání ho okamžitě a natrvalo uzavře.'
   event: 'Akce ještě neskončila. Údaje potřebné během ní, například zdravotní informace, by zmizely.'
 </i18n>

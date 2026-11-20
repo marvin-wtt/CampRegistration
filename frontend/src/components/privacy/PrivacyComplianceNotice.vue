@@ -1,6 +1,6 @@
 <template>
-  <!-- Public registration is refused while the form asks for data its privacy
-       notice does not cover (`eventPrivacyCompliant`). This tells the managers
+  <!-- Registration is refused, the event team's included, while the form asks
+       for data its privacy notice does not cover (`eventPrivacyCompliant`). This tells the managers
        why, while it still matters: registration open or about to open. -->
   <danger-card
     v-if="problems.length > 0"

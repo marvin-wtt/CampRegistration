@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import type { EventDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
@@ -120,8 +121,14 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
     return event;
   }
 
+  /** Whether all registrations of the event were deleted for good. */
+  const registrationsPurged = computed<boolean>(
+    () => !!details.data.value?.registrationDataPurgedAt,
+  );
+
   return {
     data: details.data,
+    registrationsPurged,
     isLoading: details.isLoading,
     error: details.error,
     reset: details.reset,

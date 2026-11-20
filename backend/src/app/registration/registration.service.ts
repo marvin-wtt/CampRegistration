@@ -1,6 +1,6 @@
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
-import { isRetentionPurged, notRetentionPurged } from '#app/event/event.util';
+import { notRetentionPurged } from '#app/event/event.util';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
@@ -16,8 +16,8 @@ import { BaseService } from '#core/base/BaseService';
 import {
   CUSTOM_FILE_FIELD_PREFIX,
   customFileSlots,
-  registrationColumns,
 } from '#app/registration/registration.helper';
+import { registrationColumns } from '#app/registration/registration.columns';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
@@ -121,29 +121,15 @@ export class RegistrationService extends BaseService {
    */
   async createRegistration(
     event: EventWithFreePlaces,
-    data: Pick<Registration, 'data' | 'locale' | 'group'>,
+    data: Pick<Registration, 'locale' | 'group'> & { form: RegistrationForm },
     fileField: string,
     displayedTotal?: number,
     displayedConsents?: Record<string, string>,
   ) {
-    // Also for managers, who may register outside the window: deleted data
-    // is never restored (docs/privacy.md, 8).
-    if (isRetentionPurged(event)) {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'Registration data of this event was deleted; it takes no registrations.',
-      );
-    }
-
-    // Built in the locale the data was validated in: event variables such as
-    // `{event.price}` resolve per locale, so computed values can differ.
-    // Resolved by validation: one of the event's countries, defaulted for a
-    // single-group event.
-    const { group } = data;
-
-    const form = new RegistrationForm(event, group, data.locale).load(
-      data.data,
-    );
+    // Loaded by validation, in the locale and for the group it resolved: event
+    // variables such as `{event.price}` resolve per locale and group, so
+    // computed values can differ.
+    const { form, group } = data;
 
     const formData = form.data;
     const computedData = registrationColumns(form);
@@ -219,10 +205,9 @@ export class RegistrationService extends BaseService {
 
         const registration = await transaction.registration.create({
           data: {
-            ...data,
             ...computedData,
+            locale: data.locale,
             group,
-            id: undefined, // Force new ID generation
             data: formData,
             status,
             quotedAmount,
