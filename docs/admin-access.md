@@ -116,8 +116,8 @@ Two places, for two audiences:
   newsletter owners and organization admins see who accessed their resource, when, and why, next to the changes made
   during the grant. The audit log page gets an "Administrator access" action filter.
 - **Central, for administrators.** A read-only "Administrator access" page in the administration area lists every grant:
-  administrator, resource (linked), reason, start, expiry, ended early. Filters: administrator, scope, date range,
-  active only. Administrators see each other's grants, which is the point: access is reviewed by peers, not only by the
+  administrator, resource (linked), reason, start, expiry, ended early. Filters: search (administrator or reason), scope,
+  active or ended. Administrators see each other's grants, which is the point: access is reviewed by peers, not only by the
   one who took it. Each row links to the audit entries of that resource filtered to that administrator and the grant's
   time window, which is what they changed during it.
 

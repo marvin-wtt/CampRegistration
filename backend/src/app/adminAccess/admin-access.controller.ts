@@ -4,7 +4,10 @@ import { inject, injectable } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
 import { TotpService } from '#app/totp/totp.service';
 import { AdminAccessService } from '#app/adminAccess/admin-access.service';
-import { AdminAccessGrantResource } from '#app/adminAccess/admin-access.resource';
+import {
+  AdminAccessGrantResource,
+  AdminAccessGrantReviewResource,
+} from '#app/adminAccess/admin-access.resource';
 import validator from '#app/adminAccess/admin-access.validation';
 
 @injectable()
@@ -15,6 +18,23 @@ export class AdminAccessController extends BaseController {
     @inject(TotpService) private readonly totpService: TotpService,
   ) {
     super();
+  }
+
+  async index(req: Request, res: Response) {
+    const {
+      query: { cursor, limit, ...filter },
+    } = await req.validate(validator.index);
+
+    const { grants, nextCursor, total, ...rest } =
+      await this.adminAccessService.queryGrants(filter, { cursor, limit });
+
+    res.resource(
+      AdminAccessGrantReviewResource.collection(grants).withCursor(
+        nextCursor,
+        rest.limit,
+        total,
+      ),
+    );
   }
 
   async store(req: Request, res: Response) {

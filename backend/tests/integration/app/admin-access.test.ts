@@ -148,6 +148,72 @@ describe('administrator access', () => {
     });
   });
 
+  describe('GET /api/v1/admin/access-grants', () => {
+    it("lists every administrator's grants with the resource name", async () => {
+      const event = await EventFactory.create();
+      const { user } = await createAdmin();
+      const { accessToken } = await createAdmin();
+      const grant = await AdminAccessGrantFactory.create({
+        userId: user.id,
+        scope: 'event',
+        scopeId: event.id,
+      });
+
+      const { body } = await request()
+        .get('/api/v1/admin/access-grants')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toEqual([
+        expect.objectContaining({
+          id: grant.id,
+          user: { id: user.id, name: user.name, email: user.email },
+          subjectName: event.name,
+        }),
+      ]);
+      expect(body.meta.total).toBe(1);
+    });
+
+    it('filters by active and scope', async () => {
+      const event = await EventFactory.create();
+      const organization = await OrganizationFactory.create();
+      const { user, accessToken } = await createAdmin();
+      const active = await AdminAccessGrantFactory.create({
+        userId: user.id,
+        scope: 'event',
+        scopeId: event.id,
+      });
+      await AdminAccessGrantFactory.create({
+        userId: user.id,
+        scope: 'event',
+        scopeId: event.id,
+        endedAt: new Date(),
+      });
+      await AdminAccessGrantFactory.create({
+        userId: user.id,
+        scope: 'organization',
+        scopeId: organization.id,
+      });
+
+      const { body } = await request()
+        .get('/api/v1/admin/access-grants')
+        .query({ active: 'true', scope: 'event' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.map((g: { id: string }) => g.id)).toEqual([active.id]);
+    });
+
+    it('is for administrators only', async () => {
+      const user = await UserFactory.create();
+
+      await request()
+        .get('/api/v1/admin/access-grants')
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(403);
+    });
+  });
+
   describe('POST /api/v1/admin/access-grants', () => {
     it('grants access with a reason and a current code, and audits it', async () => {
       const event = await EventFactory.create();

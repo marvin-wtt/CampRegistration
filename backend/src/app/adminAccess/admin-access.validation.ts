@@ -1,6 +1,22 @@
 import { z, type ZodType } from 'zod';
-import type { AdminAccessGrantCreateData } from '@camp-registration/common/entities';
+import type {
+  AdminAccessGrantCreateData,
+  AdminAccessGrantQuery,
+} from '@camp-registration/common/entities';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
+
+const index = z.object({
+  query: z
+    .object({
+      scope: z.enum(PERMISSION_SCOPES),
+      userId: z.ulid(),
+      active: z.stringbool(),
+      search: z.string().trim().min(1),
+      limit: z.coerce.number().int().positive().max(100),
+      cursor: z.ulid(),
+    })
+    .partial() satisfies ZodType<AdminAccessGrantQuery>,
+});
 
 const store = z.object({
   body: z.object({
@@ -18,4 +34,4 @@ const destroy = z.object({
   }),
 });
 
-export default { store, destroy };
+export default { index, store, destroy };

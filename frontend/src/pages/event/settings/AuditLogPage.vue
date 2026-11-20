@@ -397,12 +397,23 @@ const { data: event } = storeToRefs(useEventDetailsStore());
 const eventId = computed(() => String(route.params.eventId));
 const timeZone = computed(() => event.value?.timezone);
 
+// The administration's access review links here with `actorId`, `from` and `to`.
+const queryString = (key: string) => {
+  const value = route.query[key];
+  return typeof value === 'string' && value ? value : null;
+};
+const queryFrom = queryString('from');
+
 const selectedEntityTypes = ref<AuditEntityType[]>([]);
-const selectedActorIds = ref<string[]>([]);
+const selectedActorIds = ref<string[]>(
+  queryString('actorId')?.split(',') ?? [],
+);
 // Public/self-service actions (no actor) tend to dominate the trail — default
 // to hiding them so manager/director activity isn't buried underneath.
 const showSystemEvents = ref(false);
-const dateRange = ref<DateRange | null>(null);
+const dateRange = ref<DateRange | null>(
+  queryFrom ? { from: queryFrom, to: queryString('to') ?? queryFrom } : null,
+);
 // Narrows the log to one record's full history, overriding the other filters.
 const historyEntityId = ref<string | null>(null);
 

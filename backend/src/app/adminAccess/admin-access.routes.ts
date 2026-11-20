@@ -16,6 +16,9 @@ export class AdminAccessRouter extends ModuleRouter {
 
     this.router.use(auth());
 
+    // Metadata about access, not the resources' data: needs no grant.
+    this.router.get('/', guard(), controller(adminAccessController, 'index'));
+
     // Takes a TOTP code, so it shares the auth routes' attempt limit.
     this.router.post(
       '/',

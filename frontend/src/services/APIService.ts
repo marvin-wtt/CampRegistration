@@ -25,6 +25,7 @@ import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
 import { useChoreService } from '@/services/ChoreService';
 import { useAdminService } from '@/services/AdminService';
+import { useAdminAccessService } from '@/services/AdminAccessService';
 import { useOrganizationService } from '@/services/OrganizationService';
 import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
 import { useTranslationService } from '@/services/TranslationService';
@@ -35,6 +36,7 @@ export function useAPIService() {
   return {
     ...useAuthService(),
     ...useAdminService(),
+    ...useAdminAccessService(),
     ...useProfileService(),
     ...useUserService(),
     ...useOrganizationService(),

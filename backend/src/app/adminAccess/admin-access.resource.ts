@@ -1,5 +1,9 @@
-import type { AdminAccessGrant as AdminAccessGrantData } from '@camp-registration/common/entities';
-import type { AdminAccessGrant } from '#generated/prisma/client';
+import type {
+  AdminAccessGrant as AdminAccessGrantData,
+  AdminAccessGrantReview,
+  Translatable,
+} from '@camp-registration/common/entities';
+import type { AdminAccessGrant, Prisma, User } from '#generated/prisma/client';
 import { JsonResource } from '#core/resource/JsonResource';
 
 export class AdminAccessGrantResource extends JsonResource<
@@ -15,6 +19,24 @@ export class AdminAccessGrantResource extends JsonResource<
       expiresAt: this.data.expiresAt.toISOString(),
       endedAt: this.data.endedAt?.toISOString() ?? null,
       createdAt: this.data.createdAt.toISOString(),
+    };
+  }
+}
+
+type ReviewInput = AdminAccessGrant & {
+  user: Pick<User, 'id' | 'name' | 'email'>;
+  subjectName: Prisma.JsonValue;
+};
+
+export class AdminAccessGrantReviewResource extends JsonResource<
+  ReviewInput,
+  AdminAccessGrantReview
+> {
+  transform(): AdminAccessGrantReview {
+    return {
+      ...new AdminAccessGrantResource(this.data).transform(),
+      user: this.data.user,
+      subjectName: this.data.subjectName as Translatable | null,
     };
   }
 }
