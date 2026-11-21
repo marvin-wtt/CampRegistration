@@ -175,17 +175,6 @@ export default {
         granted: 'Granted',
         ended: 'Ended early',
       },
-      fields: {
-        scope: 'Scope',
-        expiresAt: 'Expires at',
-      },
-      values: {
-        scope: {
-          event: 'Event',
-          newsletter: 'Newsletter',
-          organization: 'Organization',
-        },
-      },
     },
   },
 };

@@ -175,17 +175,6 @@ export default {
         granted: 'Gewährt',
         ended: 'Vorzeitig beendet',
       },
-      fields: {
-        scope: 'Bereich',
-        expiresAt: 'Läuft ab am',
-      },
-      values: {
-        scope: {
-          event: 'Veranstaltung',
-          newsletter: 'Newsletter',
-          organization: 'Organisation',
-        },
-      },
     },
   },
 };

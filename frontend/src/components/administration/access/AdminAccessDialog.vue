@@ -37,11 +37,6 @@
             data-test="admin-access-reason"
           />
 
-          <two-factor-code-input
-            v-model="otp"
-            data-test="admin-access-otp"
-          />
-
           <q-banner
             v-if="error"
             dense
@@ -82,7 +77,6 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ADMIN_ACCESS_GRANT_MINUTES } from '@camp-registration/common/entities';
 import type { PermissionScope } from '@camp-registration/common/permissions';
-import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
 import { useProfileStore } from '@/stores/profile-store';
 import { useErrorExtractor } from '@/composables/errorText';
 
@@ -100,7 +94,6 @@ const profileStore = useProfileStore();
 const { extractErrorText } = useErrorExtractor();
 
 const reason = ref('');
-const otp = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
 
@@ -112,12 +105,10 @@ async function onSubmit() {
       scope,
       scopeId,
       reason: reason.value.trim(),
-      otp: otp.value,
     });
     onDialogOK();
   } catch (err) {
     error.value = extractErrorText(err);
-    otp.value = '';
   } finally {
     loading.value = false;
   }

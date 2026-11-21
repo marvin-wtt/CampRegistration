@@ -178,12 +178,8 @@
     <q-page-container
       :class="{ 'q-page-container--floating-controls': showFloatingControls }"
     >
-      <admin-access-bar
-        v-if="adminAccess"
-        :subject="adminAccess"
-      />
       <admin-access-required
-        v-if="adminAccess && adminAccessRequired"
+        v-if="adminAccess && accessRequired"
         :subject="adminAccess"
       />
       <router-view
@@ -208,7 +204,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useSlots } from 'vue';
+import { computed, ref, useSlots, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from '@/components/NavigationItem.vue';
 import ProfileMenu from '@/components/common/ProfileMenu.vue';
@@ -220,7 +216,6 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import NavigationItemSkeleton from '@/components/NavigationItemSkeleton.vue';
 import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.vue';
 import AdminAccessButton from '@/components/administration/access/AdminAccessButton.vue';
-import AdminAccessBar from '@/components/administration/access/AdminAccessBar.vue';
 import AdminAccessRequired from '@/components/administration/access/AdminAccessRequired.vue';
 import {
   type AdminAccessSubject,
@@ -248,10 +243,30 @@ const {
   loading?: boolean;
 }>();
 
-const { required: adminAccessRequired, grant: adminGrant } = useAdminAccess(
+const { required: accessRequired, grant: adminGrant } = useAdminAccess(
   () => adminAccess,
 );
 const accessKey = computed<string>(() => adminGrant.value?.id ?? 'own');
+
+const ADMINISTRATION_ROUTES: Record<AdminAccessSubject['scope'], string> = {
+  event: 'administration.events',
+  newsletter: 'administration.newsletters',
+  organization: 'administration.organizations',
+};
+
+// Without an own role there is nothing left to show once access ends, so go
+// back to where administrators reach the resource from.
+watch(adminGrant, (current, previous) => {
+  const ended =
+    previous !== undefined &&
+    current === undefined &&
+    previous.scope === adminAccess?.scope &&
+    previous.scopeId === adminAccess.id;
+
+  if (ended && accessRequired.value) {
+    void router.replace({ name: ADMINISTRATION_ROUTES[previous.scope] });
+  }
+});
 
 useMeta(() => {
   return {

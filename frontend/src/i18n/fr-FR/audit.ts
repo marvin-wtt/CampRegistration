@@ -176,17 +176,6 @@ export default {
         granted: 'Accordé',
         ended: 'Terminé plus tôt',
       },
-      fields: {
-        scope: 'Portée',
-        expiresAt: 'Expire le',
-      },
-      values: {
-        scope: {
-          event: 'Événement',
-          newsletter: 'Newsletter',
-          organization: 'Organisation',
-        },
-      },
     },
   },
 };

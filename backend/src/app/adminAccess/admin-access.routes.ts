@@ -3,7 +3,6 @@ import { guard } from '#core/guard';
 import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
-import { authLimiter } from '#core/rate-limit/limiters';
 import { AdminAccessController } from '#app/adminAccess/admin-access.controller';
 
 export class AdminAccessRouter extends ModuleRouter {
@@ -19,13 +18,7 @@ export class AdminAccessRouter extends ModuleRouter {
     // Metadata about access, not the resources' data: needs no grant.
     this.router.get('/', guard(), controller(adminAccessController, 'index'));
 
-    // Takes a TOTP code, so it shares the auth routes' attempt limit.
-    this.router.post(
-      '/',
-      authLimiter,
-      guard(),
-      controller(adminAccessController, 'store'),
-    );
+    this.router.post('/', guard(), controller(adminAccessController, 'store'));
     this.router.delete(
       '/:grantId',
       guard(),

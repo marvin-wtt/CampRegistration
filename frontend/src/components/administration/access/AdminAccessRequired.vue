@@ -47,7 +47,7 @@ title:
   event: "You don't manage this event"
   newsletter: "You don't manage this newsletter"
   organization: "You aren't a member of this organization"
-message: 'As an administrator, you can request access for a limited time. You need a reason and your two-factor code.'
+message: 'As an administrator, you can request access for a limited time. You need to give a reason.'
 request: 'Request administrator access'
 </i18n>
 
@@ -56,7 +56,7 @@ title:
   event: 'Du verwaltest diese Veranstaltung nicht'
   newsletter: 'Du verwaltest diesen Newsletter nicht'
   organization: 'Du bist kein Mitglied dieser Organisation'
-message: 'Als Administrator kannst du zeitlich begrenzten Zugriff anfordern. Du brauchst dafür einen Grund und deinen Zwei-Faktor-Code.'
+message: 'Als Administrator kannst du zeitlich begrenzten Zugriff anfordern. Du musst dafür einen Grund angeben.'
 request: 'Administratorzugriff anfordern'
 </i18n>
 
@@ -65,7 +65,7 @@ title:
   event: 'Vous ne gérez pas cet événement'
   newsletter: 'Vous ne gérez pas cette newsletter'
   organization: "Vous n'êtes pas membre de cette organisation"
-message: "En tant qu'administrateur, vous pouvez demander un accès limité dans le temps. Il vous faut un motif et votre code à deux facteurs."
+message: "En tant qu'administrateur, vous pouvez demander un accès limité dans le temps. Il vous faut indiquer un motif."
 request: "Demander l'accès administrateur"
 </i18n>
 
@@ -74,7 +74,7 @@ title:
   event: 'Nie zarządzasz tym wydarzeniem'
   newsletter: 'Nie zarządzasz tym newsletterem'
   organization: 'Nie jesteś członkiem tej organizacji'
-message: 'Jako administrator możesz poprosić o dostęp na ograniczony czas. Potrzebujesz powodu i kodu uwierzytelniania dwuskładnikowego.'
+message: 'Jako administrator możesz poprosić o dostęp na ograniczony czas. Musisz podać powód.'
 request: 'Poproś o dostęp administratora'
 </i18n>
 
@@ -83,6 +83,6 @@ title:
   event: 'Tuto akci nespravujete'
   newsletter: 'Tento newsletter nespravujete'
   organization: 'Nejste členem této organizace'
-message: 'Jako administrátor můžete požádat o časově omezený přístup. Potřebujete důvod a svůj dvoufázový kód.'
+message: 'Jako administrátor můžete požádat o časově omezený přístup. Musíte uvést důvod.'
 request: 'Požádat o přístup administrátora'
 </i18n>

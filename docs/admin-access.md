@@ -1,6 +1,6 @@
 # Administrator Access — Design & Plan
 
-**Status:** planned, not implemented.
+**Status:** implemented.
 
 **A system administrator acts on someone else's event, newsletter or organization only through an explicit, logged,
 time-limited grant.** Their own manager or member roles keep working as for any user; the administrator role only
@@ -77,8 +77,8 @@ model AdminAccessGrant {
 }
 ```
 
-- `POST /admin/access-grants` `{ scope, scopeId, reason, otp }`. Requires the administrator role with 2FA and a current
-  TOTP code (step-up). Grants 60 minutes. Fails if the subject doesn't exist.
+- `POST /admin/access-grants` `{ scope, scopeId, reason }`.
+  Grants 60 minutes. Fails if the subject doesn't exist.
 - `DELETE /admin/access-grants/:id` ends a grant early (`endedAt`).
 - Active grants are part of the profile response, like manager roles, so the frontend needs no extra request.
 - A scheduler job prunes expired grants after the audit retention window; the audit entry is the durable record.
@@ -144,14 +144,15 @@ to a director with full rights).
 
 - **Desktop:** a shield icon button in the rail footer, directly above the profile menu.
 - **Mobile:** a shield icon button in the top bar, directly left of the profile menu.
-- **Inactive:** outlined shield. Tapping opens the request dialog: reason (required) and TOTP code.
-- **Active:** filled shield in an MD3 error/tertiary container role, plus a bar across the top of the page container on
-  every subpage: `Administrator access · 42 min left · [End]`. Tapping the shield also offers "End access".
+- **Inactive:** outlined shield. Tapping opens the request dialog: reason (required).
+- **Active:** filled shield in an MD3 error container role. Tapping it shows the expiry time and offers "End access".
 - **No role at all:** instead of a 403 page, the resource shows "You don't manage this event" with the same request
   button.
+- **Access ends** (ended early or expired): without an own role the administrator is sent to the administration list of
+  that resource type; with one they stay, limited to what their role allows.
 
-A badge on the profile menu shows the count of active grants; the menu lists each with a link and "End". It only shows
-status; access is requested inside the resource.
+A badge on the workspace switcher shows the count of active grants; its panel lists each by reason, with a link and
+"End". It only shows status; access is requested inside the resource.
 
 The administration pages (events, newsletters, organizations) act on resources too: before unpublishing or deleting,
 they open the same request dialog unless the administrator already holds a grant or the full role there.
@@ -182,8 +183,8 @@ common.
    entries, realtime.
 3. **Non-guard admin checks** — review and adapt the list above.
 4. **Review** — `GET /admin/access-grants`, the administration page, the audit log action filter.
-5. **Frontend** — `scopePermissions`, access control component in `GeneralLayout`, request dialog, active bar, no-role
-   page, header indicator; strings in all 5 locales.
+5. **Frontend** — `scopePermissions`, access control component in `GeneralLayout`, request dialog, no-role page,
+   workspace switcher section; strings in all 5 locales.
 
 ## Tests
 
@@ -192,7 +193,7 @@ common.
 - Administrator who is a viewer: viewer requests pass without a grant; edit passes only with one.
 - Expired and ended grants are refused; a grant for one event doesn't open another.
 - An organization grant opens no event or newsletter of that organization.
-- Granting without a valid TOTP code fails; a granted request writes `admin_access_granted`.
+- A granted request writes `admin_access_granted`.
 - SSE: an administrator without a grant receives only what their own role allows.
 
 - The review listing is admin-only, filters correctly, and has no write or delete route.

@@ -35,7 +35,7 @@ function ownRoleOf(
   }
 }
 
-/** Asks for a reason and a code; resolves `true` once access is granted. */
+/** Asks for a reason; resolves `true` once access is granted. */
 export function useAdminAccessRequest() {
   const quasar = useQuasar();
   const profileStore = useProfileStore();

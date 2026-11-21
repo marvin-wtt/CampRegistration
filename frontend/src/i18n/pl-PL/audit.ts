@@ -176,17 +176,6 @@ export default {
         granted: 'Przyznano',
         ended: 'Zakończono wcześniej',
       },
-      fields: {
-        scope: 'Zakres',
-        expiresAt: 'Wygasa',
-      },
-      values: {
-        scope: {
-          event: 'Wydarzenie',
-          newsletter: 'Newsletter',
-          organization: 'Organizacja',
-        },
-      },
     },
   },
 };

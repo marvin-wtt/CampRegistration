@@ -19,7 +19,6 @@ export interface AdminAccessGrantCreateData {
   scope: PermissionScope;
   scopeId: string;
   reason: string;
-  otp: string;
 }
 
 /** How long a grant lasts. */

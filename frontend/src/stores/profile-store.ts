@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, readonly, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useAPIService } from '@/services/APIService';
 import type {
   AdminAccessGrant,
@@ -110,7 +110,6 @@ export const useProfileStore = defineStore('profile', () => {
     administratorNeedsTwoFactor,
     adminAccess,
     activeAdminAccess,
-    now: readonly(now),
     requestAdminAccess,
     endAdminAccess,
     error: profile.error,

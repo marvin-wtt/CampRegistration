@@ -102,7 +102,7 @@ legal: 'Legal Content'
 <i18n lang="yaml" locale="de">
 title: 'Verwaltung'
 
-access: 'Administratorzugriff'
+access: 'Adminzugriff'
 organizations: 'Organisationen'
 events: 'Veranstaltungen'
 newsletters: 'Newsletter'

@@ -88,7 +88,8 @@ const { required: adminAccessRequired, grant: adminGrant } =
 watch(
   () => adminGrant.value?.id,
   () => {
-    if (route.params.eventId) {
+    // Without an own role the layout navigates away instead.
+    if (route.params.eventId && !adminAccessRequired.value) {
       void eventDetailStore.reload();
       realtimeStore.reopen();
     }
@@ -99,7 +100,9 @@ watch(
 // workspace switcher never lands here. Until the profile loads the page decides.
 const routeAllowed = computed<boolean>(
   () =>
-    profileStore.user === undefined || canAccess(route.meta.eventPermission),
+    profileStore.user === undefined ||
+    canAccess(route.meta.eventPermission) ||
+    adminAccessRequired.value,
 );
 
 watch(

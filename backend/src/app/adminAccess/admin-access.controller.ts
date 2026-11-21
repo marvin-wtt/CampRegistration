@@ -2,7 +2,6 @@ import type { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
-import { TotpService } from '#app/totp/totp.service';
 import { AdminAccessService } from '#app/adminAccess/admin-access.service';
 import {
   AdminAccessGrantResource,
@@ -15,7 +14,6 @@ export class AdminAccessController extends BaseController {
   constructor(
     @inject(AdminAccessService)
     private readonly adminAccessService: AdminAccessService,
-    @inject(TotpService) private readonly totpService: TotpService,
   ) {
     super();
   }
@@ -39,12 +37,10 @@ export class AdminAccessController extends BaseController {
 
   async store(req: Request, res: Response) {
     const {
-      body: { otp, ...input },
+      body: { ...input },
     } = await req.validate(validator.store);
     const userId = req.authUserId();
 
-    // Confirmed in person, so a stolen session alone opens nothing.
-    await this.totpService.verifyTwoFactor(userId, otp);
     const grant = await this.adminAccessService.grant(userId, input);
 
     res

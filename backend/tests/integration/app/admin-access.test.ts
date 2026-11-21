@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import * as OTPAuth from 'otpauth';
 import {
-  ADMIN_TOTP_SECRET,
   AdminAccessGrantFactory,
   EventFactory,
   EventManagerFactory,
@@ -12,13 +10,6 @@ import {
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
-
-const currentCode = () =>
-  new OTPAuth.TOTP({
-    secret: OTPAuth.Secret.fromBase32(ADMIN_TOTP_SECRET),
-    digits: 6,
-    period: 30,
-  }).generate();
 
 const createAdmin = async () => {
   const user = await UserFactory.create({ role: 'ADMIN' });
@@ -215,7 +206,7 @@ describe('administrator access', () => {
   });
 
   describe('POST /api/v1/admin/access-grants', () => {
-    it('grants access with a reason and a current code, and audits it', async () => {
+    it('grants access with a reason and audits it', async () => {
       const event = await EventFactory.create();
       const { user, accessToken } = await createAdmin();
 
@@ -225,7 +216,6 @@ describe('administrator access', () => {
           scope: 'event',
           scopeId: event.id,
           reason: 'Support ticket 42',
-          otp: currentCode(),
         })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
@@ -254,24 +244,6 @@ describe('administrator access', () => {
         .expect(200);
     });
 
-    it('refuses a wrong code', async () => {
-      const event = await EventFactory.create();
-      const { accessToken } = await createAdmin();
-
-      await request()
-        .post('/api/v1/admin/access-grants')
-        .send({
-          scope: 'event',
-          scopeId: event.id,
-          reason: 'Support ticket 42',
-          otp: '000000',
-        })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
-
-      expect(await prisma.adminAccessGrant.count()).toBe(0);
-    });
-
     it('refuses a missing subject', async () => {
       const newsletter = await NewsletterFactory.create();
       await prisma.newsletter.delete({ where: { id: newsletter.id } });
@@ -283,7 +255,6 @@ describe('administrator access', () => {
           scope: 'newsletter',
           scopeId: newsletter.id,
           reason: 'Support ticket 42',
-          otp: currentCode(),
         })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -304,7 +275,6 @@ describe('administrator access', () => {
           scope: 'event',
           scopeId: event.id,
           reason: 'Support ticket 42',
-          otp: currentCode(),
         })
         .auth(accessToken, { type: 'bearer' })
         .expect(409);
@@ -320,7 +290,6 @@ describe('administrator access', () => {
           scope: 'event',
           scopeId: event.id,
           reason: 'Support ticket 42',
-          otp: '123456',
         })
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(403);

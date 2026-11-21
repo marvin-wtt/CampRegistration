@@ -348,7 +348,7 @@
 
 <script setup lang="ts">
 import FilterChip from '@/components/common/FilterChip.vue';
-import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { copyToClipboard, useQuasar, type QVirtualScroll } from 'quasar';
@@ -364,6 +364,7 @@ import {
 import { zonedInstant } from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
 import { useServerList } from '@/composables/serverList';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import { useAuditLabels } from '@/composables/audit/auditLabels';
 import { useAuditTimeline } from '@/composables/audit/auditTimeline';
 import {
@@ -397,25 +398,45 @@ const { data: event } = storeToRefs(useEventDetailsStore());
 const eventId = computed(() => String(route.params.eventId));
 const timeZone = computed(() => event.value?.timezone);
 
+// The filters live in the URL, so a filtered log can be shared or reloaded.
 // The administration's access review links here with `actorId`, `from` and `to`.
-const queryString = (key: string) => {
-  const value = route.query[key];
-  return typeof value === 'string' && value ? value : null;
-};
+const { getStringQueryParam, getBooleanQueryParam, setQueryParams } =
+  useRouteQueryParams();
+const queryString = (key: string) => getStringQueryParam(key) || null;
+const queryList = (key: string) => queryString(key)?.split(',') ?? [];
 const queryFrom = queryString('from');
 
-const selectedEntityTypes = ref<AuditEntityType[]>([]);
-const selectedActorIds = ref<string[]>(
-  queryString('actorId')?.split(',') ?? [],
+const selectedEntityTypes = ref<AuditEntityType[]>(
+  AUDIT_ENTITY_TYPES.filter((type) => queryList('type').includes(type)),
 );
+const selectedActorIds = ref<string[]>(queryList('actorId'));
 // Public/self-service actions (no actor) tend to dominate the trail — default
 // to hiding them so manager/director activity isn't buried underneath.
-const showSystemEvents = ref(false);
+const showSystemEvents = ref(getBooleanQueryParam('system') ?? false);
 const dateRange = ref<DateRange | null>(
   queryFrom ? { from: queryFrom, to: queryString('to') ?? queryFrom } : null,
 );
 // Narrows the log to one record's full history, overriding the other filters.
-const historyEntityId = ref<string | null>(null);
+const historyEntityId = ref<string | null>(queryString('history'));
+
+watch(
+  [
+    selectedEntityTypes,
+    selectedActorIds,
+    showSystemEvents,
+    dateRange,
+    historyEntityId,
+  ],
+  () =>
+    setQueryParams({
+      type: selectedEntityTypes.value.join(','),
+      actorId: selectedActorIds.value.join(','),
+      system: showSystemEvents.value || null,
+      from: dateRange.value?.from,
+      to: dateRange.value?.to,
+      history: historyEntityId.value,
+    }),
+);
 
 const filtered = computed(
   () =>

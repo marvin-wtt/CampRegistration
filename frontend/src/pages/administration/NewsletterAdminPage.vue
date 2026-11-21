@@ -206,15 +206,19 @@ function showDeleteDialog(newsletter: Newsletter) {
         value: newsletter.name,
       },
     })
-    .onOk(async () => {
-      const subject = { scope: 'newsletter', id: newsletter.id } as const;
-      if (!(await ensureAdminAccess(subject))) {
-        return;
-      }
-      void run('delete', () => api.deleteNewsletter(newsletter.id), {
-        feedback: 'progress',
-      }).then(() => reload());
+    .onOk(() => {
+      void deleteNewsletter(newsletter.id);
     });
+}
+
+async function deleteNewsletter(id: string) {
+  if (!(await ensureAdminAccess({ scope: 'newsletter', id }))) {
+    return;
+  }
+  await run('delete', () => api.deleteNewsletter(id), {
+    feedback: 'progress',
+  });
+  reload();
 }
 </script>
 
