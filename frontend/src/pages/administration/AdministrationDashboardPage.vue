@@ -258,16 +258,6 @@ const attention = computed<AttentionItem[]>(() => {
     });
   }
 
-  if (data.users.locked > 0) {
-    items.push({
-      key: 'locked',
-      icon: 'lock',
-      color: 'negative',
-      label: t('attention.locked', { count: data.users.locked }),
-      to: { name: 'administration.users', query: { status: 'locked' } },
-    });
-  }
-
   const legalMissing = data.legal.total - data.legal.configured;
   if (legalMissing > 0) {
     items.push({
@@ -358,7 +348,6 @@ attention:
   title: 'Needs attention'
   failedJobs: '{count} failed jobs'
   unverified: '{count} unverified users'
-  locked: '{count} locked users'
   organizationsPending: '{count} organizations awaiting review'
   legalMissing: '{count} legal documents missing'
 
@@ -406,7 +395,6 @@ attention:
   title: 'Erfordert Aufmerksamkeit'
   failedJobs: '{count} fehlgeschlagene Jobs'
   unverified: '{count} unbestätigte Benutzer'
-  locked: '{count} gesperrte Benutzer'
   organizationsPending: '{count} Organisationen warten auf Prüfung'
   legalMissing: '{count} fehlende rechtliche Inhalte'
 
@@ -454,7 +442,6 @@ attention:
   title: 'Nécessite une attention'
   failedJobs: '{count} tâches échouées'
   unverified: '{count} utilisateurs non vérifiés'
-  locked: '{count} utilisateurs verrouillés'
   organizationsPending: '{count} organisations en attente de contrôle'
   legalMissing: '{count} documents légaux manquants'
 
@@ -502,7 +489,6 @@ attention:
   title: 'Wymaga uwagi'
   failedJobs: '{count} nieudanych zadań'
   unverified: '{count} niezweryfikowanych użytkowników'
-  locked: '{count} zablokowanych użytkowników'
   organizationsPending: '{count} organizacji oczekuje na sprawdzenie'
   legalMissing: '{count} brakujących dokumentów prawnych'
 
@@ -550,7 +536,6 @@ attention:
   title: 'Vyžaduje pozornost'
   failedJobs: '{count} neúspěšných úloh'
   unverified: '{count} neověřených uživatelů'
-  locked: '{count} zamčených uživatelů'
   organizationsPending: '{count} organizací čeká na kontrolu'
   legalMissing: '{count} chybějících právních dokumentů'
 

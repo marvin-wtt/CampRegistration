@@ -160,13 +160,12 @@ export class UserService extends BaseService {
   }
 
   async getOverviewCounts() {
-    const [total, unverified, locked] = await this.prisma.$transaction([
+    const [total, unverified] = await this.prisma.$transaction([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { emailVerified: false } }),
-      this.prisma.user.count({ where: { locked: true } }),
     ]);
 
-    return { total, unverified, locked };
+    return { total, unverified };
   }
 
   async getProfileUserById(id: string): Promise<ProfileUser> {
