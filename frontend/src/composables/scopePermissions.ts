@@ -72,19 +72,26 @@ export function createScopePermissions<S extends PermissionScope>(
   }
 
   /** Undefined means "not gated" — used by the declarative navigation items. */
-  function canAccess(requirement?: PermissionRequirement<S>): boolean {
+  function canAccessFor(
+    subjectId: string | undefined,
+    requirement?: PermissionRequirement<S>,
+  ): boolean {
     if (requirement === undefined) {
       return true;
     }
 
     if (typeof requirement === 'string') {
-      return can(requirement);
+      return canFor(subjectId, requirement);
     }
 
     return 'any' in requirement
-      ? canAny(...requirement.any)
-      : can(...requirement.all);
+      ? requirement.any.some((value) => canFor(subjectId, value))
+      : canFor(subjectId, ...requirement.all);
   }
 
-  return { can, canAny, canFor, canOn, cannot, canAccess };
+  function canAccess(requirement?: PermissionRequirement<S>): boolean {
+    return canAccessFor(options.currentSubjectId(), requirement);
+  }
+
+  return { can, canAny, canFor, canOn, cannot, canAccess, canAccessFor };
 }
