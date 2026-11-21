@@ -90,6 +90,7 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     themes: data.themes ?? expect.anything(),
     // Written only by the retention workflow, never on create or update.
     sensitiveDataPurgedAt: null,
+    sensitiveDataClearedAt: null,
     registrationDataPurgedAt: null,
     archivedAt: null,
     updatedAt: expect.anything(),

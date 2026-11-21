@@ -69,7 +69,7 @@ export class RetentionController extends BaseController {
 
   /** Who may postpone and delete, as the guards decide it, admins included. */
   private async canAct(req: Request, eventId: string): Promise<boolean> {
-    if (admin(req) === true) {
+    if (admin(req)) {
       return true;
     }
     const userId = req.authUserId();

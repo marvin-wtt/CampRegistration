@@ -277,13 +277,16 @@ function consentGiven(
     return true;
   }
 
+  // A consent with a copy in scope was decided above, declined or not.
   const byName = new Map<string, Question[]>();
-  for (const consent of covering.filter((consent) => !inScope(consent))) {
+  for (const consent of covering) {
     const name = consent.getValueName();
     byName.set(name, [...(byName.get(name) ?? []), consent]);
   }
-  return [...byName.values()].some((copies) =>
-    copies.every((consent) => consent.value === true),
+  return [...byName.values()].some(
+    (copies) =>
+      !copies.some(inScope) &&
+      copies.every((consent) => consent.value === true),
   );
 }
 

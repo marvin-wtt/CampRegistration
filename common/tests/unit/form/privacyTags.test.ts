@@ -275,7 +275,7 @@ describe('unconsentedQuestions', () => {
     expect(names(model, consentBased)).toEqual(['allergies']);
   });
 
-  it('counts a consent asked per entry only when given in every entry', () => {
+  it('counts a consent asked per entry for the answers in its own entry', () => {
     const model = new SurveyModel({
       elements: [
         {
@@ -290,6 +290,48 @@ describe('unconsentedQuestions', () => {
         { allergies: 'Nuts', consent_health: true },
         { consent_health: false },
       ],
+    };
+
+    expect(names(model, consentBased)).toEqual([]);
+  });
+
+  it('reports an entry whose own consent was declined', () => {
+    const model = new SurveyModel({
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'children',
+          templateElements: [allergies, healthConsent],
+        },
+      ],
+    });
+    model.data = {
+      children: [
+        { allergies: 'Nuts', consent_health: true },
+        { allergies: 'Milk', consent_health: false },
+      ],
+    };
+
+    const missing = unconsentedQuestions(model, consentBased);
+    expect(missing.map((question) => question.value as unknown)).toEqual([
+      'Milk',
+    ]);
+  });
+
+  it('counts per-entry consents for a top-level answer only when all agree', () => {
+    const model = new SurveyModel({
+      elements: [
+        allergies,
+        {
+          type: 'paneldynamic',
+          name: 'children',
+          templateElements: [healthConsent],
+        },
+      ],
+    });
+    model.data = {
+      allergies: 'Nuts',
+      children: [{ consent_health: true }, { consent_health: false }],
     };
 
     expect(names(model, consentBased)).toEqual(['allergies']);

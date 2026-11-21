@@ -460,7 +460,7 @@ describe('retention workflow', () => {
         .patch(url)
         .send({ data: { first_name: 'Ada', allergies: 'Peanuts' } })
         .auth(token, { type: 'bearer' })
-        .expect(400);
+        .expect(409);
 
       await request()
         .patch(url)
