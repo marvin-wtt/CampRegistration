@@ -1,38 +1,34 @@
 export default {
   email: {
     resetPassword: {
-      subject: 'Reset hasła',
-      preview: 'Zresetuj teraz hasło, aby odzyskać dostęp.',
+      subject: 'Zresetuj hasło',
+      preview: 'Ustaw nowe hasło, aby odzyskać dostęp do konta.',
       text: {
-        title: 'Dzień dobry,',
+        title: 'Zresetuj hasło',
         information:
-          'Zapomniałeś(-aś) hasła? Nic nie szkodzi. Tutaj możesz ustawić nowe.',
-        button: 'Zresetuj hasło',
+          'Nie pamiętasz hasła? Nic nie szkodzi. Ustaw nowe za pomocą przycisku poniżej.',
+        button: 'Ustaw nowe hasło',
         accidental:
-          'Jeśli nie prosiłeś(-aś) o reset hasła, zignoruj tę wiadomość.',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+          'To nie Ty? Po prostu zignoruj tę wiadomość. Twoje hasło pozostanie bez zmian.',
       },
       footer: {
-        cause: '$t(email:footer.cause) poproszono o ustawienie nowego hasła.',
+        cause:
+          '$t(email:footer.cause) poproszono o nowe hasło do Twojego konta.',
       },
     },
 
     verifyEmail: {
       subject: 'Potwierdź swój adres e-mail',
-      preview: 'Potwierdź adres e-mail, aby odblokować konto.',
+      preview: 'Jedno kliknięcie i Twoje konto jest gotowe.',
       text: {
-        title: 'Dzień dobry,',
+        title: 'Potwierdź swój adres e-mail',
         information:
-          'Potwierdź proszę swój adres e-mail, aby upewnić się, że konto należy do Ciebie. Po potwierdzeniu możesz od razu się zalogować.',
-        button: 'Potwierdź e-mail',
-        accidental:
-          'Jeśli nie zakładałeś(-aś) konta, nie klikaj w link i skontaktuj się z nami.',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+          'Ostatni krok: potwierdź, że ten adres należy do Ciebie. Zaraz potem możesz się zalogować.',
+        button: 'Potwierdź adres e-mail',
+        accidental: 'Nie zakładasz konta? Po prostu zignoruj tę wiadomość.',
       },
       footer: {
-        cause: '$t(email:footer.cause) utworzono konto.',
+        cause: '$t(email:footer.cause) utworzono konto z tym adresem.',
       },
     },
   },

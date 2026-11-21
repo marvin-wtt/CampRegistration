@@ -5,12 +5,12 @@ export default {
     text: {
       title: 'Nouveau retour',
       replyNote:
-        "Vous pouvez répondre à cet e-mail pour contacter l'utilisateur directement s'il a fourni une adresse e-mail.",
+        "Réponds à cet e-mail pour contacter directement l'auteur, s'il a laissé une adresse.",
       senderLabel: 'De',
       messageLabel: 'Message',
     },
     footer: {
-      cause: '$t(email:footer.cause) vous êtes administrateur.',
+      cause: '$t(email:footer.cause) tu es administrateur.',
     },
   },
 };

@@ -1,7 +1,6 @@
 export default {
   email: {
-    reason:
-      '$t(email:footer.cause) ponieważ zarejestrowałeś się na to wydarzenie.',
+    reason: '$t(email:footer.cause) zgłoszono Cię na to wydarzenie.',
     privacyLink: 'Informacje o ochronie danych dla tego wydarzenia',
     changes: {
       cleared: 'usunięto',
@@ -9,14 +8,12 @@ export default {
     },
     managerNotification: {
       subject: 'Nowe zgłoszenie | {{ event.name }}',
-      preview: 'Nowe zgłoszenie na wydarzenie: {{ event.name }}',
+      preview: 'Nowe zgłoszenie na {{ event.name }}',
       text: {
-        title: 'Dzień dobry,',
+        title: 'Nowe zgłoszenie',
         information:
-          '{{ registration.firstName }} {{ registration.lastName }} zarejestrował(-a) się na wydarzenie {{ event.name }}.',
-        button: 'Zobacz zgłoszenia',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+          '{{ registration.firstName }} {{ registration.lastName }} właśnie zgłosił(a) się na {{ event.name }}.',
+        button: 'Pokaż zgłoszenia',
       },
       footer: {
         cause:
@@ -26,14 +23,12 @@ export default {
     messageBounced: {
       subject: 'Wiadomość niedostarczona | {{ event.name }}',
       preview:
-        'Wiadomość do {{ recipient }} nie mogła zostać dostarczona dla {{ event.name }}',
+        'Nie udało się dostarczyć wiadomości do {{ recipient }} dla {{ event.name }}',
       text: {
-        title: 'Dzień dobry,',
+        title: 'Twoja wiadomość nie została dostarczona',
         information:
-          'Twoja wiadomość „{{ messageSubject }}” do {{ recipient }} dotycząca {{ event.name }} nie mogła zostać dostarczona.',
-        button: 'Zobacz zgłoszenia',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+          'Nie udało się dostarczyć „{{ messageSubject }}” do {{ recipient }} dla {{ event.name }}. Sprawdź adres e-mail tego zgłoszenia.',
+        button: 'Pokaż zgłoszenia',
       },
       footer: {
         cause:

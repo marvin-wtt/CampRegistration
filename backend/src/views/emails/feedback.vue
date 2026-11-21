@@ -1,99 +1,46 @@
 <script setup lang="ts">
-import EmailHead from './components/EmailHead.vue';
-import EmailHeader from './components/EmailHeader.vue';
-import EmailFooter from './components/EmailFooter.vue';
+import EmailLayout from './components/EmailLayout.vue';
+import EmailHeading from './components/EmailHeading.vue';
+import EmailParagraph from './components/EmailParagraph.vue';
 import type { FeedbackProps } from './types';
 
 defineProps<FeedbackProps>();
+
+const labelStyle =
+  'margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 0.08em; text-transform: uppercase;';
 </script>
 
 <template>
-  <mjml>
-    <email-head
-      :subject="subject"
-      :preview="preview"
-    />
-    <mj-body
-      background-color="#f3f4f6"
-      css-class="email-body"
+  <email-layout
+    :subject="subject"
+    :preview="preview"
+    :app-name="appName"
+    :primary-color="primaryColor"
+    :sent-to="sentTo"
+    :reason="reason"
+  >
+    <email-heading>{{ title }}</email-heading>
+    <email-paragraph
+      padding="0 40px 20px"
+      muted
     >
-      <email-header
-        :primary-color="primaryColor"
-        :app-name="appName"
-      />
-      <mj-section
-        background-color="#ffffff"
-        padding="36px 0 44px"
-      >
-        <mj-column>
-          <mj-text
-            font-size="22px"
-            font-weight="700"
-            color="#111827"
-            padding="0 36px 16px"
-          >
-            {{ title }}
-          </mj-text>
-          <mj-text
-            font-size="14px"
-            line-height="1.6"
-            color="#6b7280"
-            padding="0 36px 20px"
-          >
-            {{ replyNote }}
-          </mj-text>
-          <mj-divider
-            border-color="#e5e7eb"
-            border-width="1px"
-            padding="0 36px 20px"
-          />
-          <mj-text
-            v-if="sender"
-            font-size="15px"
-            line-height="1.7"
-            color="#1f2937"
-            padding="0 36px 20px"
-          >
-            <p
-              style="
-                margin: 0 0 4px;
-                font-size: 11px;
-                font-weight: 600;
-                color: #9ca3af;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-              "
-            >
-              {{ senderLabel }}
-            </p>
-            {{ sender }}
-          </mj-text>
-          <mj-text
-            font-size="15px"
-            line-height="1.7"
-            color="#1f2937"
-            padding="0 36px 0"
-          >
-            <p
-              style="
-                margin: 0 0 4px;
-                font-size: 11px;
-                font-weight: 600;
-                color: #9ca3af;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-              "
-            >
-              {{ messageLabel }}
-            </p>
-            {{ message }}
-          </mj-text>
-        </mj-column>
-      </mj-section>
-      <email-footer
-        :sent-to="sentTo"
-        :reason="reason"
-      />
-    </mj-body>
-  </mjml>
+      {{ replyNote }}
+    </email-paragraph>
+    <mj-divider
+      border-color="#e2e8f0"
+      border-width="1px"
+      padding="0 40px 20px"
+    />
+    <email-paragraph
+      v-if="sender"
+      padding="0 40px 20px"
+    >
+      <p :style="labelStyle">{{ senderLabel }}</p>
+      {{ sender }}
+    </email-paragraph>
+    <email-paragraph padding="0 40px">
+      <p :style="labelStyle">{{ messageLabel }}</p>
+      {{ message }}
+    </email-paragraph>
+  </email-layout>
 </template>

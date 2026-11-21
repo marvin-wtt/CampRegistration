@@ -5,7 +5,7 @@ export default {
     text: {
       title: 'New Feedback',
       replyNote:
-        'You can reply to this email to contact the user directly if they provided an email address.',
+        'Reply to this email to reach the sender directly, if they left an address.',
       senderLabel: 'From',
       messageLabel: 'Message',
     },

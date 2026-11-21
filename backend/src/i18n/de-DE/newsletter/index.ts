@@ -1,24 +1,22 @@
 export default {
   email: {
     confirmation: {
-      subject: 'Bitte bestätige dein Newsletter-Abonnement',
-      preview: '{{ organization }} möchte dir einen Newsletter schicken.',
+      subject: 'Bestätige deine Newsletter-Anmeldung',
+      preview: 'Ein Klick und du erhältst „{{ newsletter }}“.',
       text: {
-        title: 'Hallo,',
+        title: 'Newsletter-Anmeldung bestätigen',
         information:
-          '{{ organization }} möchte dich in den Newsletter „{{ newsletter }}“ aufnehmen. Bitte bestätige, dass du ihn erhalten möchtest. Bis dahin bekommst du ihn nicht.',
-        button: 'Abonnement bestätigen',
+          '{{ organization }} möchte dich in den Newsletter „{{ newsletter }}“ aufnehmen. Bestätige deine Anmeldung, um künftig Neuigkeiten und Informationen per E-Mail zu erhalten.',
+        button: 'Anmeldung bestätigen',
         accidental:
-          'Wenn du diese E-Mail nicht erwartet hast, ignoriere sie einfach. Du wirst nicht eingetragen und deine Adresse wird nach 30 Tagen gelöscht.',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
+          'Du hast dich nicht angemeldet? Dann ignoriere diese E-Mail einfach. Du wirst nicht aufgenommen und deine Adresse wird nach 30 Tagen gelöscht.',
       },
       footer: {
         cause:
           '$t(email:footer.cause) {{ organization }} dich zu ihrem Newsletter hinzugefügt hat.',
       },
     },
-    reason: '$t(email:footer.cause) Sie unseren Newsletter abonniert haben.',
+    reason: '$t(email:footer.cause) du diesen Newsletter abonniert hast.',
     unsubscribe: 'Abmelden',
   },
 };

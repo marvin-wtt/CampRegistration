@@ -73,6 +73,42 @@ describe('task due reminders', () => {
     expect(await reminderSentAt(task.id)).not.toBeNull();
   });
 
+  it('should bundle an assignee’s due tasks into one mail', async () => {
+    const { event, task } = await assignedTask('2026-11-12');
+    const second = await TaskFactory.create({
+      event: { connect: { id: event.id } },
+      dueDate: '2026-11-11',
+      assignee: { connect: { id: task.assigneeId! } },
+    });
+
+    await run();
+
+    expect(await reminderSentAt(second.id)).not.toBeNull();
+    expect(mailer.sendMail).toHaveBeenCalledTimes(1);
+    expect(mailer.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: '2 tasks due soon' }),
+    );
+  });
+
+  it('should mail each assignee separately', async () => {
+    await assignedTask('2026-11-12');
+    await assignedTask('2026-11-12');
+
+    await run();
+
+    expect(mailer.sendMail).toHaveBeenCalledTimes(2);
+  });
+
+  it('should name the day relative to the event’s date', async () => {
+    const { task } = await assignedTask('2026-11-12');
+
+    await run();
+
+    expect(mailer.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: `Due tomorrow: ${task.title}` }),
+    );
+  });
+
   it('should send only once', async () => {
     await assignedTask('2026-11-12');
 

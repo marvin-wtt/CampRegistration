@@ -4,47 +4,39 @@ export default {
       subject: 'Organizace čeká na kontrolu: {{ organization.name }}',
       preview: '{{ organization.name }} čeká na ověření',
       text: {
-        title: 'Nová organizace vyžaduje kontrolu',
+        title: 'Nová organizace ke kontrole',
         information:
-          '{{ organization.name }} byla odeslána k ověření. ' +
-          'Než bude ověřena, nemůže zveřejňovat akce ani posílat newslettery.',
-        button: 'Zkontrolovat organizace',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+          '{{ organization.name }} čeká na ověření. ' +
+          'Do té doby nemůže zveřejňovat akce ani posílat newslettery.',
+        button: 'Zkontrolovat organizaci',
       },
       footer: {
         cause: '$t(email:footer.cause) jsi správce.',
       },
     },
     verified: {
-      subject: 'Tvoje organizace byla ověřena',
-      preview: '{{ organization.name }} může nyní zveřejňovat akce',
+      subject: 'Tvoje organizace je ověřená',
+      preview: '{{ organization.name }} teď může zveřejňovat akce',
       text: {
-        title: 'Tvoje organizace byla ověřena',
+        title: '{{ organization.name }} je ověřená',
         information:
-          '{{ organization.name }} byla ověřena. ' +
-          'Nyní můžeš zveřejňovat její akce a posílat newslettery.',
+          'Dobrá zpráva: teď můžeš zveřejňovat akce a posílat newslettery.',
         button: 'Otevřít organizaci',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) spravuješ tuto organizaci.',
       },
     },
     rejected: {
-      subject: 'Tvoji organizaci se nepodařilo ověřit',
-      preview: '{{ organization.name }} vyžaduje tvoji pozornost',
+      subject: 'Tvou organizaci se nepodařilo ověřit',
+      preview: '{{ organization.name }} potřebuje tvou pozornost',
       text: {
-        title: 'Tvoji organizaci se nepodařilo ověřit',
+        title: '{{ organization.name }} se nepodařilo ověřit',
         information:
-          '{{ organization.name }} nebyla ověřena. ' +
-          'Do té doby nemůže zveřejňovat akce ani posílat newslettery. ' +
-          'Oprava registrovaných údajů ji vrátí zpět k ověření.',
+          'Dokud nebude ověřená, nemůže zveřejňovat akce ani posílat newslettery. ' +
+          'Aktualizuj její údaje a znovu ji zkontrolujeme.',
         reasonLabel: 'Důvod',
-        button: 'Zkontrolovat údaje',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+        button: 'Aktualizovat údaje',
       },
       footer: {
         cause: '$t(email:footer.cause) spravuješ tuto organizaci.',

@@ -6,7 +6,10 @@ import {
   dateRange,
   zonedNaiveDateTime,
 } from '@camp-registration/common/utils';
-import { TaskDueReminderMessage } from './task.messages.js';
+import {
+  TaskDueReminderMessage,
+  type TaskDueReminderPayload,
+} from './task.messages.js';
 
 /** Local hours (from inclusive, until exclusive) reminders go out in. */
 const REMINDER_HOURS = { from: 8, until: 21 };
@@ -20,6 +23,7 @@ const BATCH_SIZE = 500;
 /**
  * Mails each assignee once, from the morning before their open task is due
  * (in the event's timezone). Tasks without an assignee are not reminded.
+ * Tasks found in the same run go out as one mail per assignee.
  */
 @injectable()
 export class TaskReminderService extends BaseService {
@@ -43,10 +47,12 @@ export class TaskReminderService extends BaseService {
         },
       },
       include: {
-        event: { select: { id: true, name: true } },
+        event: { select: { id: true, name: true, timezone: true } },
         assignee: {
           select: {
-            user: { select: { name: true, email: true, locale: true } },
+            user: {
+              select: { id: true, name: true, email: true, locale: true },
+            },
           },
         },
       },
@@ -54,6 +60,13 @@ export class TaskReminderService extends BaseService {
       // Claimed tasks drop out of the query, so the next run sends the rest.
       take: BATCH_SIZE,
     });
+
+    const todayByTimezone = new Map(
+      windows.flatMap(({ timezones, today }) =>
+        timezones.map((timezone) => [timezone, today] as const),
+      ),
+    );
+    const digests = new Map<string, TaskDueReminderPayload>();
 
     for (const task of tasks) {
       const user = task.assignee?.user;
@@ -63,7 +76,7 @@ export class TaskReminderService extends BaseService {
 
       try {
         // Claim before enqueuing so overlapping runs never send twice. A failed
-        // enqueue drops this reminder; it is only a courtesy.
+        // enqueue drops the reminder; it is only a courtesy.
         const { count } = await this.prisma.task.updateMany({
           where: { id: task.id, reminderSentAt: null },
           data: { reminderSentAt: now },
@@ -71,16 +84,29 @@ export class TaskReminderService extends BaseService {
         if (count === 0) {
           continue;
         }
-
-        await TaskDueReminderMessage.enqueue({
-          task: { id: task.id, title: task.title, dueDate: task.dueDate },
-          event: { id: task.event.id, name: task.event.name },
-          recipient: user,
-        });
       } catch (error: unknown) {
-        logger.error(`Failed to send the reminder for task ${task.id}:`, error);
+        logger.error(
+          `Failed to claim the reminder for task ${task.id}:`,
+          error,
+        );
+        continue;
       }
+
+      const { id: userId, ...recipient } = user;
+      const digest = digests.get(userId) ?? { recipient, tasks: [] };
+      digest.tasks.push({
+        title: task.title,
+        dueDate: task.dueDate,
+        due:
+          task.dueDate === todayByTimezone.get(task.event.timezone)
+            ? 'today'
+            : 'tomorrow',
+        event: { id: task.event.id, name: task.event.name },
+      });
+      digests.set(userId, digest);
     }
+
+    await TaskDueReminderMessage.enqueueBulk([...digests.values()]);
   }
 
   /**
@@ -120,6 +146,7 @@ export class TaskReminderService extends BaseService {
 
     return [...byDate].map(([date, timezones]) => ({
       timezones,
+      today: date,
       dueDates: dateRange(date, 0, LEAD_DAYS),
     }));
   }
@@ -127,5 +154,7 @@ export class TaskReminderService extends BaseService {
 
 interface DueWindow {
   timezones: string[];
+  /** The local date these timezones share. */
+  today: string;
   dueDates: string[];
 }

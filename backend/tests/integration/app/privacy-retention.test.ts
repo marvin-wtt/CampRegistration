@@ -162,8 +162,8 @@ describe('retention reminders', () => {
 
       await run();
 
-      expect(sentBody()).not.toContain('kept beyond this period');
-      expect(sentBody()).not.toContain('withdraws that consent');
+      expect(sentBody()).not.toContain('exceptions that are kept longer');
+      expect(sentBody()).not.toContain('once someone withdraws it');
     });
 
     it('should warn about exceptions a event does have', async () => {
@@ -185,8 +185,8 @@ describe('retention reminders', () => {
 
       await run();
 
-      expect(sentBody()).toContain('kept beyond this period');
-      expect(sentBody()).toContain('withdraws that consent');
+      expect(sentBody()).toContain('exceptions that are kept longer');
+      expect(sentBody()).toContain('once someone withdraws it');
     });
   });
 

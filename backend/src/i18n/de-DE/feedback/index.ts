@@ -5,12 +5,12 @@ export default {
     text: {
       title: 'Neues Feedback',
       replyNote:
-        'Sie können auf diese E-Mail antworten, um den Benutzer direkt zu kontaktieren, falls er eine E-Mail-Adresse angegeben hat.',
+        'Antworte auf diese E-Mail, um die Person direkt zu erreichen, falls sie eine Adresse angegeben hat.',
       senderLabel: 'Von',
       messageLabel: 'Nachricht',
     },
     footer: {
-      cause: '$t(email:footer.cause) Sie Administrator sind.',
+      cause: '$t(email:footer.cause) du Administrator bist.',
     },
   },
 };

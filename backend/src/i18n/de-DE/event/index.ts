@@ -2,22 +2,20 @@ export default {
   email: {
     retentionDue: {
       subject: 'Speicherfrist läuft ab: {{ event.name }}',
-      preview: 'Die Anmeldedaten von {{ event.name }} sollten geprüft werden',
+      preview: 'Zeit, die Anmeldedaten von {{ event.name }} zu prüfen',
       text: {
-        title: 'Eine Speicherfrist läuft ab',
+        title: 'Zeit, {{ event.name }} zu prüfen',
         information:
-          'In den Datenschutzinformationen zu {{ event.name }} steht, dass die Daten {{ months }} Monate $t(event:email.retentionDue.anchor.{{anchor}}) gespeichert werden. Für diese Veranstaltung endet diese Frist am {{ dueAt }}.',
+          'Laut deinen Datenschutzinformationen zu {{ event.name }} werden Anmeldedaten {{ months }} Monate $t(event:email.retentionDue.anchor.{{anchor}}) gespeichert. Diese Frist endet am {{ dueAt }}.',
         action:
-          'Bitte sieh die Anmeldungen der Veranstaltung durch und lösche, was nicht mehr benötigt wird. Nur ihr könnt beurteilen, was weiterhin aufbewahrt werden muss.',
+          'Sieh dir die Anmeldungen an und lösche, was du nicht mehr brauchst. Nur du kannst beurteilen, was weiterhin aufbewahrt werden muss.',
         exceptions:
-          'Eure Datenschutzinformationen nennen außerdem Ausnahmen, die länger gespeichert werden. Lösche nicht, was davon erfasst ist.',
+          'Deine Datenschutzinformationen nennen außerdem Ausnahmen, die länger gespeichert werden. Lass diese bestehen.',
         consentBound:
-          'Manche Daten werden so lange gespeichert, wie die zugrunde liegende Einwilligung besteht. Sie bleiben, bis die Person die Einwilligung widerruft, und müssen dann unverzüglich gelöscht werden.',
+          'Daten, die auf einer Einwilligung beruhen, dürfen so lange bleiben, wie die Einwilligung besteht. Lösche sie zeitnah, sobald jemand sie widerruft.',
         noAutomaticDeletion:
-          'Es wurde nichts automatisch gelöscht. Diese Plattform löscht Veranstaltungsdaten niemals von selbst — Entscheidung und Ausführung liegen bei euch.',
+          'Es wurde nichts automatisch gelöscht. Wir löschen Veranstaltungsdaten nie von selbst — die Entscheidung liegt bei dir.',
         button: 'Veranstaltung öffnen',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
       },
       // Pulled into the sentence above by nesting: the payload carries the
       // catalogue key, not a phrase.

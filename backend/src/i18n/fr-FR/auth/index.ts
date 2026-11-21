@@ -1,40 +1,36 @@
 export default {
   email: {
     resetPassword: {
-      subject: 'Réinitialiser votre mot de passe',
+      subject: 'Réinitialise ton mot de passe',
       preview:
-        'Réinitialisez votre mot de passe maintenant pour retrouver l’accès à votre compte.',
+        'Choisis un nouveau mot de passe pour retrouver l’accès à ton compte.',
       text: {
-        title: 'Bonjour,',
+        title: 'Réinitialise ton mot de passe',
         information:
-          'Vous avez oublié votre mot de passe ? Pas de problème. Vous pouvez en définir un nouveau ici.',
-        button: 'Réinitialiser le mot de passe',
+          'Mot de passe oublié ? Pas de souci. Choisis-en un nouveau avec le bouton ci-dessous.',
+        button: 'Choisir un nouveau mot de passe',
         accidental:
-          "Si vous n'avez pas demandé de réinitialisation de mot de passe, vous pouvez ignorer cet e-mail.",
-        greeting: 'Cordialement,',
-        teamName: 'Équipe {{ appName }}',
+          'Tu n’as rien demandé ? Ignore simplement cet e-mail. Ton mot de passe reste inchangé.',
       },
       footer: {
         cause:
-          '$t(email:footer.cause) vous avez demandé un nouveau mot de passe.',
+          '$t(email:footer.cause) un nouveau mot de passe a été demandé pour ton compte.',
       },
     },
 
     verifyEmail: {
-      subject: 'Vérifiez votre e-mail',
-      preview: 'Vérifiez votre e-mail pour activer votre compte.',
+      subject: 'Confirme ton adresse e-mail',
+      preview: 'Un clic et ton compte est prêt.',
       text: {
-        title: 'Bonjour,',
+        title: 'Confirme ton adresse e-mail',
         information:
-          'Veuillez confirmer votre e-mail pour confirmer que le compte vous appartient. Vous pouvez vous connecter directement après confirmation.',
-        button: "Confirmer l'e-mail",
+          'Dernière étape : confirme que cette adresse t’appartient. Tu pourras te connecter juste après.',
+        button: 'Confirmer l’adresse e-mail',
         accidental:
-          "Si vous n'avez pas créé de compte, veuillez ne pas cliquer sur le lien et nous contacter.",
-        greeting: 'Cordialement,',
-        teamName: 'Équipe {{ appName }}',
+          'Tu n’as pas créé de compte ? Ignore simplement cet e-mail.',
       },
       footer: {
-        cause: '$t(email:footer.cause) vous avez créé un compte.',
+        cause: '$t(email:footer.cause) tu as créé un compte.',
       },
     },
   },

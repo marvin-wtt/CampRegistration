@@ -2,22 +2,20 @@ export default {
   email: {
     retentionDue: {
       subject: 'Kończy się okres przechowywania: {{ event.name }}',
-      preview: 'Dane zgłoszeń wydarzenia {{ event.name }} wymagają przeglądu',
+      preview: 'Czas przejrzeć dane zgłoszeń wydarzenia {{ event.name }}',
       text: {
-        title: 'Kończy się okres przechowywania',
+        title: 'Czas przejrzeć {{ event.name }}',
         information:
-          'Informacje o ochronie danych opublikowane dla wydarzenia {{ event.name }} mówią zgłaszającym się, że ich dane są przechowywane przez {{ months }} miesięcy $t(event:email.retentionDue.anchor.{{anchor}}). Dla tego wydarzenia okres ten kończy się {{ dueAt }}.',
+          'Według Twoich informacji o ochronie danych dla {{ event.name }} dane zgłoszeń są przechowywane przez {{ months }} miesięcy $t(event:email.retentionDue.anchor.{{anchor}}). Ten okres kończy się {{ dueAt }}.',
         action:
-          'Przejrzyj proszę zgłoszenia wydarzenia i usuń to, co nie jest już potrzebne. Tylko wy możecie ocenić, co należy zachować dłużej.',
+          'Przejrzyj zgłoszenia i usuń to, czego już nie potrzebujesz. Tylko Ty wiesz, co nadal trzeba przechowywać.',
         exceptions:
-          'Wasze informacje o ochronie danych wskazują także wyjątki przechowywane dłużej niż ten okres. Nie usuwaj tego, co obejmują.',
+          'Twoje informacje o ochronie danych wymieniają też wyjątki przechowywane dłużej. Pozostaw je.',
         consentBound:
-          'Część danych jest przechowywana tak długo, jak trwa zgoda, na której się opiera. Pozostają do czasu wycofania zgody, a wtedy muszą zostać niezwłocznie usunięte.',
+          'Dane oparte na zgodzie można przechowywać tak długo, jak zgoda obowiązuje. Usuń je niezwłocznie, gdy ktoś ją wycofa.',
         noAutomaticDeletion:
-          'Nic nie zostało usunięte automatycznie. Ta platforma nigdy sama nie kasuje danych wydarzenia — decyzja i działanie należą do was.',
+          'Nic nie zostało usunięte automatycznie. Nigdy nie usuwamy danych wydarzeń sami — decyzja należy do Ciebie.',
         button: 'Otwórz wydarzenie',
-        greeting: 'Z pozdrowieniami,',
-        teamName: 'Zespół {{ appName }}',
       },
       // Pulled into the sentence above by nesting: the payload carries the
       // catalogue key, not a phrase.

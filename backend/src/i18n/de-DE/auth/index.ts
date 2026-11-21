@@ -1,40 +1,35 @@
 export default {
   email: {
     resetPassword: {
-      subject: 'Passwort zurücksetzen',
-      preview:
-        'Setzen Sie jetzt Ihr Passwort zurück, um wieder Zugriff zu erhalten.',
+      subject: 'Setze dein Passwort zurück',
+      preview: 'Wähle ein neues Passwort, um wieder Zugriff zu bekommen.',
       text: {
-        title: 'Hallo,',
+        title: 'Setze dein Passwort zurück',
         information:
-          'Haben Sie Ihr Passwort vergessen? Kein Problem. Sie können hier ein neues festlegen.',
-        button: 'Passwort zurücksetzen',
+          'Passwort vergessen? Kein Problem. Wähle über den Button ein neues.',
+        button: 'Neues Passwort wählen',
         accidental:
-          'Wenn Sie keine Passwortrücksetzung angefordert haben, können Sie diese E-Mail ignorieren.',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
+          'Du hast das nicht angefordert? Dann ignoriere diese E-Mail einfach. Dein Passwort bleibt unverändert.',
       },
       footer: {
         cause:
-          '$t(email:footer.cause) Sie ein neues Password angefordert haben.',
+          '$t(email:footer.cause) für dein Konto ein neues Passwort angefordert wurde.',
       },
     },
 
     verifyEmail: {
-      subject: 'Bestätigen Sie Ihre E-Mail',
-      preview: 'Bestätigen Sie Ihre E-Mail, um Ihr Konto freizuschalten.',
+      subject: 'Bestätige deine E-Mail-Adresse',
+      preview: 'Ein Klick und dein Konto ist startklar.',
       text: {
-        title: 'Hallo,',
+        title: 'Bestätige deine E-Mail-Adresse',
         information:
-          'Bitte bestätigen Sie Ihre E-Mail, um sicherzustellen, dass das Konto Ihnen gehört. Sie können sich nach der Bestätigung direkt anmelden.',
-        button: 'E-Mail bestätigen',
+          'Nur noch ein Schritt: Bestätige, dass diese Adresse dir gehört. Danach kannst du dich direkt anmelden.',
+        button: 'E-Mail-Adresse bestätigen',
         accidental:
-          'Wenn Sie kein Konto erstellt haben, klicken Sie bitte nicht auf den Link und kontaktieren Sie uns.',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
+          'Du hast kein Konto erstellt? Dann ignoriere diese E-Mail einfach.',
       },
       footer: {
-        cause: '$t(email:footer.cause) Sie haben ein Konto erstellt.',
+        cause: '$t(email:footer.cause) du ein Konto erstellt hast.',
       },
     },
   },
