@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { BaseService } from '#core/base/BaseService';
 import logger from '#core/logger';
-import { permissionRegistry } from '#core/permission/permission.registry';
+import { EventManagerService } from '#app/eventManager/event-manager.service';
 import {
   currentDateInTimeZone,
   daysBetween,
@@ -26,6 +26,8 @@ export class RetentionReminderService extends BaseService {
   constructor(
     @inject(RetentionService)
     private readonly retentionService: RetentionService,
+    @inject(EventManagerService)
+    private readonly eventManagerService: EventManagerService,
   ) {
     super();
   }
@@ -65,7 +67,12 @@ export class RetentionReminderService extends BaseService {
       return;
     }
 
-    const recipients = await this.recipients(event.id);
+    // Those who can delete registrations, since they can act.
+    const recipients =
+      await this.eventManagerService.usersWithManagerPermission(
+        event.id,
+        'event.registrations.delete',
+      );
     if (recipients.length === 0) {
       logger.warn(
         `Event ${event.id} has nobody to remind of its retention deadline.`,
@@ -113,25 +120,5 @@ export class RetentionReminderService extends BaseService {
     });
 
     return count > 0;
-  }
-
-  /** The managers allowed to delete registrations, since they can act. */
-  private async recipients(eventId: string) {
-    const roles = Object.entries(permissionRegistry.for('event').getAll())
-      .filter(([, permissions]) =>
-        permissions.includes('event.registrations.delete'),
-      )
-      .map(([role]) => role);
-
-    const managers = await this.prisma.eventManager.findMany({
-      where: {
-        eventId,
-        role: { in: roles },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
-      select: { user: { select: { name: true, email: true, locale: true } } },
-    });
-
-    return managers.flatMap(({ user }) => (user ? [user] : []));
   }
 }

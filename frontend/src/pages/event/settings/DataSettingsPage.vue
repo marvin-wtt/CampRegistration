@@ -100,24 +100,17 @@
           </div>
         </div>
 
-        <!-- Deleting early is allowed but rarely meant: say what it costs. -->
+        <!-- Deleting needs the event over: the team may still need the data. -->
         <div
-          v-if="canDeleteData && earlyWarnings.length > 0"
-          class="danger-note bg-error-container text-on-error-container rounded-lg q-mb-sm"
-          data-test="retention-early"
+          v-if="canDeleteData && eventStillRunning"
+          class="danger-note bg-secondary-container text-on-secondary-container rounded-lg q-mb-sm"
+          data-test="retention-wait-for-end"
         >
           <q-icon
             name="schedule"
             size="20px"
           />
-          <div>
-            <div
-              v-for="warning in earlyWarnings"
-              :key="warning"
-            >
-              {{ t(`early.${warning}`) }}
-            </div>
-          </div>
+          <span>{{ t('waitForEnd', { date: eventEndDate }) }}</span>
         </div>
 
         <div
@@ -196,7 +189,7 @@
                 />
                 <m-btn
                   :label="t(`action.delete.${row.kind}`)"
-                  :disable="!registrationClosed"
+                  :disable="!deletable"
                   icon="delete_forever"
                   error
                   no-caps
@@ -358,19 +351,27 @@ const EVENT_EFFECTS = [
 // The only things that outlive the event; keep in sync like the list above.
 const EVENT_KEEPS = ['newsletter', 'audit', 'outside'] as const;
 
-// The server refuses deleting until then (docs/privacy.md, 8).
+// The server refuses deleting until both hold (docs/privacy.md, 8).
 const registrationClosed = computed<boolean>(
   () => event.value?.registrationStatus === 'closed',
 );
 
-/** Why deleting now would be early: the event is still on. */
-const earlyWarnings = computed<'event'[]>(() => {
+const eventStillRunning = computed<boolean>(() => {
   const current = event.value;
-  if (!current || current.registrationDataPurgedAt) {
-    return [];
-  }
-  return new Date(current.endAt) > new Date() ? ['event'] : [];
+  return (
+    !!current &&
+    !current.registrationDataPurgedAt &&
+    new Date(current.endAt) > new Date()
+  );
 });
+
+const deletable = computed<boolean>(
+  () => registrationClosed.value && !eventStillRunning.value,
+);
+
+const eventEndDate = computed(() =>
+  event.value ? d(new Date(event.value.endAt), 'date') : '',
+);
 
 interface Row {
   kind: EventRetentionDeadlineKind;
@@ -567,7 +568,7 @@ periods:
 delete:
   preserve: 'Before deleting, keep a copy of anything you are legally required to retain, such as invoices or records for a funding body, for example by exporting it.'
   title: 'Delete registration data'
-  summary: 'Possible once registration has closed, before or after the deadline. Sensitive data is part of the registration data.'
+  summary: 'Possible once the event has ended and registration has closed, before or after the deadline. Sensitive data is part of the registration data.'
   noAutomaticDeletion: 'Nothing is deleted automatically.'
 event:
   preserve: 'Export the finances and anything else you are legally required to keep, such as receipts, payouts or registration records for a funding body, before deleting the event.'
@@ -614,8 +615,7 @@ purge:
 closeFirst:
   message: 'Registration is still open or scheduled. Close it first in the event settings: data can only be deleted once registration has closed, and it then stays closed for good.'
   link: 'Open event settings'
-early:
-  event: 'The event has not ended yet. Data you need during it, such as health details, would be gone.'
+waitForEnd: 'Data can only be deleted once the event has ended, on {date}: until then the team may still need it, health details above all. To remove everything earlier, for example for a cancelled event, delete the whole event instead.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -632,7 +632,7 @@ periods:
 delete:
   preserve: 'Sichere vor dem Löschen alles, was du gesetzlich aufbewahren musst, etwa Rechnungen oder Nachweise für Fördermittelgeber, zum Beispiel per Export.'
   title: 'Anmeldedaten löschen'
-  summary: 'Möglich, sobald die Anmeldung geschlossen ist – vor oder nach der Frist. Sensible Daten sind Teil der Anmeldedaten.'
+  summary: 'Möglich, sobald die Veranstaltung vorbei und die Anmeldung geschlossen ist – vor oder nach der Frist. Sensible Daten sind Teil der Anmeldedaten.'
   noAutomaticDeletion: 'Es wird nichts automatisch gelöscht.'
 event:
   preserve: 'Exportiere vor dem Löschen die Finanzen und alles, was du gesetzlich aufbewahren musst, etwa Belege, Auszahlungen oder Anmeldenachweise für Fördermittelgeber.'
@@ -679,8 +679,7 @@ purge:
 closeFirst:
   message: 'Die Anmeldung ist noch offen oder geplant. Schließe sie zuerst in den Veranstaltungseinstellungen: Daten lassen sich erst nach Anmeldeschluss löschen, danach bleibt die Anmeldung dauerhaft geschlossen.'
   link: 'Zu den Veranstaltungseinstellungen'
-early:
-  event: 'Die Veranstaltung ist noch nicht vorbei. Daten, die ihr währenddessen braucht, etwa Gesundheitsangaben, wären danach weg.'
+waitForEnd: 'Daten lassen sich erst löschen, wenn die Veranstaltung vorbei ist (am {date}): Bis dahin braucht das Team sie womöglich noch, vor allem Gesundheitsangaben. Um vorher alles zu entfernen, etwa bei einer abgesagten Veranstaltung, lösche stattdessen die ganze Veranstaltung.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -697,7 +696,7 @@ periods:
 delete:
   preserve: 'Avant de supprimer, garde une copie de tout ce que tu dois conserver légalement, comme des factures ou des justificatifs pour un financeur, par exemple en l’exportant.'
   title: 'Supprimer les données d’inscription'
-  summary: 'Possible une fois les inscriptions closes, avant ou après l’échéance. Les données sensibles font partie des données d’inscription.'
+  summary: 'Possible une fois l’événement terminé et les inscriptions closes, avant ou après l’échéance. Les données sensibles font partie des données d’inscription.'
   noAutomaticDeletion: 'Rien n’est supprimé automatiquement.'
 event:
   preserve: 'Avant de supprimer l’événement, exporte les finances et tout ce que tu dois conserver légalement, comme les justificatifs, les versements ou les listes d’inscription pour un financeur.'
@@ -744,8 +743,7 @@ purge:
 closeFirst:
   message: 'Les inscriptions sont encore ouvertes ou prévues. Fermez-les d’abord dans les paramètres de l’événement : les données ne peuvent être supprimées qu’une fois les inscriptions closes, qui le restent ensuite définitivement.'
   link: 'Ouvrir les paramètres de l’événement'
-early:
-  event: 'L’événement n’est pas encore terminé. Les données nécessaires pendant celui-ci, comme les informations de santé, disparaîtraient.'
+waitForEnd: 'Les données ne peuvent être supprimées qu’une fois l’événement terminé, le {date} : d’ici là, l’équipe peut encore en avoir besoin, surtout des informations de santé. Pour tout supprimer plus tôt, par exemple pour un événement annulé, supprime plutôt l’événement entier.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -762,7 +760,7 @@ periods:
 delete:
   preserve: 'Przed usunięciem zachowaj kopię wszystkiego, co musisz przechowywać z mocy prawa, np. faktur lub dokumentów dla grantodawcy, na przykład eksportując je.'
   title: 'Usuń dane zgłoszeń'
-  summary: 'Możliwe po zamknięciu zgłoszeń, przed terminem lub po nim. Dane wrażliwe są częścią danych zgłoszeń.'
+  summary: 'Możliwe po zakończeniu wydarzenia i zamknięciu zgłoszeń, przed terminem lub po nim. Dane wrażliwe są częścią danych zgłoszeń.'
   noAutomaticDeletion: 'Nic nie jest usuwane automatycznie.'
 event:
   preserve: 'Przed usunięciem wydarzenia wyeksportuj finanse i wszystko, co musisz przechowywać z mocy prawa, np. paragony, wypłaty lub listy zgłoszeń dla grantodawcy.'
@@ -809,8 +807,7 @@ purge:
 closeFirst:
   message: 'Zgłoszenia są jeszcze otwarte lub zaplanowane. Najpierw zamknij je w ustawieniach wydarzenia: dane można usunąć dopiero po zamknięciu zgłoszeń, które potem pozostają zamknięte na stałe.'
   link: 'Otwórz ustawienia wydarzenia'
-early:
-  event: 'Wydarzenie jeszcze się nie zakończyło. Dane potrzebne w jego trakcie, np. informacje o zdrowiu, zostałyby utracone.'
+waitForEnd: 'Dane można usunąć dopiero po zakończeniu wydarzenia ({date}): do tego czasu zespół może ich jeszcze potrzebować, zwłaszcza informacji o zdrowiu. Aby usunąć wszystko wcześniej, np. w przypadku odwołanego wydarzenia, usuń całe wydarzenie.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -827,7 +824,7 @@ periods:
 delete:
   preserve: 'Před smazáním si uložte kopii všeho, co musíte ze zákona uchovávat, například faktury nebo doklady pro poskytovatele dotace, třeba exportem.'
   title: 'Smazat údaje z přihlášek'
-  summary: 'Možné po uzavření přihlašování, před termínem i po něm. Citlivé údaje jsou součástí údajů z přihlášek.'
+  summary: 'Možné po skončení akce a uzavření přihlašování, před termínem i po něm. Citlivé údaje jsou součástí údajů z přihlášek.'
   noAutomaticDeletion: 'Nic se nemaže automaticky.'
 event:
   preserve: 'Před smazáním akce exportujte finance a vše, co musíte ze zákona uchovávat, například doklady, výplaty nebo seznamy přihlášek pro poskytovatele dotace.'
@@ -874,6 +871,5 @@ purge:
 closeFirst:
   message: 'Přihlašování je ještě otevřené nebo naplánované. Nejprve ho uzavřete v nastavení akce: údaje lze smazat až po uzavření přihlašování, které pak zůstane uzavřené natrvalo.'
   link: 'Otevřít nastavení akce'
-early:
-  event: 'Akce ještě neskončila. Údaje potřebné během ní, například zdravotní informace, by zmizely.'
+waitForEnd: 'Údaje lze smazat až po skončení akce ({date}): do té doby je tým může ještě potřebovat, hlavně zdravotní informace. Chceš-li vše odstranit dříve, třeba u zrušené akce, smaž raději celou akci.'
 </i18n>

@@ -68,4 +68,30 @@ describe('lockPurgedQuestions', () => {
   it('changes nothing before it', () => {
     expect(lock(null).getQuestionByName('allergies').readOnly).toBe(false);
   });
+
+  it('keeps the question’s own description before the note', () => {
+    const survey = new SurveyModel({
+      elements: [
+        {
+          type: 'comment',
+          name: 'allergies',
+          description: 'Anything we should know',
+          privacyCategory: 'allergies',
+        },
+      ],
+    });
+    lockPurgedQuestions(
+      survey,
+      {
+        form: form as unknown as EventDetails['form'],
+        sensitiveDataPurgedAt: '2026-11-01T00:00:00.000Z',
+        registrationDataPurgedAt: null,
+      },
+      'Deleted',
+    );
+
+    expect(survey.getQuestionByName('allergies').description).toBe(
+      'Anything we should know\n\nDeleted',
+    );
+  });
 });

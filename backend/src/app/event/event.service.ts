@@ -13,9 +13,9 @@ import { eventAuditPolicy } from '#app/event/event.audit';
 import {
   calculateFreePlaces,
   eventRegistrationStatus,
-  isRetentionPurged,
   type FreePlaces,
 } from '#app/event/event.util';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,

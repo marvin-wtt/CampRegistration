@@ -13,6 +13,20 @@ export const EVENT_RETENTION_DEADLINE_KINDS = [
 export type EventRetentionDeadlineKind =
   (typeof EVENT_RETENTION_DEADLINE_KINDS)[number];
 
+/** When an event's registration data was deleted for good, as each side holds it. */
+export interface RetentionPurgeState {
+  sensitiveDataPurgedAt: Date | string | null;
+  registrationDataPurgedAt: Date | string | null;
+}
+
+/**
+ * Whether any of the event's registration data was deleted for good. From
+ * then on it takes no registrations and its window stays frozen.
+ */
+export function isRetentionPurged(event: RetentionPurgeState): boolean {
+  return !!event.sensitiveDataPurgedAt || !!event.registrationDataPurgedAt;
+}
+
 /** How far ahead one postponement may move a deadline. */
 export const MAX_RETENTION_POSTPONE_MONTHS = 12;
 

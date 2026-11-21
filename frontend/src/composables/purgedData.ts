@@ -4,6 +4,7 @@ import {
   isSpecialCategory,
   specialCategoryAnswerKeys,
 } from '@camp-registration/common/form';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
 import type { SurveyModel } from 'survey-core';
 
 type PurgeState = Pick<
@@ -52,10 +53,7 @@ export function usePurgedFields(
 ) {
   const keys = computed<Set<string>>(() => {
     const current = toValue(event);
-    if (
-      !current ||
-      (!current.sensitiveDataPurgedAt && !current.registrationDataPurgedAt)
-    ) {
+    if (!current || !isRetentionPurged(current)) {
       return new Set();
     }
 
@@ -77,14 +75,17 @@ export function lockPurgedQuestions(
   event: PurgeState,
   note: string,
 ): void {
-  if (!event.sensitiveDataPurgedAt && !event.registrationDataPurgedAt) {
+  if (!isRetentionPurged(event)) {
     return;
   }
 
   for (const question of survey.getAllQuestions(false, false, true)) {
     if (isSpecialCategory(question.getPropertyValue('privacyCategory'))) {
       question.readOnly = true;
-      question.description = note;
+      // After the question's own help text, which may still explain it.
+      question.description = [question.description, note]
+        .filter((part) => !!part)
+        .join('\n\n');
     }
   }
 }

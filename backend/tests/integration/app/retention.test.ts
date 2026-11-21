@@ -74,7 +74,9 @@ async function eventDue(
     endAt,
     timezone,
     form,
-    // Data is only deleted once registration has closed.
+    // Data is only deleted once registration has closed. A whole window, as
+    // the factory's random opening date may fall after this closing date.
+    registrationOpensAt: moment(endAt).subtract(3, 'months').toDate(),
     registrationClosesAt: moment(endAt).subtract(14, 'days').toDate(),
   });
   const registration = await RegistrationFactory.create({
@@ -539,6 +541,41 @@ describe('retention workflow', () => {
       },
     );
 
+    it('should refuse to delete before the event has ended', async () => {
+      const { event, token } = await eventDue(-1);
+      // Registration closed, but the event still running.
+      await prisma.event.update({
+        where: { id: event.id },
+        data: {
+          registrationOpensAt: moment().subtract(2, 'months').toDate(),
+          registrationClosesAt: moment().subtract(1, 'week').toDate(),
+          startAt: moment().subtract(1, 'day').toDate(),
+          endAt: moment().add(1, 'week').toDate(),
+        },
+      });
+
+      for (const kind of ['sensitive', 'registrations']) {
+        const { body } = await request()
+          .post(`/api/v1/events/${event.id}/retention/${kind}/purge`)
+          .send({ confirm: true })
+          .auth(token, { type: 'bearer' })
+          .expect(409);
+        expect(body.message).toContain('ended');
+      }
+
+      const stored = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(stored.sensitiveDataPurgedAt).toBeNull();
+      expect(stored.registrationDataPurgedAt).toBeNull();
+      expect(
+        await prisma.registration.findMany({
+          where: { eventId: event.id },
+          select: { data: true },
+        }),
+      ).toEqual([{ data: { first_name: 'Ada', allergies: 'Peanuts' } }]);
+    });
+
     it('should keep registration closed for good once data was deleted', async () => {
       const { event, token } = await eventDue(-1);
       await request()
@@ -557,8 +594,9 @@ describe('retention workflow', () => {
       await patch({
         registrationOpensAt: null,
         registrationClosesAt: null,
-        startAt: moment().add(1, 'month').toISOString(),
-        endAt: moment().add(2, 'months').toISOString(),
+        // Naive, as the editor sends them: no offset.
+        startAt: moment().add(1, 'month').format('YYYY-MM-DDTHH:mm:ss'),
+        endAt: moment().add(2, 'months').format('YYYY-MM-DDTHH:mm:ss'),
       }).expect(409);
 
       // The window sent unchanged with every save, or closing it earlier, is not.

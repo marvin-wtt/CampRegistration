@@ -4,11 +4,7 @@ import {
   type PrivacyPurposeRef,
   type PrivacyRecipientRef,
 } from './catalogue.js';
-import type {
-  PrivacyNoticeAddendum,
-  PrivacyNoticeContent,
-  PrivacyRecipientEntry,
-} from './content.js';
+import type { PrivacyNoticeAddendum, PrivacyNoticeContent } from './content.js';
 
 /**
  * Organization entries an event drops from its notice. Excluding a purpose also
@@ -53,21 +49,17 @@ function keysOf(entries: readonly { key: string }[] | undefined): Set<string> {
  * is not an exclusion: an undeclared key hides nothing, and a restated one is an
  * override, which wins.
  */
-function declaredAndInherited(
+function declaredAndInherited<T extends Keyed>(
   excluded: readonly string[] | undefined,
-  organization: readonly Keyed[],
+  organization: readonly T[],
   restated: readonly { key: string }[] | undefined,
-): Keyed[] {
+): T[] {
   const wanted = new Set(excluded ?? []);
   const own = keysOf(restated);
 
   return organization.filter(
     (entry) => wanted.has(entry.key) && !own.has(entry.key),
   );
-}
-
-function recipientExcludable(entry: PrivacyRecipientEntry): boolean {
-  return !entry.allEvents && !isAlwaysRecipient(entry.key);
 }
 
 /** Countries a recipient left in the composed notice is located in. */
@@ -91,64 +83,93 @@ function countriesInUse(
 }
 
 /**
- * What composition actually removes. Mandatory entries, always-recipients and
+ * Sorts every requested exclusion into what composition removes and what it
+ * ignores, with the reason. The one place these rules live: composition and
+ * publishing read the same answer. Mandatory entries, always-recipients and
  * countries a remaining recipient is located in are never removed, so a notice
  * cannot become false by construction — whatever an older addendum says.
  */
+function classifyExclusions(
+  organization: PrivacyNoticeContent | null,
+  addendum: PrivacyNoticeAddendum | null | undefined,
+): { applied: AppliedExclusions; refused: RefusedExclusion[] } {
+  const applied: AppliedExclusions = {
+    purposes: new Set(),
+    dataCategories: new Set(),
+    recipients: new Set(),
+    transferCountries: new Set(),
+  };
+  const refused: RefusedExclusion[] = [];
+  const excluded = addendum?.excluded;
+  if (!organization || !addendum || !excluded) {
+    return { applied, refused };
+  }
+
+  const entries = (
+    part: 'purposes' | 'dataCategories',
+    keys: readonly string[] | undefined,
+  ) => {
+    for (const entry of declaredAndInherited<Keyed>(
+      keys,
+      organization[part],
+      addendum[part],
+    )) {
+      if (entry.allEvents) {
+        refused.push({ part, key: entry.key, reason: 'all_events' });
+      } else {
+        applied[part].add(entry.key);
+      }
+    }
+  };
+  entries('purposes', excluded.purposes);
+  entries('dataCategories', excluded.dataCategories);
+
+  for (const entry of declaredAndInherited(
+    excluded.recipients,
+    organization.recipients,
+    addendum.recipients,
+  )) {
+    const reason = isAlwaysRecipient(entry.key)
+      ? 'always_recipient'
+      : entry.allEvents
+        ? 'all_events'
+        : null;
+    if (reason) {
+      refused.push({ part: 'recipients', key: entry.key, reason });
+    } else {
+      applied.recipients.add(entry.key);
+    }
+  }
+
+  // Countries are typed freely, so compared case-insensitively; the applied
+  // set holds the organization's own spelling, which composition filters by.
+  const inUse = countriesInUse(organization, addendum, applied.recipients);
+  for (const country of new Set(excluded.transferCountries ?? [])) {
+    const code = country.toUpperCase();
+    if (inUse.has(code)) {
+      refused.push({
+        part: 'transferCountries',
+        key: country,
+        reason: 'country_in_use',
+      });
+      continue;
+    }
+    for (const declared of organization.thirdCountryTransfers.countries) {
+      if (declared.toUpperCase() === code) {
+        applied.transferCountries.add(declared);
+      }
+    }
+  }
+
+  return { applied, refused };
+}
+
+/** What composition actually removes (`classifyExclusions`). */
 export function appliedExclusions(
   organization: PrivacyNoticeContent,
   addendum: PrivacyNoticeAddendum | null | undefined,
 ): AppliedExclusions {
-  const excluded = addendum?.excluded;
-  if (!addendum || !excluded) {
-    return {
-      purposes: new Set(),
-      dataCategories: new Set(),
-      recipients: new Set(),
-      transferCountries: new Set(),
-    };
-  }
-
-  const purposes = declaredAndInherited(
-    excluded.purposes,
-    organization.purposes,
-    addendum.purposes,
-  ).filter((entry) => !entry.allEvents);
-  const dataCategories = declaredAndInherited(
-    excluded.dataCategories,
-    organization.dataCategories,
-    addendum.dataCategories,
-  ).filter((entry) => !entry.allEvents);
-  const recipients = new Set(
-    organization.recipients
-      .filter(
-        (entry) =>
-          (excluded.recipients ?? []).includes(entry.key) &&
-          !keysOf(addendum.recipients).has(entry.key) &&
-          recipientExcludable(entry),
-      )
-      .map((entry) => entry.key),
-  );
-
-  // Countries are typed freely, so compared case-insensitively; the result
-  // holds the organization's own spelling, which composition filters by.
-  const inUse = countriesInUse(organization, addendum, recipients);
-  const wanted = new Set(
-    (excluded.transferCountries ?? []).map((country) => country.toUpperCase()),
-  );
-  const transferCountries = new Set(
-    organization.thirdCountryTransfers.countries.filter((country) => {
-      const code = country.toUpperCase();
-      return wanted.has(code) && !inUse.has(code);
-    }),
-  );
-
-  return {
-    purposes: keysOf(purposes),
-    dataCategories: keysOf(dataCategories),
-    recipients,
-    transferCountries,
-  };
+  return classifyExclusions(organization, addendum).applied;
 }
 
 /**
@@ -159,70 +180,7 @@ export function refusedExclusions(
   organization: PrivacyNoticeContent | null,
   addendum: PrivacyNoticeAddendum,
 ): RefusedExclusion[] {
-  const excluded = addendum.excluded;
-  if (!organization || !excluded) {
-    return [];
-  }
-
-  const refused: RefusedExclusion[] = [];
-
-  for (const entry of declaredAndInherited(
-    excluded.purposes,
-    organization.purposes,
-    addendum.purposes,
-  )) {
-    if (entry.allEvents) {
-      refused.push({ part: 'purposes', key: entry.key, reason: 'all_events' });
-    }
-  }
-
-  for (const entry of declaredAndInherited(
-    excluded.dataCategories,
-    organization.dataCategories,
-    addendum.dataCategories,
-  )) {
-    if (entry.allEvents) {
-      refused.push({
-        part: 'dataCategories',
-        key: entry.key,
-        reason: 'all_events',
-      });
-    }
-  }
-
-  const wantedRecipients = new Set(excluded.recipients ?? []);
-  for (const entry of organization.recipients) {
-    if (!wantedRecipients.has(entry.key)) {
-      continue;
-    }
-    if (isAlwaysRecipient(entry.key)) {
-      refused.push({
-        part: 'recipients',
-        key: entry.key,
-        reason: 'always_recipient',
-      });
-    } else if (entry.allEvents) {
-      refused.push({
-        part: 'recipients',
-        key: entry.key,
-        reason: 'all_events',
-      });
-    }
-  }
-
-  const applied = appliedExclusions(organization, addendum);
-  const inUse = countriesInUse(organization, addendum, applied.recipients);
-  for (const country of excluded.transferCountries ?? []) {
-    if (inUse.has(country.toUpperCase())) {
-      refused.push({
-        part: 'transferCountries',
-        key: country,
-        reason: 'country_in_use',
-      });
-    }
-  }
-
-  return refused;
+  return classifyExclusions(organization, addendum).refused;
 }
 
 /**

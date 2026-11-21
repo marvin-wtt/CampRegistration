@@ -14,6 +14,7 @@ import type {
   Prisma,
 } from '#generated/prisma/client.js';
 import { getRequestContext } from '#core/context/requestContext';
+import { batchesById } from '#core/database/batches';
 import {
   extractPrivacyTags,
   isSpecialCategory,
@@ -42,6 +43,9 @@ import {
 
 /** Events read per round trip when walking all of them. */
 const BATCH_SIZE = 50;
+
+/** How long deleting all registrations of an event may hold its transaction. */
+const PURGE_TIMEOUT_MS = 60_000;
 
 /** What an event records about the deletion of its data. */
 export type PurgeState = Pick<
@@ -217,7 +221,7 @@ export class RetentionService extends BaseService {
   /**
    * Clears the answers to special-category questions in every registration
    * and detaches files uploaded to them (the file cleanup removes those).
-   * Idempotent: a rerun, after an interruption, finishes the job.
+   * A rerun, after an interruption, finishes the job.
    */
   async purgeSensitiveData(event: EventWithFreePlaces): Promise<number> {
     if (event.registrationDataPurgedAt) {
@@ -249,28 +253,35 @@ export class RetentionService extends BaseService {
   async purgeRegistrationData(
     event: PurgeState & Pick<Event, 'id'>,
   ): Promise<number> {
-    return this.transaction(async () => {
-      // Sensitive data is a subset: deleting all of it deletes that too.
-      await this.markPurged(event.id, EVENT_RETENTION_DEADLINE_KINDS);
-      const deleted =
-        await this.registrationService.deleteRegistrationsForEvent(event.id);
+    return this.transaction(
+      async () => {
+        // Sensitive data is a subset: deleting all of it deletes that too.
+        await this.markPurged(event.id, EVENT_RETENTION_DEADLINE_KINDS);
+        const deleted =
+          await this.registrationService.deleteRegistrationsForEvent(event.id);
 
-      await this.audit.record({
-        action: 'registrations_purged',
-        entityType: 'retention',
-        entityId: event.id,
-        eventId: event.id,
-        details: { values: { count: deleted } },
-      });
+        await this.audit.record({
+          action: 'registrations_purged',
+          entityType: 'retention',
+          entityId: event.id,
+          eventId: event.id,
+          details: { values: { count: deleted } },
+        });
 
-      return deleted;
-    });
+        return deleted;
+      },
+      // One statement, but it detaches every file, bed and audit entry of a
+      // large event: Prisma's default of 5 s is too short for that.
+      { timeout: PURGE_TIMEOUT_MS },
+    );
   }
 
   /**
-   * Records the deletion for good, once registration has closed: the event
-   * then never reopens it (`assertRegistrationStaysClosed`). Under the event's
-   * row lock, so an edit reopening it cannot slip in between.
+   * Records the deletion for good, once the event has ended and registration
+   * has closed: the event then never reopens it (`assertRegistrationStaysClosed`).
+   * Under the event's row lock, so an edit reopening it cannot slip in between.
+   * Before the end the team may still need the data, health details above all;
+   * a cancelled event is removed by deleting the event instead.
    */
   private async markPurged(
     eventId: string,
@@ -278,6 +289,12 @@ export class RetentionService extends BaseService {
   ): Promise<void> {
     await this.transaction(async (tx) => {
       const event = await this.eventService.lockForUpdate(eventId);
+      if (event.endAt > new Date()) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'Data can only be deleted once the event has ended.',
+        );
+      }
       if (eventRegistrationStatus(event) !== 'closed') {
         throw new ApiError(
           httpStatus.CONFLICT,
@@ -331,26 +348,26 @@ export class RetentionService extends BaseService {
   async *eventsWithRegistrations(
     where: Prisma.EventWhereInput = {},
   ): AsyncGenerator<RetentionEventWithName> {
-    let cursor: string | undefined;
-    let batch: RetentionEventWithName[];
-
-    do {
-      batch = await this.prisma.event.findMany({
-        where: {
-          ...where,
-          registrationDataPurgedAt: null,
-          registrations: {
-            some: { organizationPrivacyNoticeVersionId: { not: null } },
+    const batches = batchesById(
+      (page) =>
+        this.prisma.event.findMany({
+          ...page,
+          where: {
+            ...where,
+            registrationDataPurgedAt: null,
+            registrations: {
+              some: { organizationPrivacyNoticeVersionId: { not: null } },
+            },
+            ...page.where,
           },
-          ...(cursor ? { id: { gt: cursor } } : {}),
-        },
-        select: RETENTION_EVENT_SELECT,
-        orderBy: { id: 'asc' },
-        take: BATCH_SIZE,
-      });
+          select: RETENTION_EVENT_SELECT,
+        }),
+      BATCH_SIZE,
+    );
+
+    for await (const batch of batches) {
       yield* batch;
-      cursor = batch.at(-1)?.id;
-    } while (batch.length === BATCH_SIZE);
+    }
   }
 
   /** The earliest date each kind was promised to be deleted by. */

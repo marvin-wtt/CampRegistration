@@ -27,6 +27,7 @@ import {
   registrationAuditPolicy,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
+import { batchesById } from '#core/database/batches';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import {
   assertConsentsGiven,
@@ -499,23 +500,16 @@ export class RegistrationService extends BaseService {
   }
 
   /** The event's registrations, read in batches by id. */
-  private async *registrationBatchesOfEvent(eventId: string) {
-    let cursor: string | undefined;
-    let batch;
-
-    do {
-      batch = await this.prisma.registration.findMany({
-        where: { eventId },
-        select: BULK_REGISTRATION_SELECT,
-        orderBy: { id: 'asc' },
-        take: BATCH_SIZE,
-        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-      });
-      if (batch.length > 0) {
-        yield batch;
-      }
-      cursor = batch.at(-1)?.id;
-    } while (batch.length === BATCH_SIZE);
+  private registrationBatchesOfEvent(eventId: string) {
+    return batchesById(
+      (page) =>
+        this.prisma.registration.findMany({
+          ...page,
+          where: { eventId, ...page.where },
+          select: BULK_REGISTRATION_SELECT,
+        }),
+      BATCH_SIZE,
+    );
   }
 
   /**

@@ -1,6 +1,8 @@
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   isCustomKey,
+  LEGAL_BASIS_KEYS,
   type PrivacyDataCategoryEntry,
   type PrivacyPurposeEntry,
   type PrivacyRecipientEntry,
@@ -54,7 +56,16 @@ export function usePrivacyLabels() {
     return te(key) ? t(key) : code.toUpperCase();
   }
 
+  /** The legal bases, as options for a select. */
+  const legalBasisOptions = computed(() =>
+    LEGAL_BASIS_KEYS.map((key) => ({
+      value: key,
+      label: t(`privacy.legalBasis.${key}`),
+    })),
+  );
+
   return {
+    legalBasisOptions,
     categoryLabel,
     purposeLabel,
     exceptionLabel,

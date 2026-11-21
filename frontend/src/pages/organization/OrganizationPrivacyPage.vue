@@ -458,7 +458,7 @@
                     icon="delete"
                     :aria-label="t('action.remove')"
                     :disable="!canEdit"
-                    @click="removeCategory(entry.key)"
+                    @click="removeDataCategory(entry.key)"
                   />
                 </div>
 
@@ -760,7 +760,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
-  LEGAL_BASIS_KEYS,
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_PURPOSE_KEYS,
   PRIVACY_PURPOSE_PRESETS,
@@ -781,17 +780,13 @@ import {
   type LegalBasisKey,
   type PrivacyDataCategoryEntry,
   type PrivacyDataCategoryKey,
-  type PrivacyDataCategoryRef,
   type PrivacyNoticeContent,
   type PrivacyNoticeSection,
   type PrivacyPurposeEntry,
   type PrivacyPurposeKey,
   type PrivacyPurposeRef,
   type PrivacyRecipientEntry,
-  type PrivacyRecipientKey,
-  type PrivacyRecipientRef,
   type PublishedPrivacyNotice,
-  type SpecialCategoryBasisKey,
 } from '@camp-registration/common/privacy';
 import type { Translatable } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -812,6 +807,9 @@ import { useOrganizationDetailsStore } from '@/stores/organization-details-store
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
+import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
+import { usePrivacyLabels } from '@/composables/privacyLabels';
+import { localeText, useLocaleTextModel } from '@/composables/localeText';
 import { countryName } from '@/utils/countries';
 import { APP_LOCALES as locales } from '@/i18n/locales';
 
@@ -846,6 +844,37 @@ const content = ref<PrivacyNoticeContent>(emptyPrivacyNoticeContent());
 // only thing an edit can be compared against.
 const publishedSnapshot = ref(JSON.stringify(content.value));
 const publishedAt = ref<string | null>(null);
+
+const {
+  dataCategory,
+  hasDataCategory,
+  addDataCategory,
+  removeDataCategory,
+  toggleDataCategory,
+  setSpecialBasis,
+  recipient,
+  hasRecipient,
+  addRecipient,
+  removeRecipient,
+  toggleRecipient,
+  setRecipientName,
+} = usePrivacyEntryEditor(content);
+const { legalBasisOptions } = usePrivacyLabels();
+
+const additionalForLocale = useLocaleTextModel(
+  {
+    get: () => content.value.additional,
+    set: (value) => (content.value.additional = value),
+  },
+  additionalLocale,
+);
+const freeTextForLocale = useLocaleTextModel(
+  {
+    get: () => content.value.freeText,
+    set: (value) => (content.value.freeText = value),
+  },
+  freeTextLocale,
+);
 
 const hasUnpublishedChanges = computed(
   () => JSON.stringify(content.value) !== publishedSnapshot.value,
@@ -1018,12 +1047,6 @@ const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
   };
 });
 
-const legalBasisOptions = computed(() =>
-  LEGAL_BASIS_KEYS.map((key) => ({
-    value: key,
-    label: gt(`privacy.legalBasis.${key}`),
-  })),
-);
 function asTranslatable(value: unknown): Translatable | null {
   return (value ?? null) as Translatable | null;
 }
@@ -1034,46 +1057,6 @@ const customCategories = computed(() =>
   content.value.dataCategories.filter((entry) => isCustomKey(entry.key)),
 );
 
-function dataCategory(key: PrivacyDataCategoryRef) {
-  return content.value.dataCategories.find((entry) => entry.key === key);
-}
-function hasDataCategory(key: PrivacyDataCategoryRef) {
-  return dataCategory(key) !== undefined;
-}
-function addDataCategory(key: PrivacyDataCategoryKey) {
-  if (hasDataCategory(key)) {
-    return;
-  }
-
-  // Pre-select the Art. 9 basis nearly every event actually relies on, rather
-  // than opening with an empty required field.
-  content.value.dataCategories.push(
-    isSpecialCategory(key)
-      ? { key, specialCategoryBasis: DEFAULT_SPECIAL_CATEGORY_BASIS }
-      : { key },
-  );
-}
-function toggleDataCategory(key: PrivacyDataCategoryKey, on: boolean) {
-  if (on) {
-    addDataCategory(key);
-  } else {
-    removeCategory(key);
-  }
-}
-function removeCategory(key: PrivacyDataCategoryRef) {
-  content.value.dataCategories = content.value.dataCategories.filter(
-    (entry) => entry.key !== key,
-  );
-}
-function setSpecialBasis(
-  key: PrivacyDataCategoryRef,
-  value: SpecialCategoryBasisKey | null | undefined,
-) {
-  const entry = dataCategory(key);
-  if (entry) {
-    entry.specialCategoryBasis = value ?? null;
-  }
-}
 function addCustomCategory() {
   content.value.dataCategories.push({
     key: nextCustomKey(content.value.dataCategories),
@@ -1176,92 +1159,12 @@ function addCustomRecipient() {
     label: null,
   });
 }
-function removeRecipient(key: PrivacyRecipientRef) {
-  content.value.recipients = content.value.recipients.filter(
-    (entry) => entry.key !== key,
-  );
-}
-
-function recipient(key: PrivacyRecipientKey) {
-  return content.value.recipients.find((entry) => entry.key === key);
-}
-function hasRecipient(key: PrivacyRecipientKey) {
-  return recipient(key) !== undefined;
-}
-function addRecipient(key: PrivacyRecipientKey) {
-  if (!hasRecipient(key)) {
-    content.value.recipients.push({ key });
-  }
-}
-function toggleRecipient(key: PrivacyRecipientKey, on: boolean) {
-  if (on) {
-    addRecipient(key);
-  } else {
-    content.value.recipients = content.value.recipients.filter(
-      (entry) => entry.key !== key,
-    );
-  }
-}
-function setRecipientName(key: PrivacyRecipientKey, value: string) {
-  const entry = recipient(key);
-  if (entry) {
-    entry.name = value || null;
-  }
-}
-
 /* Retention */
 
 /* Free text and the builder's own free-text section */
 
 // The rich-text editor edits one locale at a time; the stored value stays a
 // per-locale record so a notice can be read in every language a event runs in.
-function localeText(value: Translatable | null, loc: string): string {
-  if (value === null) {
-    return '';
-  }
-
-  return typeof value === 'string' ? value : (value[loc] ?? '');
-}
-
-function withLocaleText(
-  value: Translatable | null,
-  loc: string,
-  html: string,
-): Translatable | null {
-  const current =
-    value === null || typeof value === 'string' ? {} : { ...value };
-
-  if (html) {
-    current[loc] = html;
-  } else {
-    delete current[loc];
-  }
-
-  return Object.keys(current).length > 0 ? current : null;
-}
-
-const additionalForLocale = computed({
-  get: () => localeText(content.value.additional, additionalLocale.value),
-  set: (html: string) => {
-    content.value.additional = withLocaleText(
-      content.value.additional,
-      additionalLocale.value,
-      html,
-    );
-  },
-});
-
-const freeTextForLocale = computed({
-  get: () => localeText(content.value.freeText, freeTextLocale.value),
-  set: (html: string) => {
-    content.value.freeText = withLocaleText(
-      content.value.freeText,
-      freeTextLocale.value,
-      html,
-    );
-  },
-});
-
 // Art. 12 wants the notice in a language the reader understands, and nothing
 // translates free text for the organization — so name what is still missing.
 const missingFreeTextLocales = computed(() =>

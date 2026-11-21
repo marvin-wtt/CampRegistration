@@ -12,10 +12,8 @@ import httpStatus from 'http-status';
 import { EventService } from '#app/event/event.service';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { resolve } from '#core/ioc/container';
-import {
-  eventRegistrationStatus,
-  isRetentionPurged,
-} from '#app/event/event.util';
+import { eventRegistrationStatus } from '#app/event/event.util';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import {
   formPrivacyIssues,

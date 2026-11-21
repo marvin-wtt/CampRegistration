@@ -176,6 +176,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { sumGroupValues, zonedInstant } from '@camp-registration/common/utils';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import RegistrationScheduleDialog from '@/components/event/index/RegistrationScheduleDialog.vue';
@@ -430,10 +431,7 @@ const canEdit = computed<boolean>(() => canFor(event.id, 'event.edit'));
 
 // After a deletion the window is frozen (docs/privacy.md, 8).
 const canEditWindow = computed<boolean>(
-  () =>
-    canEdit.value &&
-    !event.sensitiveDataPurgedAt &&
-    !event.registrationDataPurgedAt,
+  () => canEdit.value && !isRetentionPurged(event),
 );
 
 const registrationLoading = ref<boolean>(false);

@@ -91,6 +91,31 @@ export class EventManagerService extends BaseService {
   }
 
   /**
+   * The users whose own live manager record grants `permission` on the event,
+   * resolved in one query for bulk mails. Organization-derived access is not
+   * included: it has no manager record to address.
+   */
+  async usersWithManagerPermission(
+    eventId: string,
+    permission: EventScopedPermission,
+  ) {
+    const roles = Object.entries(permissionRegistry.for('event').getAll())
+      .filter(([, permissions]) => permissions.includes(permission))
+      .map(([role]) => role);
+
+    const managers = await this.prisma.eventManager.findMany({
+      where: {
+        eventId,
+        role: { in: roles },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: { user: { select: { name: true, email: true, locale: true } } },
+    });
+
+    return managers.flatMap(({ user }) => (user ? [user] : []));
+  }
+
+  /**
    * Authorization for a system administrator, who is not a event manager and so
    * has no manager record. Grants every resource view permission (so
    * `shouldDeliver` passes for all events), a never-expiring snapshot, and an

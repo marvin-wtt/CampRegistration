@@ -138,14 +138,7 @@ export function calculateFreePlaces(
   };
 }
 
-/** Whether any of the event's registration data was deleted for good. */
-export function isRetentionPurged(
-  event: Pick<Event, 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'>,
-): boolean {
-  return !!event.sensitiveDataPurgedAt || !!event.registrationDataPurgedAt;
-}
-
-/** `isRetentionPurged` as a query filter, for events not purged. */
+/** `isRetentionPurged` (common/privacy) as a query filter, for events not purged. */
 export const notRetentionPurged = {
   sensitiveDataPurgedAt: null,
   registrationDataPurgedAt: null,

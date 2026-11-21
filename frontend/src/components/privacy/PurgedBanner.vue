@@ -1,8 +1,11 @@
 <template>
   <!-- After "Delete all registrations" (docs/privacy.md, 8). -->
+  <!-- The action sits beside the text where there is room for both, and below
+       it on a phone, where beside it would squeeze the text into a column. -->
   <q-banner
     dense
     rounded
+    :inline-actions="quasar.screen.gt.xs"
     class="bg-surface-container-high text-on-surface"
     :data-test="`purged-${kind}`"
   >
@@ -28,6 +31,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { usePermissions } from '@/composables/permissions';
 
@@ -38,6 +42,7 @@ const { kind, manageLink = false } = defineProps<{
 }>();
 
 const { t } = useI18n();
+const quasar = useQuasar();
 const { canAccess } = usePermissions();
 
 const canManage = computed(

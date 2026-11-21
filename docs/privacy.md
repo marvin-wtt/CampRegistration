@@ -692,14 +692,20 @@ verification:
   declares on another Art. 9 basis (`consentBasedCategories`). Under a free-text
   notice nothing is readable, so all special categories rely on consent and the
   "undeclared" check is skipped.
-- **[implemented] Submission and manager edits.** Refuse (422,
+- **[implemented] Submission.** Refuse (422,
   `REGISTRATION_CONSENT_MISSING`) when a tagged question relying on consent has an
-  answer while its consent is not `true` (`assertConsentsGiven`). Read through the
+  answer while its consent is not `true` (`assertConsentsGiven`), whoever submits
+  — a manager creating a registration included. Read through the
   survey model (`unconsentedQuestions`), like the client's clearing and the mail
   filter, so SurveyJS decides where an answer lives; a consent asked per dynamic
   panel entry counts only when given in every entry. Tags alone are read off the
   form JSON (`extractPrivacyTags`): they are the platform's own properties.
 - Categories relying on (g) or another non-consent basis need no consent question.
+- **[implemented] Manager edits are not checked.** A manager may record a
+  sensitive answer without the form's consent, e.g. allergies a parent phoned in
+  with consent given outside the form; that is the organizer's responsibility.
+  The stored consent wording (`consentTexts`) is not updated by an edit: it is
+  proof of what the form showed at submission only.
 - **[review]** Editing a live form into a non-compliant state stops registrations
   until it is fixed. Intended: collecting without a basis is not allowed even
   briefly.
@@ -709,9 +715,9 @@ verification:
 - The registrant withdraws by contacting the organizer; the consent text and the
   notice say how.
 - **[implemented]** No dedicated action: a manager edits the registration and
-  empties the covered answers. The consent check also runs on updates, so a
-  registration cannot keep covered answers without the consent; emptying them hides
-  the consent question again. The audit log records who edited it and when.
+  empties the covered answers; emptying them hides the consent question again.
+  Edits are not consent-checked (see above), so the manager is responsible for
+  emptying them. The audit log records who edited it and when.
 - Handled without undue delay; the event's managers are responsible.
 - **[review]** Art. 7(3) requires withdrawing to be as easy as giving consent.
   Consent is a click; withdrawal is an email followed by a manager's action. Whether
@@ -936,9 +942,11 @@ keep data.
   cascade.
 - Both need `event.registrations.delete`, warn to keep a copy of anything legally
   required first, and require typing the event name (`SafeDeleteDialog`); the
-  request carries `confirm: true`. Both are idempotent.
+  request carries `confirm: true`. Both can be run again safely; a rerun audits
+  only what it changed.
 - Deleting all registrations is one transaction: recorded, deleted and audited
-  together or not at all. A registration create re-reads the deletion state
+  together or not at all. It gets 60 s instead of Prisma's 5 s, as detaching
+  the files, beds and audit entries of a large event takes longer. A registration create re-reads the deletion state
   inside its own (serializable) transaction, so the two never interleave.
 - The sensitive deletion is recorded first, on its own, which closes
   registration, then clears the registrations one at a time, each locked while
@@ -952,15 +960,20 @@ keep data.
   `registrationDataPurgedAt`; deleting everything sets both. Nothing clears them,
   and deleted data is never treated as restorable. A kind whose data is deleted
   has no deadline any more: no reminders, and it leaves the overviews.
-- Deleting needs the registration closed (`eventRegistrationStatus`; an event
-  without a window is closed once it has started), checked under the event's row
-  lock (409 otherwise, the data page disables both actions and says why). From
+- Deleting needs the event ended (`endAt` passed) and the registration closed
+  (`eventRegistrationStatus`; an event without a window is closed once it has
+  started), both checked under the event's row lock (409 otherwise; the data page
+  disables both actions and says why). Before the end the team may still need the
+  data, health details above all, and a slip on the day before a camp cannot be
+  undone. Nothing requires deleting earlier: a person's erasure request deletes
+  that one registration, and a cancelled or mistaken event is removed by
+  deleting the event, both at any time. From
   then on it stays closed: an event edit that would reopen it — the window, or
   without one the start — is refused under the same lock (409; the editor and the
   event card disable the window), so the status needs no deletion check of its
   own. Nobody registers again, managers included (`eventNotPurged`, re-checked
   inside the create's transaction): a new registration would bring back what was
-  deleted. The data page warns while the event has not ended. After the sensitive deletion an edit carrying
+  deleted. After the sensitive deletion an edit carrying
   sensitive answers is refused (400), never
   silently stripped: the manager learns the input was not kept. After deleting everything, the dashboard hides the
   cards built on registrations and the participants page says the data is gone.
@@ -1005,7 +1018,8 @@ keep data.
 - Settings › "Data & deletion" (`DataSettingsPage`) holds everything
   irreversible: the periods the current notice states (`periods`, with a link to
   the organization's privacy settings, where they are set), both deletion actions
-  — available before or after the deadline, once registration has closed — with their deadline, the server's
+  — available before or after the deadline, once the event has ended and
+  registration has closed — with their deadline, the server's
   estimate from the current notice where there is none yet, or postponement, and deleting the event itself (moved here from the event card's
   menu). Shown to managers with `event.registrations.delete` or `event.delete`.
 - Event dashboard (wrap-up phase): a summary of both deadlines and their status,

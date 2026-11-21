@@ -678,7 +678,6 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
   EVENT_DATA_TYPE_DATA_CATEGORIES,
   DEFAULT_SPECIAL_CATEGORY_BASIS,
-  LEGAL_BASIS_KEYS,
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_PURPOSE_KEYS,
   PRIVACY_PURPOSE_PRESETS,
@@ -707,7 +706,6 @@ import {
   type PublishedPrivacyNotice,
   type SpecialCategoryBasisKey,
 } from '@camp-registration/common/privacy';
-import type { Translatable } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
@@ -728,6 +726,8 @@ import { useOrganizationPermissions } from '@/composables/organizationPermission
 import { usePrivacyLabels } from '@/composables/privacyLabels';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
+import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
+import { localeText, useLocaleTextModel } from '@/composables/localeText';
 import {
   extractEventDataTypes,
   extractPrivacyTags,
@@ -740,8 +740,13 @@ const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
 const { canOrgFor } = useOrganizationPermissions();
-const { categoryLabel, purposeLabel, recipientLabel, countryLabel } =
-  usePrivacyLabels();
+const {
+  legalBasisOptions,
+  categoryLabel,
+  purposeLabel,
+  recipientLabel,
+  countryLabel,
+} = usePrivacyLabels();
 const { extractErrorText } = useErrorExtractor();
 const notifier = useNotifier();
 const { fetchEventAddendum, publishEventAddendum, fetchEventNotice } =
@@ -769,6 +774,17 @@ const content = ref<PrivacyNoticeAddendum>(emptyAddendum());
 // What registrants are currently reading. There is no draft, so this is the
 // only thing an edit can be compared against.
 const publishedSnapshot = ref(JSON.stringify(content.value));
+
+const {
+  dataCategory,
+  hasDataCategory,
+  toggleDataCategory,
+  setSpecialBasis,
+  recipient,
+  hasRecipient,
+  toggleRecipient,
+  setRecipientName,
+} = usePrivacyEntryEditor(content);
 
 const eventId = computed(() => event.value?.id);
 const organizationId = computed(() => event.value?.organizationId);
@@ -998,36 +1014,6 @@ function applySuggested() {
 
 /* Data categories */
 
-function dataCategory(key: PrivacyDataCategoryKey) {
-  return content.value.dataCategories?.find((entry) => entry.key === key);
-}
-function hasDataCategory(key: PrivacyDataCategoryKey): boolean {
-  return dataCategory(key) !== undefined;
-}
-function toggleDataCategory(key: PrivacyDataCategoryKey, on: boolean) {
-  const entries = content.value.dataCategories ?? [];
-
-  content.value.dataCategories = on
-    ? [
-        ...entries,
-        // Pre-select the Art. 9 basis nearly every event actually relies on,
-        // rather than opening with an empty required field.
-        isSpecialCategory(key)
-          ? { key, specialCategoryBasis: DEFAULT_SPECIAL_CATEGORY_BASIS }
-          : { key },
-      ]
-    : entries.filter((entry) => entry.key !== key);
-}
-function setSpecialBasis(
-  key: PrivacyDataCategoryKey,
-  value: SpecialCategoryBasisKey | null | undefined,
-) {
-  const entry = dataCategory(key);
-  if (entry) {
-    entry.specialCategoryBasis = value ?? null;
-  }
-}
-
 function hasCategoryNotes(key: PrivacyDataCategoryKey): boolean {
   return isAdvisorySpecialCategory(key) || requiresConsentQuestion(key);
 }
@@ -1102,13 +1088,6 @@ const eventPurposeKeys = computed(() =>
   ),
 );
 
-const legalBasisOptions = computed(() =>
-  LEGAL_BASIS_KEYS.map((key) => ({
-    value: key,
-    label: gt(`privacy.legalBasis.${key}`),
-  })),
-);
-
 function eventPurpose(key: PrivacyPurposeKey) {
   return content.value.purposes?.find((entry) => entry.key === key);
 }
@@ -1148,25 +1127,6 @@ function setEventLegalBasis(key: PrivacyPurposeKey, value: LegalBasisKey) {
 }
 
 /* Recipients */
-
-function recipient(key: PrivacyRecipientRef) {
-  return content.value.recipients?.find((entry) => entry.key === key);
-}
-function hasRecipient(key: PrivacyRecipientRef): boolean {
-  return recipient(key) !== undefined;
-}
-function toggleRecipient(key: PrivacyRecipientKey, on: boolean) {
-  const entries = content.value.recipients ?? [];
-  content.value.recipients = on
-    ? [...entries, { key }]
-    : entries.filter((entry) => entry.key !== key);
-}
-function setRecipientName(key: PrivacyRecipientKey, value: string) {
-  const entry = recipient(key);
-  if (entry) {
-    entry.name = value || null;
-  }
-}
 
 /* Exclusions: inherit, change or drop an organization entry */
 
@@ -1335,31 +1295,13 @@ const excludedFormCategories = computed<PrivacyDataCategoryKey[]>(() =>
 
 /* Additional information */
 
-function localeText(value: Translatable | null | undefined, loc: string) {
-  if (!value) {
-    return '';
-  }
-
-  return typeof value === 'string' ? value : (value[loc] ?? '');
-}
-
-const additionalForLocale = computed({
-  get: () => localeText(content.value.additional, additionalLocale.value),
-  set: (html: string) => {
-    const current =
-      !content.value.additional || typeof content.value.additional === 'string'
-        ? {}
-        : { ...content.value.additional };
-
-    if (html) {
-      current[additionalLocale.value] = html;
-    } else {
-      delete current[additionalLocale.value];
-    }
-
-    content.value.additional = Object.keys(current).length > 0 ? current : null;
+const additionalForLocale = useLocaleTextModel(
+  {
+    get: () => content.value.additional,
+    set: (value) => (content.value.additional = value),
   },
-});
+  additionalLocale,
+);
 
 /**
  * Only the languages this event's registrants read. The addendum is written by
