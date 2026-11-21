@@ -148,10 +148,9 @@ import { useProgramPublishedDayStore } from '@/stores/program-published-day-stor
 import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
-import { usePermissions } from '@/composables/permissions';
+import { useEventRouteAccess, usePermissions } from '@/composables/permissions';
 import { useNavigationSettings } from '@/composables/eventNavigationSettings';
 import { type EventPhase, useEventPhase } from '@/composables/eventPhase';
-import type { PermissionRequirement } from '@/composables/scopePermissions';
 import type { HideableNavigationItem } from '@camp-registration/common/settings';
 type CardKey =
   | 'setup'
@@ -217,7 +216,8 @@ const publishedDayStore = useProgramPublishedDayStore();
 const choreStore = useChoreStore();
 const choreAssignmentStore = useChoreAssignmentStore();
 const stats = useEventStatistics();
-const { can, canAccess } = usePermissions();
+const { can } = usePermissions();
+const { canAccessRoute } = useEventRouteAccess();
 const { settings: navigationSettings, isLoading: navigationLoading } =
   useNavigationSettings();
 const { viewedPhase } = useEventPhase();
@@ -374,7 +374,6 @@ interface QuickAction {
   label: string;
   icon: string;
   route: string;
-  permission: PermissionRequirement<'event'>;
   navItem?: HideableNavigationItem;
 }
 
@@ -386,7 +385,6 @@ const quickActions = computed<QuickAction[]>(() =>
         label: t('actions.participants'),
         icon: 'groups',
         route: 'management.event.participants',
-        permission: 'event.registrations.view',
       },
       {
         key: 'contact',
@@ -394,12 +392,11 @@ const quickActions = computed<QuickAction[]>(() =>
         icon: 'mark_email_unread',
         route: 'management.event.contact',
         navItem: 'contact',
-        permission: { any: ['event.messages.create', 'event.messages.view'] },
       },
     ] satisfies QuickAction[]
   ).filter(
     (action) =>
-      canAccess(action.permission) &&
+      canAccessRoute(action.route) &&
       (!action.navItem || isShown(action.navItem)),
   ),
 );
