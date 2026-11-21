@@ -476,6 +476,50 @@ describe('RegistrationForm.getFileIds', () => {
   });
 });
 
+describe('RegistrationForm.answers', () => {
+  const sensitivity = (elements: object[], data: unknown) =>
+    new RegistrationForm(eventWith(elements), null)
+      .load(data)
+      .answers()
+      .filter((answer) => answer.value !== undefined)
+      .map(({ path, isSensitive }) => ({ path, isSensitive }));
+
+  it('marks a tagged question sensitive', () => {
+    expect(
+      sensitivity(
+        [
+          { type: 'text', name: 'allergies', privacyCategory: 'health' },
+          { type: 'text', name: 'first_name' },
+        ],
+        { allergies: 'Nuts', first_name: 'Ada' },
+      ),
+    ).toEqual([
+      { path: 'allergies', isSensitive: true },
+      { path: 'first_name', isSensitive: false },
+    ]);
+  });
+
+  it('marks everything inside a tagged container sensitive', () => {
+    const answers = sensitivity(
+      [
+        {
+          type: 'paneldynamic',
+          name: 'medications',
+          privacyCategory: 'health',
+          templateElements: [
+            { type: 'text', name: 'name' },
+            { type: 'text', name: 'dose' },
+          ],
+        },
+      ],
+      { medications: [{ name: 'Aspirin', dose: '20mg' }] },
+    );
+
+    expect(answers.length).toBeGreaterThan(0);
+    expect(answers.every((answer) => answer.isSensitive)).toBe(true);
+  });
+});
+
 describe('RegistrationForm.consentColumns', () => {
   const newsletter = {
     type: 'boolean',

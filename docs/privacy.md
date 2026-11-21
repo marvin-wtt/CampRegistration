@@ -604,6 +604,10 @@ then record wording the registrant never saw.
 - Compared as processed text (placeholders filled, before Markdown): the client adds
   a Markdown renderer the server does not have (`addMarkdownRenderer`), so rendered
   HTML may differ for identical text.
+- The placeholders must therefore render alike in every browser and on the
+  server (`setVariables`): dates and times are formatted from the naive digits in
+  UTC, so no runtime zone moves them, and every formatted value has one kind of
+  space only (`uniformSpaces`) — engines' locale data differ mostly in that.
 - **[review]** A link inside a consent text (`{_file.rules}`) is compared as the link,
   not as the document behind it. Replacing the linked file is not detected.
 - **[review]** Audit entries are purged after two years (`AUDIT_RETENTION_DAYS`).
@@ -958,7 +962,9 @@ keep data.
   the event is not purged, so one racing a deletion is refused (409). Only when
   every registration is cleared is it done (`sensitiveDataClearedAt`): an
   interrupted run keeps its deadline and reminders, and the page offers it
-  again, which finishes the job.
+  again, which finishes the job. Once done, a rerun still clears answers to a
+  question tagged since; the first completion stays the deletion's date, and
+  only a run that cleared something is audited.
 - The event records the deletion for good: `sensitiveDataPurgedAt` (begun,
   which blocks sensitive edits), `registrationDataPurgedAt`; deleting everything
   sets both. Nothing clears them,

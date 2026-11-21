@@ -254,12 +254,57 @@ describe('variables', () => {
 
       setVariables(model, fakeEventData({ price: 15000, currency: 'EUR' }));
 
-      expect(model.getVariable('event.priceWithCurrency')).toBe(
-        new Intl.NumberFormat('de', {
-          style: 'currency',
+      expect(model.getVariable('event.priceWithCurrency')).toBe('150,00 €');
+    });
+  });
+
+  // Consent texts embed these, and the server compares the wording the browser
+  // showed exactly: every engine must write them alike (docs/privacy.md, 5).
+  describe('formatting alike on every side', () => {
+    const formatted = (locale: string) => {
+      const model = new SurveyModel();
+      model.locale = locale;
+      setVariables(
+        model,
+        fakeEventData({
+          startAt: '2026-07-01T09:05:00',
+          price: 123450,
           currency: 'EUR',
-        }).format(150),
+        }),
       );
+
+      return ['startAtDate', 'startAtTime', 'priceWithCurrency'].map((name) =>
+        model.getVariable(`event.${name}`),
+      );
+    };
+
+    it.each([
+      ['en', ['07/01/2026', '09:05', '€1,234.50']],
+      ['de', ['01.07.2026', '09:05', '1.234,50 €']],
+      ['fr', ['01/07/2026', '09:05', '1 234,50 €']],
+      ['pl', ['01.07.2026', '09:05', '1234,50 €']],
+      ['cs', ['01. 07. 2026', '09:05', '1 234,50 €']],
+    ])('writes %s with one kind of space only', (locale, expected) => {
+      expect(formatted(locale)).toEqual(expected);
+    });
+
+    it('keeps a time in the runtime zone’s DST gap', () => {
+      // 02:30 does not exist in Berlin on that day; read as local time it
+      // would come out as 03:30 there, unlike on a UTC server.
+      vi.stubEnv('TZ', 'Europe/Berlin');
+      const model = new SurveyModel();
+      model.locale = 'de';
+      setVariables(model, fakeEventData({ startAt: '2026-03-29T02:30:00' }));
+      vi.unstubAllEnvs();
+
+      expect(model.getVariable('event.startAtTime')).toBe('02:30');
+    });
+
+    it('leaves the date empty while none is set', () => {
+      const model = new SurveyModel();
+      setVariables(model, fakeEventData({ startAt: '' }));
+
+      expect(model.getVariable('event.startAtDate')).toBeUndefined();
     });
   });
 

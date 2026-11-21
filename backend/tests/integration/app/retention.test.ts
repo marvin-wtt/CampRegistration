@@ -628,7 +628,7 @@ describe('retention workflow', () => {
         .post(`/api/v1/events/${event.id}/registrations`)
         .send({ data: { first_name: 'Ada' } })
         .auth(token, { type: 'bearer' })
-        .expect(403);
+        .expect(409);
       expect(
         await prisma.registration.count({ where: { eventId: event.id } }),
       ).toBe(0);

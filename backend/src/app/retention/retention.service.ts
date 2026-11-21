@@ -233,11 +233,10 @@ export class RetentionService extends BaseService {
   /**
    * Clears the answers to special-category questions in every registration
    * and detaches files uploaded to them (the file cleanup removes those).
-   * A rerun, after an interruption, finishes the job.
+   * A rerun finishes an interrupted run, and clears what was tagged since.
    */
   async purgeSensitiveData(event: EventWithFreePlaces): Promise<number> {
-    // Done before: its date and audit entry stand.
-    if (event.registrationDataPurgedAt || event.sensitiveDataClearedAt) {
+    if (event.registrationDataPurgedAt) {
       return 0;
     }
 
@@ -247,18 +246,24 @@ export class RetentionService extends BaseService {
     // interrupted run stays open and is simply run again.
     await this.markPurged(event.id, ['sensitive']);
     const cleared = await this.registrationService.clearSensitiveAnswers(event);
-    await this.prisma.event.update({
-      where: { id: event.id },
-      data: { sensitiveDataClearedAt: new Date() },
-    });
 
-    await this.audit.record({
-      action: 'sensitive_purged',
-      entityType: 'retention',
-      entityId: event.id,
-      eventId: event.id,
-      details: { values: { count: cleared } },
-    });
+    // A rerun also clears answers to a question tagged since; the first
+    // completion stays the date of the deletion.
+    if (!event.sensitiveDataClearedAt) {
+      await this.prisma.event.update({
+        where: { id: event.id },
+        data: { sensitiveDataClearedAt: new Date() },
+      });
+    }
+    if (!event.sensitiveDataClearedAt || cleared > 0) {
+      await this.audit.record({
+        action: 'sensitive_purged',
+        entityType: 'retention',
+        entityId: event.id,
+        eventId: event.id,
+        details: { values: { count: cleared } },
+      });
+    }
 
     return cleared;
   }

@@ -135,10 +135,43 @@ const questionPath = (question: Question): string => {
   return `${parentPath}.${name}`;
 };
 
-function flattenAnswers(
+/** A plain-data entry with whether its answer must never be printed. */
+interface SensitivityEntry extends PlainDataEntry {
+  isSensitive: boolean;
+  data?: SensitivityEntry[];
+}
+
+/**
+ * Marks what a special-category tag covers: the tagged question and, for a
+ * container, everything inside it — as the purge clears it. Its children
+ * carry no tag of their own.
+ */
+function markSensitive(
   entries: PlainDataEntry[],
-  trail: { path: string; label: string }[],
-): FormAnswer[] {
+  inherited = false,
+): SensitivityEntry[] {
+  return entries.map((entry) => {
+    const isSensitive = inherited || isSpecialCategory(entry.privacyCategory);
+
+    return {
+      ...entry,
+      isSensitive,
+      data: entry.data && markSensitive(entry.data, isSensitive),
+    };
+  });
+}
+
+interface FlatEntry<T> {
+  entry: T;
+  path: string;
+  label: string;
+}
+
+/** The answers of a plain-data tree, each with where it sits in the form. */
+function flattenEntries<T extends PlainDataEntry & { data?: T[] }>(
+  entries: T[],
+  trail: { path: string; label: string }[] = [],
+): FlatEntry<T>[] {
   return entries.flatMap((entry) => {
     const name = String(entry.name);
     // The rows and panels a container expands into are titled generically
@@ -162,17 +195,14 @@ function flattenAnswers(
       children?.length &&
       (questionType === undefined || CONTAINER_TYPES.has(questionType))
     ) {
-      return flattenAnswers(children, nested);
+      return flattenEntries(children, nested);
     }
 
     return [
       {
+        entry,
         path: nested.map((part) => part.path).join(PATH_SEPARATOR),
         label: nested.map((part) => part.label).join(LABEL_SEPARATOR),
-        value: entry.value,
-        displayValue: entry.displayValue,
-        isFile: questionType === FILE_TYPE,
-        isSensitive: isSpecialCategory(entry.privacyCategory),
       },
     ];
   });
@@ -348,7 +378,16 @@ export class RegistrationForm {
       calculations: [{ propertyName: 'privacyCategory' }],
     });
 
-    return flattenAnswers(plain, []);
+    return flattenEntries(markSensitive(plain)).map(
+      ({ entry, path, label }) => ({
+        path,
+        label,
+        value: entry.value,
+        displayValue: entry.displayValue,
+        isFile: entry.questionType === FILE_TYPE,
+        isSensitive: entry.isSensitive,
+      }),
+    );
   }
 
   // Runs the form's own rules (required, validators, ...) and returns whether

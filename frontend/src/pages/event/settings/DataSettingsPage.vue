@@ -382,7 +382,7 @@ interface Row {
   purgedAt: string | null;
   /**
    * Sensitive data deleted while the registrations remain: running it again
-   * finishes a deletion that was interrupted, and changes nothing otherwise.
+   * clears answers to questions tagged since, and changes nothing otherwise.
    */
   rerun: boolean;
 }

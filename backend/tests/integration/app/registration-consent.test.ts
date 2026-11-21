@@ -60,11 +60,12 @@ describe('registration consent', () => {
     it('should refuse registrations while a tagged category has no consent question', async () => {
       const event = await eventWith([firstName, allergies]);
 
+      // A guest gets the reason, not a 401.
       const { status } = await register(event.id, {
         data: { first_name: 'Jane' },
       });
 
-      expect(status).not.toBe(201);
+      expect(status).toBe(409);
     });
 
     it('should refuse registrations while a tagged category is undeclared', async () => {
@@ -74,11 +75,12 @@ describe('registration consent', () => {
         { ...consent, privacyConsentFor: ['medication'] },
       ]);
 
+      // A guest gets the reason, not a 401.
       const { status } = await register(event.id, {
         data: { first_name: 'Jane' },
       });
 
-      expect(status).not.toBe(201);
+      expect(status).toBe(409);
     });
 
     it('should refuse managers too: entering the data does not cover it', async () => {
@@ -90,7 +92,7 @@ describe('registration consent', () => {
 
       await register(event.id, { data: { first_name: 'Jane' } })
         .auth(generateAccessToken(user), { type: 'bearer' })
-        .expect(403);
+        .expect(409);
     });
   });
 
