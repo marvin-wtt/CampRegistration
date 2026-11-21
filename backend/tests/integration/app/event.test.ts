@@ -90,6 +90,7 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     themes: data.themes ?? expect.anything(),
     // Written only by the retention reminder job, never on create or update.
     retentionReminderSentAt: null,
+    archivedAt: null,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -139,6 +140,7 @@ const assertEventResponseBody = (
     } as unknown as Event),
     logo: null,
     banner: null,
+    archivedAt: null,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
   });
@@ -865,6 +867,7 @@ describe('/api/v1/events', () => {
         registrationStatus: eventRegistrationStatus(event),
         logo: null,
         banner: null,
+        archivedAt: null,
       });
     });
 
