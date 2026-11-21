@@ -165,7 +165,7 @@ void load();
 <i18n lang="yaml" locale="en">
 ready:
   title: 'Confirm your subscription'
-  message: '{organization} would like to add you to their newsletter "{newsletter}". Confirm below to start receiving it.'
+  message: 'You would like to subscribe to the newsletter "{newsletter}" from {organization}. Confirm your subscription to receive news by email from now on.'
   action: 'Confirm subscription'
 confirmed:
   title: 'Subscription confirmed'
@@ -182,7 +182,7 @@ error:
 <i18n lang="yaml" locale="de">
 ready:
   title: 'Bestätige dein Abonnement'
-  message: '{organization} möchte dich in den Newsletter „{newsletter}“ aufnehmen. Bestätige unten, um ihn zu erhalten.'
+  message: 'Du möchtest den Newsletter „{newsletter}“ von {organization} abonnieren. Bestätige deine Anmeldung, um künftig Neuigkeiten per E-Mail zu erhalten.'
   action: 'Abonnement bestätigen'
 confirmed:
   title: 'Abonnement bestätigt'
@@ -199,7 +199,7 @@ error:
 <i18n lang="yaml" locale="fr">
 ready:
   title: 'Confirme ton abonnement'
-  message: '{organization} aimerait t’ajouter à sa newsletter « {newsletter} ». Confirme ci-dessous pour commencer à la recevoir.'
+  message: 'Tu souhaites t’abonner à la newsletter « {newsletter} » de {organization}. Confirme ton inscription pour recevoir désormais les nouvelles par e-mail.'
   action: 'Confirmer l’abonnement'
 confirmed:
   title: 'Abonnement confirmé'
@@ -216,7 +216,7 @@ error:
 <i18n lang="yaml" locale="pl">
 ready:
   title: 'Potwierdź subskrypcję'
-  message: '{organization} chce dodać Cię do newslettera „{newsletter}”. Potwierdź poniżej, aby zacząć go otrzymywać.'
+  message: 'Chcesz zapisać się do newslettera „{newsletter}” od {organization}. Potwierdź zapis, aby od teraz otrzymywać nowości e-mailem.'
   action: 'Potwierdź subskrypcję'
 confirmed:
   title: 'Subskrypcja potwierdzona'
@@ -233,7 +233,7 @@ error:
 <i18n lang="yaml" locale="cs">
 ready:
   title: 'Potvrď odběr'
-  message: '{organization} tě chce přidat do newsletteru „{newsletter}“. Potvrď níže a začni ho dostávat.'
+  message: 'Chceš odebírat newsletter „{newsletter}“ od {organization}. Potvrď své přihlášení a dostávej od teď novinky e-mailem.'
   action: 'Potvrdit odběr'
 confirmed:
   title: 'Odběr potvrzen'
