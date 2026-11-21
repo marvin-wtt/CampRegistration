@@ -1,7 +1,7 @@
 export default {
   email: {
     reason:
-      '$t(email:footer.cause) Sie sich für diese Veranstaltung angemeldet haben.',
+      '$t(email:footer.cause) du dich für diese Veranstaltung angemeldet hast.',
     privacyLink: 'Datenschutzinformationen zu dieser Veranstaltung',
     changes: {
       cleared: 'entfernt',
@@ -10,18 +10,16 @@ export default {
     },
     managerNotification: {
       subject: 'Neue Anmeldung | {{ event.name }}',
-      preview: 'Neue Anmeldung für die Veranstaltung: {{ event.name }}',
+      preview: 'Neue Anmeldung für {{ event.name }}',
       text: {
-        title: 'Hallo,',
+        title: 'Neue Anmeldung',
         information:
-          '{{ registration.firstName }} {{ registration.lastName }} hat sich für {{ event.name }} angemeldet.',
+          '{{ registration.firstName }} {{ registration.lastName }} hat sich gerade für {{ event.name }} angemeldet.',
         button: 'Anmeldungen anzeigen',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
       },
       footer: {
         cause:
-          '$t(email:footer.cause) Sie eine Kontaktperson für diese Veranstaltung sind.',
+          '$t(email:footer.cause) du Kontaktperson für diese Veranstaltung bist.',
       },
     },
     messageBounced: {
@@ -29,16 +27,14 @@ export default {
       preview:
         'Eine Nachricht an {{ recipient }} konnte für {{ event.name }} nicht zugestellt werden',
       text: {
-        title: 'Hallo,',
+        title: 'Deine Nachricht wurde nicht zugestellt',
         information:
-          'Ihre Nachricht "{{ messageSubject }}" an {{ recipient }} für {{ event.name }} konnte nicht zugestellt werden.',
+          '„{{ messageSubject }}“ an {{ recipient }} für {{ event.name }} konnte nicht zugestellt werden. Prüfe am besten die E-Mail-Adresse dieser Anmeldung.',
         button: 'Anmeldungen anzeigen',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
       },
       footer: {
         cause:
-          '$t(email:footer.cause) Sie eine Kontaktperson für diese Veranstaltung sind.',
+          '$t(email:footer.cause) du Kontaktperson für diese Veranstaltung bist.',
       },
     },
   },

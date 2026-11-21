@@ -1,7 +1,6 @@
 export default {
   email: {
-    reason:
-      '$t(email:footer.cause) protože jste se zaregistrovali na tuto akci.',
+    reason: '$t(email:footer.cause) jsi přihlášen(a) na tuto akci.',
     privacyLink: 'Informace o ochraně osobních údajů pro tuto akci',
     changes: {
       cleared: 'odstraněno',
@@ -9,34 +8,30 @@ export default {
       sensitive: 'změněno',
     },
     managerNotification: {
-      subject: 'Nová registrace | {{ event.name }}',
-      preview: 'Nová registrace na akci: {{ event.name }}',
+      subject: 'Nová přihláška | {{ event.name }}',
+      preview: 'Nová přihláška na {{ event.name }}',
       text: {
-        title: 'Dobrý den,',
+        title: 'Nová přihláška',
         information:
-          '{{ registration.firstName }} {{ registration.lastName }} se přihlásil(a) na akci {{ event.name }}.',
-        button: 'Zobrazit registrace',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+          '{{ registration.firstName }} {{ registration.lastName }} se právě přihlásil/a na {{ event.name }}.',
+        button: 'Zobrazit přihlášky',
       },
       footer: {
-        cause: '$t(email:footer.cause) jste kontaktní osobou pro tuto akci.',
+        cause: '$t(email:footer.cause) jsi kontaktní osobou této akce.',
       },
     },
     messageBounced: {
       subject: 'Zpráva nedoručena | {{ event.name }}',
       preview:
-        'Zprávu pro {{ recipient }} se nepodařilo doručit pro akci {{ event.name }}',
+        'Zprávu pro {{ recipient }} k akci {{ event.name }} se nepodařilo doručit',
       text: {
-        title: 'Dobrý den,',
+        title: 'Tvoje zpráva nebyla doručena',
         information:
-          'Vaši zprávu „{{ messageSubject }}“ pro {{ recipient }} týkající se akce {{ event.name }} se nepodařilo doručit.',
-        button: 'Zobrazit registrace',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+          '„{{ messageSubject }}“ pro {{ recipient }} k akci {{ event.name }} se nepodařilo doručit. Zkontroluj e-mailovou adresu této přihlášky.',
+        button: 'Zobrazit přihlášky',
       },
       footer: {
-        cause: '$t(email:footer.cause) jste kontaktní osobou pro tuto akci.',
+        cause: '$t(email:footer.cause) jsi kontaktní osobou této akce.',
       },
     },
   },

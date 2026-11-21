@@ -9,6 +9,7 @@ import type {
   RegistrationManagerNotificationProps,
   NewsletterProps,
   RegistrationMessageProps,
+  TaskReminderProps,
   LocalContext,
 } from '#views/emails/types';
 import { htmlToPreviewText } from '#core/mail/emailPreview';
@@ -41,18 +42,17 @@ export const fixtures: EmailFixture[] = [
   },
   {
     template: 'message-bounced',
-    subject: 'Message Undelivered | Summer Camp 2026',
+    subject: 'Message undelivered | Summer Camp 2026',
     context: {
-      preview: 'A message to jane@example.com could not be delivered',
+      preview:
+        'A message to jane@example.com could not be delivered for Summer Camp 2026',
       eventName: 'Summer Camp 2026',
       reason:
         'You are receiving this email because you are a contact email of this event.',
-      title: 'Hello,',
+      title: 'Your message wasn’t delivered',
       information:
-        'Your message "Payment reminder" to jane@example.com for Summer Camp 2026 could not be delivered.',
-      button: 'View Registrations',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+        '“Payment reminder” to jane@example.com for Summer Camp 2026 couldn’t be delivered. It’s worth checking the email address of this registration.',
+      button: 'View registrations',
       url,
     } satisfies LocalContext<MessageBouncedProps>,
   },
@@ -64,7 +64,7 @@ export const fixtures: EmailFixture[] = [
       reason: 'You are receiving this email because you are an administrator.',
       title: 'New Feedback',
       replyNote:
-        'You can reply to this email to contact the user directly if they provided an email address.',
+        'Reply to this email to reach the sender directly, if they left an address.',
       senderLabel: 'From',
       messageLabel: 'Message',
       sender: 'Jane Doe <jane@example.com>',
@@ -73,53 +73,46 @@ export const fixtures: EmailFixture[] = [
   },
   {
     template: 'verify-email',
-    subject: 'Verify your email',
+    subject: 'Confirm your email address',
     context: {
-      preview: 'Verify your email to activate your account.',
+      preview: 'One click and your account is ready.',
       reason: 'You are receiving this email because you created an account.',
-      title: 'Hey there,',
+      title: 'Confirm your email address',
       information:
-        'Please confirm your email to confirm the account belongs to you. You can login directly after confirmation',
-      button: 'Confirm email',
-      accidental:
-        'If you did not create an account, please do not click the link and contact us.',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+        'One last step: confirm that this address is yours. You can sign in right after.',
+      button: 'Confirm email address',
+      accidental: 'Didn’t create an account? Just ignore this email.',
       url,
     } satisfies LocalContext<VerifyEmailProps>,
   },
   {
     template: 'reset-password',
-    subject: 'Reset password',
+    subject: 'Reset your password',
     context: {
-      preview: 'Reset your password now to regain access to your account.',
+      preview: 'Choose a new password to get back into your account.',
       reason:
-        'You are receiving this email because you have requested a new password.',
-      title: 'Hey there,',
+        'You are receiving this email because a new password was requested for your account.',
+      title: 'Reset your password',
       information:
-        'You forgot your password? No problem. You can set a new one here.',
-      button: 'Reset password',
+        'Forgot your password? No worries. Choose a new one with the button below.',
+      button: 'Choose a new password',
       accidental:
-        'If you did not request a password reset, you can ignore this email.',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+        'Didn’t request this? Just ignore this email. Your password stays the same.',
       url,
     } satisfies LocalContext<ResetPasswordProps>,
   },
   {
     template: 'action-card',
     name: 'manager-invitation',
-    subject: 'Event Invitation',
+    subject: 'You’re invited to manage an event',
     context: {
-      preview: 'You have been invited to manage Summer Camp 2026',
+      preview: 'Help manage Summer Camp 2026',
       reason:
         'You are receiving this email because you were invited by another user.',
-      title: 'Hello,',
+      title: 'You’re invited to manage Summer Camp 2026',
       information:
-        'You have been invited to manage Summer Camp 2026. If you already have an account, the event will be available automatically. Otherwise, please create a free account first.',
-      button: 'Manage Event',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+        'If you already have an account, the event is waiting for you. Otherwise, create a free account first.',
+      button: 'Open event',
       url,
     } satisfies LocalContext<ActionCardProps>,
   },
@@ -130,48 +123,42 @@ export const fixtures: EmailFixture[] = [
     context: {
       preview: 'Adventure Org is waiting to be verified',
       reason: 'You are receiving this email because you are an administrator.',
-      title: 'A new organization needs review',
+      title: 'New organization to review',
       information:
-        'Adventure Org has been submitted for verification. Until it is verified it cannot publish events or send newsletters.',
-      button: 'Review organizations',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+        'Adventure Org is waiting for verification. Until then, it can’t publish events or send newsletters.',
+      button: 'Review organization',
       url,
     } satisfies LocalContext<ActionCardProps>,
   },
   {
     template: 'action-card',
     name: 'organization-verified',
-    subject: 'Your organization has been verified',
+    subject: 'Your organization is verified',
     context: {
       preview: 'Adventure Org can now publish events',
       reason:
         'You are receiving this email because you administer this organization.',
-      title: 'Your organization has been verified',
+      title: 'Adventure Org is verified',
       information:
-        'Adventure Org has been verified. You can now publish its events and send newsletters.',
+        'Good news: you can now publish events and send newsletters.',
       button: 'Open organization',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
       url,
     } satisfies LocalContext<ActionCardProps>,
   },
   {
     template: 'action-card',
     name: 'newsletter-confirmation',
-    subject: 'Please confirm your newsletter subscription',
+    subject: 'Confirm your newsletter subscription',
     context: {
-      preview: 'Adventure Org would like to send you their newsletter.',
+      preview: 'One click to start receiving “Summer News”.',
       reason:
         'You are receiving this email because Adventure Org added you to their newsletter.',
-      title: 'Hi,',
+      title: 'Confirm your subscription',
       information:
-        'Adventure Org would like to add you to their newsletter "Summer News". Please confirm that you want to receive it. You will not get it until you confirm.',
+        'Adventure Org would like to add you to the newsletter “Summer News”. Confirm your subscription to receive news and updates by email.',
       button: 'Confirm subscription',
       accidental:
-        'If you did not expect this email, just ignore it. You will not be subscribed and your address will be deleted after 30 days.',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+        'Didn’t sign up? Just ignore this email. You won’t be subscribed, and your address is deleted after 30 days.',
       url,
     } satisfies LocalContext<ActionCardProps>,
   },
@@ -182,33 +169,79 @@ export const fixtures: EmailFixture[] = [
       preview: 'Adventure Org needs your attention',
       reason:
         'You are receiving this email because you administer this organization.',
-      title: 'Your organization could not be verified',
+      title: 'We couldn’t verify Adventure Org',
       information:
-        'Adventure Org has not been verified. It cannot publish events or send newsletters until it is. Correcting its registered details puts it back into review.',
+        'Until it’s verified, it can’t publish events or send newsletters. Update its details and we’ll review it again.',
       reasonLabel: 'Reason',
       reviewNote:
         'The registered address could not be confirmed against the business registry.',
-      button: 'Review the details',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+      button: 'Update details',
       url,
     } satisfies LocalContext<OrganizationRejectedProps>,
   },
   {
     template: 'registration-manager-notification',
-    subject: 'New Registration | Summer Camp 2026',
+    subject: 'New registration | Summer Camp 2026',
     context: {
-      preview: 'New registration for the event: Summer Camp 2026',
+      preview: 'New registration for Summer Camp 2026',
       eventName: 'Summer Camp 2026',
       reason:
         'You are receiving this email because you are a contact email of this event.',
-      title: 'Hello,',
-      information: 'Jane Doe registered for Summer Camp 2026.',
-      button: 'View Registrations',
-      greeting: 'Best regards,',
-      teamName: 'Camp Registration team',
+      title: 'New registration',
+      information: 'Jane Doe just registered for Summer Camp 2026.',
+      button: 'View registrations',
       url,
     } satisfies LocalContext<RegistrationManagerNotificationProps>,
+  },
+  {
+    template: 'task-reminder',
+    name: 'task-reminder-single',
+    subject: 'Due tomorrow: Pack the bus',
+    context: {
+      preview:
+        'This task for Summer Camp 2026 is assigned to you and due tomorrow (22.11.2026).',
+      reason:
+        'You are receiving this email because this task is assigned to you.',
+      title: 'Due tomorrow: Pack the bus',
+      information:
+        'This task for Summer Camp 2026 is assigned to you and due tomorrow (22.11.2026).',
+      groups: [],
+      groupLinkLabel: 'Open tasks',
+      button: 'Open tasks',
+      url,
+    } satisfies LocalContext<TaskReminderProps>,
+  },
+  {
+    template: 'task-reminder',
+    name: 'task-reminder-digest',
+    subject: '3 tasks due soon',
+    context: {
+      preview: 'Buy snacks · Pack the bus · Print name tags',
+      reason:
+        'You are receiving this email because these tasks are assigned to you.',
+      title: '3 tasks due soon',
+      information: 'These tasks are assigned to you and due today or tomorrow.',
+      groups: [
+        {
+          eventName: 'Summer Camp 2026',
+          url,
+          tasks: [
+            { title: 'Buy snacks', when: 'Due today · 21.11.2026' },
+            { title: 'Pack the bus', when: 'Due tomorrow · 22.11.2026' },
+          ],
+        },
+        {
+          eventName: 'Winter Retreat 2027',
+          url,
+          tasks: [
+            { title: 'Print name tags', when: 'Due tomorrow · 22.11.2026' },
+          ],
+        },
+      ],
+      groupLinkLabel: 'Open tasks',
+      button: 'Open tasks',
+      url,
+    } satisfies LocalContext<TaskReminderProps>,
   },
   {
     template: 'newsletter',
@@ -217,7 +250,7 @@ export const fixtures: EmailFixture[] = [
       preview: htmlToPreviewText(newsletterBody),
       body: newsletterBody,
       reason:
-        'You are receiving this email because you subscribed to our newsletter.',
+        'You are receiving this email because you subscribed to this newsletter.',
       unsubscribeUrl: 'https://example.com/newsletters/unsubscribe/tok_01',
       unsubscribeLabel: 'Unsubscribe',
     } satisfies LocalContext<NewsletterProps>,

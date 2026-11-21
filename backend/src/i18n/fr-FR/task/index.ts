@@ -1,19 +1,32 @@
 export default {
   email: {
     dueReminder: {
-      subject: 'Tâche à rendre le {{ dueDate }} : {{ task.title }}',
-      preview:
-        '« {{ task.title }} » pour {{ event.name }} est à rendre le {{ dueDate }}',
-      text: {
-        title: 'Une tâche arrive à échéance',
+      single: {
+        title: {
+          today: 'À faire aujourd’hui : {{ title }}',
+          tomorrow: 'À faire demain : {{ title }}',
+        },
         information:
-          'La tâche « {{ task.title }} » pour {{ event.name }} t’est assignée et arrive à échéance le {{ dueDate }}.',
-        button: 'Ouvrir les tâches',
-        greeting: 'Bien à toi,',
-        teamName: 'Équipe {{ appName }}',
+          'Cette tâche pour {{ eventName }} t’est assignée et arrive à échéance {{ when }}.',
       },
+      multiple: {
+        title_one: '{{ count }} tâche bientôt à échéance',
+        title_other: '{{ count }} tâches bientôt à échéance',
+        information:
+          'Ces tâches te sont assignées et arrivent à échéance aujourd’hui ou demain.',
+      },
+      when: {
+        today: 'aujourd’hui ({{ date }})',
+        tomorrow: 'demain ({{ date }})',
+      },
+      label: {
+        today: 'Échéance aujourd’hui · {{ date }}',
+        tomorrow: 'Échéance demain · {{ date }}',
+      },
+      button: 'Ouvrir les tâches',
       footer: {
         cause: '$t(email:footer.cause) cette tâche t’est assignée.',
+        causeMultiple: '$t(email:footer.cause) ces tâches te sont assignées.',
       },
     },
   },

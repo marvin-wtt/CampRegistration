@@ -4,29 +4,24 @@ export default {
       subject: 'Organization awaiting review: {{ organization.name }}',
       preview: '{{ organization.name }} is waiting to be verified',
       text: {
-        title: 'A new organization needs review',
+        title: 'New organization to review',
         information:
-          '{{ organization.name }} has been submitted for verification. ' +
-          'Until it is verified it cannot publish events or send newsletters.',
-        button: 'Review organizations',
-        greeting: 'Best regards,',
-        teamName: '{{ appName }} team',
+          '{{ organization.name }} is waiting for verification. ' +
+          'Until then, it can’t publish events or send newsletters.',
+        button: 'Review organization',
       },
       footer: {
         cause: '$t(email:footer.cause) you are an administrator.',
       },
     },
     verified: {
-      subject: 'Your organization has been verified',
+      subject: 'Your organization is verified',
       preview: '{{ organization.name }} can now publish events',
       text: {
-        title: 'Your organization has been verified',
+        title: '{{ organization.name }} is verified',
         information:
-          '{{ organization.name }} has been verified. ' +
-          'You can now publish its events and send newsletters.',
+          'Good news: you can now publish events and send newsletters.',
         button: 'Open organization',
-        greeting: 'Best regards,',
-        teamName: '{{ appName }} team',
       },
       footer: {
         cause: '$t(email:footer.cause) you administer this organization.',
@@ -36,15 +31,12 @@ export default {
       subject: 'Your organization could not be verified',
       preview: '{{ organization.name }} needs your attention',
       text: {
-        title: 'Your organization could not be verified',
+        title: 'We couldn’t verify {{ organization.name }}',
         information:
-          '{{ organization.name }} has not been verified. ' +
-          'It cannot publish events or send newsletters until it is. ' +
-          'Correcting its registered details puts it back into review.',
+          'Until it’s verified, it can’t publish events or send newsletters. ' +
+          'Update its details and we’ll review it again.',
         reasonLabel: 'Reason',
-        button: 'Review the details',
-        greeting: 'Best regards,',
-        teamName: '{{ appName }} team',
+        button: 'Update details',
       },
       footer: {
         cause: '$t(email:footer.cause) you administer this organization.',

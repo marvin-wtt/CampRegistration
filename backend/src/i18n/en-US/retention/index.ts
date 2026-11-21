@@ -9,34 +9,31 @@ export default {
         subject_one: 'Retention deadline in {{ count }} day: {{ event.name }}',
         subject_other:
           'Retention deadline in {{ count }} days: {{ event.name }}',
-        preview: 'Data of {{ event.name }} is due for deletion on {{ date }}',
+        preview: 'Time to review the data of {{ event.name }}',
         text: {
-          title: 'A retention deadline is coming up',
+          title: 'Time to review {{ event.name }}',
           information:
-            'The privacy notice of {{ event.name }} says that $t(retention:kind.{{kindKey}}) are deleted by {{ date }}. Check now whether anything must be kept for longer, such as invoices or records for a funding body, and keep a copy of it outside the platform. Then delete the data, or postpone the deadline with a reason. Nothing is deleted automatically.',
+            'Your privacy information for {{ event.name }} promises to delete $t(retention:kind.{{kindKey}}) by {{ date }}. Keep a copy outside the platform of anything you still need, such as invoices or records for a funding body. Then delete the data, or postpone the deadline with a reason. Nothing is deleted automatically.',
           button: 'Open event',
-          greeting: 'Best regards',
-          teamName: '{{ appName }} Team',
         },
         footer: {
           cause:
-            '$t(email:footer.cause) you can delete the registrations of this event.',
+            '$t(email:footer.cause) you can delete this event’s registrations.',
         },
       },
       due: {
         subject: 'Retention deadline reached: {{ event.name }}',
-        preview: 'Data of {{ event.name }} was due for deletion on {{ date }}',
+        preview:
+          'The data of {{ event.name }} was due for deletion on {{ date }}',
         text: {
-          title: 'A retention deadline has been reached',
+          title: 'Retention deadline reached for {{ event.name }}',
           information:
-            'The retention deadline for $t(retention:kind.{{kindKey}}) of {{ event.name }} is {{ date }}. Delete the data now, or postpone the deadline with a reason if it must be kept for longer. Nothing is deleted automatically.',
+            'Your privacy information for {{ event.name }} promised to delete $t(retention:kind.{{kindKey}}) by {{ date }}. Delete the data now, or postpone the deadline with a reason if you have to keep it longer. Nothing is deleted automatically.',
           button: 'Open event',
-          greeting: 'Best regards',
-          teamName: '{{ appName }} Team',
         },
         footer: {
           cause:
-            '$t(email:footer.cause) you can delete the registrations of this event.',
+            '$t(email:footer.cause) you can delete this event’s registrations.',
         },
       },
     },

@@ -1,17 +1,14 @@
 export default {
   email: {
     invitation: {
-      subject: 'Veranstaltungseinladung',
-      preview: 'Du wurdest eingeladen, {{ event.name }} zu verwalten',
+      subject: 'Du wurdest eingeladen, eine Veranstaltung zu verwalten',
+      preview: 'Hilf mit, {{ event.name }} zu verwalten',
       text: {
-        title: 'Hallo,',
+        title: 'Du wurdest zu {{ event.name }} eingeladen',
         information:
-          'Du wurdest eingeladen, {{ event.name }} zu verwalten. ' +
-          'Wenn du bereits ein Konto hast, wird die Veranstaltung automatisch verfügbar sein. ' +
-          'Andernfalls erstelle bitte zuerst ein kostenloses Konto.',
-        button: 'Veranstaltung verwalten',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
+          'Wenn du schon ein Konto hast, wartet die Veranstaltung bereits auf dich. ' +
+          'Andernfalls erstelle zuerst ein kostenloses Konto.',
+        button: 'Veranstaltung öffnen',
       },
       footer: {
         cause:

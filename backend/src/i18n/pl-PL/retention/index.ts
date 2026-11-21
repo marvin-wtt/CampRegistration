@@ -14,14 +14,12 @@ export default {
           'Termin przechowywania za {{ count }} dni: {{ event.name }}',
         subject_other:
           'Termin przechowywania za {{ count }} dnia: {{ event.name }}',
-        preview: 'Dane wydarzenia {{ event.name }} należy usunąć do {{ date }}',
+        preview: 'Czas sprawdzić dane wydarzenia {{ event.name }}',
         text: {
-          title: 'Zbliża się termin przechowywania',
+          title: 'Czas sprawdzić wydarzenie {{ event.name }}',
           information:
-            'Zgodnie z informacjami o ochronie danych wydarzenia {{ event.name }} $t(retention:kind.{{kindKey}}) są usuwane najpóźniej {{ date }}. Sprawdź teraz, czy coś trzeba przechowywać dłużej, na przykład faktury lub dokumenty dla grantodawcy, i zachowaj ich kopię poza platformą. Następnie usuń dane albo przesuń termin, podając powód. Nic nie jest usuwane automatycznie.',
+            'Twoje informacje o ochronie danych wydarzenia {{ event.name }} obiecują usunąć $t(retention:kind.{{kindKey}}) najpóźniej {{ date }}. Zachowaj poza platformą kopię tego, czego jeszcze potrzebujesz, na przykład faktur lub dokumentów dla grantodawcy. Następnie usuń dane albo przesuń termin, podając powód. Nic nie jest usuwane automatycznie.',
           button: 'Otwórz wydarzenie',
-          greeting: 'Pozdrawiamy',
-          teamName: 'Zespół {{ appName }}',
         },
         footer: {
           cause:
@@ -33,12 +31,10 @@ export default {
         preview:
           'Dane wydarzenia {{ event.name }} należało usunąć do {{ date }}',
         text: {
-          title: 'Termin przechowywania minął',
+          title: 'Minął termin przechowywania dla {{ event.name }}',
           information:
-            'Termin przechowywania dla: $t(retention:kind.{{kindKey}}) wydarzenia {{ event.name }} to {{ date }}. Usuń dane teraz albo przesuń termin, podając powód, jeśli trzeba je przechowywać dłużej. Nic nie jest usuwane automatycznie.',
+            'Twoje informacje o ochronie danych wydarzenia {{ event.name }} obiecują usunąć $t(retention:kind.{{kindKey}}) najpóźniej {{ date }}. Usuń dane teraz albo przesuń termin, podając powód, jeśli musisz je przechowywać dłużej. Nic nie jest usuwane automatycznie.',
           button: 'Otwórz wydarzenie',
-          greeting: 'Pozdrawiamy',
-          teamName: 'Zespół {{ appName }}',
         },
         footer: {
           cause:

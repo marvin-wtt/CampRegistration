@@ -1,22 +1,17 @@
 export default {
   email: {
     invitation: {
-      subject: 'Zaproszenie do wydarzenia',
-      preview:
-        'Zostałeś(-aś) zaproszony(-a) do zarządzania wydarzeniem {{ event.name }}',
+      subject: 'Zaproszenie do zarządzania wydarzeniem',
+      preview: 'Pomóż w zarządzaniu wydarzeniem {{ event.name }}',
       text: {
-        title: 'Cześć,',
+        title: 'Zaproszenie do zarządzania {{ event.name }}',
         information:
-          'Zostałeś(-aś) zaproszony(-a) do zarządzania wydarzeniem {{ event.name }}. ' +
-          'Jeśli masz już konto, wydarzenie będzie automatycznie dostępne. ' +
-          'W przeciwnym razie utwórz najpierw bezpłatne konto.',
-        button: 'Zarządzaj wydarzeniem',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+          'Jeśli masz już konto, wydarzenie już na Ciebie czeka. ' +
+          'W przeciwnym razie najpierw załóż bezpłatne konto.',
+        button: 'Otwórz wydarzenie',
       },
       footer: {
-        cause:
-          '$t(email:footer.cause) zostałeś(-aś) zaproszony(-a) przez innego użytkownika.',
+        cause: '$t(email:footer.cause) zaprosił Cię inny użytkownik.',
       },
     },
   },

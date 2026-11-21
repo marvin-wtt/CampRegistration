@@ -10,32 +10,28 @@ export default {
         subject_few: 'Lhůta uchování za {{ count }} dny: {{ event.name }}',
         subject_many: 'Lhůta uchování za {{ count }} dne: {{ event.name }}',
         subject_other: 'Lhůta uchování za {{ count }} dní: {{ event.name }}',
-        preview: 'Údaje akce {{ event.name }} je třeba smazat do {{ date }}',
+        preview: 'Je čas zkontrolovat údaje akce {{ event.name }}',
         text: {
-          title: 'Blíží se lhůta uchování',
+          title: 'Je čas zkontrolovat akci {{ event.name }}',
           information:
-            'Podle informací o ochraně osobních údajů akce {{ event.name }} se $t(retention:kind.{{kindKey}}) mažou nejpozději {{ date }}. Zkontrolujte nyní, zda je třeba něco uchovat déle, například faktury nebo doklady pro poskytovatele dotace, a uložte si kopii mimo platformu. Poté údaje smažte, nebo lhůtu s uvedením důvodu odložte. Nic se nemaže automaticky.',
+            'Tvoje informace o ochraně osobních údajů akce {{ event.name }} slibují smazat $t(retention:kind.{{kindKey}}) nejpozději {{ date }}. Ulož si mimo platformu kopii toho, co ještě potřebuješ, například faktury nebo doklady pro poskytovatele dotace. Poté údaje smaž, nebo lhůtu s uvedením důvodu odlož. Nic se nemaže automaticky.',
           button: 'Otevřít akci',
-          greeting: 'S pozdravem',
-          teamName: 'Tým {{ appName }}',
         },
         footer: {
-          cause: '$t(email:footer.cause) můžete mazat přihlášky této akce.',
+          cause: '$t(email:footer.cause) můžeš mazat přihlášky této akce.',
         },
       },
       due: {
         subject: 'Lhůta uchování uplynula: {{ event.name }}',
         preview: 'Údaje akce {{ event.name }} bylo třeba smazat do {{ date }}',
         text: {
-          title: 'Lhůta uchování uplynula',
+          title: 'Lhůta uchování akce {{ event.name }} uplynula',
           information:
-            'Lhůta uchování pro $t(retention:kind.{{kindKey}}) akce {{ event.name }} je {{ date }}. Smažte údaje nyní, nebo lhůtu s uvedením důvodu odložte, pokud je třeba je uchovat déle. Nic se nemaže automaticky.',
+            'Tvoje informace o ochraně osobních údajů akce {{ event.name }} slibují smazat $t(retention:kind.{{kindKey}}) nejpozději {{ date }}. Smaž údaje nyní, nebo lhůtu s uvedením důvodu odlož, pokud je musíš uchovat déle. Nic se nemaže automaticky.',
           button: 'Otevřít akci',
-          greeting: 'S pozdravem',
-          teamName: 'Tým {{ appName }}',
         },
         footer: {
-          cause: '$t(email:footer.cause) můžete mazat přihlášky této akce.',
+          cause: '$t(email:footer.cause) můžeš mazat přihlášky této akce.',
         },
       },
     },

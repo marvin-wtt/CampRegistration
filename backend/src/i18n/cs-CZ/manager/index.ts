@@ -1,20 +1,17 @@
 export default {
   email: {
     invitation: {
-      subject: 'Pozvánka na akci',
-      preview: 'Byli jste pozváni ke správě akce {{ event.name }}',
+      subject: 'Pozvánka ke správě akce',
+      preview: 'Pomoz se správou akce {{ event.name }}',
       text: {
-        title: 'Dobrý den,',
+        title: 'Pozvánka ke správě akce {{ event.name }}',
         information:
-          'Byli jste pozváni ke správě akce {{ event.name }}. ' +
-          'Pokud již máte účet, akce bude automaticky zpřístupněna. ' +
-          'V opačném případě si nejprve vytvořte bezplatný účet.',
-        button: 'Spravovat akci',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+          'Pokud už máš účet, akce na tebe čeká. ' +
+          'Jinak si nejdřív založ bezplatný účet.',
+        button: 'Otevřít akci',
       },
       footer: {
-        cause: '$t(email:footer.cause) vás pozval jiný uživatel.',
+        cause: '$t(email:footer.cause) tě pozval jiný uživatel.',
       },
     },
   },

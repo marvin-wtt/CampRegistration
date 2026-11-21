@@ -11,6 +11,7 @@ export interface BaseEmailProps {
   subject: string;
   appName: string;
   primaryColor: string;
+  primaryTint: string;
   sentTo: string;
 }
 
@@ -37,8 +38,6 @@ export interface ActionCardProps extends BaseEmailProps {
   title: string;
   information: string;
   button: string;
-  greeting: string;
-  teamName: string;
   url: string;
   /** Small print under the button, e.g. what to do if the mail was unexpected. */
   accidental?: string;
@@ -74,6 +73,18 @@ export interface OrganizationRejectedProps extends ActionCardProps {
 
 export interface RegistrationManagerNotificationProps extends ActionCardProps {
   eventName: string;
+}
+
+export interface TaskReminderGroup {
+  eventName: string;
+  url: string;
+  tasks: { title: string; when: string }[];
+}
+
+/** One task renders as a plain action card; several as `groups` per event. */
+export interface TaskReminderProps extends ActionCardProps {
+  groups: TaskReminderGroup[];
+  groupLinkLabel: string;
 }
 
 export interface NewsletterProps extends BaseEmailProps {

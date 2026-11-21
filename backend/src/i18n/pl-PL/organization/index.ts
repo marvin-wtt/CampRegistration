@@ -1,50 +1,42 @@
 export default {
   email: {
     reviewPending: {
-      subject: 'Organizacja oczekuje na sprawdzenie: {{ organization.name }}',
-      preview: '{{ organization.name }} oczekuje na weryfikację',
+      subject: 'Organizacja czeka na weryfikację: {{ organization.name }}',
+      preview: '{{ organization.name }} czeka na weryfikację',
       text: {
-        title: 'Nowa organizacja wymaga sprawdzenia',
+        title: 'Nowa organizacja do sprawdzenia',
         information:
-          '{{ organization.name }} została zgłoszona do weryfikacji. ' +
-          'Do czasu weryfikacji nie może publikować obozów ani wysyłać newsletterów.',
-        button: 'Sprawdź organizacje',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+          '{{ organization.name }} czeka na weryfikację. ' +
+          'Do tego czasu nie może publikować wydarzeń ani wysyłać newsletterów.',
+        button: 'Sprawdź organizację',
       },
       footer: {
         cause: '$t(email:footer.cause) jesteś administratorem.',
       },
     },
     verified: {
-      subject: 'Twoja organizacja została zweryfikowana',
-      preview: '{{ organization.name }} może już publikować obozy',
+      subject: 'Twoja organizacja jest zweryfikowana',
+      preview: '{{ organization.name }} może teraz publikować wydarzenia',
       text: {
-        title: 'Twoja organizacja została zweryfikowana',
+        title: '{{ organization.name }} jest zweryfikowana',
         information:
-          '{{ organization.name }} została zweryfikowana. ' +
-          'Możesz teraz publikować jej obozy i wysyłać newslettery.',
+          'Dobra wiadomość: możesz teraz publikować wydarzenia i wysyłać newslettery.',
         button: 'Otwórz organizację',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) zarządzasz tą organizacją.',
       },
     },
     rejected: {
-      subject: 'Twojej organizacji nie udało się zweryfikować',
+      subject: 'Nie udało się zweryfikować Twojej organizacji',
       preview: '{{ organization.name }} wymaga Twojej uwagi',
       text: {
-        title: 'Twojej organizacji nie udało się zweryfikować',
+        title: 'Nie udało się zweryfikować {{ organization.name }}',
         information:
-          '{{ organization.name }} nie została zweryfikowana. ' +
-          'Do tego czasu nie może publikować obozów ani wysyłać newsletterów. ' +
-          'Poprawienie zarejestrowanych danych ponownie kieruje ją do weryfikacji.',
+          'Dopóki nie zostanie zweryfikowana, nie może publikować wydarzeń ani wysyłać newsletterów. ' +
+          'Zaktualizuj jej dane, a sprawdzimy ją ponownie.',
         reasonLabel: 'Powód',
-        button: 'Sprawdź dane',
-        greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół {{ appName }}',
+        button: 'Zaktualizuj dane',
       },
       footer: {
         cause: '$t(email:footer.cause) zarządzasz tą organizacją.',

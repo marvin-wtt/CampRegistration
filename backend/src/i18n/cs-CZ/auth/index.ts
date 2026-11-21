@@ -1,38 +1,33 @@
 export default {
   email: {
     resetPassword: {
-      subject: 'Obnovení hesla',
-      preview: 'Obnovte nyní své heslo a získejte znovu přístup.',
+      subject: 'Obnov si heslo',
+      preview: 'Nastav si nové heslo a získej zpět přístup ke svému účtu.',
       text: {
-        title: 'Dobrý den,',
+        title: 'Obnov si heslo',
         information:
-          'Zapomněli jste své heslo? Žádný problém. Zde si můžete nastavit nové.',
-        button: 'Obnovit heslo',
+          'Zapomněl(a) jsi heslo? Nevadí. Nastav si nové pomocí tlačítka níže.',
+        button: 'Nastavit nové heslo',
         accidental:
-          'Pokud jste nepožádali o obnovení hesla, tuto e-mailovou zprávu ignorujte.',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+          'Nežádal(a) jsi o to? Jednoduše tento e-mail ignoruj. Tvoje heslo zůstane beze změny.',
       },
       footer: {
-        cause: '$t(email:footer.cause) požádali jste o nové heslo.',
+        cause: '$t(email:footer.cause) bylo pro tvůj účet vyžádáno nové heslo.',
       },
     },
 
     verifyEmail: {
-      subject: 'Potvrďte svou e-mailovou adresu',
-      preview: 'Potvrďte e-mail a aktivujte svůj účet.',
+      subject: 'Potvrď svou e-mailovou adresu',
+      preview: 'Jedno kliknutí a tvůj účet je připravený.',
       text: {
-        title: 'Dobrý den,',
+        title: 'Potvrď svou e-mailovou adresu',
         information:
-          'Potvrďte prosím svou e-mailovou adresu, abychom ověřili, že je účet váš. Po potvrzení se můžete ihned přihlásit.',
-        button: 'Potvrdit e-mail',
-        accidental:
-          'Pokud jste si účet nevytvořili, na odkaz neklikejte a kontaktujte nás.',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
+          'Poslední krok: potvrď, že tato adresa patří tobě. Hned potom se můžeš přihlásit.',
+        button: 'Potvrdit e-mailovou adresu',
+        accidental: 'Nezakládal(a) jsi účet? Jednoduše tento e-mail ignoruj.',
       },
       footer: {
-        cause: '$t(email:footer.cause) vytvořili jste účet.',
+        cause: '$t(email:footer.cause) byl s touto adresou vytvořen účet.',
       },
     },
   },

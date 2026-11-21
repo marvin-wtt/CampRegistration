@@ -5,7 +5,7 @@ export default {
     text: {
       title: 'Nowa opinia',
       replyNote:
-        'Możesz odpowiedzieć na tę wiadomość, aby skontaktować się bezpośrednio z użytkownikiem, jeśli podał adres e-mail.',
+        'Odpowiedz na tę wiadomość, aby skontaktować się bezpośrednio z nadawcą, jeśli zostawił adres.',
       senderLabel: 'Od',
       messageLabel: 'Wiadomość',
     },

@@ -1,17 +1,14 @@
 export default {
   email: {
     invitation: {
-      subject: 'Event Invitation',
-      preview: 'You have been invited to manage {{ event.name }}',
+      subject: 'You’re invited to manage an event',
+      preview: 'Help manage {{ event.name }}',
       text: {
-        title: 'Hello,',
+        title: 'You’re invited to manage {{ event.name }}',
         information:
-          'You have been invited to manage {{ event.name }}. ' +
-          'If you already have an account, the event will be available automatically. ' +
-          'Otherwise, please create a free account first.',
-        button: 'Manage Event',
-        greeting: 'Best regards,',
-        teamName: '{{ appName }} team',
+          'If you already have an account, the event is waiting for you. ' +
+          'Otherwise, create a free account first.',
+        button: 'Open event',
       },
       footer: {
         cause: '$t(email:footer.cause) you were invited by another user.',

@@ -1,6 +1,6 @@
 export default {
   email: {
-    reason: '$t(email:footer.cause) vous êtes inscrit à cet événement.',
+    reason: '$t(email:footer.cause) tu t’es inscrit(e) à cet événement.',
     privacyLink:
       'Informations sur la protection des données pour cet événement',
     changes: {
@@ -10,14 +10,12 @@ export default {
     },
     managerNotification: {
       subject: 'Nouvelle inscription | {{ event.name }}',
-      preview: "Nouvelle inscription pour l'événement : {{ event.name }}",
+      preview: 'Nouvelle inscription pour {{ event.name }}',
       text: {
-        title: 'Salut,',
+        title: 'Nouvelle inscription',
         information:
-          "{{ registration.firstName }} {{ registration.lastName }} s'est inscrit pour {{ event.name }}.",
+          '{{ registration.firstName }} {{ registration.lastName }} vient de s’inscrire à {{ event.name }}.',
         button: 'Voir les inscriptions',
-        greeting: 'Cordialement,',
-        teamName: 'Équipe {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) tu es un contact de cet événement.',
@@ -26,14 +24,12 @@ export default {
     messageBounced: {
       subject: 'Message non distribué | {{ event.name }}',
       preview:
-        "Un message à {{ recipient }} n'a pas pu être distribué pour {{ event.name }}",
+        'Un message à {{ recipient }} n’a pas pu être distribué pour {{ event.name }}',
       text: {
-        title: 'Salut,',
+        title: 'Ton message n’a pas été distribué',
         information:
-          "Votre message « {{ messageSubject }} » à {{ recipient }} pour {{ event.name }} n'a pas pu être distribué.",
+          '« {{ messageSubject }} » à {{ recipient }} pour {{ event.name }} n’a pas pu être distribué. Vérifie l’adresse e-mail de cette inscription.',
         button: 'Voir les inscriptions',
-        greeting: 'Cordialement,',
-        teamName: 'Équipe {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) tu es un contact de cet événement.',
