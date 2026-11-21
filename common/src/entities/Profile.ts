@@ -2,6 +2,7 @@ import type { ScopeGrant } from '#permissions';
 import type { OrganizationRole } from './OrganizationMember.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
 import type { Translatable } from './Translatable.js';
+import type { AdminAccessGrant } from './AdminAccessGrant.js';
 
 interface EventAccess {
   eventId: string;
@@ -50,6 +51,8 @@ export interface Profile {
   eventAccess: EventAccess[];
   newsletterAccess: NewsletterAccess[];
   organizationAccess: OrganizationAccess[];
+  /** The administrator's active access grants; empty for everyone else. */
+  adminAccess: AdminAccessGrant[];
 }
 
 export type ProfileUpdateData = Partial<Omit<Profile, 'role'>> & {

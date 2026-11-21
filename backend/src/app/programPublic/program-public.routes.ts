@@ -1,4 +1,4 @@
-import { guard } from '#core/guard';
+import { admin, guard, or } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#core/router/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
@@ -34,13 +34,13 @@ export class ProgramPublicRouter extends ModuleRouter {
     // its module docblock for why it isn't here too.
     this.router.get(
       '/',
-      guard(programPublicViewGuard),
+      guard(or(admin, programPublicViewGuard)),
       controller(this.programPublicController, 'show'),
     );
 
     this.router.get(
       '/stream',
-      guard(programPublicViewGuard),
+      guard(or(admin, programPublicViewGuard)),
       realtimeStream(programPublicSubscriber),
     );
   }

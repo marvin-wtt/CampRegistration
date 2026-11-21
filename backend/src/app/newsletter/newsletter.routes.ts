@@ -1,5 +1,5 @@
 import { auth } from '#core/auth/auth.middleware';
-import { guard } from '#core/guard';
+import { admin, guard, or } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterController } from './newsletter.controller.js';
 import { NewsletterService } from './newsletter.service.js';
@@ -24,7 +24,7 @@ export class NewsletterRouter extends ModuleRouter {
     this.router.get(
       '/',
       auth(),
-      guard((req) => (req.query as NewsletterQuery).view !== 'all'),
+      guard(or(admin, (req) => (req.query as NewsletterQuery).view !== 'all')),
       controller(newsletterController, 'index'),
     );
     this.router.get(

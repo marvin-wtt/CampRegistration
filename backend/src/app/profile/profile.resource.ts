@@ -11,6 +11,7 @@ import {
 import type { ProfileUser } from './profile.types.js';
 import { JsonResource } from '#core/resource/JsonResource';
 import { permissionRegistry } from '#core/permission/permission.registry';
+import { AdminAccessGrantResource } from '#app/adminAccess/admin-access.resource';
 
 /** Marks event access that comes from administering the owning organization. */
 const ORGANIZATION_DERIVED_ROLE = 'ORGANIZATION';
@@ -36,6 +37,9 @@ export class ProfileResource extends JsonResource<
           .getPermissions(membership.role),
         verificationStatus: membership.organization.verificationStatus,
       })),
+      adminAccess: this.data.adminAccessGrants.map((grant) =>
+        new AdminAccessGrantResource(grant).transform(),
+      ),
     };
   }
 

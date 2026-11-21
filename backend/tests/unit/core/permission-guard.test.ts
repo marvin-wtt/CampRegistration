@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as adminAccess from '#core/permission/admin-access';
 import type { Request } from 'express';
 import {
   assertScopeResolversComplete,
@@ -144,5 +145,59 @@ describe('own grants', () => {
     await expect(guard(fakeReq(undefined, { view: 'all' }))).resolves.toBe(
       false,
     );
+  });
+});
+
+describe('administrator access', () => {
+  const adminReq = (): Request =>
+    ({
+      user: {
+        id: 'admin-1',
+        role: 'ADMIN',
+        twoFactor: { confirmedAt: new Date() },
+      },
+      authUserId: () => 'admin-1',
+      modelOrFail: () => ({ id: 'event-1' }),
+    }) as unknown as Request;
+
+  const grantAccess = (granted: boolean) =>
+    vi
+      .spyOn(adminAccess, 'activeAdminAccess')
+      .mockResolvedValue(
+        granted ? { id: 'grant-1', expiresAt: new Date() } : null,
+      );
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('passes on the own role without looking up a grant', async () => {
+    registerScopeResolver('event', {
+      model: 'event',
+      resolve: () => Promise.resolve(new Set(['event.view']) as never),
+    });
+    const lookup = grantAccess(false);
+
+    await expect(scoped('event', 'event.view')(adminReq())).resolves.toBe(true);
+    expect(lookup).not.toHaveBeenCalled();
+  });
+
+  it('fills the gap above the own role with an active grant', async () => {
+    registerScopeResolver('event', stub('event'));
+    grantAccess(true);
+
+    await expect(
+      scoped('event', 'event.registrations.edit')(adminReq()),
+    ).resolves.toBe(true);
+  });
+
+  it('refuses without a grant', async () => {
+    registerScopeResolver('event', stub('event'));
+    const lookup = grantAccess(false);
+
+    await expect(
+      scoped('event', 'event.registrations.edit')(adminReq()),
+    ).resolves.toBe(false);
+    expect(lookup).toHaveBeenCalledWith(expect.anything(), 'event', 'event-1');
   });
 });

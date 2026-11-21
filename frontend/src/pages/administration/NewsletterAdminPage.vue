@@ -60,11 +60,13 @@ import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDi
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import { useRouter } from 'vue-router';
+import { useAdminAccessRequest } from '@/composables/adminAccess';
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
+const { ensureAdminAccess } = useAdminAccessRequest();
 
 const {
   tableRef,
@@ -205,10 +207,18 @@ function showDeleteDialog(newsletter: Newsletter) {
       },
     })
     .onOk(() => {
-      void run('delete', () => api.deleteNewsletter(newsletter.id), {
-        feedback: 'progress',
-      }).then(() => reload());
+      void deleteNewsletter(newsletter.id);
     });
+}
+
+async function deleteNewsletter(id: string) {
+  if (!(await ensureAdminAccess({ scope: 'newsletter', id }))) {
+    return;
+  }
+  await run('delete', () => api.deleteNewsletter(id), {
+    feedback: 'progress',
+  });
+  reload();
 }
 </script>
 

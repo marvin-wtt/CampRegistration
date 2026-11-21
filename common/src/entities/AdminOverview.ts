@@ -2,7 +2,6 @@ export interface AdminOverview {
   users: {
     total: number;
     unverified: number;
-    locked: number;
   };
   organizations: {
     total: number;
