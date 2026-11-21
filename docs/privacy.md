@@ -608,8 +608,11 @@ then record wording the registrant never saw.
   server (`setVariables`): dates and times are formatted from the naive digits in
   UTC, so no runtime zone moves them, and every formatted value has one kind of
   space only (`uniformSpaces`) — engines' locale data differ mostly in that.
-- **[review]** A link inside a consent text (`{_file.rules}`) is compared as the link,
-  not as the document behind it. Replacing the linked file is not detected.
+- A link inside a consent text (`{_file.rules}`) is written by one resolver on both
+  sides (`addEventFileSlotResolver`): the root-relative route of the slot
+  (`fileSlotPath`), nothing fetched. It is compared, and stored, as that link.
+- **[review]** The link names the slot, not the document behind it. Replacing the
+  linked file is not detected.
 - **[review]** Audit entries are purged after two years (`AUDIT_RETENTION_DAYS`).
   Proof of a later change must not be needed longer than that, or the registration
   is deleted earlier anyway.

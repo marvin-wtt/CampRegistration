@@ -279,7 +279,14 @@ export class RetentionService extends BaseService {
     return this.transaction(
       async () => {
         // Sensitive data is a subset: deleting all of it deletes that too.
-        await this.markPurged(event.id, EVENT_RETENTION_DEADLINE_KINDS);
+        const before = await this.markPurged(
+          event.id,
+          EVENT_RETENTION_DEADLINE_KINDS,
+        );
+        // Deleted before, by a retry or a second click: nothing to record.
+        if (before.registrationDataPurgedAt) {
+          return 0;
+        }
         const deleted =
           await this.registrationService.deleteRegistrationsForEvent(event.id);
 
@@ -304,13 +311,14 @@ export class RetentionService extends BaseService {
    * has closed: the event then never reopens it (`assertRegistrationStaysClosed`).
    * Under the event's row lock, so an edit reopening it cannot slip in between.
    * Before the end the team may still need the data, health details above all;
-   * a cancelled event is removed by deleting the event instead.
+   * a cancelled event is removed by deleting the event instead. Returns the
+   * purge state it found, read under the lock.
    */
   private async markPurged(
     eventId: string,
     kinds: readonly EventRetentionDeadlineKind[],
-  ): Promise<void> {
-    await this.transaction(async (tx) => {
+  ): Promise<PurgeState> {
+    return this.transaction(async (tx) => {
       const event = await this.eventService.lockForUpdate(eventId);
       if (eventEndInstant(event) > new Date()) {
         throw new ApiError(
@@ -344,6 +352,8 @@ export class RetentionService extends BaseService {
         where: { eventId, kind: { in: [...kinds] } },
         data: { postponeReason: null },
       });
+
+      return event;
     });
   }
 

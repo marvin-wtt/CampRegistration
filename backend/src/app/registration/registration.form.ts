@@ -19,6 +19,7 @@ import {
   unconsentedQuestions,
   extractEventData,
   extractPaymentAmounts,
+  addEventFileSlotResolver,
   setVariables,
 } from '@camp-registration/common/form';
 import type { EventWithFreePlaces } from '#app/event/event.types';
@@ -255,6 +256,8 @@ export class RegistrationForm {
     // SurveyJS resolves `de-DE` to its `de` strings, but not `de_DE`.
     this.survey.locale = locale.replace('_', '-');
     setVariables(this.survey, event, { group });
+    // The links the browser writes too: consent texts holding one are compared.
+    addEventFileSlotResolver(this.survey, event.id);
   }
 
   /** Replaces the response the form holds, running the form's logic on it. */

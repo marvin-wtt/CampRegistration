@@ -148,6 +148,52 @@ describe('registration consent', () => {
     });
   });
 
+  describe('consent linking a file', () => {
+    // A link to an event file (`{_file.<slot>}`) is written by the same
+    // resolver in the browser, so the wording shown matches the server's.
+    const rulesConsent = {
+      type: 'boolean',
+      name: 'consent_rules',
+      title: 'I accept the [rules]({_file.rules}).',
+      privacyConsent: true,
+    };
+
+    it('should store the slot link as the wording shows it', async () => {
+      const event = await eventWith([firstName, rulesConsent]);
+
+      const { body } = await register(event.id, {
+        data: { first_name: 'Jane', consent_rules: true },
+        locale: 'en-US',
+      }).expect(201);
+
+      const text = body.data.consentTexts.consent_rules as string;
+      expect(text).toContain(
+        `](/api/v1/events/${event.id}/files/slots/rules/?locale=en-US`,
+      );
+
+      // What a browser displaying the same link sends is accepted.
+      await register(event.id, {
+        data: { first_name: 'Ada', consent_rules: true },
+        locale: 'en-US',
+        displayedConsents: { consent_rules: text },
+      }).expect(201);
+    });
+
+    it('should refuse a link the server does not write', async () => {
+      const event = await eventWith([firstName, rulesConsent]);
+
+      const { body } = await register(event.id, {
+        data: { first_name: 'Jane', consent_rules: true },
+        locale: 'en-US',
+        displayedConsents: {
+          consent_rules: 'I accept the [rules]({_file.rules}).',
+        },
+      }).expect(409);
+
+      expect(body).toHaveProperty('errorCode', 'REGISTRATION_CONSENT_CHANGED');
+    });
+  });
+
   describe('manager edits', () => {
     // Managers record what may rest on consent given outside the form (say,
     // allergies a parent phoned in); that is the organizer's responsibility.

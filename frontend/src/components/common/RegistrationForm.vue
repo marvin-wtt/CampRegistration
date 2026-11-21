@@ -168,10 +168,7 @@ import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
 } from '@/composables/survey';
-import {
-  addFileSlotResolver,
-  addMarkdownRenderer,
-} from '@/lib/surveyJs/textProcessing';
+import { addMarkdownRenderer } from '@/lib/surveyJs/textProcessing';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import {
@@ -190,6 +187,7 @@ import {
   isPriceChangedError,
 } from '@/services/RegistrationService';
 import {
+  addEventFileSlotResolver,
   unconsentedQuestions,
   consentTexts,
 } from '@camp-registration/common/form';
@@ -478,9 +476,8 @@ function createModel(eventId: string, form: object): SurveyModel {
     options.callback('success');
   });
   addMarkdownRenderer(survey);
-  addFileSlotResolver(survey, (slot, locale, group) =>
-    api.getEventFileSlotUrl(eventId, slot, locale, group),
-  );
+  // The links the server writes too: consent texts holding one are compared.
+  addEventFileSlotResolver(survey, eventId);
 
   emphasizeForwardNavigation(survey);
 

@@ -65,6 +65,12 @@ export {
   EVENT_BANNER_SLOT,
   FILE_VARIABLE,
 } from './files.js';
+export {
+  addEventFileSlotResolver,
+  addFileSlotResolver,
+  fileSlotPath,
+  type FileSlotOptions,
+} from './fileSlots.js';
 export type { GroupCountryMatch } from './questions/groupCountryMatch.js';
 export {
   PAYMENT_TOTAL_MODES,

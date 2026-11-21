@@ -37,9 +37,9 @@ import { APP_LOCALES } from '@/i18n/locales';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
   addDesignerFileSlotResolver,
-  addFileSlotResolver,
   addMarkdownRenderer,
 } from '@/lib/surveyJs/textProcessing';
+import { addFileSlotResolver } from '@camp-registration/common/form';
 import { useAPIService } from '@/services/APIService';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
 import {

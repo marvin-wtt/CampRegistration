@@ -5,7 +5,7 @@ import {
   specialCategoryAnswerKeys,
 } from '@camp-registration/common/form';
 import { isRetentionPurged } from '@camp-registration/common/privacy';
-import type { SurveyModel } from 'survey-core';
+import type { Question, SurveyModel } from 'survey-core';
 
 type PurgeState = Pick<
   EventDetails,
@@ -68,7 +68,8 @@ export function usePurgedFields(
 
 /**
  * Locks the questions whose answers were deleted and says why, so a manager
- * doesn't type an answer the server would refuse.
+ * doesn't type an answer the server would refuse — in panel entries added
+ * later too.
  */
 export function lockPurgedQuestions(
   survey: SurveyModel,
@@ -79,13 +80,20 @@ export function lockPurgedQuestions(
     return;
   }
 
-  for (const question of survey.getAllQuestions(false, false, true)) {
-    if (isSpecialCategory(question.getPropertyValue('privacyCategory'))) {
-      question.readOnly = true;
-      // After the question's own help text, which may still explain it.
-      question.description = [question.description, note]
-        .filter((part) => !!part)
-        .join('\n\n');
+  const lock = (questions: Question[]) => {
+    for (const question of questions) {
+      if (isSpecialCategory(question.getPropertyValue('privacyCategory'))) {
+        question.readOnly = true;
+        // After the question's own help text, which may still explain it.
+        question.description = [question.description, note]
+          .filter((part) => !!part)
+          .join('\n\n');
+      }
     }
-  }
+  };
+
+  lock(survey.getAllQuestions(false, false, true));
+  survey.onDynamicPanelAdded.add((_, options) => {
+    lock(options.panel.questions);
+  });
 }

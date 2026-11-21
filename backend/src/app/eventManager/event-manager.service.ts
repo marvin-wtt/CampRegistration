@@ -5,10 +5,7 @@ import type {
   EventScopedPermission,
   ScopeGrant,
 } from '@camp-registration/common/permissions';
-import {
-  EVENT_MANAGER_ROLES,
-  type AccountDeletionBlocker,
-} from '@camp-registration/common/entities';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
@@ -68,13 +65,8 @@ export class EventManagerService extends BaseService {
 
     // An expired record grants nothing, but must not mask organization-derived
     // access, which has no expiry of its own.
-    const expired =
-      manager !== null &&
-      manager.expiresAt !== null &&
-      manager.expiresAt <= new Date();
-    const active = expired ? null : manager;
-
-    const managerPermissions = active ? rolePermissions(active.role) : [];
+    const active = manager && isActive(manager) ? manager : null;
+    const managerPermissions = active ? recordPermissions(active) : [];
 
     if (
       managerPermissions.length === 0 &&
@@ -93,27 +85,25 @@ export class EventManagerService extends BaseService {
 
   /**
    * The users whose own live manager record grants `permission` on the event,
-   * resolved in one query for bulk mails. Organization-derived access is not
-   * included: it has no manager record to address.
+   * for bulk mails: each record resolved as `getManagerAuthorization` does.
+   * Organization-derived access is not included: it has no record to address.
    */
   async usersWithManagerPermission(
     eventId: string,
     permission: EventScopedPermission,
   ) {
-    const roles = EVENT_MANAGER_ROLES.filter((role) =>
-      rolePermissions(role).includes(permission),
-    );
-
     const managers = await this.prisma.eventManager.findMany({
-      where: {
-        eventId,
-        role: { in: roles },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      where: { eventId },
+      select: {
+        role: true,
+        expiresAt: true,
+        user: { select: { name: true, email: true, locale: true } },
       },
-      select: { user: { select: { name: true, email: true, locale: true } } },
     });
 
-    return managers.flatMap(({ user }) => (user ? [user] : []));
+    return managers.flatMap(({ user, ...manager }) =>
+      user && recordPermissions(manager).includes(permission) ? [user] : [],
+    );
   }
 
   /**
@@ -380,7 +370,18 @@ export class EventManagerService extends BaseService {
   }
 }
 
-/** What a manager record's role grants: the one place a role is resolved. */
-function rolePermissions(role: string) {
-  return permissionRegistry.for('event').getPermissions(role);
+interface ManagerRecord {
+  role: string;
+  expiresAt: Date | null;
+}
+
+function isActive(manager: ManagerRecord): boolean {
+  return manager.expiresAt === null || manager.expiresAt > new Date();
+}
+
+/** What a manager record grants: the one place a record is resolved. */
+function recordPermissions(manager: ManagerRecord) {
+  return isActive(manager)
+    ? permissionRegistry.for('event').getPermissions(manager.role)
+    : [];
 }

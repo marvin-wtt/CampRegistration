@@ -300,6 +300,20 @@ describe('variables', () => {
       expect(model.getVariable('event.startAtTime')).toBe('02:30');
     });
 
+    it('reads a carrier after a JSON round trip, as in a queued mail', () => {
+      const naive = '2026-07-01T09:05:00';
+      const queued = JSON.parse(
+        JSON.stringify({ startAt: naiveDateTimeToUtcCarrier(naive) }),
+      ) as { startAt: string };
+      const model = new SurveyModel();
+      model.locale = 'de';
+      setVariables(model, fakeEventData({ startAt: queued.startAt }));
+
+      expect(model.getVariable('event.startAt')).toBe(naive);
+      expect(model.getVariable('event.startAtDate')).toBe('01.07.2026');
+      expect(model.getVariable('event.startAtTime')).toBe('09:05');
+    });
+
     it('leaves the date empty while none is set', () => {
       const model = new SurveyModel();
       setVariables(model, fakeEventData({ startAt: '' }));

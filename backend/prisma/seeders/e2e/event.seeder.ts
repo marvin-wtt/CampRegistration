@@ -120,6 +120,31 @@ export async function seedE2eEvents(): Promise<void> {
     },
   });
 
+  // A consent whose wording links an event file: the browser and the server
+  // must write the same link, or every submission is refused as changed.
+  await EventFactory.create({
+    price: E2E_EVENT_PRICE,
+    id: E2E_CONSENT_FILE_EVENT_ID,
+    name: 'Consent File Event',
+    maxParticipants: 10,
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    contactEmail: 'consent-file-event@example.com',
+    form: {
+      name: 'Consent file event',
+      elements: [
+        { name: 'first_name', type: 'text', required: true },
+        {
+          name: 'consent_rules',
+          type: 'boolean',
+          renderAs: 'checkbox',
+          title: 'I accept the [event rules]({_file.rules}).',
+          privacyConsent: true,
+        },
+      ],
+    },
+  });
+
   // Two groups, chosen before the form. Unlisted, so the listing baselines
   // don't change. The address is strict (the default), the nationality warns.
   await EventFactory.create({
@@ -242,6 +267,7 @@ export async function seedE2eEvents(): Promise<void> {
 
 export const E2E_GROUP_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG01';
 export const E2E_PRIVACY_BLOCKED_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCP01';
+export const E2E_CONSENT_FILE_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCF01';
 export const E2E_WAITLIST_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCW01';
 export const E2E_GROUP_CLOSED_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG20';
 export const E2E_GROUP_UPCOMING_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG10';

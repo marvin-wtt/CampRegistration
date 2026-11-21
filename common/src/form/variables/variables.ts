@@ -131,9 +131,20 @@ export const setVariables = (
   }
 };
 
+// An ISO string with an offset: a UTC carrier after a JSON round trip, as in
+// a queued mail's payload.
+const CARRIER_JSON = /(Z|[+-]\d{2}:?\d{2})$/;
+
 // Naive digits as written; a `Date` is the backend's UTC carrier of them.
-const naiveDateTime = (value: Date | string): string =>
-  typeof value === 'string' ? value : utcCarrierToNaiveDateTime(value);
+const naiveDateTime = (value: Date | string): string => {
+  if (typeof value !== 'string') {
+    return utcCarrierToNaiveDateTime(value);
+  }
+
+  return CARRIER_JSON.test(value)
+    ? utcCarrierToNaiveDateTime(new Date(value))
+    : value;
+};
 
 const FALLBACK_LOCALE = 'en-US';
 

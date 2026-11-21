@@ -48,16 +48,17 @@ export class RegistrationRouter extends ModuleRouter {
       '/',
       guard(
         and(
-          eventNotPurged,
           or(
             and(registrationOpen, eventOrganizationVerified),
             hasEventPermission('event.registrations.create'),
           ),
-          // Last: it reads the privacy notice.
-          eventPrivacyCompliant,
+          // After the access check: its 409 must not tell a stranger more.
+          eventNotPurged,
         ),
       ),
       captcha('registration'),
+      // After the bot check: it reads the privacy notice and parses the form.
+      guard(eventPrivacyCompliant),
       controller(registrationController, 'store'),
     );
     this.router.patch(
