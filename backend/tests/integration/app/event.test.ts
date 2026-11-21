@@ -1998,6 +1998,100 @@ describe('/api/v1/events', () => {
         .expect(404);
     });
 
+    describe('archiving', () => {
+      it('should archive the event', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}`)
+          .send({ archived: true })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.archivedAt).toEqual(expect.any(String));
+        const stored = await prisma.event.findUniqueOrThrow({
+          where: { id: event.id },
+        });
+        expect(stored.archivedAt).toBeInstanceOf(Date);
+      });
+
+      it('should keep the original timestamp when archived again', async () => {
+        const archivedAt = new Date('2026-01-01T00:00:00Z');
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          archivedAt,
+        });
+
+        await request()
+          .patch(`/api/v1/events/${event.id}`)
+          .send({ archived: true })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const stored = await prisma.event.findUniqueOrThrow({
+          where: { id: event.id },
+        });
+        expect(stored.archivedAt).toEqual(archivedAt);
+      });
+
+      it('should unarchive the event', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          archivedAt: new Date(),
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}`)
+          .send({ archived: false })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.archivedAt).toBeNull();
+      });
+
+      it('should leave the archive state alone on other updates', async () => {
+        const archivedAt = new Date('2026-01-01T00:00:00Z');
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          archivedAt,
+        });
+
+        await request()
+          .patch(`/api/v1/events/${event.id}`)
+          .send({ listed: false })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const stored = await prisma.event.findUniqueOrThrow({
+          where: { id: event.id },
+        });
+        expect(stored.archivedAt).toEqual(archivedAt);
+      });
+
+      it('should respond with `403` status code when user is VIEWER', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          {},
+          'VIEWER',
+        );
+
+        await request()
+          .patch(`/api/v1/events/${event.id}`)
+          .send({ archived: true })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
+
+      it('should not copy the archive state from the reference event', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken({ archivedAt: new Date() });
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send({ ...eventCreateNational, referenceEventId: referenceEvent.id })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.archivedAt).toBeNull();
+      });
+    });
+
     describe('request body', () => {
       it.each(eventUpdateBody)(
         'should validate the request body | $name',

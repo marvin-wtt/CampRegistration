@@ -33,6 +33,13 @@ export const useEventsStore = defineStore('events', () => {
     return event;
   }
 
+  // Only failures toast — the caller confirms with its own undo toast.
+  async function setArchived(id: string, archived: boolean): Promise<Event> {
+    const event = await run('update', () => api.updateEvent(id, { archived }));
+    bus.emit('update', event);
+    return event;
+  }
+
   async function deleteEntry(id: string): Promise<void> {
     await run('delete', () => api.deleteEvent(id), { feedback: 'progress' });
     bus.emit('delete', id);
@@ -41,6 +48,7 @@ export const useEventsStore = defineStore('events', () => {
   return {
     createEntry,
     updateEntry,
+    setArchived,
     deleteEntry,
   };
 });

@@ -49,6 +49,22 @@
       </q-item>
 
       <q-item
+        v-if="can('event.edit')"
+        v-close-popup
+        clickable
+        @click="emit('archive', !event.archivedAt)"
+      >
+        <q-item-section avatar>
+          <q-icon :name="event.archivedAt ? 'unarchive' : 'inventory_2'" />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>
+            {{ event.archivedAt ? t('action.unarchive') : t('action.archive') }}
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+
+      <q-item
         v-if="can('event.delete')"
         v-close-popup
         class="text-negative"
@@ -84,6 +100,7 @@ const { event, shareWarning = null } = defineProps<{
 const emit = defineEmits<{
   (e: 'share'): void;
   (e: 'edit'): void;
+  (e: 'archive', archived: boolean): void;
   (e: 'delete'): void;
 }>();
 
@@ -96,6 +113,8 @@ function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
 
 <i18n lang="yaml" locale="en">
 action:
+  archive: 'Archive'
+  unarchive: 'Unarchive'
   create: 'Create new'
   delete: 'Delete'
   edit: 'Edit'
@@ -106,6 +125,8 @@ action:
 
 <i18n lang="yaml" locale="de">
 action:
+  archive: 'Archivieren'
+  unarchive: 'Wiederherstellen'
   create: 'Neu erstellen'
   delete: 'Löschen'
   edit: 'Bearbeiten'
@@ -116,6 +137,8 @@ action:
 
 <i18n lang="yaml" locale="fr">
 action:
+  archive: 'Archiver'
+  unarchive: 'Désarchiver'
   create: 'Créer'
   delete: 'Supprimer'
   edit: 'Éditer'
@@ -126,6 +149,8 @@ action:
 
 <i18n lang="yaml" locale="pl">
 action:
+  archive: 'Archiwizuj'
+  unarchive: 'Przywróć z archiwum'
   create: 'Utwórz nowe'
   delete: 'Usuń'
   edit: 'Edytuj'
@@ -136,6 +161,8 @@ action:
 
 <i18n lang="yaml" locale="cs">
 action:
+  archive: 'Archivovat'
+  unarchive: 'Obnovit z archivu'
   create: 'Vytvořit nový'
   delete: 'Smazat'
   edit: 'Upravit'

@@ -263,6 +263,7 @@ const update = (event: Event) =>
         currency: CurrencySchema,
         form: z.record(z.string(), z.unknown()),
         themes: z.record(z.string(), z.unknown()),
+        archived: z.boolean(),
       })
       .partial()
       .superRefine((val, ctx) => {

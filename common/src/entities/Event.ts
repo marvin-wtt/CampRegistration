@@ -49,6 +49,8 @@ export interface Event extends Identifiable {
   registrationStatus: EventRegistrationStatus;
   logo: string | null;
   banner: string | null;
+  /** When a manager archived the event; it only moves it out of active lists. */
+  archivedAt: string | null;
 }
 
 export interface EventDetails extends Event {
@@ -66,7 +68,8 @@ type EventServerFields =
   | 'freePlacesTotal'
   | 'registrationStatus'
   | 'logo'
-  | 'banner';
+  | 'banner'
+  | 'archivedAt';
 
 // Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
 type EventOverriddenFields =
@@ -93,7 +96,9 @@ export type EventCreateData = Omit<
 export type EventUpdateData = Omit<
   Partial<EventCreateData>,
   'organizationId' | 'countries'
->;
+> & {
+  archived?: boolean | undefined;
+};
 
 export interface EventOrganizationUpdateData {
   organizationId: string;

@@ -69,6 +69,7 @@
           :event
           :share-warning="shareWarning"
           @edit="editAction"
+          @archive="archiveAction"
           @delete="deleteAction"
           @share="shareAction"
         />
@@ -413,10 +414,16 @@ const canEdit = computed<boolean>(() => canFor(event.id, 'event.edit'));
 
 const registrationLoading = ref<boolean>(false);
 const editLoading = ref<boolean>(false);
+const archiveLoading = ref<boolean>(false);
 const deleteLoading = ref<boolean>(false);
 
 const actionLoading = computed<boolean>(() => {
-  return registrationLoading.value || deleteLoading.value || editLoading.value;
+  return (
+    registrationLoading.value ||
+    deleteLoading.value ||
+    editLoading.value ||
+    archiveLoading.value
+  );
 });
 
 function manageRegistration() {
@@ -488,6 +495,28 @@ function editAction() {
       params: {
         eventId: event.id,
       },
+    });
+  });
+}
+
+function archiveAction(archived: boolean) {
+  void withLoading(archiveLoading, async () => {
+    await capsStore.setArchived(event.id, archived);
+    quasar.notify({
+      type: 'positive',
+      color: 'positive',
+      textColor: 'on-positive',
+      position: 'top',
+      message: archived
+        ? t('notification.archived')
+        : t('notification.unarchived'),
+      actions: [
+        {
+          label: t('notification.undo'),
+          color: 'on-positive',
+          handler: () => archiveAction(!archived),
+        },
+      ],
     });
   });
 }
@@ -819,6 +848,9 @@ dialog:
     message: 'Are you sure you want to delete this event? All registrations will be lost. This event cannot be used as a template for future events.'
     label: 'Event name'
 notification:
+  archived: 'Event archived'
+  unarchived: 'Event restored from the archive'
+  undo: 'Undo'
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
 </i18n>
@@ -857,6 +889,9 @@ dialog:
     message: 'Bist du sicher, dass du diese Veranstaltung löschen möchtest? Alle Anmeldungen gehen verloren. Diese Veranstaltung kann nicht als Vorlage für zukünftige Veranstaltungen verwendet werden.'
     label: 'Veranstaltungsname'
 notification:
+  archived: 'Veranstaltung archiviert'
+  unarchived: 'Veranstaltung aus dem Archiv wiederhergestellt'
+  undo: 'Rückgängig'
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
 </i18n>
@@ -899,6 +934,9 @@ dialog:
     label: "Nom de l'événement"
 
 notification:
+  archived: 'Événement archivé'
+  unarchived: 'Événement restauré depuis les archives'
+  undo: 'Annuler'
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
 </i18n>
@@ -937,6 +975,9 @@ dialog:
     message: 'Czy na pewno chcesz usunąć to wydarzenie? Wszystkie zgłoszenia zostaną utracone. To wydarzenie nie będzie mogło być użyte jako szablon dla przyszłych wydarzeń.'
     label: 'Nazwa wydarzenia'
 notification:
+  archived: 'Wydarzenie zarchiwizowane'
+  unarchived: 'Wydarzenie przywrócone z archiwum'
+  undo: 'Cofnij'
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
 </i18n>
@@ -975,6 +1016,9 @@ dialog:
     message: 'Opravdu chcete tuto akci smazat? Všechny registrace budou ztraceny. Tuto akci nebude možné použít jako šablonu pro budoucí akce.'
     label: 'Název akce'
 notification:
+  archived: 'Akce archivována'
+  unarchived: 'Akce obnovena z archivu'
+  undo: 'Zpět'
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
 </i18n>

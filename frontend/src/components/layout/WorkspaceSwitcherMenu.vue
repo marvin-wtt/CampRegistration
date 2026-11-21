@@ -12,8 +12,8 @@
     <workspace-switcher-entries
       v-if="soleArea"
       :entries="soleArea.entries"
-      :past="soleArea.past"
-      :past-label="t('past')"
+      :archived="soleArea.archived"
+      :archived-label="t('archived')"
       :index-to="soleArea.indexTo"
       :all-label="soleArea.allLabel"
       @select="selectSole"
@@ -116,8 +116,8 @@
 
           <workspace-switcher-entries
             :entries="area.entries"
-            :past="area.past"
-            :past-label="t('past')"
+            :archived="area.archived"
+            :archived-label="t('archived')"
             :inset="!compact"
             @select="(id) => select(area.name, id)"
           />
@@ -174,7 +174,7 @@ import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { isEventPast } from '@/utils/eventPhase';
+import { isEventArchived } from '@/utils/eventPhase';
 import WorkspaceSwitcherEntries from '@/components/layout/WorkspaceSwitcherEntries.vue';
 import {
   areaFromRouteName,
@@ -194,7 +194,7 @@ interface WorkspaceArea {
   indexTo: RouteLocationRaw;
   allLabel: string;
   entries: WorkspaceEntry[];
-  past: WorkspaceEntry[];
+  archived: WorkspaceEntry[];
   count: number;
   loading: boolean;
 }
@@ -248,11 +248,11 @@ const eventArea = computed<WorkspaceArea>(() => {
     indexTo: { name: 'management.events' },
     allLabel: t('all_events'),
     entries: events
-      .filter((event) => !isEventPast(event))
+      .filter((event) => !isEventArchived(event))
       .slice(0, MAX_ENTRIES)
       .map((event) => toEntry(event.id, to(event.name))),
-    past: events
-      .filter((event) => isEventPast(event))
+    archived: events
+      .filter(isEventArchived)
       .slice(0, MAX_ENTRIES)
       .map((event) => toEntry(event.id, to(event.name))),
     count: assignedEventsStore.data?.length ?? 0,
@@ -278,7 +278,7 @@ const newsletterArea = computed<WorkspaceArea>(() => {
         label: newsletter.name,
         icon: 'mail',
       })),
-    past: [],
+    archived: [],
     count: newsletterStore.data?.length ?? 0,
     loading: newsletterStore.isLoading,
   };
@@ -306,7 +306,7 @@ const organizationArea = computed<WorkspaceArea>(() => {
             ? undefined
             : t(`verification.${organization.verificationStatus}`),
       })),
-    past: [],
+    archived: [],
     count: organizationsStore.data?.length ?? 0,
     loading: organizationsStore.isLoading,
   };
@@ -337,7 +337,7 @@ const soleArea = computed<WorkspaceArea | undefined>(() =>
 // by then.
 
 function hasEntries(area: WorkspaceArea): boolean {
-  return area.entries.length > 0 || area.past.length > 0;
+  return area.entries.length > 0 || area.archived.length > 0;
 }
 
 function selectSole(id: string) {
@@ -401,7 +401,7 @@ function goTo(rootName: string, param: string, id: string) {
 <i18n lang="yaml" locale="en">
 switch: 'Switch to'
 open: 'Open {area}'
-past: 'Past'
+archived: 'Archived'
 area:
   events: 'Events'
   newsletters: 'Newsletters'
@@ -419,7 +419,7 @@ verification:
 <i18n lang="yaml" locale="de">
 switch: 'Wechseln zu'
 open: '{area} öffnen'
-past: 'Vergangen'
+archived: 'Archiviert'
 area:
   events: 'Veranstaltungen'
   newsletters: 'Newsletter'
@@ -437,7 +437,7 @@ verification:
 <i18n lang="yaml" locale="fr">
 switch: 'Aller à'
 open: 'Ouvrir {area}'
-past: 'Passés'
+archived: 'Archivés'
 area:
   events: 'Événements'
   newsletters: 'Newsletters'
@@ -455,7 +455,7 @@ verification:
 <i18n lang="yaml" locale="pl">
 switch: 'Przejdź do'
 open: 'Otwórz {area}'
-past: 'Minione'
+archived: 'Zarchiwizowane'
 area:
   events: 'Wydarzenia'
   newsletters: 'Newslettery'
@@ -473,7 +473,7 @@ verification:
 <i18n lang="yaml" locale="cs">
 switch: 'Přejít na'
 open: 'Otevřít {area}'
-past: 'Minulé'
+archived: 'Archivované'
 area:
   events: 'Akce'
   newsletters: 'Newslettery'

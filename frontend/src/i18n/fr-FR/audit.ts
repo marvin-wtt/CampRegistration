@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Ouverture des inscriptions',
         registrationClosesAt: 'Fermeture des inscriptions',
         confirmationMode: 'Mode de confirmation',
+        archivedAt: 'Archivé',
         countries: 'Pays',
         name: 'Nom',
         organizer: 'Organisateur',

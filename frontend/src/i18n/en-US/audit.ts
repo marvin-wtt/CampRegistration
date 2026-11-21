@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Registration opens at',
         registrationClosesAt: 'Registration closes at',
         confirmationMode: 'Confirmation mode',
+        archivedAt: 'Archived',
         countries: 'Countries',
         name: 'Name',
         organizer: 'Organizer',
