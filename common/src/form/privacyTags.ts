@@ -236,29 +236,55 @@ export function consentAnswers(
     .map((question) => question.value as unknown);
 }
 
+/** The dynamic panel entries holding `question`, innermost first. */
+function entriesOf(question: Question): unknown[] {
+  const entries: unknown[] = [];
+  let current = question;
+  while (current.parentQuestion instanceof QuestionPanelDynamicModel) {
+    const owner = current.parentQuestion;
+    const entry = owner.panels.find((panel) =>
+      panel.questions.includes(current),
+    );
+    if (entry) {
+      entries.push(entry);
+    }
+    current = owner;
+  }
+
+  return entries;
+}
+
 /**
- * Special categories with a given consent. A consent asked once per dynamic
- * panel entry counts only when given in every entry.
+ * Whether a consent covering `category` was given for `question`. A consent
+ * in the question's own panel entry, an enclosing one or at the top level
+ * counts on its own; one asked in other entries only when given in all of them.
  */
-function consentedCategories(questions: Question[]): Set<string> {
+function consentGiven(
+  question: Question,
+  category: string,
+  consents: Question[],
+): boolean {
+  const scope = new Set(entriesOf(question));
+  const covering = consents.filter((consent) =>
+    categoriesOf(consent).includes(category),
+  );
+
+  const inScope = (consent: Question) => {
+    const [entry] = entriesOf(consent);
+    return entry === undefined || scope.has(entry);
+  };
+  if (covering.some((consent) => inScope(consent) && consent.value === true)) {
+    return true;
+  }
+
   const byName = new Map<string, Question[]>();
-  for (const question of questions) {
-    if (isConsentQuestion(question)) {
-      const name = question.getValueName();
-      byName.set(name, [...(byName.get(name) ?? []), question]);
-    }
+  for (const consent of covering.filter((consent) => !inScope(consent))) {
+    const name = consent.getValueName();
+    byName.set(name, [...(byName.get(name) ?? []), consent]);
   }
-
-  const given = new Set<string>();
-  for (const instances of byName.values()) {
-    if (instances.every((question) => question.value === true)) {
-      for (const category of categoriesOf(instances[0])) {
-        given.add(category);
-      }
-    }
-  }
-
-  return given;
+  return [...byName.values()].some((copies) =>
+    copies.every((consent) => consent.value === true),
+  );
 }
 
 /**
@@ -272,14 +298,8 @@ export function unconsentedQuestions(
   consentCategories?: ReadonlySet<string>,
 ): Question[] {
   const questions = survey.getAllQuestions(false, false, true);
-  const given = consentedCategories(questions);
-  const relying =
-    consentCategories ??
-    new Set(
-      questions
-        .filter((question) => question.getPropertyValue('privacyConsent'))
-        .flatMap(categoriesOf),
-    );
+  const consents = questions.filter(isConsentQuestion);
+  const relying = consentCategories ?? new Set(consents.flatMap(categoriesOf));
 
   return questions.filter((question) => {
     const category: unknown = question.getPropertyValue('privacyCategory');
@@ -287,8 +307,8 @@ export function unconsentedQuestions(
     return (
       typeof category === 'string' &&
       relying.has(category) &&
-      !given.has(category) &&
-      !question.isEmpty()
+      !question.isEmpty() &&
+      !consentGiven(question, category, consents)
     );
   });
 }

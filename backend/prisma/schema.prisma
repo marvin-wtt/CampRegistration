@@ -186,9 +186,13 @@ model Event {
   form                     Json             @db.Json
   /// ![Record<string, unknown>]
   themes                   Json             @default("{}") @db.Json
-  /// When the answers to special-category questions were deleted for good
-  /// (docs/privacy.md, 8). Implied by `registrationDataPurgedAt`.
+  /// When deleting the answers to special-category questions began, for good
+  /// (docs/privacy.md, 8): no edit brings them back. Implied by
+  /// `registrationDataPurgedAt`.
   sensitiveDataPurgedAt    DateTime?        @map("sensitive_data_purged_at") @db.DateTime(0)
+  /// When every registration's sensitive answers were cleared. Until then the
+  /// deletion is still open and can be run again.
+  sensitiveDataClearedAt   DateTime?        @map("sensitive_data_cleared_at") @db.DateTime(0)
   /// When all registration data was deleted for good. The event never takes
   /// registrations again.
   registrationDataPurgedAt DateTime?        @map("registration_data_purged_at") @db.DateTime(0)
@@ -311,7 +315,7 @@ model Registration {
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
   eventPrivacyNoticeVersionId        String?            @map("event_privacy_notice_version_id") @db.Char(26)
   platformPrivacyPolicyUpdatedAt     DateTime?          @map("platform_privacy_policy_updated_at")
-  // The wording of each consent given, as shown, by question name — proof
+  // The wording of each consent given, as shown, by answer path — proof
   // under Art. 7(1). Null on registrations predating it; do not backfill.
   /// ![Record<string, string>]
   consentTexts                       Json?              @map("consent_texts") @db.Json

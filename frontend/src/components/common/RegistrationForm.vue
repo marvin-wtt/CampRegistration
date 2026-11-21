@@ -216,6 +216,9 @@ interface Props {
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
   readonly?: boolean;
+  // The categories the notice rests on consent (`consentBasedCategories`);
+  // without them every category a consent question covers counts.
+  consentCategories?: ReadonlySet<string> | undefined;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -495,9 +498,13 @@ function createModel(eventId: string, form: object): SurveyModel {
   // the submission actually succeeds.
   // Answers that need a consent nobody gave are never dropped silently: the
   // person agrees or removes them (docs/privacy.md, 5). Normally the consent
-  // question itself is required; this catches one the form hides.
+  // question itself is required; this catches one the form hides. A manager's
+  // edit is not checked: the consent behind it is theirs to hold.
   survey.onCompleting.add((sender, options) => {
-    const missing = unconsentedQuestions(sender);
+    if (props.moderation) {
+      return;
+    }
+    const missing = unconsentedQuestions(sender, props.consentCategories);
     if (missing.length === 0) {
       return;
     }

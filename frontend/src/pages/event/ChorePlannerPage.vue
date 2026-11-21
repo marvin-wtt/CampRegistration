@@ -172,9 +172,9 @@
           <!-- Today -->
           <template v-if="view === 'today'">
             <div class="row items-center no-wrap">
-              <q-btn
+              <m-btn
                 icon="chevron_left"
-                flat
+                text
                 round
                 :aria-label="t('nav.previousDay')"
                 :disable="day <= dateRange.min"
@@ -182,8 +182,8 @@
               />
               <div class="col row justify-center no-wrap">
                 <!-- A menu on wide screens, a dialog on phones. -->
-                <q-btn
-                  flat
+                <m-btn
+                  text
                   rounded
                   no-caps
                   icon-right="arrow_drop_down"
@@ -214,11 +214,11 @@
                       </div>
                     </q-date>
                   </q-popup-proxy>
-                </q-btn>
+                </m-btn>
               </div>
-              <q-btn
+              <m-btn
                 icon="chevron_right"
-                flat
+                text
                 round
                 :aria-label="t('nav.nextDay')"
                 :disable="day >= dateRange.max"
@@ -231,16 +231,16 @@
                 {{ dayAssignments.length > 0 ? daySummary : '' }}
               </div>
               <q-space />
-              <q-btn
+              <m-btn
                 v-if="focusDate === today && day !== today"
                 :label="t('nav.today')"
                 color="primary"
-                flat
+                text
                 rounded
                 no-caps
                 @click="day = today"
               />
-              <q-btn
+              <m-btn
                 v-if="canEdit && plannedToday.length > 0 && day <= today"
                 icon="done_all"
                 :label="t('action.allDone')"
@@ -294,9 +294,9 @@
           <!-- Week -->
           <template v-else-if="view === 'week'">
             <div class="row items-center no-wrap">
-              <q-btn
+              <m-btn
                 icon="chevron_left"
-                flat
+                text
                 round
                 :aria-label="t('nav.previousWeek')"
                 :disable="weekStart <= mondayOf(dateRange.min)"
@@ -307,9 +307,9 @@
               >
                 {{ weekLabel }}
               </div>
-              <q-btn
+              <m-btn
                 icon="chevron_right"
-                flat
+                text
                 round
                 :aria-label="t('nav.nextWeek')"
                 :disable="weekStart >= mondayOf(dateRange.max)"
@@ -320,10 +320,10 @@
               v-if="focusDate === today && weekStart !== mondayOf(today)"
               class="row justify-center"
             >
-              <q-btn
+              <m-btn
                 :label="t('nav.thisWeek')"
                 color="primary"
-                flat
+                text
                 rounded
                 no-caps
                 @click="weekStart = mondayOf(today)"
@@ -372,10 +372,10 @@
                   {{ d(parseLocalDate(group.date), 'dateFull') }}
                 </div>
                 <q-space />
-                <q-btn
+                <m-btn
                   v-if="canDelete"
                   icon="more_horiz"
-                  flat
+                  text
                   round
                   :aria-label="t('action.more')"
                 >
@@ -398,7 +398,7 @@
                       </q-item>
                     </q-list>
                   </q-menu>
-                </q-btn>
+                </m-btn>
               </div>
               <q-card
                 flat
@@ -450,7 +450,7 @@
         position="bottom-right"
         :offset="[16, 16]"
       >
-        <q-btn
+        <m-btn
           fab
           icon="bolt"
           color="primary"

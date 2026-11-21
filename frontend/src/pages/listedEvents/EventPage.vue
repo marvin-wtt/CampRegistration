@@ -46,6 +46,7 @@
           :key="`${group ?? ''}-${formRun}`"
           :event-details="event"
           :group
+          :consent-categories
           :submit-fn="submit"
           :upload-file-fn="uploadFile"
           class="full-width"
@@ -241,6 +242,7 @@ import { forGroup } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import {
+  consentBasedCategories,
   formPrivacyIssues,
   hasPrivacyIssues,
 } from '@camp-registration/common/form';
@@ -455,6 +457,13 @@ watch(
     }
   },
   { immediate: true },
+);
+
+// What the server's consent check reads, so the form refuses no more than it.
+const consentCategories = computed(() =>
+  publishedNotice.value
+    ? consentBasedCategories(publishedNotice.value.notice)
+    : undefined,
 );
 
 const privacyBlocked = computed<boolean>(() => {

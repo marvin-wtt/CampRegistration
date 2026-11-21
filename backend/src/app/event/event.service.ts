@@ -54,6 +54,7 @@ export type EventCreateData = Omit<
   | 'createdAt'
   | 'updatedAt'
   | 'sensitiveDataPurgedAt'
+  | 'sensitiveDataClearedAt'
   | 'registrationDataPurgedAt'
 >;
 export interface EventCreateInput {

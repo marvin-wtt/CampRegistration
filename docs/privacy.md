@@ -697,15 +697,18 @@ verification:
   answer while its consent is not `true` (`assertConsentsGiven`), whoever submits
   — a manager creating a registration included. Read through the
   survey model (`unconsentedQuestions`), like the client's clearing and the mail
-  filter, so SurveyJS decides where an answer lives; a consent asked per dynamic
-  panel entry counts only when given in every entry. Tags alone are read off the
+  filter, so SurveyJS decides where an answer lives. A consent counts for the
+  answers in its own dynamic panel entry, an enclosing one or at the top level;
+  one asked in other entries only when given in all of them. The client checks
+  against the same `consentBasedCategories`, once the notice is loaded. Tags alone are read off the
   form JSON (`extractPrivacyTags`): they are the platform's own properties.
 - Categories relying on (g) or another non-consent basis need no consent question.
 - **[implemented] Manager edits are not checked.** A manager may record a
   sensitive answer without the form's consent, e.g. allergies a parent phoned in
   with consent given outside the form; that is the organizer's responsibility.
   The stored consent wording (`consentTexts`) is not updated by an edit: it is
-  proof of what the form showed at submission only.
+  proof of what the form showed at submission only. The editor's form skips the
+  client check for the same reason.
 - **[review]** Editing a live form into a non-compliant state stops registrations
   until it is fixed. Intended: collecting without a basis is not allowed even
   briefly.
@@ -952,12 +955,13 @@ keep data.
   registration, then clears the registrations one at a time, each locked while
   it is read and written, so an edit saved meanwhile is neither overwritten nor
   lost. An edit carrying sensitive answers is written only on the condition that
-  the event is not purged, so one racing a deletion is refused. Nothing detects
-  an interrupted run: once the sensitive data is deleted and registrations
-  remain, the page offers to run it again, which finishes an interrupted run and
-  changes nothing otherwise.
-- The event records the deletion for good: `sensitiveDataPurgedAt`,
-  `registrationDataPurgedAt`; deleting everything sets both. Nothing clears them,
+  the event is not purged, so one racing a deletion is refused (409). Only when
+  every registration is cleared is it done (`sensitiveDataClearedAt`): an
+  interrupted run keeps its deadline and reminders, and the page offers it
+  again, which finishes the job.
+- The event records the deletion for good: `sensitiveDataPurgedAt` (begun,
+  which blocks sensitive edits), `registrationDataPurgedAt`; deleting everything
+  sets both. Nothing clears them,
   and deleted data is never treated as restorable. A kind whose data is deleted
   has no deadline any more: no reminders, and it leaves the overviews.
 - Deleting needs the event ended (`endAt` passed) and the registration closed

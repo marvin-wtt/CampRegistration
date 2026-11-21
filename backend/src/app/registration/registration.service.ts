@@ -336,24 +336,39 @@ export class RegistrationService extends BaseService {
           )
         : undefined;
 
-      const after = await tx.registration.update({
-        where: {
-          id: registrationId,
-          // Sensitive answers deleted for good never come back through an edit
-          // (docs/privacy.md, 8). Part of the write, so a deletion that started
-          // since is caught too.
-          ...(sensitive ? { event: notRetentionPurged } : {}),
-        },
-        data: {
-          ...computedData,
-          data: formData,
-          customData: data.customData,
-          status: data.status,
-          group: data.group,
-          files,
-        },
-        include: this.registrationInclude,
-      });
+      const after = await tx.registration
+        .update({
+          where: {
+            id: registrationId,
+            // Sensitive answers deleted for good never come back through an
+            // edit (docs/privacy.md, 8). Part of the write, so a deletion that
+            // started since is caught too.
+            ...(sensitive ? { event: notRetentionPurged } : {}),
+          },
+          data: {
+            ...computedData,
+            data: formData,
+            customData: data.customData,
+            status: data.status,
+            group: data.group,
+            files,
+          },
+          include: this.registrationInclude,
+        })
+        .catch((error: unknown) => {
+          // The registration was read above, so a miss is the purge filter.
+          if (
+            sensitive &&
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P2025'
+          ) {
+            throw new ApiError(
+              httpStatus.CONFLICT,
+              'Sensitive data of this event was deleted; it cannot be entered again.',
+            );
+          }
+          throw error;
+        });
 
       await this.audit.updated(
         registrationAuditPolicy,

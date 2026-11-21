@@ -5,7 +5,10 @@ import type {
   EventScopedPermission,
   ScopeGrant,
 } from '@camp-registration/common/permissions';
-import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
+import {
+  EVENT_MANAGER_ROLES,
+  type AccountDeletionBlocker,
+} from '@camp-registration/common/entities';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
@@ -71,9 +74,7 @@ export class EventManagerService extends BaseService {
       manager.expiresAt <= new Date();
     const active = expired ? null : manager;
 
-    const managerPermissions = active
-      ? permissionRegistry.for('event').getPermissions(active.role)
-      : [];
+    const managerPermissions = active ? rolePermissions(active.role) : [];
 
     if (
       managerPermissions.length === 0 &&
@@ -99,9 +100,9 @@ export class EventManagerService extends BaseService {
     eventId: string,
     permission: EventScopedPermission,
   ) {
-    const roles = Object.entries(permissionRegistry.for('event').getAll())
-      .filter(([, permissions]) => permissions.includes(permission))
-      .map(([role]) => role);
+    const roles = EVENT_MANAGER_ROLES.filter((role) =>
+      rolePermissions(role).includes(permission),
+    );
 
     const managers = await this.prisma.eventManager.findMany({
       where: {
@@ -377,4 +378,9 @@ export class EventManagerService extends BaseService {
       return deleted;
     });
   }
+}
+
+/** What a manager record's role grants: the one place a role is resolved. */
+function rolePermissions(role: string) {
+  return permissionRegistry.for('event').getPermissions(role);
 }

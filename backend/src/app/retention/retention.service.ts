@@ -51,7 +51,7 @@ const PURGE_TIMEOUT_MS = 60_000;
 /** What an event records about the deletion of its data. */
 export type PurgeState = Pick<
   Event,
-  'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
+  'sensitiveDataClearedAt' | 'registrationDataPurgedAt'
 >;
 
 export type RetentionEvent = PurgeState &
@@ -72,13 +72,17 @@ export interface Deadline {
   state: RetentionState | null;
 }
 
-/** When a kind of the event's data was deleted for good, or null. */
+/**
+ * When a kind of the event's data was deleted for good, or null. Sensitive
+ * data counts only once every registration was cleared, so an interrupted
+ * deletion stays open and is run again.
+ */
 export function purgedAt(
   event: PurgeState,
   kind: EventRetentionDeadlineKind,
 ): Date | null {
   return kind === 'sensitive'
-    ? event.sensitiveDataPurgedAt
+    ? (event.sensitiveDataClearedAt ?? event.registrationDataPurgedAt)
     : event.registrationDataPurgedAt;
 }
 
@@ -231,9 +235,14 @@ export class RetentionService extends BaseService {
 
     // Recorded first, on its own: from here on the event takes no
     // registrations, and no edit can bring sensitive answers back while the
-    // registrations are cleared one by one.
+    // registrations are cleared one by one. Done only once all are: an
+    // interrupted run stays open and is simply run again.
     await this.markPurged(event.id, ['sensitive']);
     const cleared = await this.registrationService.clearSensitiveAnswers(event);
+    await this.prisma.event.update({
+      where: { id: event.id },
+      data: { sensitiveDataClearedAt: new Date() },
+    });
 
     await this.audit.record({
       action: 'sensitive_purged',
@@ -429,7 +438,7 @@ const RETENTION_EVENT_SELECT = {
   endAt: true,
   timezone: true,
   form: true,
-  sensitiveDataPurgedAt: true,
+  sensitiveDataClearedAt: true,
   registrationDataPurgedAt: true,
 } as const satisfies Prisma.EventSelect;
 

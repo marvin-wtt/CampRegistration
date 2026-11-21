@@ -299,7 +299,9 @@ export class PrivacyNoticeService extends BaseService {
       return;
     }
 
-    const gaps = addendumGaps(organizationContent, content);
+    // Held to what publishing requires, the new event's locales included.
+    const locales = await this.eventLocales(toEventId);
+    const gaps = addendumGaps(organizationContent, content, { locales });
 
     if (gaps.length > 0) {
       return;

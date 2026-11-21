@@ -102,13 +102,9 @@ const canManage = computed(() =>
 
 void retentionStore.fetchData();
 
-// Only open deadlines are listed: none left, yet something deleted, is done.
-const allResolved = computed(
-  () =>
-    !!retention.value &&
-    retention.value.deadlines.length === 0 &&
-    Object.values(retention.value.purged).some((date) => date !== null),
-);
+// Done once the registrations are gone: a free-text notice sets them no
+// deadline, so deleting only the sensitive data leaves them in place.
+const allResolved = computed(() => !!retention.value?.purged.registrations);
 
 const headerTone = computed(() => {
   const statuses = retention.value?.deadlines.map((d) => d.status) ?? [];

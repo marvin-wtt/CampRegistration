@@ -4,7 +4,8 @@
 -- AlterTable
 ALTER TABLE `events` DROP COLUMN `retention_reminder_sent_at`,
     ADD COLUMN `registration_data_purged_at` DATETIME(0) NULL,
-    ADD COLUMN `sensitive_data_purged_at` DATETIME(0) NULL;
+    ADD COLUMN `sensitive_data_purged_at` DATETIME(0) NULL,
+    ADD COLUMN `sensitive_data_cleared_at` DATETIME(0) NULL;
 
 -- CreateTable
 CREATE TABLE `event_retention_states` (
