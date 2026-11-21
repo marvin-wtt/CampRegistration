@@ -13,26 +13,32 @@ import type { ProfileUser } from '#app/profile/profile.types';
 import { AuditService } from '#app/audit/audit.service';
 import { AccountLifecycle } from '#app/user/account.lifecycle';
 
-const profileAccessInclude = {
-  eventRoles: true,
-  newsletterManagers: true,
-  twoFactor: { select: { confirmedAt: true } },
-  organizationMembers: {
-    include: {
-      organization: {
-        select: {
-          id: true,
-          verificationStatus: true,
-          // Needed to project organization-derived event and newsletter access
-          // into `eventAccess`/`newsletterAccess`, so the client gates UI
-          // exactly as the server gates requests.
-          events: { select: { id: true } },
-          newsletters: { select: { id: true } },
+// A function: the active grants depend on the current time.
+const profileAccessInclude = () =>
+  ({
+    eventRoles: true,
+    newsletterManagers: true,
+    twoFactor: { select: { confirmedAt: true } },
+    organizationMembers: {
+      include: {
+        organization: {
+          select: {
+            id: true,
+            verificationStatus: true,
+            // Needed to project organization-derived event and newsletter access
+            // into `eventAccess`/`newsletterAccess`, so the client gates UI
+            // exactly as the server gates requests.
+            events: { select: { id: true } },
+            newsletters: { select: { id: true } },
+          },
         },
       },
     },
-  },
-} satisfies Prisma.UserInclude;
+    adminAccessGrants: {
+      where: { endedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { expiresAt: 'asc' },
+    },
+  }) satisfies Prisma.UserInclude;
 
 const profileAccessOmit = { password: true } satisfies Prisma.UserOmit;
 
@@ -154,20 +160,19 @@ export class UserService extends BaseService {
   }
 
   async getOverviewCounts() {
-    const [total, unverified, locked] = await this.prisma.$transaction([
+    const [total, unverified] = await this.prisma.$transaction([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { emailVerified: false } }),
-      this.prisma.user.count({ where: { locked: true } }),
     ]);
 
-    return { total, unverified, locked };
+    return { total, unverified };
   }
 
   async getProfileUserById(id: string): Promise<ProfileUser> {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
       omit: profileAccessOmit,
-      include: profileAccessInclude,
+      include: profileAccessInclude(),
     });
   }
 
@@ -208,7 +213,7 @@ export class UserService extends BaseService {
         lastSeen: new Date(),
       },
       omit: profileAccessOmit,
-      include: profileAccessInclude,
+      include: profileAccessInclude(),
     });
 
     const events = await this.eventService.getEventsByUserId(userId);

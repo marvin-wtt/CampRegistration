@@ -4,6 +4,7 @@ import { E2E_ORGANIZATION_ID } from './organization.seeder.js';
 // The factory fills unset fields with faker data, which changes on every
 // reseed. Anything the event page renders — the contact email in particular —
 // must be pinned here, or the visual baselines would drift on every run.
+// So must the participant limit, or a low random one waitlists registrations.
 const E2E_EVENT_PRICE = 15000;
 
 export async function seedE2eEvents(): Promise<void> {
@@ -11,6 +12,7 @@ export async function seedE2eEvents(): Promise<void> {
     price: E2E_EVENT_PRICE,
     id: '01JHP0CXJFR4MQS8SF1HQJCY38',
     name: 'Simple Event',
+    maxParticipants: 10,
     listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'simple-event@example.com',
@@ -36,6 +38,7 @@ export async function seedE2eEvents(): Promise<void> {
     price: E2E_EVENT_PRICE,
     id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
     name: 'Files Event',
+    maxParticipants: 10,
     listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'files-event@example.com',

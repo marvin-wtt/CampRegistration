@@ -2,6 +2,7 @@ import { EventManagerService } from '#app/eventManager/event-manager.service';
 import type { Request } from 'express';
 import { resolve } from '#core/ioc/container';
 import { admin } from '#core/guard';
+import { findActiveAdminAccess } from '#core/permission/admin-access';
 import type { SubscriberResolver } from '#app/realtime/realtime.stream';
 
 /**
@@ -23,19 +24,27 @@ export const eventManagerSelf = (req: Request): boolean => {
  * stream. Shares its authorization logic with the `event` scope resolver in
  * `event.guard.ts` via {@link EventManagerService.getManagerAuthorization}.
  *
- * System administrators are not event managers and so have no manager record,
- * but the connect guard admits them via its `admin` bypass — mirror that here
- * by resolving them through {@link EventManagerService.getAdminAuthorization}.
+ * A system administrator with an active access grant gets
+ * {@link EventManagerService.getAdminAuthorization} until the grant expires,
+ * re-checked on the heartbeat so ending it early closes the admin view too.
+ * Without a grant, they resolve like any manager.
  */
 export const eventManagerSubscriber: SubscriberResolver = async (req) => {
   const managerService = resolve(EventManagerService);
-
-  if (admin(req)) {
-    return managerService.getAdminAuthorization();
-  }
-
   const userId = req.authUserId();
   const eventId = req.modelOrFail('event').id;
+
+  // Not cached per request: the stream re-resolves on the same request.
+  const access = admin(req)
+    ? await findActiveAdminAccess(userId, 'event', eventId)
+    : null;
+  if (access) {
+    return {
+      ...managerService.getAdminAuthorization(),
+      expiresAt: access.expiresAt,
+      revalidate: true,
+    };
+  }
 
   return await managerService.getManagerAuthorization(eventId, userId);
 };

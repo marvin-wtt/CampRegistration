@@ -2,7 +2,7 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { EventController } from '#app/event/event.controller';
 import { EventService } from './event.service.js';
 import { auth } from '#core/auth/auth.middleware';
-import { guard } from '#core/guard';
+import { admin, guard, or } from '#core/guard';
 import { eventManagerSubscriber } from '#app/eventManager/event-manager.guard';
 import type { EventQuery } from '@camp-registration/common/entities';
 import { controller } from '#core/router/bindController';
@@ -23,10 +23,15 @@ export class EventRouter extends ModuleRouter {
 
     this.router.get(
       '/',
-      guard((req) => {
-        const view = (req.query as EventQuery).view;
-        return view !== 'all' && (view !== 'assigned' || req.isAuthenticated());
-      }),
+      // `view=all` is the moderation list: metadata only, no grant needed.
+      guard(
+        or(admin, (req) => {
+          const view = (req.query as EventQuery).view;
+          return (
+            view !== 'all' && (view !== 'assigned' || req.isAuthenticated())
+          );
+        }),
+      ),
       controller(eventController, 'index'),
     );
 

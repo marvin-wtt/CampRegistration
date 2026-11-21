@@ -88,6 +88,7 @@ import OrganizationReviewDialog, {
 } from '@/components/organization/OrganizationReviewDialog.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useAPIService } from '@/services/APIService';
+import { useAdminAccessRequest } from '@/composables/adminAccess';
 import { useServerTable } from '@/composables/serverTable';
 import { useAction } from '@/composables/action';
 import { useRouter } from 'vue-router';
@@ -102,6 +103,7 @@ const { t, d, locale } = useI18n();
 const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
+const { ensureAdminAccess } = useAdminAccessRequest();
 // Each call passes its own error message instead of the store's wording.
 const pageAction = useAction();
 
@@ -260,6 +262,11 @@ function showDetails(organization: Organization) {
  * confirm and only then being refused.
  */
 async function onDelete(organization: Organization) {
+  const subject = { scope: 'organization', id: organization.id } as const;
+  if (!(await ensureAdminAccess(subject))) {
+    return;
+  }
+
   const details = await pageAction.run(
     'details',
     () => api.fetchOrganization(organization.id),

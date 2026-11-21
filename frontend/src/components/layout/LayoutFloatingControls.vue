@@ -23,7 +23,13 @@
     </slot>
   </div>
 
-  <div class="layout-floating layout-floating--bottom">
+  <div class="layout-floating layout-floating--bottom column items-center">
+    <admin-access-button
+      v-if="adminAccess"
+      :subject="adminAccess"
+      class="q-mb-sm"
+      floating
+    />
     <profile-menu class="elevation-2" />
   </div>
 </template>
@@ -33,10 +39,13 @@ import { useI18n } from 'vue-i18n';
 import type { RouteLocationRaw } from 'vue-router';
 import ProfileMenu from '@/components/common/ProfileMenu.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import AdminAccessButton from '@/components/administration/access/AdminAccessButton.vue';
+import type { AdminAccessSubject } from '@/composables/adminAccess';
 
-const { backTo } = defineProps<{
+const { backTo, adminAccess } = defineProps<{
   // When set, a back button is shown top-left linking to this route.
   backTo?: RouteLocationRaw | undefined;
+  adminAccess?: AdminAccessSubject | undefined;
 }>();
 
 const { t } = useI18n();

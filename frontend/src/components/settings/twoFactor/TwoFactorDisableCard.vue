@@ -5,6 +5,18 @@
         {{ t('description') }}
       </div>
 
+      <q-banner
+        v-if="administrator"
+        dense
+        class="warning-banner rounded-md q-mb-md"
+        data-test="admin-2fa-disable-warning"
+      >
+        <template #avatar>
+          <q-icon name="shield" />
+        </template>
+        {{ t('administratorWarning') }}
+      </q-banner>
+
       <div class="row q-col-gutter-md">
         <q-input
           v-model="password"
@@ -63,8 +75,11 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
+import { storeToRefs } from 'pinia';
+import { useProfileStore } from '@/stores/profile-store';
 
 const { t } = useI18n();
+const { administrator } = storeToRefs(useProfileStore());
 
 const { loading, error } = defineProps<{
   loading?: boolean;
@@ -88,11 +103,18 @@ function onDisable() {
   background: var(--md3-error-container);
   color: var(--md3-on-error-container);
 }
+
+.warning-banner {
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+}
 </style>
 
 <i18n lang="yaml" locale="en">
 description: 'Two-factor authentication is currently active. You can disable it
   by entering your password and the OTP.'
+
+administratorWarning: 'You are an administrator. While two-factor authentication is disabled, your administrator rights are paused until you set it up again.'
 
 field:
   password:
@@ -108,6 +130,8 @@ action:
 description: 'Die Zwei-Faktor-Authentifizierung ist derzeit aktiv. Du kannst sie
   deaktivieren, indem du dein Passwort und das OTP eingibst.'
 
+administratorWarning: 'Du bist Administrator. Solange die Zwei-Faktor-Authentifizierung deaktiviert ist, ruhen deine Administratorrechte, bis du sie wieder einrichtest.'
+
 field:
   password:
     label: 'Passwort'
@@ -122,6 +146,8 @@ action:
 description: "L'authentification à deux facteurs est actuellement active. Vous
   pouvez la désactiver en saisissant votre mot de passe et l'OTP."
 
+administratorWarning: "Vous êtes administrateur. Tant que l'authentification à deux facteurs est désactivée, vos droits d'administrateur sont suspendus jusqu'à ce que vous la configuriez à nouveau."
+
 field:
   password:
     label: 'Mot de passe'
@@ -135,6 +161,8 @@ action:
 <i18n lang="yaml" locale="pl">
 description: 'Uwierzytelnianie dwuskładnikowe jest obecnie aktywne. Możesz je wyłączyć, wprowadzając swoje hasło i kod OTP.'
 
+administratorWarning: 'Jesteś administratorem. Dopóki uwierzytelnianie dwuskładnikowe jest wyłączone, Twoje uprawnienia administratora są wstrzymane, aż skonfigurujesz je ponownie.'
+
 field:
   password:
     label: 'Hasło'
@@ -147,6 +175,8 @@ action:
 
 <i18n lang="yaml" locale="cs">
 description: 'Dvoufázové ověřování je momentálně aktivní. Můžete jej vypnout zadáním hesla a kódu OTP.'
+
+administratorWarning: 'Jste administrátor. Dokud je dvoufázové ověřování vypnuté, vaše administrátorská práva jsou pozastavena, dokud si ho znovu nenastavíte.'
 
 field:
   password:
