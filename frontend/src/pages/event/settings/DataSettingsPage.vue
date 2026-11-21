@@ -300,6 +300,7 @@ import type {
   EventRetentionDeadlineStatus,
   RetentionPostponeData,
 } from '@camp-registration/common/privacy';
+import { zonedInstant } from '@camp-registration/common/utils';
 import { parseLocalDate } from '@/utils/date';
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -361,7 +362,7 @@ const eventStillRunning = computed<boolean>(() => {
   return (
     !!current &&
     !current.registrationDataPurgedAt &&
-    new Date(current.endAt) > new Date()
+    zonedInstant(current.endAt, current.timezone) > new Date()
   );
 });
 

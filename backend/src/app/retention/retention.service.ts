@@ -30,7 +30,8 @@ import {
 } from '@camp-registration/common/privacy';
 import {
   currentDateInTimeZone,
-  dateInTimeZone,
+  utcCarrierToNaiveDateTime,
+  zonedInstant,
 } from '@camp-registration/common/utils';
 import {
   deadlineStatus,
@@ -289,7 +290,7 @@ export class RetentionService extends BaseService {
   ): Promise<void> {
     await this.transaction(async (tx) => {
       const event = await this.eventService.lockForUpdate(eventId);
-      if (event.endAt > new Date()) {
+      if (eventEndInstant(event) > new Date()) {
         throw new ApiError(
           httpStatus.CONFLICT,
           'Data can only be deleted once the event has ended.',
@@ -437,8 +438,13 @@ export type RetentionEventWithName = Prisma.EventGetPayload<{
 }>;
 
 /** The day the event ends, in its time zone: what every period counts from. */
-function eventEndDate(event: Pick<Event, 'endAt' | 'timezone'>): string {
-  return dateInTimeZone(event.endAt, event.timezone);
+function eventEndDate(event: Pick<Event, 'endAt'>): string {
+  return utcCarrierToNaiveDateTime(event.endAt).slice(0, 10);
+}
+
+/** `endAt` is a UTC carrier of local digits; this is the real moment it ends. */
+function eventEndInstant(event: Pick<Event, 'endAt' | 'timezone'>): Date {
+  return zonedInstant(utcCarrierToNaiveDateTime(event.endAt), event.timezone);
 }
 
 /** A form without special-category questions holds no sensitive data. */
