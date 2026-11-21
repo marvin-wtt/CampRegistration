@@ -301,9 +301,11 @@ import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useRouter } from 'vue-router';
 import { useProfileStore } from '@/stores/profile-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
+const { to } = useObjectTranslation();
 const eventManagerStore = useEventManagerStore();
 const assignedEventsStore = useAssignedEventsStore();
 const eventDetailsStore = useEventDetailsStore();
@@ -478,14 +480,17 @@ function showDeleteDialog(manager: EventManager) {
 }
 
 function showLeaveDialog(manager: EventManager) {
+  // Leaving is confirmed with the event's name, so it's clear which one.
+  const eventName = to(eventDetailsStore.data?.name);
+
   quasar
     .dialog({
       component: SafeDeleteDialog,
       componentProps: {
         title: t('dialog.leave.title'),
-        message: t('dialog.leave.message'),
+        message: t('dialog.leave.message', { event: eventName }),
         label: t('dialog.leave.label'),
-        value: manager.email,
+        value: eventName,
       },
     })
     .onOk(() => {
@@ -695,8 +700,8 @@ dialog:
     label: 'Email'
   leave:
     title: 'Leave event'
-    message: 'Do you really want to leave this event? You will lose access.'
-    label: 'Email'
+    message: 'Do you really want to leave {event}? You will lose access.'
+    label: 'Name'
 
 expiry:
   until: 'Until {date}'
@@ -743,8 +748,8 @@ dialog:
     label: 'E-Mail'
   leave:
     title: 'Veranstaltung verlassen'
-    message: 'Möchtest du diese Veranstaltung wirklich verlassen? Du verlierst dadurch den Zugriff.'
-    label: 'E-Mail'
+    message: 'Möchtest du {event} wirklich verlassen? Du verlierst dadurch den Zugriff.'
+    label: 'Name'
 
 expiry:
   until: 'Bis {date}'
@@ -792,9 +797,8 @@ dialog:
     label: 'E-mail'
   leave:
     title: "Quitter l'événement"
-
-    message: "Voulez-vous vraiment quitter cet événement ? Vous perdrez l'accès."
-    label: 'E-mail'
+    message: "Voulez-vous vraiment quitter {event} ? Vous perdrez l'accès."
+    label: 'Nom'
 
 expiry:
   until: "Jusqu'au {date}"
@@ -841,8 +845,8 @@ dialog:
     label: 'E-mail'
   leave:
     title: 'Opuść wydarzenie'
-    message: 'Czy na pewno chcesz opuścić to wydarzenie? Stracisz do niego dostęp.'
-    label: 'E-mail'
+    message: 'Czy na pewno chcesz opuścić wydarzenie {event}? Stracisz do niego dostęp.'
+    label: 'Nazwa'
 
 expiry:
   until: 'Do {date}'
@@ -889,8 +893,8 @@ dialog:
     label: 'E-mail'
   leave:
     title: 'Opustit akci'
-    message: 'Opravdu chcete opustit tuto akci? Ztratíte k ní přístup.'
-    label: 'E-mail'
+    message: 'Opravdu chcete opustit akci {event}? Ztratíte k ní přístup.'
+    label: 'Název'
 
 expiry:
   until: 'Do {date}'

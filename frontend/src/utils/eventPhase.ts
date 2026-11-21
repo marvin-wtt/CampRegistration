@@ -1,15 +1,7 @@
 import type { Event } from '@camp-registration/common/entities';
 import { zonedInstant } from '@camp-registration/common/utils';
 
-export type EventPhase = 'ongoing' | 'upcoming' | 'recentlyEnded' | 'past';
-
-const SIX_WEEKS_MS = 6 * 7 * 24 * 60 * 60 * 1000;
-
-// The server's status, not the window: a deleted event's window stays as it
-// was, yet it never takes registrations again.
-function isRegistrationOpen(event: Event): boolean {
-  return event.registrationStatus === 'open';
-}
+export type EventPhase = 'ongoing' | 'upcoming' | 'ended';
 
 export function phaseOf(event: Event): EventPhase {
   const now = Date.now();
@@ -21,13 +13,9 @@ export function phaseOf(event: Event): EventPhase {
   if (now <= end) {
     return 'ongoing';
   }
-  // Ended — fully past once registration is closed and it ended a while ago
-  if (!isRegistrationOpen(event) && now - end > SIX_WEEKS_MS) {
-    return 'past';
-  }
-  return 'recentlyEnded';
+  return 'ended';
 }
 
-export function isEventPast(event: Event): boolean {
-  return phaseOf(event) === 'past';
+export function isEventArchived(event: Event): boolean {
+  return event.archivedAt !== null;
 }

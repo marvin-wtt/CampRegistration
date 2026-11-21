@@ -241,9 +241,17 @@ export const useRealtimeStore = defineStore('realtime', () => {
     closeStream();
   });
 
+  /** Reopen the active stream, e.g. after the user's access changed. */
+  function reopen() {
+    if (currentEventId !== undefined) {
+      openStream(currentEventId);
+    }
+  }
+
   return {
     on,
     onReconnect,
     connect,
+    reopen,
   };
 });

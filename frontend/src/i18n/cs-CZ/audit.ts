@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Registrace se otevírá',
         registrationClosesAt: 'Registrace se zavírá',
         confirmationMode: 'Režim potvrzení',
+        archivedAt: 'Archivováno',
         countries: 'Země',
         name: 'Název',
         organizer: 'Organizátor',
@@ -183,6 +184,13 @@ export default {
           registration_updated: 'Registrace aktualizována',
           registration_canceled: 'Registrace zrušena',
         },
+      },
+    },
+    adminAccessGrant: {
+      label: 'Přístup administrátora',
+      actions: {
+        granted: 'Uděleno',
+        ended: 'Ukončeno předčasně',
       },
     },
   },

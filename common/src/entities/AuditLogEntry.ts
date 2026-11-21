@@ -10,6 +10,7 @@ export const AUDIT_ENTITY_TYPES = [
   'financeCategory',
   'payout',
   'retention',
+  'adminAccessGrant',
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

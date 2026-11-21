@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Registration opens at',
         registrationClosesAt: 'Registration closes at',
         confirmationMode: 'Confirmation mode',
+        archivedAt: 'Archived',
         countries: 'Countries',
         name: 'Name',
         organizer: 'Organizer',
@@ -183,6 +184,13 @@ export default {
           registration_updated: 'Registration updated',
           registration_canceled: 'Registration canceled',
         },
+      },
+    },
+    adminAccessGrant: {
+      label: 'Administrator access',
+      actions: {
+        granted: 'Granted',
+        ended: 'Ended early',
       },
     },
   },

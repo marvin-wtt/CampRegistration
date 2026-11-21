@@ -1,4 +1,13 @@
 import { type RouteRecordRaw } from 'vue-router';
+import type { PermissionRequirement } from '@/composables/scopePermissions';
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    auth?: boolean;
+    /** Needed to open an event page; EventManagementLayout redirects without it. */
+    eventPermission?: PermissionRequirement<'event'>;
+  }
+}
 
 // Public pages are children of `/`; every other top-level path is private and
 // must be listed in `DISALLOWED_PATHS` (backend/src/app/seo/seo.routes.ts).
@@ -179,41 +188,57 @@ const routes: RouteRecordRaw[] = [
               {
                 path: 'dashboard',
                 name: 'management.event.dashboard',
+                meta: { eventPermission: 'event.view' },
                 component: () => import('@/pages/event/EventDashboardPage.vue'),
               },
               {
                 path: 'participants',
                 name: 'management.event.participants',
+                meta: { eventPermission: 'event.registrations.view' },
                 component: () => import('@/pages/event/RegistrationsPage.vue'),
               },
               {
                 path: 'contact',
                 name: 'management.event.contact',
+                meta: {
+                  eventPermission: {
+                    any: ['event.messages.create', 'event.messages.view'],
+                  },
+                },
                 component: () => import('@/pages/event/ContactPage.vue'),
               },
               {
                 path: 'program-planner',
                 name: 'management.event.program-planner',
+                meta: { eventPermission: 'event.program_items.view' },
                 component: () => import('@/pages/event/ProgramPlannerPage.vue'),
               },
               {
                 path: 'room-planner',
                 name: 'management.event.room-planner',
+                meta: { eventPermission: 'event.rooms.view' },
                 component: () => import('@/pages/event/RoomPlannerPage.vue'),
               },
               {
                 path: 'tasks',
                 name: 'management.event.tasks',
+                meta: { eventPermission: 'event.tasks.view' },
                 component: () => import('@/pages/event/TasksPage.vue'),
               },
               {
                 path: 'chore-planner',
                 name: 'management.event.chore-planner',
+                meta: { eventPermission: 'event.chore_assignments.view' },
                 component: () => import('@/pages/event/ChorePlannerPage.vue'),
               },
               {
                 path: 'finances',
                 name: 'management.event.finances',
+                meta: {
+                  eventPermission: {
+                    any: ['event.expenses.create', 'event.expenses.view'],
+                  },
+                },
                 component: () => import('@/pages/event/FinancesPage.vue'),
               },
               {
@@ -228,54 +253,71 @@ const routes: RouteRecordRaw[] = [
                   {
                     path: 'access',
                     name: 'management.event.settings.access',
+                    meta: { eventPermission: 'event.managers.view' },
                     component: () =>
                       import('@/pages/event/settings/AccessPage.vue'),
                   },
                   {
                     path: 'edit',
                     name: 'management.event.settings.edit',
+                    meta: { eventPermission: 'event.edit' },
                     component: () =>
                       import('@/pages/event/settings/EventEditPage.vue'),
                   },
                   {
                     path: 'emails',
                     name: 'management.event.settings.emails',
+                    meta: { eventPermission: 'event.message_templates.view' },
                     component: () =>
                       import('@/pages/event/settings/MessageTemplateEditPage.vue'),
                   },
                   {
                     path: 'files',
                     name: 'management.event.settings.files',
+                    meta: { eventPermission: 'event.files.view' },
                     component: () =>
                       import('@/pages/event/settings/FileSettingsPage.vue'),
                   },
                   {
                     path: 'form',
                     name: 'management.event.settings.form',
+                    meta: {
+                      eventPermission: {
+                        all: ['event.edit', 'event.files.view'],
+                      },
+                    },
                     component: () =>
                       import('@/pages/event/settings/FormEditPage.vue'),
                   },
                   {
                     path: 'navigation',
                     name: 'management.event.settings.navigation',
+                    meta: { eventPermission: 'event.edit' },
                     component: () =>
                       import('@/pages/event/settings/NavigationSettingsPage.vue'),
                   },
                   {
                     path: 'privacy',
                     name: 'management.event.settings.privacy',
+                    meta: { eventPermission: 'event.edit' },
                     component: () =>
                       import('@/pages/event/settings/EventPrivacyPage.vue'),
                   },
                   {
                     path: 'data',
                     name: 'management.event.settings.data',
+                    meta: {
+                      eventPermission: {
+                        any: ['event.registrations.delete', 'event.delete'],
+                      },
+                    },
                     component: () =>
                       import('@/pages/event/settings/DataSettingsPage.vue'),
                   },
                   {
                     path: 'audit',
                     name: 'management.event.settings.audit',
+                    meta: { eventPermission: 'event.audit.view' },
                     component: () =>
                       import('@/pages/event/settings/AuditLogPage.vue'),
                   },
@@ -405,6 +447,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/administration/QueueAdminPage.vue'),
       },
       {
+        path: 'access',
+        name: 'administration.access',
+        component: () =>
+          import('@/pages/administration/AdminAccessAdminPage.vue'),
+      },
+      {
         path: 'legal',
         name: 'administration.legal',
         component: () =>
@@ -435,6 +483,17 @@ const routes: RouteRecordRaw[] = [
         name: 'settings.account',
         path: 'account',
         component: () => import('@/pages/settings/AccountSettingsPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/newsletters/confirm/:token',
+    component: () => import('@/layouts/PublicLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'newsletter.confirm',
+        component: () => import('@/pages/newsletter/NewsletterConfirmPage.vue'),
       },
     ],
   },

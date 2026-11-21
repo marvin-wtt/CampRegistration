@@ -47,7 +47,8 @@ export interface EventSeed {
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
 // The purge timestamps sit with the timestamps rather than the payload: only
-// the retention workflow writes them, never an author.
+// the retention workflow writes them, never an author. A new event is never
+// archived.
 export type EventCreateData = Omit<
   Event,
   | 'id'
@@ -56,6 +57,7 @@ export type EventCreateData = Omit<
   | 'sensitiveDataPurgedAt'
   | 'sensitiveDataClearedAt'
   | 'registrationDataPurgedAt'
+  | 'archivedAt'
 >;
 export interface EventCreateInput {
   event: EventCreateData;
@@ -65,7 +67,11 @@ export interface EventCreateInput {
 }
 
 // Ownership moves through `moveEventToOrganization`, never a field update.
-export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;
+export type EventUpdateData = Partial<
+  Omit<EventCreateData, 'organizationId'>
+> & {
+  archived?: boolean | undefined;
+};
 
 type EventRegistrationStatusFilter = 'open' | 'upcoming' | 'closed';
 
@@ -534,11 +540,21 @@ export class EventService extends BaseService {
 
       assertRegistrationStaysClosed(before, data);
 
+      const { archived, ...fields } = data;
+      // Re-archiving keeps the original timestamp.
+      const archivedAt =
+        archived === undefined
+          ? undefined
+          : archived
+            ? (before.archivedAt ?? new Date())
+            : null;
+
       const updatedEvent = await tx.event.update({
         where: { id: event.id },
         data: {
-          ...data,
-          location: dbNullable(data.location),
+          ...fields,
+          location: dbNullable(fields.location),
+          archivedAt,
         },
         include: { ...this.eventResourceInclude() },
       });

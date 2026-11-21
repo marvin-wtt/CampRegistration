@@ -157,6 +157,25 @@ export const fixtures: EmailFixture[] = [
     } satisfies LocalContext<ActionCardProps>,
   },
   {
+    template: 'action-card',
+    name: 'newsletter-confirmation',
+    subject: 'Please confirm your newsletter subscription',
+    context: {
+      preview: 'Adventure Org would like to send you their newsletter.',
+      reason:
+        'You are receiving this email because Adventure Org added you to their newsletter.',
+      title: 'Hi,',
+      information:
+        'Adventure Org would like to add you to their newsletter "Summer News". Please confirm that you want to receive it. You will not get it until you confirm.',
+      button: 'Confirm subscription',
+      accidental:
+        'If you did not expect this email, just ignore it. You will not be subscribed and your address will be deleted after 30 days.',
+      greeting: 'Best regards,',
+      teamName: 'Camp Registration team',
+      url,
+    } satisfies LocalContext<ActionCardProps>,
+  },
+  {
     template: 'organization-rejected',
     subject: 'Your organization could not be verified',
     context: {

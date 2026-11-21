@@ -54,6 +54,7 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   registrationDataPurgedAt: null,
   logo: null,
   banner: null,
+  archivedAt: null,
   ...overrides,
 });
 

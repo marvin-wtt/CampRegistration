@@ -70,6 +70,7 @@
           :event
           :share-warning="shareWarning"
           @edit="go('management.event.settings')"
+          @archive="archiveAction"
           @delete="go('management.event.settings.data')"
           @share="shareAction"
         />
@@ -435,6 +436,7 @@ const canEditWindow = computed<boolean>(
 );
 
 const registrationLoading = ref<boolean>(false);
+const archiveLoading = ref<boolean>(false);
 
 function manageRegistration() {
   quasar
@@ -496,6 +498,28 @@ function shareAction() {
         message: t('notification.share_fail'),
       });
     });
+}
+
+function archiveAction(archived: boolean) {
+  void withLoading(archiveLoading, async () => {
+    await capsStore.setArchived(event.id, archived);
+    quasar.notify({
+      type: 'positive',
+      color: 'positive',
+      textColor: 'on-positive',
+      position: 'top',
+      message: archived
+        ? t('notification.archived')
+        : t('notification.unarchived'),
+      actions: [
+        {
+          label: t('notification.undo'),
+          color: 'on-positive',
+          handler: () => archiveAction(!archived),
+        },
+      ],
+    });
+  });
 }
 
 async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
@@ -809,6 +833,9 @@ share:
   upcoming: 'Registration has not opened yet — visitors can view the event but cannot sign up yet.'
   unverified: 'Only this event’s managers can open the link while {organization} is unverified.'
 notification:
+  archived: 'Event archived'
+  unarchived: 'Event restored from the archive'
+  undo: 'Undo'
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
 purgedStatus: 'Data deleted'
@@ -843,6 +870,9 @@ share:
   upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen die Veranstaltung, können sich aber noch nicht anmelden.'
   unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieser Veranstaltung den Link öffnen.'
 notification:
+  archived: 'Veranstaltung archiviert'
+  unarchived: 'Veranstaltung aus dem Archiv wiederhergestellt'
+  undo: 'Rückgängig'
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
 purgedStatus: 'Daten gelöscht'
@@ -879,6 +909,9 @@ share:
 
   unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de cet événement peuvent ouvrir le lien.'
 notification:
+  archived: 'Événement archivé'
+  unarchived: 'Événement restauré depuis les archives'
+  undo: 'Annuler'
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
 purgedStatus: 'Données supprimées'
@@ -913,6 +946,9 @@ share:
   upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą wydarzenie, ale nie mogą się jeszcze zapisać.'
   unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym wydarzeniem.'
 notification:
+  archived: 'Wydarzenie zarchiwizowane'
+  unarchived: 'Wydarzenie przywrócone z archiwum'
+  undo: 'Cofnij'
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
 purgedStatus: 'Dane usunięte'
@@ -947,6 +983,9 @@ share:
   upcoming: 'Registrace ještě nezačala — návštěvníci akci uvidí, ale zatím se nemohou přihlásit.'
   unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa této akce.'
 notification:
+  archived: 'Akce archivována'
+  unarchived: 'Akce obnovena z archivu'
+  undo: 'Zpět'
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
 purgedStatus: 'Údaje smazány'

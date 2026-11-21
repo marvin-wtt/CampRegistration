@@ -64,7 +64,7 @@
         <q-item
           v-for="item in filteredItems"
           :key="item.name"
-          :to="item.to"
+          :to="{ name: item.routeName }"
           v-ripple
           clickable
           class="q-py-md"
@@ -103,16 +103,14 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type RouteLocationRaw } from 'vue-router';
-import { usePermissions } from '@/composables/permissions';
-import type { PermissionRequirement } from '@/composables/scopePermissions';
+import { useEventRouteAccess } from '@/composables/permissions';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
 
 const { t } = useI18n();
-const { canAccess } = usePermissions();
+const { canAccessRoute } = useEventRouteAccess();
 const profileStore = useProfileStore();
 const { data: event, error: eventError } = storeToRefs(useEventDetailsStore());
 
@@ -131,8 +129,7 @@ interface SettingsItem {
   icon: string;
   // Groups: event setup, content & communication, access & compliance.
   color: 'primary' | 'secondary' | 'tertiary';
-  to: RouteLocationRaw;
-  permission?: PermissionRequirement<'event'>;
+  routeName: string;
 }
 
 const items = computed<SettingsItem[]>(() => [
@@ -142,8 +139,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('edit.description'),
     icon: 'edit',
     color: 'primary',
-    to: { name: 'management.event.settings.edit' },
-    permission: 'event.edit',
+    routeName: 'management.event.settings.edit',
   },
   {
     name: 'form',
@@ -151,8 +147,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('form.description'),
     icon: 'feed',
     color: 'primary',
-    to: { name: 'management.event.settings.form' },
-    permission: { all: ['event.edit', 'event.files.view'] },
+    routeName: 'management.event.settings.form',
   },
   {
     name: 'navigation',
@@ -160,8 +155,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('navigation.description'),
     icon: 'visibility',
     color: 'primary',
-    to: { name: 'management.event.settings.navigation' },
-    permission: 'event.edit',
+    routeName: 'management.event.settings.navigation',
   },
   {
     name: 'emails',
@@ -169,8 +163,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('emails.description'),
     icon: 'email',
     color: 'secondary',
-    to: { name: 'management.event.settings.emails' },
-    permission: 'event.message_templates.view',
+    routeName: 'management.event.settings.emails',
   },
   {
     name: 'files',
@@ -178,8 +171,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('files.description'),
     icon: 'folder',
     color: 'secondary',
-    to: { name: 'management.event.settings.files' },
-    permission: 'event.files.view',
+    routeName: 'management.event.settings.files',
   },
   {
     name: 'access',
@@ -187,8 +179,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('access.description'),
     icon: 'key',
     color: 'tertiary',
-    to: { name: 'management.event.settings.access' },
-    permission: 'event.managers.view',
+    routeName: 'management.event.settings.access',
   },
   {
     name: 'privacy',
@@ -196,8 +187,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('privacy.description'),
     icon: 'privacy_tip',
     color: 'tertiary',
-    to: { name: 'management.event.settings.privacy' },
-    permission: 'event.edit',
+    routeName: 'management.event.settings.privacy',
   },
   {
     name: 'data',
@@ -205,8 +195,7 @@ const items = computed<SettingsItem[]>(() => [
     description: t('data.description'),
     icon: 'delete_sweep',
     color: 'tertiary',
-    to: { name: 'management.event.settings.data' },
-    permission: { any: ['event.registrations.delete', 'event.delete'] },
+    routeName: 'management.event.settings.data',
   },
   {
     name: 'audit',
@@ -214,13 +203,12 @@ const items = computed<SettingsItem[]>(() => [
     description: t('audit.description'),
     icon: 'history',
     color: 'tertiary',
-    to: { name: 'management.event.settings.audit' },
-    permission: 'event.audit.view',
+    routeName: 'management.event.settings.audit',
   },
 ]);
 
 const filteredItems = computed<SettingsItem[]>(() => {
-  return items.value.filter((item) => canAccess(item.permission));
+  return items.value.filter((item) => canAccessRoute(item.routeName));
 });
 </script>
 

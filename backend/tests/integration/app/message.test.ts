@@ -19,14 +19,15 @@ import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
 import { Registration, Message, User } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
+import sanitizeHtml from 'sanitize-html';
 import { formatMoney, fromMinorUnits } from '@camp-registration/common/utils';
 
-// The message body is HTML, so Handlebars escapes interpolated values there
-// (e.g. `'` -> `&#x27;`). Faker-generated fields such as the company name can
-// contain those characters, so expected body values are escaped the same way.
-// The subject is plain text and must never be escaped.
+// The message body is HTML: Handlebars escapes interpolated values, then
+// sanitize-html re-encodes the result (`&#x27;` back to `'`, `&` stays `&amp;`).
+// Faker fields such as the company name can contain those characters, so
+// expected body values go through the same two steps. Subjects are never escaped.
 const esc = (value: unknown): string =>
-  Handlebars.escapeExpression(String(value));
+  sanitizeHtml(Handlebars.escapeExpression(String(value)));
 
 const crateEventWithManager = async (
   eventCreateData?: Parameters<(typeof EventFactory)['create']>[0],

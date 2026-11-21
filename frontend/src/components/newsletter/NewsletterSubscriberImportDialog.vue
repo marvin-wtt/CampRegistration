@@ -49,7 +49,8 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none text-caption text-on-surface-variant">
-          {{ t('notice') }}
+          <p>{{ t('notice') }}</p>
+          <p class="q-mb-none">{{ t('confirmationNotice') }}</p>
         </q-card-section>
 
         <q-card-actions
@@ -145,6 +146,7 @@ input:
     label: 'Filter by group (optional)'
     hint: 'Leave empty to import all groups'
 notice: 'Only registrations that agreed to the newsletter in the form are imported. Registrations without an email address and existing subscribers are skipped.'
+confirmationNotice: 'Everyone imported gets an email to confirm the subscription. Only confirmed subscribers receive newsletters.'
 action:
   import: 'Import'
   cancel: 'Cancel'
@@ -162,6 +164,7 @@ input:
     label: 'Nach Gruppe filtern (optional)'
     hint: 'Leer lassen, um alle Gruppen zu importieren'
 notice: 'Importiert werden nur Anmeldungen, die im Formular dem Newsletter zugestimmt haben. Anmeldungen ohne E-Mail-Adresse und bereits vorhandene Abonnenten werden übersprungen.'
+confirmationNotice: 'Alle Importierten bekommen eine E-Mail, um das Abonnement zu bestätigen. Nur bestätigte Abonnenten erhalten Newsletter.'
 action:
   import: 'Importieren'
   cancel: 'Abbrechen'
@@ -181,6 +184,7 @@ input:
     label: 'Filtrer par groupe (optionnel)'
     hint: 'Laisser vide pour importer tous les groupes'
 notice: 'Seules les inscriptions ayant accepté la newsletter dans le formulaire sont importées. Les inscriptions sans adresse e-mail et les abonnés existants sont ignorés.'
+confirmationNotice: "Chaque personne importée recevra un e-mail pour confirmer l'abonnement. Seuls les abonnés confirmés reçoivent les newsletters."
 action:
   import: 'Importer'
   cancel: 'Annuler'
@@ -198,6 +202,7 @@ input:
     label: 'Filtruj według grupy (opcjonalnie)'
     hint: 'Pozostaw puste, aby importować wszystkie grupy'
 notice: 'Importowane są tylko zgłoszenia, które w formularzu wyraziły zgodę na newsletter. Zgłoszenia bez adresu e-mail oraz istniejący subskrybenci są pomijani.'
+confirmationNotice: 'Każda zaimportowana osoba otrzyma e-mail z prośbą o potwierdzenie subskrypcji. Newslettery otrzymują tylko potwierdzeni subskrybenci.'
 action:
   import: 'Importuj'
   cancel: 'Anuluj'
@@ -215,6 +220,7 @@ input:
     label: 'Filtrovat podle skupiny (volitelné)'
     hint: 'Nechte prázdné pro import všech skupin'
 notice: 'Importují se jen registrace, které ve formuláři souhlasily s newsletterem. Registrace bez e-mailové adresy a stávající odběratelé budou přeskočeni.'
+confirmationNotice: 'Každý importovaný dostane e-mail k potvrzení odběru. Newslettery dostávají pouze potvrzení odběratelé.'
 action:
   import: 'Importovat'
   cancel: 'Zrušit'

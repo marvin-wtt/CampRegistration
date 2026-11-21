@@ -42,6 +42,7 @@ import { FinanceCategoryModule } from '#app/financeCategory/finance-category.mod
 import { ExpenseModule } from '#app/expense/expense.module';
 import { PayoutModule } from '#app/payout/payout.module';
 import { AdminModule } from '#app/admin/admin.module';
+import { AdminAccessModule } from '#app/adminAccess/admin-access.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
 import { ErrorTrackingModule } from '#core/errorTracking/errorTracking.module';
@@ -85,6 +86,7 @@ export const createAppModules = (): AppModule[] => [
   new EventModule(),
   new UserModule(),
   new AdminModule(),
+  new AdminAccessModule(),
   new LegalModule(),
   new PrivacyNoticeModule(),
   new RetentionModule(),

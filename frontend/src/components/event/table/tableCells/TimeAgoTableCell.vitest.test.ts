@@ -82,6 +82,7 @@ const createEvent = (
   registrationDataPurgedAt: null,
   logo: null,
   banner: null,
+  archivedAt: null,
   form: {} as EventDetails['form'],
   themes: {},
   ...overrides,

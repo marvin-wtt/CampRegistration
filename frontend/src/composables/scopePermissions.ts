@@ -19,8 +19,8 @@ export type PermissionRequirement<S extends PermissionScope> =
   | { all: ScopePermission<S>[] };
 
 interface ScopePermissionOptions<S extends PermissionScope> {
-  /** Whether the current user bypasses every check (system administrator). */
-  isAdmin: () => boolean;
+  /** Whether a system administrator's access grant opens `subjectId`. */
+  isAdmin: (subjectId: string | undefined) => boolean;
   /** The permissions granted on `subjectId`, from the profile's access list. */
   granted: (subjectId: string | undefined) => ScopeGrant<S>[];
   /** The subject `can()` defaults to — the event/organization currently open. */
@@ -39,7 +39,7 @@ export function createScopePermissions<S extends PermissionScope>(
 
   /** All of `permissions` must be held. */
   function canFor(subjectId: string | undefined, ...permissions: P[]): boolean {
-    if (options.isAdmin()) {
+    if (options.isAdmin(subjectId)) {
       return true;
     }
 
@@ -72,19 +72,26 @@ export function createScopePermissions<S extends PermissionScope>(
   }
 
   /** Undefined means "not gated" — used by the declarative navigation items. */
-  function canAccess(requirement?: PermissionRequirement<S>): boolean {
+  function canAccessFor(
+    subjectId: string | undefined,
+    requirement?: PermissionRequirement<S>,
+  ): boolean {
     if (requirement === undefined) {
       return true;
     }
 
     if (typeof requirement === 'string') {
-      return can(requirement);
+      return canFor(subjectId, requirement);
     }
 
     return 'any' in requirement
-      ? canAny(...requirement.any)
-      : can(...requirement.all);
+      ? requirement.any.some((value) => canFor(subjectId, value))
+      : canFor(subjectId, ...requirement.all);
   }
 
-  return { can, canAny, canFor, canOn, cannot, canAccess };
+  function canAccess(requirement?: PermissionRequirement<S>): boolean {
+    return canAccessFor(options.currentSubjectId(), requirement);
+  }
+
+  return { can, canAny, canFor, canOn, cannot, canAccess, canAccessFor };
 }

@@ -51,6 +51,7 @@ describe('RegistrationForm', () => {
     registrationDataPurgedAt: null,
     logo: null,
     banner: null,
+    archivedAt: null,
     form: {
       title: '',
       description: '',

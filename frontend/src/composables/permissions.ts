@@ -1,7 +1,10 @@
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
-import { createScopePermissions } from '@/composables/scopePermissions';
+import {
+  createScopePermissions,
+  type PermissionRequirement,
+} from '@/composables/scopePermissions';
 
 /**
  * Event-scoped permissions, resolved against `profile.eventAccess`.
@@ -21,7 +24,7 @@ export function usePermissions() {
   const { user } = storeToRefs(profileStore);
 
   return createScopePermissions<'event'>({
-    isAdmin: () => user.value?.role === 'ADMIN',
+    isAdmin: (id) => !!profileStore.activeAdminAccess('event', id),
     granted: (eventId) =>
       (user.value?.eventAccess ?? []).find((value) => value.eventId === eventId)
         ?.permissions ?? [],
@@ -31,4 +34,31 @@ export function usePermissions() {
       return Array.isArray(id) ? id[0] : id;
     },
   });
+}
+
+/**
+ * Access to event pages, read from their route's `meta.eventPermission` so the
+ * navigation, shortcuts and the layout's redirect share one requirement.
+ */
+export function useEventRouteAccess() {
+  const router = useRouter();
+  const { canAccess, canAccessFor } = usePermissions();
+
+  function routePermission(
+    name: string,
+  ): PermissionRequirement<'event'> | undefined {
+    return router.getRoutes().find((record) => record.name === name)?.meta
+      .eventPermission;
+  }
+
+  /** On the open event, or on `eventId` when given. */
+  function canAccessRoute(name: string, eventId?: string): boolean {
+    const requirement = routePermission(name);
+
+    return eventId === undefined
+      ? canAccess(requirement)
+      : canAccessFor(eventId, requirement);
+  }
+
+  return { routePermission, canAccessRoute };
 }

@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Anmeldung öffnet am',
         registrationClosesAt: 'Anmeldung schließt am',
         confirmationMode: 'Bestätigungsmodus',
+        archivedAt: 'Archiviert',
         countries: 'Länder',
         name: 'Name',
         organizer: 'Veranstalter',
@@ -183,6 +184,13 @@ export default {
           registration_updated: 'Anmeldung aktualisiert',
           registration_canceled: 'Anmeldung storniert',
         },
+      },
+    },
+    adminAccessGrant: {
+      label: 'Administratorzugriff',
+      actions: {
+        granted: 'Gewährt',
+        ended: 'Vorzeitig beendet',
       },
     },
   },

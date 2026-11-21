@@ -42,6 +42,7 @@ export * from './Organization.js';
 export * from './OrganizationMember.js';
 
 // Types
+export * from './AdminAccessGrant.js';
 export * from './AdminOverview.js';
 export * from './AuditLogEntry.js';
 export * from './AuthTokens.js';

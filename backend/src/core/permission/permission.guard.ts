@@ -5,7 +5,8 @@ import type {
   ScopePermission,
 } from '@camp-registration/common/permissions';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
-import { admin, type GuardFn } from '#core/guard';
+import { admin, type GuardFn, markAdminAccessRequired } from '#core/guard';
+import { activeAdminAccess } from '#core/permission/admin-access';
 import { type ModelKey, ownsBoundModel } from '#core/permission/ownership';
 
 /**
@@ -77,10 +78,6 @@ export async function scopeAccess<S extends PermissionScope>(
   scope: S,
   permission: ScopePermission<S>,
 ): Promise<ScopeAccess> {
-  if (admin(req) === true) {
-    return 'all';
-  }
-
   const resolver = resolvers.get(scope);
   if (!resolver) {
     throw new Error(`No permission resolver registered for scope '${scope}'`);
@@ -91,6 +88,14 @@ export async function scopeAccess<S extends PermissionScope>(
 
   if (grants?.has(permission)) {
     return 'all';
+  }
+
+  // The administrator role only fills the gap above the user's own role.
+  if (admin(req)) {
+    if (await activeAdminAccess(req, scope, subjectId)) {
+      return 'all';
+    }
+    markAdminAccessRequired(req);
   }
 
   return grants?.has(`${permission}:own` as ScopeGrant<S>) ? 'own' : null;

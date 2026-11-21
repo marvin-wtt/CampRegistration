@@ -20,6 +20,13 @@ const store = z.object({
     consentConfirmed: z.boolean().refine((value) => value, {
       message: 'The subscriber must have agreed to receive this newsletter.',
     }),
+    consentedAt: z
+      .union([z.iso.date(), z.iso.datetime({ offset: true })])
+      // A day of slack: a plain date is UTC midnight, ahead of zones east of UTC.
+      .refine((value) => new Date(value).getTime() <= Date.now() + 86_400_000, {
+        message: 'The consent date cannot be in the future.',
+      })
+      .optional(),
   }) satisfies ZodType<NewsletterSubscriberCreateData>,
 });
 
@@ -42,6 +49,19 @@ const destroy = z.object({
   }),
 });
 
+const resendConfirmation = z.object({
+  params: z.object({
+    newsletterId: z.ulid(),
+    newsletterSubscriberId: z.ulid(),
+  }),
+});
+
+const confirmation = z.object({
+  params: z.object({
+    token: z.string().length(64),
+  }),
+});
+
 const unsubscribe = z.object({
   params: z.object({
     token: z.string().length(64),
@@ -52,6 +72,8 @@ export default {
   index,
   store,
   importFromEvent,
+  resendConfirmation,
   destroy,
+  confirmation,
   unsubscribe,
 };

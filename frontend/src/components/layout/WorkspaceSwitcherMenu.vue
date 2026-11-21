@@ -12,8 +12,8 @@
     <workspace-switcher-entries
       v-if="soleArea"
       :entries="soleArea.entries"
-      :past="soleArea.past"
-      :past-label="t('past')"
+      :archived="soleArea.archived"
+      :archived-label="t('archived')"
       :index-to="soleArea.indexTo"
       :all-label="soleArea.allLabel"
       @select="selectSole"
@@ -116,14 +116,79 @@
 
           <workspace-switcher-entries
             :entries="area.entries"
-            :past="area.past"
-            :past-label="t('past')"
+            :archived="area.archived"
+            :archived-label="t('archived')"
             :inset="!compact"
             @select="(id) => select(area.name, id)"
           />
         </q-expansion-item>
       </template>
     </template>
+
+    <!-- Built like an area, but outside the accordion group: it reports status,
+         so it stays open beside the current area. -->
+    <q-expansion-item
+      v-if="adminAccess.length"
+      default-opened
+      data-test="admin-access-grants"
+    >
+      <template #header>
+        <q-item-section avatar>
+          <q-icon
+            name="shield"
+            color="error"
+          />
+        </q-item-section>
+
+        <q-item-section>
+          {{ t('adminAccess.title') }}
+        </q-item-section>
+
+        <q-item-section side>
+          <q-badge
+            color="error"
+            :label="adminAccess.length"
+          />
+        </q-item-section>
+      </template>
+
+      <q-item
+        v-for="grant in adminAccess"
+        :key="grant.id"
+        v-close-popup
+        clickable
+        :to="grantRoute(grant)"
+        :inset-level="compact ? undefined : 0.5"
+        active-class=""
+        exact-active-class=""
+        data-test="admin-access-grant"
+      >
+        <q-item-section avatar>
+          <q-icon :name="SCOPE_ICONS[grant.scope]" />
+        </q-item-section>
+        <q-item-section class="workspace-switcher-menu__grant">
+          <q-item-label class="workspace-switcher-menu__grant-label">
+            {{ grant.reason }}
+          </q-item-label>
+          <q-item-label caption>
+            {{ t('adminAccess.until', { time: formatTime(grant.expiresAt) }) }}
+          </q-item-label>
+        </q-item-section>
+        <q-item-section side>
+          <q-btn
+            dense
+            flat
+            round
+            size="sm"
+            icon="logout"
+            :aria-label="t('adminAccess.end')"
+            @click.stop.prevent="profileStore.endAdminAccess(grant.id)"
+          >
+            <q-tooltip>{{ t('adminAccess.end') }}</q-tooltip>
+          </q-btn>
+        </q-item-section>
+      </q-item>
+    </q-expansion-item>
 
     <q-separator spaced />
 
@@ -167,13 +232,15 @@ import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
+import type { AdminAccessGrant } from '@camp-registration/common/entities';
+import { useEventRouteAccess } from '@/composables/permissions';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { isEventPast } from '@/utils/eventPhase';
+import { isEventArchived } from '@/utils/eventPhase';
 import WorkspaceSwitcherEntries from '@/components/layout/WorkspaceSwitcherEntries.vue';
 import {
   areaFromRouteName,
@@ -193,7 +260,7 @@ interface WorkspaceArea {
   indexTo: RouteLocationRaw;
   allLabel: string;
   entries: WorkspaceEntry[];
-  past: WorkspaceEntry[];
+  archived: WorkspaceEntry[];
   count: number;
   loading: boolean;
 }
@@ -201,8 +268,9 @@ interface WorkspaceArea {
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
+const { canAccessRoute } = useEventRouteAccess();
 
 const profileStore = useProfileStore();
 const assignedEventsStore = useAssignedEventsStore();
@@ -217,6 +285,40 @@ const { hasNewsletters, hasOrganizations } = useWorkspaceAreaAccess();
 const compact = computed<boolean>(() => quasar.screen.lt.sm);
 
 const administrator = computed<boolean>(() => user.value?.role === 'ADMIN');
+
+const SCOPE_ICONS: Record<AdminAccessGrant['scope'], string> = {
+  event: 'cabin',
+  newsletter: 'mail',
+  organization: 'apartment',
+};
+
+const adminAccess = computed<AdminAccessGrant[]>(
+  () => profileStore.adminAccess,
+);
+
+function grantRoute(grant: AdminAccessGrant): RouteLocationRaw {
+  switch (grant.scope) {
+    case 'event':
+      return { name: 'management.event', params: { eventId: grant.scopeId } };
+    case 'newsletter':
+      return {
+        name: 'management.newsletter',
+        params: { newsletterId: grant.scopeId },
+      };
+    case 'organization':
+      return {
+        name: 'management.organization',
+        params: { organizationId: grant.scopeId },
+      };
+  }
+}
+
+function formatTime(dateTime: string): string {
+  return new Intl.DateTimeFormat(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateTime));
+}
 
 const currentArea = computed<WorkspaceAreaName | undefined>(() =>
   areaFromRouteName(route.name),
@@ -246,11 +348,11 @@ const eventArea = computed<WorkspaceArea>(() => {
     indexTo: { name: 'management.events' },
     allLabel: t('all_events'),
     entries: events
-      .filter((event) => !isEventPast(event))
+      .filter((event) => !isEventArchived(event))
       .slice(0, MAX_ENTRIES)
       .map((event) => toEntry(event.id, to(event.name))),
-    past: events
-      .filter((event) => isEventPast(event))
+    archived: events
+      .filter(isEventArchived)
       .slice(0, MAX_ENTRIES)
       .map((event) => toEntry(event.id, to(event.name))),
     count: assignedEventsStore.data?.length ?? 0,
@@ -276,7 +378,7 @@ const newsletterArea = computed<WorkspaceArea>(() => {
         label: newsletter.name,
         icon: 'mail',
       })),
-    past: [],
+    archived: [],
     count: newsletterStore.data?.length ?? 0,
     loading: newsletterStore.isLoading,
   };
@@ -304,7 +406,7 @@ const organizationArea = computed<WorkspaceArea>(() => {
             ? undefined
             : t(`verification.${organization.verificationStatus}`),
       })),
-    past: [],
+    archived: [],
     count: organizationsStore.data?.length ?? 0,
     loading: organizationsStore.isLoading,
   };
@@ -326,8 +428,12 @@ const availableAreas = computed<WorkspaceArea[]>(() => {
   return areas;
 });
 
+// Active grants form a section of their own, so the areas keep their headers
+// beside it.
 const soleArea = computed<WorkspaceArea | undefined>(() =>
-  availableAreas.value.length === 1 ? availableAreas.value[0] : undefined,
+  availableAreas.value.length === 1 && adminAccess.value.length === 0
+    ? availableAreas.value[0]
+    : undefined,
 );
 
 // This component mounts when the panel opens, which is too late to fetch —
@@ -335,7 +441,7 @@ const soleArea = computed<WorkspaceArea | undefined>(() =>
 // by then.
 
 function hasEntries(area: WorkspaceArea): boolean {
-  return area.entries.length > 0 || area.past.length > 0;
+  return area.entries.length > 0 || area.archived.length > 0;
 }
 
 function selectSole(id: string) {
@@ -364,12 +470,17 @@ function select(area: WorkspaceAreaName, id: string) {
 
 /**
  * Switching within the area the user is already in keeps the current sub-page,
- * so moving from one event's room planner lands on the next event's room planner.
+ * so moving from one event's room planner lands on the next event's room planner
+ * — unless the next event doesn't grant it, then it lands on the area's root.
  */
 function goTo(rootName: string, param: string, id: string) {
   const name = typeof route.name === 'string' ? route.name : '';
 
-  if (name.startsWith(`${rootName}.`) && route.params[param]) {
+  if (
+    name.startsWith(`${rootName}.`) &&
+    route.params[param] &&
+    canAccessRoute(name, id)
+  ) {
     void router.push({ name, params: { ...route.params, [param]: id } });
     return;
   }
@@ -384,6 +495,17 @@ function goTo(rootName: string, param: string, id: string) {
   max-width: min(420px, calc(100vw - 32px));
 }
 
+/* Same wrapping as the area entries. */
+.workspace-switcher-menu__grant {
+  min-width: 0;
+}
+
+.workspace-switcher-menu__grant-label {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 /* In the sheet the width is the sheet's, so the menu must not cap itself. */
 .workspace-switcher-menu--compact {
   min-width: 100%;
@@ -392,9 +514,13 @@ function goTo(rootName: string, param: string, id: string) {
 </style>
 
 <i18n lang="yaml" locale="en">
+adminAccess:
+  title: 'Administrator access'
+  until: 'Until {time}'
+  end: 'End'
 switch: 'Switch to'
 open: 'Open {area}'
-past: 'Past'
+archived: 'Archived'
 area:
   events: 'Events'
   newsletters: 'Newsletters'
@@ -410,9 +536,13 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+adminAccess:
+  title: 'Administratorzugriff'
+  until: 'Bis {time}'
+  end: 'Beenden'
 switch: 'Wechseln zu'
 open: '{area} öffnen'
-past: 'Vergangen'
+archived: 'Archiviert'
 area:
   events: 'Veranstaltungen'
   newsletters: 'Newsletter'
@@ -428,9 +558,13 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+adminAccess:
+  title: 'Accès administrateur'
+  until: "Jusqu'à {time}"
+  end: 'Terminer'
 switch: 'Aller à'
 open: 'Ouvrir {area}'
-past: 'Passés'
+archived: 'Archivés'
 area:
   events: 'Événements'
   newsletters: 'Newsletters'
@@ -446,9 +580,13 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+adminAccess:
+  title: 'Dostęp administratora'
+  until: 'Do {time}'
+  end: 'Zakończ'
 switch: 'Przejdź do'
 open: 'Otwórz {area}'
-past: 'Minione'
+archived: 'Zarchiwizowane'
 area:
   events: 'Wydarzenia'
   newsletters: 'Newslettery'
@@ -464,9 +602,13 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+adminAccess:
+  title: 'Přístup administrátora'
+  until: 'Do {time}'
+  end: 'Ukončit'
 switch: 'Přejít na'
 open: 'Otevřít {area}'
-past: 'Minulé'
+archived: 'Archivované'
 area:
   events: 'Akce'
   newsletters: 'Newslettery'

@@ -61,6 +61,7 @@ export class EventResource extends JsonResource<
         this.data.sensitiveDataPurgedAt?.toISOString() ?? null,
       registrationDataPurgedAt:
         this.data.registrationDataPurgedAt?.toISOString() ?? null,
+      archivedAt: this.data.archivedAt?.toISOString() ?? null,
       logo: eventLogoUrl(this.data),
       banner: eventBannerUrl(this.data),
     };

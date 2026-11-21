@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Ouverture des inscriptions',
         registrationClosesAt: 'Fermeture des inscriptions',
         confirmationMode: 'Mode de confirmation',
+        archivedAt: 'Archivé',
         countries: 'Pays',
         name: 'Nom',
         organizer: 'Organisateur',
@@ -184,6 +185,13 @@ export default {
           registration_updated: 'Inscription mise à jour',
           registration_canceled: 'Inscription annulée',
         },
+      },
+    },
+    adminAccessGrant: {
+      label: 'Accès administrateur',
+      actions: {
+        granted: 'Accordé',
+        ended: 'Terminé plus tôt',
       },
     },
   },

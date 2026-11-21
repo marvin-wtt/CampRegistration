@@ -165,12 +165,12 @@ event:
 newsletter:
   pending:
     title: 'This newsletter cannot send yet'
-    message: '{organization} is awaiting verification. Set everything up now — only sending is disabled.'
-    short: 'Sending disabled until verification'
+    message: '{organization} is awaiting verification. Set everything up now — sending and adding subscribers stay disabled until then.'
+    short: 'Sending and new subscribers disabled until verification'
   rejected:
     title: 'This newsletter cannot send'
     message: '{organization} was not verified. Correct its details and submit them again.'
-    short: 'Sending disabled — organization not verified'
+    short: 'Sending and new subscribers disabled — organization not verified'
 action: 'Open organization'
 close: 'Close'
 </i18n>
@@ -188,12 +188,12 @@ event:
 newsletter:
   pending:
     title: 'Dieser Newsletter kann noch nicht senden'
-    message: '{organization} wartet auf die Verifizierung. Du kannst alles vorbereiten — nur das Senden ist deaktiviert.'
-    short: 'Senden bis zur Verifizierung deaktiviert'
+    message: '{organization} wartet auf die Verifizierung. Du kannst alles vorbereiten — Senden und das Hinzufügen von Abonnenten sind bis dahin deaktiviert.'
+    short: 'Senden und neue Abonnenten bis zur Verifizierung deaktiviert'
   rejected:
     title: 'Dieser Newsletter kann nicht senden'
     message: '{organization} wurde nicht verifiziert. Korrigiere die Angaben und reiche sie erneut ein.'
-    short: 'Senden deaktiviert — nicht verifiziert'
+    short: 'Senden und neue Abonnenten deaktiviert — nicht verifiziert'
 action: 'Organisation öffnen'
 close: 'Schließen'
 </i18n>
@@ -211,12 +211,12 @@ event:
 newsletter:
   pending:
     title: 'Cette newsletter ne peut pas encore être envoyée'
-    message: "{organization} attend sa vérification. Préparez tout dès maintenant : seul l'envoi est désactivé."
-    short: "Envoi désactivé jusqu'à la vérification"
+    message: "{organization} attend sa vérification. Préparez tout dès maintenant : l'envoi et l'ajout d'abonnés restent désactivés d'ici là."
+    short: "Envoi et nouveaux abonnés désactivés jusqu'à la vérification"
   rejected:
     title: 'Cette newsletter ne peut pas être envoyée'
     message: "{organization} n'a pas été vérifiée. Corrigez ses informations et soumettez-les à nouveau."
-    short: 'Envoi désactivé — organisation non vérifiée'
+    short: 'Envoi et nouveaux abonnés désactivés — organisation non vérifiée'
 action: "Ouvrir l'organisation"
 close: 'Fermer'
 </i18n>
@@ -234,12 +234,12 @@ event:
 newsletter:
   pending:
     title: 'Tego newslettera nie można jeszcze wysłać'
-    message: '{organization} oczekuje na weryfikację. Możesz wszystko przygotować — wyłączona jest tylko wysyłka.'
-    short: 'Wysyłka wyłączona do czasu weryfikacji'
+    message: '{organization} oczekuje na weryfikację. Możesz wszystko przygotować — wysyłka i dodawanie subskrybentów są do tego czasu wyłączone.'
+    short: 'Wysyłka i nowi subskrybenci wyłączeni do czasu weryfikacji'
   rejected:
     title: 'Tego newslettera nie można wysłać'
     message: '{organization} nie została zweryfikowana. Popraw jej dane i zgłoś je ponownie.'
-    short: 'Wysyłka wyłączona — brak weryfikacji'
+    short: 'Wysyłka i nowi subskrybenci wyłączeni — brak weryfikacji'
 action: 'Otwórz organizację'
 close: 'Zamknij'
 </i18n>
@@ -257,12 +257,12 @@ event:
 newsletter:
   pending:
     title: 'Tento newsletter zatím nelze odeslat'
-    message: '{organization} čeká na ověření. Vše si můžete připravit — vypnuté je jen odesílání.'
-    short: 'Odesílání vypnuto do ověření'
+    message: '{organization} čeká na ověření. Vše si můžete připravit — odesílání a přidávání odběratelů zůstává do té doby vypnuté.'
+    short: 'Odesílání a noví odběratelé vypnuti do ověření'
   rejected:
     title: 'Tento newsletter nelze odeslat'
     message: '{organization} nebyla ověřena. Uprav její údaje a odešli je znovu.'
-    short: 'Odesílání vypnuto — organizace neověřena'
+    short: 'Odesílání a noví odběratelé vypnuti — organizace neověřena'
 action: 'Otevřít organizaci'
 close: 'Zavřít'
 </i18n>

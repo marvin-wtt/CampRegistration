@@ -11,6 +11,7 @@ import {
   usePayoutAuditView,
 } from '@/composables/audit/entities/finance';
 import { useRetentionAuditView } from '@/composables/audit/entities/retention';
+import { useAdminAccessGrantAuditView } from '@/composables/audit/entities/adminAccessGrant';
 
 // Every audited entity type's view. Typed over `AuditEntityType`, so a new
 // type fails to compile until it's registered here.
@@ -25,5 +26,6 @@ export function useAuditEntities(): Record<AuditEntityType, AuditEntityView> {
     financeCategory: useFinanceCategoryAuditView(),
     payout: usePayoutAuditView(),
     retention: useRetentionAuditView(),
+    adminAccessGrant: useAdminAccessGrantAuditView(),
   };
 }

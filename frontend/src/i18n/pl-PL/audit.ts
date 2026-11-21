@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Rejestracja otwiera się',
         registrationClosesAt: 'Rejestracja zamyka się',
         confirmationMode: 'Tryb potwierdzenia',
+        archivedAt: 'Zarchiwizowane',
         countries: 'Kraje',
         name: 'Nazwa',
         organizer: 'Organizator',
@@ -184,6 +185,13 @@ export default {
           registration_updated: 'Rejestracja zaktualizowana',
           registration_canceled: 'Rejestracja anulowana',
         },
+      },
+    },
+    adminAccessGrant: {
+      label: 'Dostęp administratora',
+      actions: {
+        granted: 'Przyznano',
+        ended: 'Zakończono wcześniej',
       },
     },
   },
