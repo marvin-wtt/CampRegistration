@@ -11,6 +11,7 @@ export async function seedE2eEvents(): Promise<void> {
     price: E2E_EVENT_PRICE,
     id: '01JHP0CXJFR4MQS8SF1HQJCY38',
     name: 'Simple Event',
+    maxParticipants: 10,
     listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'simple-event@example.com',
