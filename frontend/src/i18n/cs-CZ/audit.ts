@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Registrace se otevírá',
         registrationClosesAt: 'Registrace se zavírá',
         confirmationMode: 'Režim potvrzení',
+        archivedAt: 'Archivováno',
         countries: 'Země',
         name: 'Název',
         organizer: 'Organizátor',

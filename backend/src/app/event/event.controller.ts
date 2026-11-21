@@ -245,6 +245,7 @@ export class EventController extends BaseController {
       location: body.location,
       form: body.form,
       themes: body.themes,
+      archived: body.archived,
     });
 
     // Re-generate computed data fields
