@@ -169,5 +169,12 @@ export default {
         },
       },
     },
+    adminAccessGrant: {
+      label: 'Administrator access',
+      actions: {
+        granted: 'Granted',
+        ended: 'Ended early',
+      },
+    },
   },
 };

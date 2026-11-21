@@ -436,6 +436,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/administration/QueueAdminPage.vue'),
       },
       {
+        path: 'access',
+        name: 'administration.access',
+        component: () =>
+          import('@/pages/administration/AdminAccessAdminPage.vue'),
+      },
+      {
         path: 'legal',
         name: 'administration.legal',
         component: () =>

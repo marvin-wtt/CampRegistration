@@ -3,6 +3,7 @@
     :navigation-items="navigationItems"
     :title="title"
     :loading="permissionsLoading"
+    :admin-access="adminAccessSubject"
   >
     <template #toolbar>
       <workspace-switcher />
@@ -12,11 +13,11 @@
       <workspace-switcher rail />
     </template>
 
-    <template #default="{ component }">
+    <template #default="{ component, accessKey }">
       <component
         :is="component"
         v-if="routeAllowed"
-        :key="eventKey"
+        :key="`${eventKey}:${accessKey}`"
       />
     </template>
   </general-layout>
@@ -39,6 +40,10 @@ import { useRealtimeStore } from '@/stores/realtime-store';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
 import { provideNavigationSettings } from '@/composables/eventNavigationSettings';
+import {
+  type AdminAccessSubject,
+  useAdminAccess,
+} from '@/composables/adminAccess';
 
 const route = useRoute();
 const router = useRouter();
@@ -73,11 +78,31 @@ const eventKey = computed<string | undefined>(() => {
   return Array.isArray(eventId) ? eventId[0] : eventId;
 });
 
+const adminAccessSubject = computed<AdminAccessSubject | undefined>(() =>
+  eventKey.value ? { scope: 'event', id: eventKey.value } : undefined,
+);
+const { required: adminAccessRequired, grant: adminGrant } =
+  useAdminAccess(adminAccessSubject);
+
+// What the event loaded with no longer matches the permissions.
+watch(
+  () => adminGrant.value?.id,
+  () => {
+    // Without an own role the layout navigates away instead.
+    if (route.params.eventId && !adminAccessRequired.value) {
+      void eventDetailStore.reload();
+      realtimeStore.reopen();
+    }
+  },
+);
+
 // A direct link to, or lost access on, a page the event doesn't grant. The
 // workspace switcher never lands here. Until the profile loads the page decides.
 const routeAllowed = computed<boolean>(
   () =>
-    profileStore.user === undefined || canAccess(route.meta.eventPermission),
+    profileStore.user === undefined ||
+    canAccess(route.meta.eventPermission) ||
+    adminAccessRequired.value,
 );
 
 watch(
@@ -141,7 +166,7 @@ const permissionsLoading = computed<boolean>(() => {
 // falls back to the floating switcher rather than showing links that could not
 // resolve without a eventId.
 const navigationItems = computed<NavigationItemProps<'event'>[]>(() => {
-  if (!route.params.eventId) {
+  if (!route.params.eventId || adminAccessRequired.value) {
     return [];
   }
 

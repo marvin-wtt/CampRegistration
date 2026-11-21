@@ -27,6 +27,14 @@
         name="arrow_drop_down"
         size="18px"
       />
+      <q-badge
+        v-if="adminAccessCount"
+        :label="adminAccessCount"
+        color="error"
+        floating
+        rounded
+        data-test="admin-access-badge"
+      />
 
       <q-tooltip
         anchor="center right"
@@ -73,6 +81,14 @@
       name="arrow_drop_down"
       size="20px"
       class="workspace-switcher__chevron on-right"
+    />
+    <q-badge
+      v-if="adminAccessCount"
+      :label="adminAccessCount"
+      color="error"
+      floating
+      rounded
+      data-test="admin-access-badge"
     />
 
     <!-- Touch has no hover, so a tooltip cannot be what discloses the
@@ -159,6 +175,7 @@ import { useRoute } from 'vue-router';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useSheetDrag } from '@/composables/sheetDrag';
 import WorkspaceSwitcherMenu from '@/components/layout/WorkspaceSwitcherMenu.vue';
@@ -182,6 +199,12 @@ const { to } = useObjectTranslation();
 const eventDetailsStore = useEventDetailsStore();
 const organizationDetailsStore = useOrganizationDetailsStore();
 const newsletterStore = useNewsletterStore();
+const profileStore = useProfileStore();
+
+// Active grants are listed in the panel, so the control carries their count.
+const adminAccessCount = computed<number>(
+  () => profileStore.adminAccess.length,
+);
 
 const area = computed(() => areaFromRouteName(route.name));
 

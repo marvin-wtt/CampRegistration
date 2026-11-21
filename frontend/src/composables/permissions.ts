@@ -24,7 +24,7 @@ export function usePermissions() {
   const { user } = storeToRefs(profileStore);
 
   return createScopePermissions<'event'>({
-    isAdmin: () => user.value?.role === 'ADMIN',
+    isAdmin: (id) => !!profileStore.activeAdminAccess('event', id),
     granted: (eventId) =>
       (user.value?.eventAccess ?? []).find((value) => value.eventId === eventId)
         ?.permissions ?? [],

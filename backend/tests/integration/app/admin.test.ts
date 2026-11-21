@@ -39,6 +39,20 @@ describe('/api/v1/admin/overview', () => {
         .expect(403);
     });
 
+    it('should respond with `403` and ADMIN_2FA_REQUIRED for an admin without 2FA', async () => {
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+        twoFactor: undefined,
+      });
+
+      const { body } = await request()
+        .get('/api/v1/admin/overview')
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(403);
+
+      expect(body.errorCode).toBe('ADMIN_2FA_REQUIRED');
+    });
+
     it('should respond with `200` status code and the overview shape for admin', async () => {
       const { accessToken } = await createAdminWithToken();
 
@@ -51,7 +65,6 @@ describe('/api/v1/admin/overview', () => {
         users: {
           total: expect.any(Number),
           unverified: expect.any(Number),
-          locked: expect.any(Number),
         },
         organizations: {
           total: expect.any(Number),
@@ -81,21 +94,19 @@ describe('/api/v1/admin/overview', () => {
       });
     });
 
-    it('should count users by verification and lock status', async () => {
+    it('should count users by verification status', async () => {
       const { accessToken } = await createAdminWithToken();
       await UserFactory.create({ emailVerified: false });
-      await UserFactory.create({ locked: true });
-      await UserFactory.create({ emailVerified: true, locked: false });
+      await UserFactory.create({ emailVerified: true });
 
       const { body } = await request()
         .get('/api/v1/admin/overview')
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      // The admin created for auth, plus the 3 users above.
-      expect(body.data.users.total).toBe(4);
+      // The admin created for auth, plus the 2 users above.
+      expect(body.data.users.total).toBe(3);
       expect(body.data.users.unverified).toBe(1);
-      expect(body.data.users.locked).toBe(1);
     });
 
     it('should count events by registration status', async () => {

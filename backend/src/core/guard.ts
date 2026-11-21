@@ -62,7 +62,9 @@ export const or = (...guardFns: GuardFn[]): GuardFn => {
   };
 };
 
-export const admin = (req: Request): boolean | string => {
+export const ADMIN_TWO_FACTOR_REQUIRED = 'ADMIN_2FA_REQUIRED';
+
+const hasAdminRole = (req: Request): boolean => {
   return (
     req.user !== undefined &&
     'role' in req.user &&
@@ -71,17 +73,46 @@ export const admin = (req: Request): boolean | string => {
   );
 };
 
+// `req.user` is loaded with `twoFactor.confirmedAt` by the JWT strategy.
+const hasTwoFactor = (req: Request): boolean => {
+  const twoFactor: unknown =
+    req.user !== undefined && 'twoFactor' in req.user
+      ? req.user.twoFactor
+      : null;
+
+  return (
+    typeof twoFactor === 'object' &&
+    twoFactor !== null &&
+    'confirmedAt' in twoFactor &&
+    twoFactor.confirmedAt != null
+  );
+};
+
+// The administrator role grants nothing without two-factor authentication.
+export const admin = (req: Request): boolean => {
+  return hasAdminRole(req) && hasTwoFactor(req);
+};
+
+export const ADMIN_ACCESS_REQUIRED = 'ADMIN_ACCESS_REQUIRED';
+
+// Requests where a scoped check would have passed with an access grant.
+const adminAccessMissing = new WeakSet<Request>();
+
+export function markAdminAccessRequired(req: Request): void {
+  adminAccessMissing.add(req);
+}
+
 /**
  * Middleware to guard the access to a route.
  * Multiple guards can be combined by using the 'and', and 'or' guard.
  *
+ * Without a guard function, only administrators pass. With one, administrators
+ * are judged like everyone else: their role reaches an event, newsletter or
+ * organization only through an access grant, checked by the scoped guards.
+ *
  * @param guardFn The guard function or a wrapper function (and, or)
  */
-export const guard = (guardFn?: GuardFn) => {
-  // Always grand access to administrators
-  // When no guard is defined, only administrators have access
-  guardFn = guardFn ? or(admin, guardFn) : admin;
-
+export const guard = (guardFn: GuardFn = admin) => {
   return catchMiddlewareAsync(async (req: Request) => {
     let message = 'Insufficient permissions';
 
@@ -96,6 +127,24 @@ export const guard = (guardFn?: GuardFn) => {
 
     if (req.isUnauthenticated()) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated');
+    }
+
+    // Tells an administrator why their role didn't apply, so the client can
+    // send them to the setup instead of showing a bare 403.
+    if (hasAdminRole(req) && !hasTwoFactor(req)) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Administrator access requires two-factor authentication',
+        { code: ADMIN_TWO_FACTOR_REQUIRED },
+      );
+    }
+
+    if (adminAccessMissing.has(req)) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Administrator access to this resource must be requested first',
+        { code: ADMIN_ACCESS_REQUIRED },
+      );
     }
 
     throw new ApiError(httpStatus.FORBIDDEN, message);

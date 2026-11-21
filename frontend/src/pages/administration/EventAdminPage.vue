@@ -182,6 +182,7 @@ import RegistrationScheduleDialog, {
 } from '@/components/event/index/RegistrationScheduleDialog.vue';
 import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useAdminAccessRequest } from '@/composables/adminAccess';
 import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
@@ -199,6 +200,7 @@ function formatPrices(event: Event): string {
     .join(' / ');
 }
 const { to } = useObjectTranslation();
+const { ensureAdminAccess } = useAdminAccessRequest();
 const quasar = useQuasar();
 const router = useRouter();
 const routeQuery = useRouteQueryParams();
@@ -612,6 +614,9 @@ function onUnpublishEvent(event: Event) {
 }
 
 async function updateEvent(id: string, data: EventUpdateData) {
+  if (!(await ensureAdminAccess({ scope: 'event', id }))) {
+    return;
+  }
   await run('update', () => api.updateEvent(id, data), {
     feedback: 'progress',
   });
@@ -619,6 +624,9 @@ async function updateEvent(id: string, data: EventUpdateData) {
 }
 
 async function deleteEvent(id: string) {
+  if (!(await ensureAdminAccess({ scope: 'event', id }))) {
+    return;
+  }
   await run('delete', () => api.deleteEvent(id), { feedback: 'progress' });
   reload();
 }

@@ -19,8 +19,8 @@ export type PermissionRequirement<S extends PermissionScope> =
   | { all: ScopePermission<S>[] };
 
 interface ScopePermissionOptions<S extends PermissionScope> {
-  /** Whether the current user bypasses every check (system administrator). */
-  isAdmin: () => boolean;
+  /** Whether a system administrator's access grant opens `subjectId`. */
+  isAdmin: (subjectId: string | undefined) => boolean;
   /** The permissions granted on `subjectId`, from the profile's access list. */
   granted: (subjectId: string | undefined) => ScopeGrant<S>[];
   /** The subject `can()` defaults to — the event/organization currently open. */
@@ -39,7 +39,7 @@ export function createScopePermissions<S extends PermissionScope>(
 
   /** All of `permissions` must be held. */
   function canFor(subjectId: string | undefined, ...permissions: P[]): boolean {
-    if (options.isAdmin()) {
+    if (options.isAdmin(subjectId)) {
       return true;
     }
 

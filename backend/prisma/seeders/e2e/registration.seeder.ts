@@ -8,6 +8,7 @@ export async function seedE2eRegistrations(): Promise<void> {
     emails: ['tom.smith@example.com'],
     phoneNumbers: ['+49 151 23456789'],
     status: 'ACCEPTED',
+    country: 'de',
     event: { connect: { id: '01JHP0CXJFR4MQS8SF1HQJCY38' } },
   });
 

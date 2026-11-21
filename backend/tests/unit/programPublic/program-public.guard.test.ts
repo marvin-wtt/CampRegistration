@@ -18,7 +18,11 @@ const fakeReq = (eventId = 'event-1'): Request =>
 const fakeAdminReq = (eventId = 'event-1'): Request =>
   ({
     modelOrFail: () => ({ id: eventId }),
-    user: { id: 'admin-1', role: 'ADMIN' },
+    user: {
+      id: 'admin-1',
+      role: 'ADMIN',
+      twoFactor: { confirmedAt: new Date() },
+    },
   }) as unknown as Request;
 
 beforeEach(() => {
