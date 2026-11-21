@@ -48,7 +48,11 @@ export class EventRetentionDeadlineMessage extends MailBase<EventRetentionDeadli
   }
 
   protected subject(): string {
-    return this.getT()('subject', this.context());
+    // `count` picks the plural form; the due subject has none.
+    return this.getT()('subject', {
+      ...this.context(),
+      count: this.payload.daysLeft,
+    });
   }
 
   protected content() {
@@ -70,7 +74,7 @@ export class EventRetentionDeadlineMessage extends MailBase<EventRetentionDeadli
 
   private context() {
     const locale = this.getLocale();
-    const { event, kind, effectiveAt, daysLeft } = this.payload;
+    const { event, kind, effectiveAt } = this.payload;
 
     return {
       event: {
@@ -78,7 +82,6 @@ export class EventRetentionDeadlineMessage extends MailBase<EventRetentionDeadli
       },
       // Nested into the texts: `$t(retention:kind.{{kindKey}})`.
       kindKey: kind,
-      days: daysLeft,
       // A calendar date: formatted in UTC, where it is midnight, so no zone
       // moves it to another day.
       date: new Intl.DateTimeFormat(locale, {

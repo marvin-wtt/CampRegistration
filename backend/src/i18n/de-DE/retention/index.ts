@@ -6,7 +6,8 @@ export default {
   email: {
     manager: {
       upcoming: {
-        subject: 'Speicherfrist in {{ days }} Tagen: {{ event.name }}',
+        subject_one: 'Speicherfrist in {{ count }} Tag: {{ event.name }}',
+        subject_other: 'Speicherfrist in {{ count }} Tagen: {{ event.name }}',
         preview: 'Daten von {{ event.name }} sind am {{ date }} zu löschen',
         text: {
           title: 'Eine Speicherfrist läuft bald ab',

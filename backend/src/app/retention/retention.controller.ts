@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
+import { admin } from '#core/guard';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { RetentionService } from './retention.service.js';
@@ -66,19 +67,28 @@ export class RetentionController extends BaseController {
     res.resource(RetentionOverviewResource.collection(deadlines));
   }
 
+  /** Who may postpone and delete, as the guards decide it, admins included. */
+  private async canAct(req: Request, eventId: string): Promise<boolean> {
+    if (admin(req) === true) {
+      return true;
+    }
+    const userId = req.authUserId();
+
+    return userId
+      ? this.eventManagerService.eventManagerHasPermission(
+          eventId,
+          userId,
+          'event.registrations.delete',
+        )
+      : false;
+  }
+
   private async eventRetention(req: Request) {
     const event = req.modelOrFail('event');
-    const userId = req.authUserId();
     const [deadlines, { periods, estimates }, withReason] = await Promise.all([
       this.retentionService.deadlines(event),
       this.retentionService.currentPeriods(event),
-      userId
-        ? this.eventManagerService.eventManagerHasPermission(
-            event.id,
-            userId,
-            'event.registrations.delete',
-          )
-        : false,
+      this.canAct(req, event.id),
     ]);
 
     return new EventRetentionResource({

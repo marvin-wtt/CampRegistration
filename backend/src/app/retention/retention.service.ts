@@ -51,7 +51,9 @@ const PURGE_TIMEOUT_MS = 60_000;
 /** What an event records about the deletion of its data. */
 export type PurgeState = Pick<
   Event,
-  'sensitiveDataClearedAt' | 'registrationDataPurgedAt'
+  | 'sensitiveDataPurgedAt'
+  | 'sensitiveDataClearedAt'
+  | 'registrationDataPurgedAt'
 >;
 
 export type RetentionEvent = PurgeState &
@@ -175,7 +177,12 @@ export class RetentionService extends BaseService {
     kind: EventRetentionDeadlineKind,
     data: RetentionPostponeData,
   ): Promise<void> {
-    if (purgedAt(event, kind)) {
+    // Once deleting began, a new reason would outlive nothing it could justify.
+    const started =
+      kind === 'sensitive'
+        ? (event.sensitiveDataPurgedAt ?? event.registrationDataPurgedAt)
+        : event.registrationDataPurgedAt;
+    if (started) {
       throw new ApiError(httpStatus.CONFLICT, 'This data was already deleted.');
     }
 
@@ -229,7 +236,8 @@ export class RetentionService extends BaseService {
    * A rerun, after an interruption, finishes the job.
    */
   async purgeSensitiveData(event: EventWithFreePlaces): Promise<number> {
-    if (event.registrationDataPurgedAt) {
+    // Done before: its date and audit entry stand.
+    if (event.registrationDataPurgedAt || event.sensitiveDataClearedAt) {
       return 0;
     }
 
@@ -438,6 +446,7 @@ const RETENTION_EVENT_SELECT = {
   endAt: true,
   timezone: true,
   form: true,
+  sensitiveDataPurgedAt: true,
   sensitiveDataClearedAt: true,
   registrationDataPurgedAt: true,
 } as const satisfies Prisma.EventSelect;

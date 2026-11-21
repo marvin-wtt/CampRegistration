@@ -6,7 +6,9 @@ export default {
   email: {
     manager: {
       upcoming: {
-        subject: 'Retention deadline in {{ days }} days: {{ event.name }}',
+        subject_one: 'Retention deadline in {{ count }} day: {{ event.name }}',
+        subject_other:
+          'Retention deadline in {{ count }} days: {{ event.name }}',
         preview: 'Data of {{ event.name }} is due for deletion on {{ date }}',
         text: {
           title: 'A retention deadline is coming up',

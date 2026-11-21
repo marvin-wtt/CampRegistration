@@ -6,8 +6,10 @@ export default {
   email: {
     manager: {
       upcoming: {
-        subject:
-          'Délai de conservation dans {{ days }} jours : {{ event.name }}',
+        subject_one:
+          'Délai de conservation dans {{ count }} jour : {{ event.name }}',
+        subject_other:
+          'Délai de conservation dans {{ count }} jours : {{ event.name }}',
         preview:
           'Des données de {{ event.name }} sont à supprimer le {{ date }}',
         text: {

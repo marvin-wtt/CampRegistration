@@ -5,6 +5,7 @@ import { injectable } from 'inversify';
 @injectable()
 export class MailableRegistry {
   private registry = new Map<string, MailableCtor<unknown>>();
+  private retired = new Set<string>();
 
   has<P>(ctor: MailableCtor<P>): boolean {
     if (!this.registry.has(ctor.type)) {
@@ -23,6 +24,18 @@ export class MailableRegistry {
     if (this.registry.get(ctor.type) !== ctor) {
       throw new Error(`Duplicate mailable type: "${ctor.type}"`);
     }
+  }
+
+  /**
+   * A mailable removed from the code: jobs queued for it before a deploy are
+   * dropped instead of failing on every retry.
+   */
+  retire(type: string): void {
+    this.retired.add(type);
+  }
+
+  isRetired(type: string): boolean {
+    return this.retired.has(type) && !this.registry.has(type);
   }
 
   createFromJob(job: SimpleJob<unknown>): MailBase<unknown> {

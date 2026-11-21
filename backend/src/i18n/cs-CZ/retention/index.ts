@@ -6,7 +6,10 @@ export default {
   email: {
     manager: {
       upcoming: {
-        subject: 'Lhůta uchování za {{ days }} dní: {{ event.name }}',
+        subject_one: 'Lhůta uchování za {{ count }} den: {{ event.name }}',
+        subject_few: 'Lhůta uchování za {{ count }} dny: {{ event.name }}',
+        subject_many: 'Lhůta uchování za {{ count }} dne: {{ event.name }}',
+        subject_other: 'Lhůta uchování za {{ count }} dní: {{ event.name }}',
         preview: 'Údaje akce {{ event.name }} je třeba smazat do {{ date }}',
         text: {
           title: 'Blíží se lhůta uchování',

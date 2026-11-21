@@ -6,7 +6,14 @@ export default {
   email: {
     manager: {
       upcoming: {
-        subject: 'Termin przechowywania za {{ days }} dni: {{ event.name }}',
+        subject_one:
+          'Termin przechowywania za {{ count }} dzień: {{ event.name }}',
+        subject_few:
+          'Termin przechowywania za {{ count }} dni: {{ event.name }}',
+        subject_many:
+          'Termin przechowywania za {{ count }} dni: {{ event.name }}',
+        subject_other:
+          'Termin przechowywania za {{ count }} dnia: {{ event.name }}',
         preview: 'Dane wydarzenia {{ event.name }} należy usunąć do {{ date }}',
         text: {
           title: 'Zbliża się termin przechowywania',

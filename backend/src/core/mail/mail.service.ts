@@ -41,6 +41,10 @@ export class MailService {
 
   startWorker() {
     this.queue.process(async (job) => {
+      if (this.mailableRegistry.isRetired(job.name)) {
+        logger.info(`Dropped mail of retired type "${job.name}"`);
+        return;
+      }
       await this.sendMail(this.mailableRegistry.createFromJob(job));
     });
   }

@@ -364,7 +364,7 @@ export class RegistrationService extends BaseService {
           ) {
             throw new ApiError(
               httpStatus.CONFLICT,
-              'Sensitive data of this event was deleted; it cannot be entered again.',
+              'Sensitive data of this event is deleted or being deleted, so it cannot be entered again. If the deletion was interrupted, finish it on the Data page first.',
             );
           }
           throw error;

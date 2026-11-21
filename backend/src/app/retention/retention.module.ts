@@ -20,7 +20,10 @@ export class RetentionModule implements AppModule {
   }
 
   configure(): void {
-    resolve(MailableRegistry).register(EventRetentionDeadlineMessage);
+    const mailables = resolve(MailableRegistry);
+    mailables.register(EventRetentionDeadlineMessage);
+    // The one-off reminder this workflow replaced; its queued jobs are void.
+    mailables.retire('event:retention-due');
   }
 
   registerApiRoutes(router: AppRouter): void {
