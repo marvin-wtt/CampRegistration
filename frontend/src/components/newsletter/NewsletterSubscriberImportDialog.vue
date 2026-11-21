@@ -46,29 +46,11 @@
               <q-icon name="group" />
             </template>
           </q-select>
-          <div>
-            <q-toggle
-              v-model="requireConsent"
-              :label="t('input.consent.label')"
-            />
-            <div class="text-caption text-on-surface-variant q-ml-sm">
-              {{ t('input.consent.hint') }}
-            </div>
-          </div>
-
-          <div v-if="!requireConsent">
-            <q-checkbox
-              v-model="consentConfirmed"
-              :label="t('input.consentConfirmation.label')"
-            />
-            <div class="text-caption text-on-surface-variant q-ml-sm">
-              {{ t('input.consentConfirmation.hint') }}
-            </div>
-          </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none text-caption text-on-surface-variant">
-          {{ t('notice') }}
+          <p>{{ t('notice') }}</p>
+          <p class="q-mb-none">{{ t('confirmationNotice') }}</p>
         </q-card-section>
 
         <q-card-actions
@@ -86,7 +68,6 @@
             :label="t('action.import')"
             type="submit"
             color="primary"
-            :disable="!requireConsent && !consentConfirmed"
             rounded
           />
         </q-card-actions>
@@ -116,8 +97,6 @@ void assignedEventsStore.fetchData();
 
 const eventId = ref<string>('');
 const group = ref<string | null>(null);
-const requireConsent = ref(true);
-const consentConfirmed = ref(false);
 
 const eventOptions = computed(() => {
   return (assignedEventsStore.data ?? []).map((event) => ({
@@ -144,19 +123,12 @@ const groupOptions = computed(() => {
 
 watch(eventId, () => {
   group.value = null;
-  requireConsent.value = true;
-});
-
-watch(requireConsent, () => {
-  consentConfirmed.value = false;
 });
 
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
     eventId: eventId.value,
     group: group.value ?? null,
-    requireConsent: requireConsent.value,
-    consentConfirmed: consentConfirmed.value,
   };
   onDialogOK(data);
 }
@@ -173,13 +145,8 @@ input:
   group:
     label: 'Filter by group (optional)'
     hint: 'Leave empty to import all groups'
-  consent:
-    label: 'Require explicit newsletter consent'
-    hint: 'Registrations that declined are always excluded.'
-  consentConfirmation:
-    label: 'I confirm that these people agreed to receive this newsletter'
-    hint: 'Required when importing registrations that did not explicitly consent.'
-notice: 'Registrations without an email address and existing subscribers are skipped.'
+notice: 'Only registrations that agreed to the newsletter in the form are imported. Registrations without an email address and existing subscribers are skipped.'
+confirmationNotice: 'Everyone imported gets an email to confirm the subscription. Only confirmed subscribers receive newsletters.'
 action:
   import: 'Import'
   cancel: 'Cancel'
@@ -196,13 +163,8 @@ input:
   group:
     label: 'Nach Gruppe filtern (optional)'
     hint: 'Leer lassen, um alle Gruppen zu importieren'
-  consent:
-    label: 'Ausdrückliche Newsletter-Einwilligung erforderlich'
-    hint: 'Anmeldungen, die abgelehnt haben, werden immer ausgeschlossen.'
-  consentConfirmation:
-    label: 'Ich bestätige, dass diese Personen dem Erhalt dieses Newsletters zugestimmt haben'
-    hint: 'Erforderlich beim Import von Anmeldungen ohne ausdrückliche Einwilligung.'
-notice: 'Anmeldungen ohne E-Mail-Adresse und bereits vorhandene Abonnenten werden übersprungen.'
+notice: 'Importiert werden nur Anmeldungen, die im Formular dem Newsletter zugestimmt haben. Anmeldungen ohne E-Mail-Adresse und bereits vorhandene Abonnenten werden übersprungen.'
+confirmationNotice: 'Alle Importierten bekommen eine E-Mail, um das Abonnement zu bestätigen. Nur bestätigte Abonnenten erhalten Newsletter.'
 action:
   import: 'Importieren'
   cancel: 'Abbrechen'
@@ -221,13 +183,8 @@ input:
   group:
     label: 'Filtrer par groupe (optionnel)'
     hint: 'Laisser vide pour importer tous les groupes'
-  consent:
-    label: 'Exiger un consentement explicite à la newsletter'
-    hint: 'Les inscriptions ayant refusé sont toujours exclues.'
-  consentConfirmation:
-    label: 'Je confirme que ces personnes ont accepté de recevoir cette newsletter'
-    hint: "Requis lors de l'import d'inscriptions sans consentement explicite."
-notice: 'Les inscriptions sans adresse e-mail et les abonnés existants sont ignorés.'
+notice: 'Seules les inscriptions ayant accepté la newsletter dans le formulaire sont importées. Les inscriptions sans adresse e-mail et les abonnés existants sont ignorés.'
+confirmationNotice: "Chaque personne importée recevra un e-mail pour confirmer l'abonnement. Seuls les abonnés confirmés reçoivent les newsletters."
 action:
   import: 'Importer'
   cancel: 'Annuler'
@@ -244,13 +201,8 @@ input:
   group:
     label: 'Filtruj według grupy (opcjonalnie)'
     hint: 'Pozostaw puste, aby importować wszystkie grupy'
-  consent:
-    label: 'Wymagaj wyraźnej zgody na newsletter'
-    hint: 'Zgłoszenia, które odmówiły, są zawsze wykluczone.'
-  consentConfirmation:
-    label: 'Potwierdzam, że te osoby wyraziły zgodę na otrzymywanie tego newslettera'
-    hint: 'Wymagane przy imporcie zgłoszeń bez wyraźnej zgody.'
-notice: 'Zgłoszenia bez adresu e-mail oraz istniejący subskrybenci są pomijani.'
+notice: 'Importowane są tylko zgłoszenia, które w formularzu wyraziły zgodę na newsletter. Zgłoszenia bez adresu e-mail oraz istniejący subskrybenci są pomijani.'
+confirmationNotice: 'Każda zaimportowana osoba otrzyma e-mail z prośbą o potwierdzenie subskrypcji. Newslettery otrzymują tylko potwierdzeni subskrybenci.'
 action:
   import: 'Importuj'
   cancel: 'Anuluj'
@@ -267,13 +219,8 @@ input:
   group:
     label: 'Filtrovat podle skupiny (volitelné)'
     hint: 'Nechte prázdné pro import všech skupin'
-  consent:
-    label: 'Vyžadovat výslovný souhlas s newsletterem'
-    hint: 'Registrace, které odmítly, jsou vždy vyloučeny.'
-  consentConfirmation:
-    label: 'Potvrzuji, že tyto osoby souhlasily se zasíláním tohoto newsletteru'
-    hint: 'Vyžadováno při importu registrací bez výslovného souhlasu.'
-notice: 'Registrace bez e-mailové adresy a stávající odběratelé budou přeskočeni.'
+notice: 'Importují se jen registrace, které ve formuláři souhlasily s newsletterem. Registrace bez e-mailové adresy a stávající odběratelé budou přeskočeni.'
+confirmationNotice: 'Každý importovaný dostane e-mail k potvrzení odběru. Newslettery dostávají pouze potvrzení odběratelé.'
 action:
   import: 'Importovat'
   cancel: 'Zrušit'

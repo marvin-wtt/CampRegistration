@@ -204,7 +204,8 @@ Events and newsletters are owned by an `Organization`, moderated by system admin
   `buildEventWhere` (public listing), the event `show` route guard,
   `eventPubliclyVisible` (link previews — see below), `registrationOpen`
   combined with `eventOrganizationVerified` (registrations), and
-  `newsletterOrganizationVerified` (sending newsletter messages). Management UI reads
+  `newsletterOrganizationVerified` (sending newsletter messages, and adding or importing subscribers, since each is
+  mailed a confirmation). Management UI reads
   `Event.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a event isn't
   reaching anyone or why sending is disabled.
 - Organization `ADMIN`s hold exactly `ORGANIZATION_EVENT_PERMISSIONS`

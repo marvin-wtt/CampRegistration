@@ -476,6 +476,17 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/newsletters/confirm/:token',
+    component: () => import('@/layouts/PublicLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'newsletter.confirm',
+        component: () => import('@/pages/newsletter/NewsletterConfirmPage.vue'),
+      },
+    ],
+  },
+  {
     path: '/newsletters/unsubscribe/:token',
     component: () => import('@/layouts/PublicLayout.vue'),
     children: [

@@ -6,6 +6,7 @@ import type {
   NewsletterSubscriber,
   NewsletterSubscriberCreateData,
   NewsletterSubscriberImportData,
+  NewsletterSubscriberImportResult,
 } from '@camp-registration/common/entities';
 
 export const useNewsletterSubscriberStore = defineStore(
@@ -37,11 +38,22 @@ export const useNewsletterSubscriberStore = defineStore(
     function importFromEvent(
       newsletterId: string,
       importData: NewsletterSubscriberImportData,
-    ): Promise<{ added: number; skipped: number }> {
+    ): Promise<NewsletterSubscriberImportResult> {
       return subscribers.mutate(
         'import',
         (key) => api.importNewsletterSubscribers(key, importData),
         { key: newsletterId, feedback: 'progress', reload: true },
+      );
+    }
+
+    async function resendConfirmation(
+      newsletterId: string,
+      subscriberId: string,
+    ): Promise<void> {
+      await subscribers.mutate(
+        'resendConfirmation',
+        (key) => api.resendNewsletterConfirmation(key, subscriberId),
+        { key: newsletterId, feedback: 'progress', apply: upsertById },
       );
     }
 
@@ -69,6 +81,7 @@ export const useNewsletterSubscriberStore = defineStore(
       fetchData,
       createData,
       importFromEvent,
+      resendConfirmation,
       deleteData,
     };
   },

@@ -37,7 +37,18 @@ defineProps<ActionCardProps>();
           >
             {{ button }}
           </email-button>
-          <email-paragraph padding="28px 36px 0">
+          <mj-text
+            v-if="accidental"
+            font-size="14px"
+            line-height="1.6"
+            color="#6b7280"
+            padding="20px 36px 0"
+          >
+            {{ accidental }}
+          </mj-text>
+          <email-paragraph
+            :padding="accidental ? '16px 36px 0' : '28px 36px 0'"
+          >
             {{ greeting }}<br />
             {{ teamName }}
           </email-paragraph>
