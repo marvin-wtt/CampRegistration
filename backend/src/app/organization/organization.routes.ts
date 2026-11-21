@@ -1,5 +1,5 @@
 import { auth } from '#core/auth/auth.middleware';
-import { guard } from '#core/guard';
+import { admin, guard, or } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#core/router/bindController';
 import { resolve } from '#core/ioc/container';
@@ -21,11 +21,12 @@ export class OrganizationRouter extends ModuleRouter {
 
     this.router.use(auth());
 
-    // `view=all` is the moderation queue; the guard fails for everyone but
-    // system administrators, who the guard middleware admits implicitly.
+    // `view=all` is the moderation queue, for system administrators only.
     this.router.get(
       '/',
-      guard((req) => (req.query as OrganizationQuery).view !== 'all'),
+      guard(
+        or(admin, (req) => (req.query as OrganizationQuery).view !== 'all'),
+      ),
       controller(organizationController, 'index'),
     );
 

@@ -35,6 +35,7 @@ describe('/api/v1/profile', () => {
         eventAccess: [],
         newsletterAccess: [],
         organizationAccess: [],
+        adminAccess: [],
       });
     });
 
@@ -181,6 +182,7 @@ describe('/api/v1/profile', () => {
         eventAccess: [],
         newsletterAccess: [],
         organizationAccess: [],
+        adminAccess: [],
       });
     });
 

@@ -18,16 +18,16 @@ const NEWSLETTER_ORGANIZATION_ID = '01K9ATF1H9KD1K6H12F3YK8NWZ';
 
 /**
  * Creating a newsletter requires an organization named in the body, verified or
- * not. These tests authenticate as a system administrator, who bypasses the
- * membership check.
+ * not, that the user administers.
  */
 const createOrganizationAdmin = async (
   verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED' = 'VERIFIED',
 ) => {
-  const user = await UserFactory.create({ role: 'ADMIN' });
+  const user = await UserFactory.create();
   await OrganizationFactory.create({
     id: NEWSLETTER_ORGANIZATION_ID,
     verificationStatus,
+    members: { create: { userId: user.id, role: 'ADMIN' } },
   });
 
   return { user, accessToken: generateAccessToken(user) };

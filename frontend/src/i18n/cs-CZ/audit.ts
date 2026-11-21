@@ -170,5 +170,12 @@ export default {
         },
       },
     },
+    adminAccessGrant: {
+      label: 'Přístup administrátora',
+      actions: {
+        granted: 'Uděleno',
+        ended: 'Ukončeno předčasně',
+      },
+    },
   },
 };

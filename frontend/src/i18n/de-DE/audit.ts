@@ -170,5 +170,12 @@ export default {
         },
       },
     },
+    adminAccessGrant: {
+      label: 'Administratorzugriff',
+      actions: {
+        granted: 'Gewährt',
+        ended: 'Vorzeitig beendet',
+      },
+    },
   },
 };

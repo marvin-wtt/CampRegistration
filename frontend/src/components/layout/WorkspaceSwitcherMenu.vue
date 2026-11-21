@@ -125,6 +125,71 @@
       </template>
     </template>
 
+    <!-- Built like an area, but outside the accordion group: it reports status,
+         so it stays open beside the current area. -->
+    <q-expansion-item
+      v-if="adminAccess.length"
+      default-opened
+      data-test="admin-access-grants"
+    >
+      <template #header>
+        <q-item-section avatar>
+          <q-icon
+            name="shield"
+            color="error"
+          />
+        </q-item-section>
+
+        <q-item-section>
+          {{ t('adminAccess.title') }}
+        </q-item-section>
+
+        <q-item-section side>
+          <q-badge
+            color="error"
+            :label="adminAccess.length"
+          />
+        </q-item-section>
+      </template>
+
+      <q-item
+        v-for="grant in adminAccess"
+        :key="grant.id"
+        v-close-popup
+        clickable
+        :to="grantRoute(grant)"
+        :inset-level="compact ? undefined : 0.5"
+        active-class=""
+        exact-active-class=""
+        data-test="admin-access-grant"
+      >
+        <q-item-section avatar>
+          <q-icon :name="SCOPE_ICONS[grant.scope]" />
+        </q-item-section>
+        <q-item-section class="workspace-switcher-menu__grant">
+          <q-item-label class="workspace-switcher-menu__grant-label">
+            {{ grant.reason }}
+          </q-item-label>
+          <q-item-label caption>
+            {{ t('adminAccess.until', { time: formatTime(grant.expiresAt) }) }}
+          </q-item-label>
+        </q-item-section>
+        <q-item-section side>
+          <q-btn
+            dense
+            flat
+            round
+            size="sm"
+            icon="logout"
+            :aria-label="t('adminAccess.end')"
+            @click.stop.prevent="profileStore.endAdminAccess(grant.id)"
+          >
+            <q-tooltip>{{ t('adminAccess.end') }}</q-tooltip>
+          </q-btn>
+        </q-item-section>
+      </q-item>
+    </q-expansion-item>
+
     <q-separator spaced />
 
     <!-- Management has no other way back to the public site, so the event
@@ -167,6 +232,7 @@ import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
+import type { AdminAccessGrant } from '@camp-registration/common/entities';
 import { useEventRouteAccess } from '@/composables/permissions';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
@@ -202,7 +268,7 @@ interface WorkspaceArea {
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const { canAccessRoute } = useEventRouteAccess();
 
@@ -219,6 +285,40 @@ const { hasNewsletters, hasOrganizations } = useWorkspaceAreaAccess();
 const compact = computed<boolean>(() => quasar.screen.lt.sm);
 
 const administrator = computed<boolean>(() => user.value?.role === 'ADMIN');
+
+const SCOPE_ICONS: Record<AdminAccessGrant['scope'], string> = {
+  event: 'cabin',
+  newsletter: 'mail',
+  organization: 'apartment',
+};
+
+const adminAccess = computed<AdminAccessGrant[]>(
+  () => profileStore.adminAccess,
+);
+
+function grantRoute(grant: AdminAccessGrant): RouteLocationRaw {
+  switch (grant.scope) {
+    case 'event':
+      return { name: 'management.event', params: { eventId: grant.scopeId } };
+    case 'newsletter':
+      return {
+        name: 'management.newsletter',
+        params: { newsletterId: grant.scopeId },
+      };
+    case 'organization':
+      return {
+        name: 'management.organization',
+        params: { organizationId: grant.scopeId },
+      };
+  }
+}
+
+function formatTime(dateTime: string): string {
+  return new Intl.DateTimeFormat(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateTime));
+}
 
 const currentArea = computed<WorkspaceAreaName | undefined>(() =>
   areaFromRouteName(route.name),
@@ -328,8 +428,12 @@ const availableAreas = computed<WorkspaceArea[]>(() => {
   return areas;
 });
 
+// Active grants form a section of their own, so the areas keep their headers
+// beside it.
 const soleArea = computed<WorkspaceArea | undefined>(() =>
-  availableAreas.value.length === 1 ? availableAreas.value[0] : undefined,
+  availableAreas.value.length === 1 && adminAccess.value.length === 0
+    ? availableAreas.value[0]
+    : undefined,
 );
 
 // This component mounts when the panel opens, which is too late to fetch —
@@ -391,6 +495,17 @@ function goTo(rootName: string, param: string, id: string) {
   max-width: min(420px, calc(100vw - 32px));
 }
 
+/* Same wrapping as the area entries. */
+.workspace-switcher-menu__grant {
+  min-width: 0;
+}
+
+.workspace-switcher-menu__grant-label {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 /* In the sheet the width is the sheet's, so the menu must not cap itself. */
 .workspace-switcher-menu--compact {
   min-width: 100%;
@@ -399,6 +514,10 @@ function goTo(rootName: string, param: string, id: string) {
 </style>
 
 <i18n lang="yaml" locale="en">
+adminAccess:
+  title: 'Administrator access'
+  until: 'Until {time}'
+  end: 'End'
 switch: 'Switch to'
 open: 'Open {area}'
 archived: 'Archived'
@@ -417,6 +536,10 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+adminAccess:
+  title: 'Administratorzugriff'
+  until: 'Bis {time}'
+  end: 'Beenden'
 switch: 'Wechseln zu'
 open: '{area} öffnen'
 archived: 'Archiviert'
@@ -435,6 +558,10 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+adminAccess:
+  title: 'Accès administrateur'
+  until: "Jusqu'à {time}"
+  end: 'Terminer'
 switch: 'Aller à'
 open: 'Ouvrir {area}'
 archived: 'Archivés'
@@ -453,6 +580,10 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+adminAccess:
+  title: 'Dostęp administratora'
+  until: 'Do {time}'
+  end: 'Zakończ'
 switch: 'Przejdź do'
 open: 'Otwórz {area}'
 archived: 'Zarchiwizowane'
@@ -471,6 +602,10 @@ verification:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+adminAccess:
+  title: 'Přístup administrátora'
+  until: 'Do {time}'
+  end: 'Ukončit'
 switch: 'Přejít na'
 open: 'Otevřít {area}'
 archived: 'Archivované'

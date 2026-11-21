@@ -1,4 +1,5 @@
 import type {
+  AdminAccessGrant,
   EventManager,
   NewsletterManager,
   OrganizationMember,
@@ -20,4 +21,5 @@ export interface ProfileUser extends Omit<User, 'password'> {
   newsletterManagers: NewsletterManager[];
   organizationMembers: ProfileOrganizationMembership[];
   twoFactor?: { confirmedAt: Date | null } | null;
+  adminAccessGrants: AdminAccessGrant[];
 }

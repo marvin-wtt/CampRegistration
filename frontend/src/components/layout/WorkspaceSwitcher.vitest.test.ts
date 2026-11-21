@@ -41,6 +41,10 @@ vi.mock('@/stores/newsletter-store', () => ({
   useNewsletterStore: () => ({ data: [], isLoading: false }),
 }));
 
+vi.mock('@/stores/profile-store', () => ({
+  useProfileStore: () => ({ adminAccess: [] }),
+}));
+
 // The panel itself is exercised through its own stores; here only the shell it
 // is rendered in matters.
 vi.mock('@/components/layout/workspaceArea', async (importOriginal) => ({

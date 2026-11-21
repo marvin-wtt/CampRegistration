@@ -10,6 +10,13 @@
     <template #navigation>
       <workspace-switcher rail />
     </template>
+
+    <template
+      v-if="administratorNeedsTwoFactor"
+      #default
+    >
+      <administrator-two-factor-required />
+    </template>
   </general-layout>
 </template>
 
@@ -20,10 +27,14 @@ import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore } from '@/stores/profile-store';
+import { storeToRefs } from 'pinia';
+import AdministratorTwoFactorRequired from '@/components/administration/AdministratorTwoFactorRequired.vue';
 
 const { t } = useI18n();
 
 const authStore = useAuthStore();
+const { administratorNeedsTwoFactor } = storeToRefs(useProfileStore());
 
 onMounted(async () => {
   await authStore.init();
@@ -55,6 +66,12 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'administration.organizations' },
   },
   {
+    name: 'access',
+    label: t('access'),
+    icon: 'shield',
+    to: { name: 'administration.access' },
+  },
+  {
     name: 'queues',
     label: t('queues'),
     icon: 'queue',
@@ -72,6 +89,7 @@ const items = computed<NavigationItemProps[]>(() => [
 <i18n lang="yaml" locale="en">
 title: 'Administration'
 
+access: 'Administrator access'
 organizations: 'Organizations'
 events: 'Events'
 newsletters: 'Newsletters'
@@ -84,6 +102,7 @@ legal: 'Legal Content'
 <i18n lang="yaml" locale="de">
 title: 'Verwaltung'
 
+access: 'Adminzugriff'
 organizations: 'Organisationen'
 events: 'Veranstaltungen'
 newsletters: 'Newsletter'
@@ -96,6 +115,7 @@ legal: 'Rechtliches'
 <i18n lang="yaml" locale="fr">
 title: 'Administration'
 
+access: 'Accès administrateur'
 organizations: 'Organisations'
 events: 'Événements'
 newsletters: 'Newsletters'
@@ -108,6 +128,7 @@ legal: 'Contenu légal'
 <i18n lang="yaml" locale="pl">
 title: 'Administracja'
 
+access: 'Dostęp administratora'
 organizations: 'Organizacje'
 events: 'Wydarzenia'
 newsletters: 'Newslettery'
@@ -120,6 +141,7 @@ legal: 'Treści prawne'
 <i18n lang="yaml" locale="cs">
 title: 'Administrace'
 
+access: 'Přístup administrátora'
 organizations: 'Organizace'
 events: 'Akce'
 newsletters: 'Newslettery'
