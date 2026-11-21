@@ -80,6 +80,7 @@ const createEvent = (
   registrationStatus: 'closed' as const,
   logo: null,
   banner: null,
+  archivedAt: null,
   form: {} as EventDetails['form'],
   themes: {},
   ...overrides,

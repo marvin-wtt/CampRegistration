@@ -18,6 +18,7 @@ export default {
         registrationOpensAt: 'Rejestracja otwiera się',
         registrationClosesAt: 'Rejestracja zamyka się',
         confirmationMode: 'Tryb potwierdzenia',
+        archivedAt: 'Zarchiwizowane',
         countries: 'Kraje',
         name: 'Nazwa',
         organizer: 'Organizator',

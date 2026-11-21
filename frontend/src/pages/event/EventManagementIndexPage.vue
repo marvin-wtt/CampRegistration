@@ -76,11 +76,11 @@
         />
 
         <event-card-section
-          v-if="pastEvents.length"
-          :header="t('group.past')"
-          icon="history"
-          :hint="t('group.pastHint')"
-          :events="pastEvents"
+          v-if="archivedEvents.length"
+          :header="t('group.archived')"
+          icon="inventory_2"
+          :hint="t('group.archivedHint')"
+          :events="archivedEvents"
           collapsible
         />
       </template>
@@ -100,7 +100,7 @@ import EventCardSection from '@/components/event/index/EventCardSection.vue';
 import EventCardSkeleton from '@/components/event/index/EventCardSkeleton.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import EventCreateDialog from '@/components/event/index/EventCreateDialog.vue';
-import { phaseOf, type EventPhase } from '@/utils/eventPhase';
+import { isEventArchived, phaseOf, type EventPhase } from '@/utils/eventPhase';
 import { useRouter } from 'vue-router';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
@@ -125,14 +125,14 @@ void assignedEventsStore.fetchData();
 const totalEvents = computed<number>(() => events.value?.length ?? 0);
 
 interface Group {
-  key: Exclude<EventPhase, 'past'>;
+  key: EventPhase;
   header: string;
   icon: string;
   events: Event[];
 }
 
 const groups = computed<Group[]>(() => {
-  const all = events.value ?? [];
+  const all = (events.value ?? []).filter((event) => !isEventArchived(event));
 
   const ongoing = all
     .filter((event) => phaseOf(event) === 'ongoing')
@@ -140,8 +140,8 @@ const groups = computed<Group[]>(() => {
   const upcoming = all
     .filter((event) => phaseOf(event) === 'upcoming')
     .toSorted(byStartAsc);
-  const recentlyEnded = all
-    .filter((event) => phaseOf(event) === 'recentlyEnded')
+  const ended = all
+    .filter((event) => phaseOf(event) === 'ended')
     .toSorted(byStartDesc);
 
   return [
@@ -158,18 +158,16 @@ const groups = computed<Group[]>(() => {
       events: upcoming,
     },
     {
-      key: 'recentlyEnded' as const,
-      header: t('group.recentlyEnded'),
+      key: 'ended' as const,
+      header: t('group.ended'),
       icon: 'schedule',
-      events: recentlyEnded,
+      events: ended,
     },
   ].filter((group) => group.events.length > 0);
 });
 
-const pastEvents = computed<Event[]>(() => {
-  return (events.value ?? [])
-    .filter((event) => phaseOf(event) === 'past')
-    .toSorted(byStartDesc);
+const archivedEvents = computed<Event[]>(() => {
+  return (events.value ?? []).filter(isEventArchived).toSorted(byStartDesc);
 });
 
 function byStartAsc(a: Event, b: Event) {
@@ -255,9 +253,9 @@ subtitle: 'Manage registrations, rooms and program for the events you run.'
 group:
   ongoing: 'Happening now'
   upcoming: 'Upcoming'
-  recentlyEnded: 'Recently ended'
-  past: 'Past events'
-  pastHint: 'Events move here automatically once they ended more than 6 weeks ago and registration is closed.'
+  ended: 'Ended'
+  archived: 'Archived'
+  archivedHint: 'Archived for every manager of the event. Archiving only tidies this list — the event keeps working as before.'
 action:
   create: 'Create event'
 empty:
@@ -275,9 +273,9 @@ subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Veranstaltungen, d
 group:
   ongoing: 'Aktuell'
   upcoming: 'Anstehend'
-  recentlyEnded: 'Kürzlich beendet'
-  past: 'Vergangene Veranstaltungen'
-  pastHint: 'Veranstaltungen landen automatisch hier, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
+  ended: 'Beendet'
+  archived: 'Archiviert'
+  archivedHint: 'Für alle Verwaltenden der Veranstaltung archiviert. Das Archivieren räumt nur diese Liste auf — die Veranstaltung funktioniert weiter wie bisher.'
 action:
   create: 'Veranstaltung erstellen'
 empty:
@@ -295,9 +293,9 @@ subtitle: 'Gérez les inscriptions, les chambres et le programme des événement
 group:
   ongoing: 'En cours'
   upcoming: 'À venir'
-  recentlyEnded: 'Récemment terminés'
-  past: 'Événements passés'
-  pastHint: 'Les événements arrivent ici automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
+  ended: 'Terminés'
+  archived: 'Archivés'
+  archivedHint: 'Archivés pour tous les gestionnaires de l’événement. L’archivage ne fait que ranger cette liste — l’événement continue de fonctionner comme avant.'
 action:
   create: 'Créer un événement'
 empty:
@@ -315,9 +313,9 @@ subtitle: 'Zarządzaj zapisami, pokojami i programem wydarzeń, które prowadzis
 group:
   ongoing: 'Trwające'
   upcoming: 'Nadchodzące'
-  recentlyEnded: 'Niedawno zakończone'
-  past: 'Minione wydarzenia'
-  pastHint: 'Wydarzenia trafiają tutaj automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
+  ended: 'Zakończone'
+  archived: 'Zarchiwizowane'
+  archivedHint: 'Zarchiwizowane dla wszystkich zarządzających wydarzeniem. Archiwizacja tylko porządkuje tę listę — wydarzenie działa dalej jak dotąd.'
 action:
   create: 'Utwórz wydarzenie'
 empty:
@@ -335,9 +333,9 @@ subtitle: 'Spravujte registrace, pokoje a program akcí, které vedete.'
 group:
   ongoing: 'Probíhající'
   upcoming: 'Nadcházející'
-  recentlyEnded: 'Nedávno ukončené'
-  past: 'Minulé akce'
-  pastHint: 'Akce se zde objeví automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
+  ended: 'Ukončené'
+  archived: 'Archivované'
+  archivedHint: 'Archivováno pro všechny správce akce. Archivace jen uklidí tento seznam — akce dál funguje jako dosud.'
 action:
   create: 'Vytvořit akci'
 empty:
