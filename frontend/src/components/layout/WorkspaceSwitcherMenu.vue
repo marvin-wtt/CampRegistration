@@ -167,6 +167,7 @@ import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
+import { useEventRouteAccess } from '@/composables/permissions';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
@@ -203,6 +204,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { canAccessRoute } = useEventRouteAccess();
 
 const profileStore = useProfileStore();
 const assignedEventsStore = useAssignedEventsStore();
@@ -364,12 +366,17 @@ function select(area: WorkspaceAreaName, id: string) {
 
 /**
  * Switching within the area the user is already in keeps the current sub-page,
- * so moving from one event's room planner lands on the next event's room planner.
+ * so moving from one event's room planner lands on the next event's room planner
+ * — unless the next event doesn't grant it, then it lands on the area's root.
  */
 function goTo(rootName: string, param: string, id: string) {
   const name = typeof route.name === 'string' ? route.name : '';
 
-  if (name.startsWith(`${rootName}.`) && route.params[param]) {
+  if (
+    name.startsWith(`${rootName}.`) &&
+    route.params[param] &&
+    canAccessRoute(name, id)
+  ) {
     void router.push({ name, params: { ...route.params, [param]: id } });
     return;
   }

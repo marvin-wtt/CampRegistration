@@ -15,6 +15,7 @@
     <template #default="{ component }">
       <component
         :is="component"
+        v-if="routeAllowed"
         :key="eventKey"
       />
     </template>
@@ -22,26 +23,30 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
-import { usePermissions } from '@/composables/permissions';
+import { useEventRouteAccess, usePermissions } from '@/composables/permissions';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
 import { provideNavigationSettings } from '@/composables/eventNavigationSettings';
 
 const route = useRoute();
+const router = useRouter();
+const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { canAccess } = usePermissions();
+const { routePermission, canAccessRoute } = useEventRouteAccess();
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -68,6 +73,31 @@ const eventKey = computed<string | undefined>(() => {
   return Array.isArray(eventId) ? eventId[0] : eventId;
 });
 
+// A direct link to, or lost access on, a page the event doesn't grant. The
+// workspace switcher never lands here. Until the profile loads the page decides.
+const routeAllowed = computed<boolean>(
+  () =>
+    profileStore.user === undefined || canAccess(route.meta.eventPermission),
+);
+
+watch(
+  routeAllowed,
+  (allowed) => {
+    const eventId = eventKey.value;
+    if (allowed || eventId === undefined) {
+      return;
+    }
+
+    quasar.notify({ type: 'warning', message: t('no_page_access') });
+    void router.replace(
+      canAccessRoute('management.event.dashboard')
+        ? { name: 'management.event.dashboard', params: { eventId } }
+        : { name: 'management.events' },
+    );
+  },
+  { immediate: true },
+);
+
 const title = computed<string>(() => {
   return eventName.value ?? t('title');
 });
@@ -88,7 +118,7 @@ const items = computed<NavigationItemProps<'event'>[]>(() =>
     name: def.name,
     label: t(def.name),
     icon: def.icon,
-    permission: def.permission,
+    permission: routePermission(def.routeName),
     to: { name: def.routeName },
     separated: def.separated,
     hideable: def.hideable,
@@ -154,6 +184,7 @@ tasks: 'Tasks'
 chore_planner: 'Duty Roster'
 finances: 'Finances'
 title: 'Event Management'
+no_page_access: "You don't have access to this page for this event."
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -168,6 +199,7 @@ tasks: 'Aufgaben'
 chore_planner: 'Dienstplan'
 finances: 'Finanzen'
 title: 'Veranstaltungsverwaltung'
+no_page_access: 'Du hast für diese Veranstaltung keinen Zugriff auf diese Seite.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -182,6 +214,7 @@ tasks: 'Tâches'
 chore_planner: 'Plan des corvées'
 finances: 'Finances'
 title: "Gestion de l'événement"
+no_page_access: "Tu n'as pas accès à cette page pour cet événement."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -196,6 +229,7 @@ tasks: 'Zadania'
 chore_planner: 'Grafik dyżurów'
 finances: 'Finanse'
 title: 'Zarządzanie wydarzeniem'
+no_page_access: 'Nie masz dostępu do tej strony w tym wydarzeniu.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -210,6 +244,7 @@ tasks: 'Úkoly'
 chore_planner: 'Rozpis služeb'
 finances: 'Finance'
 title: 'Správa akce'
+no_page_access: 'K této stránce u této akce nemáš přístup.'
 </i18n>
 
 <style>
