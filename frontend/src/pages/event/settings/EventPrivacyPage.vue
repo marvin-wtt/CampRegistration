@@ -13,28 +13,37 @@
         :subtitle="t('subtitle')"
       />
 
-      <!-- What the organization already says. Read-only, and shown in full
-           rather than summarised in a sentence: without it an author cannot
-           tell which of the ticks below they still have to make. -->
-      <q-card
-        flat
-        bordered
+      <!-- Without it the page reads as a broken editor: every control greyed
+           out and nothing saying why. -->
+      <q-banner
+        v-if="!canEdit"
+        dense
+        rounded
+        class="bg-surface-container-high text-on-surface"
       >
-        <q-card-section class="row items-start no-wrap q-gutter-sm card-header">
-          <div class="col">
-            <div class="text-subtitle2 text-weight-bold">
-              {{ t('baseline.title') }}
-            </div>
-            <div class="text-body2 text-on-surface-variant q-mt-xs">
-              {{ t('baseline.hint') }}
-            </div>
-          </div>
+        <template #avatar>
+          <q-icon name="visibility" />
+        </template>
+        {{ t('readOnly') }}
+      </q-banner>
+
+      <!-- What the organization already says: one line and a link to the full
+           text. Its entries appear in the sections below, marked as inherited,
+           so they are not listed twice. -->
+      <privacy-section
+        icon="corporate_fare"
+        :title="t('baseline.title')"
+        :summary="t('baseline.hint')"
+      >
+        <template
+          v-if="organizationPublishedVersion !== null"
+          #aside
+        >
           <q-chip
-            v-if="organizationPublishedVersion !== null"
             dense
             square
             icon="check_circle"
-            class="baseline-version card-header__badge"
+            class="baseline-version"
           >
             {{
               t('baseline.version', {
@@ -45,16 +54,18 @@
               })
             }}
           </q-chip>
-        </q-card-section>
+        </template>
 
-        <q-separator />
-
-        <q-card-section>
-          <!-- Nothing published is the one state a event cannot work around,
-               so it is stated before anything else on the page. -->
+        <!-- Nothing published is the one state an event cannot work around,
+             so it is stated before anything else on the page. -->
+        <template
+          v-if="!organizationContent || organizationFreeText"
+          #default
+        >
           <q-banner
             v-if="!organizationContent"
             dense
+            rounded
             class="baseline-banner"
           >
             <template #avatar>
@@ -68,62 +79,21 @@
               {{ t('baseline.missing.detail') }}
             </div>
           </q-banner>
-
           <div
-            v-else-if="organizationContent.mode === 'free_text'"
+            v-else
             class="text-body2 text-on-surface-variant"
           >
             {{ t('baseline.freeText') }}
           </div>
+        </template>
 
-          <div
-            v-else
-            class="column q-gutter-y-md"
-          >
-            <div
-              v-for="group in baselineGroups"
-              :key="group.key"
-            >
-              <div class="text-caption text-weight-medium">
-                {{ group.label }}
-              </div>
-              <div
-                v-if="group.items.length"
-                class="row items-center q-gutter-xs q-mt-xs"
-              >
-                <q-chip
-                  v-for="item in group.items"
-                  :key="item"
-                  dense
-                  square
-                  class="baseline-chip"
-                >
-                  {{ item }}
-                </q-chip>
-              </div>
-              <div
-                v-else
-                class="text-caption text-on-surface-variant q-mt-xs"
-              >
-                {{ t('baseline.none') }}
-              </div>
-            </div>
-
-            <div v-if="baselineRetention">
-              <div class="text-caption text-weight-medium">
-                {{ t('baseline.retention') }}
-              </div>
-              <div class="text-body2 q-mt-xs">{{ baselineRetention }}</div>
-            </div>
-          </div>
-        </q-card-section>
-
-        <q-card-actions>
+        <template #actions>
           <m-btn
             v-if="organizationContent"
             :label="t('baseline.open')"
             icon="description"
             flat
+            no-caps
             color="primary"
             @click="baselineOpen = true"
           />
@@ -132,202 +102,499 @@
             :label="t('baseline.edit')"
             icon="open_in_new"
             flat
+            no-caps
             color="primary"
             :to="{
               name: 'management.organization.privacy',
               params: { organizationId },
             }"
           />
-        </q-card-actions>
-      </q-card>
+        </template>
+      </privacy-section>
 
-      <!-- The event's own additions. Every row states where it comes from, so
-           ticking something the organization already declared is visibly a
-           no-op rather than a duplicate. -->
-      <q-card
-        flat
-        bordered
+      <!-- A free-text organization notice has no structure for entries to
+           join, so only the event's own text reaches registrants. -->
+      <q-banner
+        v-if="organizationFreeText && hasStructuredEntries(content)"
+        dense
+        rounded
+        class="baseline-banner"
       >
-        <q-card-section class="row items-start no-wrap q-gutter-sm card-header">
-          <div class="col">
-            <div class="text-subtitle2 text-weight-bold">
-              {{ t('addendum.title') }}
-            </div>
-            <div class="text-body2 text-on-surface-variant q-mt-xs">
-              {{ t('addendum.hint') }}
-            </div>
-          </div>
-          <q-toggle
-            v-if="hasInherited"
-            v-model="hideInherited"
-            :label="t('addendum.hideInherited')"
-            dense
-            size="sm"
-            class="text-caption card-header__badge"
+        <template #avatar>
+          <q-icon
+            name="warning"
+            class="text-warning"
           />
-        </q-card-section>
+        </template>
+        <div class="text-body2">
+          {{ t('addendum.freeTextEntries.title') }}
+        </div>
+        <div class="text-caption text-on-surface-variant">
+          {{ t('addendum.freeTextEntries.detail') }}
+        </div>
+      </q-banner>
 
-        <q-separator />
+      <template v-if="!organizationFreeText">
+        <!-- Purposes. Excluding one also drops the retention exception scoped
+             to it. -->
+        <privacy-section
+          icon="checklist"
+          :title="t('addendum.purposes')"
+          :summary="
+            sectionSummary(inheritedPurposes.length, ownPurposeKeys.length)
+          "
+          :more-count="canEdit ? morePurposeKeys.length : 0"
+        >
+          <privacy-entry-list
+            v-if="inheritedPurposes.length || ownPurposeKeys.length"
+          >
+            <privacy-entry-row
+              v-for="entry in inheritedPurposes"
+              :key="entry.key"
+              inherited
+              :label="purposeLabel(entry)"
+              :caption="lockedReason('purposes', entry.key, entry.allEvents)"
+              :excluded="isExcluded('purposes', entry.key)"
+            >
+              <template #actions>
+                <inherited-entry-toggle
+                  :model-value="entryState('purposes', entry.key, false)"
+                  :exclude-disabled="excludeBlocked('purposes', entry.key)"
+                  :disable="!canEdit"
+                  @update:model-value="
+                    (state) =>
+                      setExcluded('purposes', entry.key, state === 'exclude')
+                  "
+                />
+              </template>
+            </privacy-entry-row>
+            <privacy-entry-row
+              v-for="key in ownPurposeKeys"
+              :key="key"
+              :label="gt(`privacy.purpose.${key}`)"
+              selected
+              :disable="!canEdit"
+              @update:selected="(on) => toggleEventPurpose(key, on)"
+            >
+              <q-select
+                :model-value="eventPurpose(key)?.legalBasis"
+                :options="legalBasisOptions"
+                :label="t('field.legalBasis')"
+                emit-value
+                map-options
+                dense
+                outlined
+                rounded
+                :disable="!canEdit"
+                @update:model-value="(v) => setEventLegalBasis(key, v)"
+              />
+              <div
+                v-if="eventPurpose(key)?.legalBasis === 'consent'"
+                class="text-caption text-on-surface-variant q-mt-xs"
+              >
+                {{ gt('privacy.editor.field.consentQuestion') }}
+              </div>
+            </privacy-entry-row>
+          </privacy-entry-list>
 
-        <q-card-section>
-          <div class="text-caption text-weight-medium q-mb-sm">
-            {{ t('addendum.dataCategories') }}
-          </div>
+          <template #more>
+            <privacy-entry-list>
+              <privacy-entry-row
+                v-for="key in morePurposeKeys"
+                :key="key"
+                :label="gt(`privacy.purpose.${key}`)"
+                :selected="false"
+                :disable="!canEdit"
+                @update:selected="(on) => toggleEventPurpose(key, on)"
+              />
+            </privacy-entry-list>
+          </template>
+        </privacy-section>
 
-          <!-- Derived from the questions the form author tagged with a
-               `eventDataType`; a suggestion the manager confirms, never an
-               automatic claim about what the form collects. -->
+        <!-- Data categories. The form's own tags decide what must be here. -->
+        <privacy-section
+          icon="inventory_2"
+          :title="t('addendum.dataCategories')"
+          :summary="
+            sectionSummary(
+              inheritedCategoryCount,
+              ownCategoryKeys.length - inheritedCategoryKeys.length,
+            )
+          "
+          :more-count="canEdit ? moreCategoryKeys.length : 0"
+        >
+          <!-- The registration gate refuses this. -->
+          <q-banner
+            v-if="excludedFormCategories.length"
+            dense
+            rounded
+            class="baseline-banner q-mb-md"
+          >
+            <template #avatar>
+              <q-icon
+                name="warning"
+                class="text-warning"
+              />
+            </template>
+            <div class="text-body2">
+              {{
+                t('addendum.excludedInForm', {
+                  categories: categoryNames(excludedFormCategories),
+                })
+              }}
+            </div>
+          </q-banner>
+
+          <!-- A suggestion the manager confirms, never an automatic claim
+               about what the form collects — unless it blocks registrations. -->
           <q-banner
             v-if="suggestedCategories.length"
             dense
-            class="suggestion-banner q-mb-sm"
+            rounded
+            class="suggestion-banner q-mb-md"
           >
             <template #avatar>
-              <q-icon name="lightbulb" />
+              <q-icon
+                :name="suggestionBlocks ? 'warning' : 'lightbulb'"
+                :class="{ 'text-warning': suggestionBlocks }"
+              />
             </template>
-            <div class="row items-center justify-between q-gutter-sm">
-              <div class="col text-caption">
-                {{
-                  t('addendum.suggested', {
-                    categories: suggestedCategories
-                      .map((key) => gt(`privacy.dataCategory.${key}`))
-                      .join(', '),
-                  })
-                }}
-              </div>
+            <div class="text-body2">
+              {{
+                t(
+                  suggestionBlocks
+                    ? 'addendum.suggestedBlocking'
+                    : 'addendum.suggested',
+                  { categories: categoryNames(suggestedCategories) },
+                )
+              }}
+            </div>
+            <template #action>
               <m-btn
                 :label="t('addendum.applySuggested')"
                 flat
-                dense
+                no-caps
                 color="primary"
                 :disable="!canEdit"
                 @click="applySuggested"
               />
-            </div>
+            </template>
           </q-banner>
 
-          <div
-            v-for="key in visibleDataCategoryKeys"
-            :key="key"
-            class="entry"
+          <privacy-entry-list
+            v-if="ownCategoryKeys.length || inheritedCustomCategories.length"
           >
-            <div class="row items-center no-wrap">
-              <q-checkbox
-                :model-value="inheritsCategory(key) || hasDataCategory(key)"
+            <template
+              v-for="key in ownCategoryKeys"
+              :key="key"
+            >
+              <privacy-entry-row
+                v-if="inheritsCategory(key)"
+                inherited
                 :label="gt(`privacy.dataCategory.${key}`)"
-                :disable="!canEdit || inheritsCategory(key)"
-                dense
-                @update:model-value="(on) => toggleDataCategory(key, on)"
-              />
-              <origin-chip
-                :origin="categoryOrigin(key)"
-                class="q-ml-sm"
-              />
-            </div>
+                :caption="
+                  lockedReason(
+                    'dataCategories',
+                    key,
+                    inheritedCategory(key)?.allEvents,
+                  )
+                "
+                :special="isSpecialCategory(key)"
+                :excluded="categoryState(key) === 'exclude'"
+              >
+                <template #actions>
+                  <inherited-entry-toggle
+                    :model-value="categoryState(key)"
+                    :can-override="isSpecialCategory(key)"
+                    :exclude-disabled="excludeBlocked('dataCategories', key)"
+                    :disable="!canEdit"
+                    @update:model-value="
+                      (state) => setCategoryState(key, state)
+                    "
+                  />
+                </template>
+                <template
+                  v-if="
+                    categoryState(key) !== 'exclude' &&
+                    (isSpecialCategory(key) || hasCategoryNotes(key))
+                  "
+                  #default
+                >
+                  <!-- The organization's answer until the event restates the
+                       entry with its own. -->
+                  <div
+                    v-if="
+                      inheritedCategoryBasis(key) &&
+                      categoryState(key) === 'inherit'
+                    "
+                    class="text-caption text-on-surface-variant"
+                  >
+                    {{ gt('privacy.editor.field.art9Basis') }}:
+                    {{
+                      gt(
+                        `privacy.specialCategoryBasis.${inheritedCategoryBasis(key)}`,
+                      )
+                    }}
+                  </div>
+                  <special-category-basis-field
+                    v-else-if="hasDataCategory(key) && isSpecialCategory(key)"
+                    :model-value="dataCategory(key)?.specialCategoryBasis"
+                    :can-edit="canEdit"
+                    @update:model-value="(value) => setSpecialBasis(key, value)"
+                  />
+                  <!-- Both notes ask about this event's own form, so they show
+                       for inherited entries too. -->
+                  <privacy-category-notes
+                    :category-key="key"
+                    class="text-caption text-on-surface-variant q-mt-xs"
+                  />
+                </template>
+              </privacy-entry-row>
 
-            <!-- Inherited entries show the organization's own answer rather
-                 than an editable copy of it: restating it here would let the
-                 event silently override the notice it is adding to. -->
-            <div
-              v-if="inheritedCategoryBasis(key)"
-              class="text-caption text-on-surface-variant entry__note"
-            >
-              {{ gt('privacy.editor.field.art9Basis') }}:
-              {{
-                gt(
-                  `privacy.specialCategoryBasis.${inheritedCategoryBasis(key)}`,
-                )
-              }}
-            </div>
+              <privacy-entry-row
+                v-else
+                :label="gt(`privacy.dataCategory.${key}`)"
+                selected
+                :special="isSpecialCategory(key)"
+                :disable="!canEdit"
+                @update:selected="(on) => toggleDataCategory(key, on)"
+              >
+                <template
+                  v-if="isSpecialCategory(key) || hasCategoryNotes(key)"
+                  #default
+                >
+                  <special-category-basis-field
+                    v-if="isSpecialCategory(key)"
+                    :model-value="dataCategory(key)?.specialCategoryBasis"
+                    :can-edit="canEdit"
+                    @update:model-value="(value) => setSpecialBasis(key, value)"
+                  />
+                  <privacy-category-notes
+                    :category-key="key"
+                    class="text-caption text-on-surface-variant q-mt-xs"
+                  />
+                </template>
+              </privacy-entry-row>
+            </template>
 
-            <special-category-basis-field
-              v-else-if="hasDataCategory(key) && isSpecialCategory(key)"
-              :model-value="dataCategory(key)?.specialCategoryBasis"
-              :can-edit="canEdit"
-              class="entry__nested"
-              @update:model-value="(value) => setSpecialBasis(key, value)"
-            />
-
-            <!-- Rendered for inherited entries too: the organization declared
-                 the category, but both notes ask about this event's own form,
-                 and it is this event's manager who builds it. -->
-            <privacy-category-notes
-              v-if="inheritsCategory(key) || hasDataCategory(key)"
-              :category-key="key"
-              class="text-caption text-on-surface-variant entry__note"
-            />
-          </div>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-section>
-          <div class="text-caption text-weight-medium q-mb-sm">
-            {{ t('addendum.recipients') }}
-          </div>
-          <div
-            v-for="key in visibleRecipientKeys"
-            :key="key"
-            class="entry"
-          >
-            <div class="row items-center no-wrap">
-              <q-checkbox
-                :model-value="inheritsRecipient(key) || hasRecipient(key)"
-                :label="gt(`privacy.recipient.${key}`)"
-                :disable="!canEdit || inheritsRecipient(key)"
-                dense
-                @update:model-value="(on) => toggleRecipient(key, on)"
-              />
-              <origin-chip
-                :origin="recipientOrigin(key)"
-                class="q-ml-sm"
-              />
-            </div>
-
-            <div
-              v-if="inheritedRecipientName(key)"
-              class="text-caption text-on-surface-variant entry__note"
-            >
-              {{ inheritedRecipientName(key) }}
-            </div>
-
-            <q-input
-              v-else-if="hasRecipient(key)"
-              :model-value="recipient(key)?.name ?? ''"
-              :label="gt('privacy.editor.field.recipientName')"
-              :hint="gt('privacy.editor.field.recipientNameHint')"
-              dense
-              outlined
-              :disable="!canEdit"
-              class="entry__nested entry__field"
-              @update:model-value="
-                (value) => setRecipientName(key, String(value))
+            <privacy-entry-row
+              v-for="entry in inheritedCustomCategories"
+              :key="entry.key"
+              inherited
+              :label="categoryLabel(entry)"
+              :caption="
+                lockedReason('dataCategories', entry.key, entry.allEvents)
               "
-            />
-          </div>
-        </q-card-section>
+              :special="entry.special === true"
+              :excluded="categoryState(entry.key) === 'exclude'"
+            >
+              <template #actions>
+                <inherited-entry-toggle
+                  :model-value="categoryState(entry.key)"
+                  :exclude-disabled="
+                    excludeBlocked('dataCategories', entry.key)
+                  "
+                  :disable="!canEdit"
+                  @update:model-value="
+                    (state) => setCategoryState(entry.key, state)
+                  "
+                />
+              </template>
+            </privacy-entry-row>
+          </privacy-entry-list>
 
-        <q-separator />
+          <template #more>
+            <privacy-entry-list>
+              <privacy-entry-row
+                v-for="key in moreCategoryKeys"
+                :key="key"
+                :label="gt(`privacy.dataCategory.${key}`)"
+                :selected="false"
+                :special="isSpecialCategory(key)"
+                :disable="!canEdit"
+                @update:selected="(on) => toggleDataCategory(key, on)"
+              />
+            </privacy-entry-list>
+          </template>
+        </privacy-section>
 
-        <q-card-section>
-          <div class="text-caption text-weight-medium">
-            {{ t('addendum.additional') }}
-          </div>
-          <div class="text-caption text-on-surface-variant q-mb-sm">
-            {{ t('addendum.additionalHint') }}
-          </div>
-          <locale-tabs
-            v-model="additionalLocale"
-            :locales="additionalLocales"
-            :filled="filledAdditionalLocales"
-          />
-          <rich-text-editor
-            v-model="additionalForLocale"
-            :placeholder="t('field.additionalPlaceholder')"
-            class="q-mt-sm"
-          />
-        </q-card-section>
-      </q-card>
+        <!-- Recipients. -->
+        <privacy-section
+          icon="share"
+          :title="t('addendum.recipients')"
+          :summary="
+            sectionSummary(
+              inheritedRecipientCount,
+              ownRecipientKeys.length - inheritedRecipientKeys.length,
+            )
+          "
+          :more-count="canEdit ? moreRecipientKeys.length : 0"
+        >
+          <privacy-entry-list
+            v-if="ownRecipientKeys.length || inheritedCustomRecipients.length"
+          >
+            <template
+              v-for="key in ownRecipientKeys"
+              :key="key"
+            >
+              <privacy-entry-row
+                v-if="inheritsRecipient(key)"
+                inherited
+                :label="gt(`privacy.recipient.${key}`)"
+                :caption="
+                  lockedReason(
+                    'recipients',
+                    key,
+                    inheritedRecipient(key)?.allEvents,
+                  ) ??
+                  (recipientState(key) === 'inherit'
+                    ? inheritedRecipientName(key)
+                    : null)
+                "
+                :excluded="recipientState(key) === 'exclude'"
+              >
+                <template #actions>
+                  <inherited-entry-toggle
+                    :model-value="recipientState(key)"
+                    :can-override="!isAlwaysRecipient(key)"
+                    :exclude-disabled="excludeBlocked('recipients', key)"
+                    :disable="!canEdit"
+                    @update:model-value="
+                      (state) => setRecipientState(key, state)
+                    "
+                  />
+                </template>
+                <template
+                  v-if="recipientState(key) === 'override'"
+                  #default
+                >
+                  <q-input
+                    :model-value="recipient(key)?.name ?? ''"
+                    :label="gt('privacy.editor.field.recipientName')"
+                    :hint="gt('privacy.editor.field.recipientNameHint')"
+                    dense
+                    outlined
+                    rounded
+                    :disable="!canEdit"
+                    @update:model-value="
+                      (value) => setRecipientName(key, String(value))
+                    "
+                  />
+                </template>
+              </privacy-entry-row>
+
+              <privacy-entry-row
+                v-else
+                :label="gt(`privacy.recipient.${key}`)"
+                selected
+                :disable="!canEdit"
+                @update:selected="(on) => toggleRecipient(key, on)"
+              >
+                <q-input
+                  :model-value="recipient(key)?.name ?? ''"
+                  :label="gt('privacy.editor.field.recipientName')"
+                  :hint="gt('privacy.editor.field.recipientNameHint')"
+                  dense
+                  outlined
+                  rounded
+                  :disable="!canEdit"
+                  @update:model-value="
+                    (value) => setRecipientName(key, String(value))
+                  "
+                />
+              </privacy-entry-row>
+            </template>
+
+            <privacy-entry-row
+              v-for="entry in inheritedCustomRecipients"
+              :key="entry.key"
+              inherited
+              :label="recipientLabel(entry)"
+              :caption="lockedReason('recipients', entry.key, entry.allEvents)"
+              :excluded="recipientState(entry.key) === 'exclude'"
+            >
+              <template #actions>
+                <inherited-entry-toggle
+                  :model-value="recipientState(entry.key)"
+                  :exclude-disabled="excludeBlocked('recipients', entry.key)"
+                  :disable="!canEdit"
+                  @update:model-value="
+                    (state) => setRecipientState(entry.key, state)
+                  "
+                />
+              </template>
+            </privacy-entry-row>
+          </privacy-entry-list>
+
+          <template #more>
+            <privacy-entry-list>
+              <privacy-entry-row
+                v-for="key in moreRecipientKeys"
+                :key="key"
+                :label="gt(`privacy.recipient.${key}`)"
+                :selected="false"
+                :disable="!canEdit"
+                @update:selected="(on) => toggleRecipient(key, on)"
+              />
+            </privacy-entry-list>
+          </template>
+        </privacy-section>
+
+        <!-- Transfers outside the EEA, only when the organization declares
+             any: an event can drop countries, not add its own here. -->
+        <privacy-section
+          v-if="inheritedTransferCountries.length"
+          icon="public"
+          :title="t('addendum.transfers')"
+          :summary="sectionSummary(inheritedTransferCountries.length, 0)"
+        >
+          <privacy-entry-list>
+            <privacy-entry-row
+              v-for="country in inheritedTransferCountries"
+              :key="country"
+              inherited
+              :label="countryLabel(country)"
+              :caption="lockedReason('transferCountries', country, false)"
+              :excluded="isExcluded('transferCountries', country)"
+            >
+              <template #actions>
+                <inherited-entry-toggle
+                  :model-value="entryState('transferCountries', country, false)"
+                  :exclude-disabled="
+                    excludeBlocked('transferCountries', country)
+                  "
+                  :disable="!canEdit"
+                  @update:model-value="
+                    (state) =>
+                      setExcluded(
+                        'transferCountries',
+                        country,
+                        state === 'exclude',
+                      )
+                  "
+                />
+              </template>
+            </privacy-entry-row>
+          </privacy-entry-list>
+        </privacy-section>
+      </template>
+
+      <privacy-section
+        icon="notes"
+        :title="t('addendum.additional')"
+        :summary="t('addendum.additionalHint')"
+      >
+        <locale-tabs
+          v-model="additionalLocale"
+          :locales="additionalLocales"
+          :filled="filledAdditionalLocales"
+        />
+        <rich-text-editor
+          v-model="additionalForLocale"
+          :placeholder="t('field.additionalPlaceholder')"
+          class="q-mt-sm"
+        />
+      </privacy-section>
 
       <privacy-publish-card
         :published-version="publishedVersion"
@@ -356,7 +623,7 @@
              something has been changed: on an untouched event the status line
              already says it. -->
         <div
-          v-else-if="isEmptyAddendum(content) && hasUnpublishedChanges"
+          v-else-if="isEmptyAddendum(publishable) && hasUnpublishedChanges"
           class="text-body2 text-on-surface-variant"
         >
           {{
@@ -412,24 +679,43 @@ import {
   EVENT_DATA_TYPE_DATA_CATEGORIES,
   DEFAULT_SPECIAL_CATEGORY_BASIS,
   PRIVACY_DATA_CATEGORY_KEYS,
+  PRIVACY_PURPOSE_KEYS,
+  PRIVACY_PURPOSE_PRESETS,
   PRIVACY_RECIPIENT_KEYS,
   addendumGaps,
   composePrivacyNotice,
+  hasStructuredEntries,
   isEmptyAddendum,
+  isAdvisorySpecialCategory,
+  isAlwaysRecipient,
+  isCustomKey,
   isSpecialCategory,
+  normalizeExclusions,
+  publishableAddendum,
+  refusedExclusions,
+  requiresConsentQuestion,
+  type LegalBasisKey,
+  type PrivacyPurposeKey,
+  type PrivacyDataCategoryRef,
+  type PrivacyNoticeExclusions,
   type PrivacyDataCategoryKey,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
   type PrivacyRecipientKey,
+  type PrivacyRecipientRef,
   type PublishedPrivacyNotice,
   type SpecialCategoryBasisKey,
 } from '@camp-registration/common/privacy';
-import type { Translatable } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
-import OriginChip from '@/components/privacy/OriginChip.vue';
+import InheritedEntryToggle, {
+  type InheritedEntryState,
+} from '@/components/privacy/InheritedEntryToggle.vue';
 import PrivacyCategoryNotes from '@/components/privacy/PrivacyCategoryNotes.vue';
+import PrivacyEntryList from '@/components/privacy/PrivacyEntryList.vue';
+import PrivacyEntryRow from '@/components/privacy/PrivacyEntryRow.vue';
+import PrivacySection from '@/components/privacy/PrivacySection.vue';
 import PrivacyPreviewDialog from '@/components/privacy/PrivacyPreviewDialog.vue';
 import PrivacyPublishCard from '@/components/privacy/PrivacyPublishCard.vue';
 import SpecialCategoryBasisField from '@/components/privacy/SpecialCategoryBasisField.vue';
@@ -440,7 +726,12 @@ import { useOrganizationPermissions } from '@/composables/organizationPermission
 import { usePrivacyLabels } from '@/composables/privacyLabels';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
-import { extractEventDataTypes } from '@camp-registration/common/form';
+import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
+import { localeText, useLocaleTextModel } from '@/composables/localeText';
+import {
+  extractEventDataTypes,
+  extractPrivacyTags,
+} from '@camp-registration/common/form';
 import { APP_LOCALES, eventTextLocales } from '@/i18n/locales';
 
 const { t, d } = useI18n();
@@ -449,7 +740,13 @@ const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
 const { canOrgFor } = useOrganizationPermissions();
-const { categoryLabel, purposeLabel, recipientLabel } = usePrivacyLabels();
+const {
+  legalBasisOptions,
+  categoryLabel,
+  purposeLabel,
+  recipientLabel,
+  countryLabel,
+} = usePrivacyLabels();
 const { extractErrorText } = useErrorExtractor();
 const notifier = useNotifier();
 const { fetchEventAddendum, publishEventAddendum, fetchEventNotice } =
@@ -459,12 +756,13 @@ const loading = ref(true);
 const publishing = ref(false);
 const error = ref<string | null>(null);
 const additionalLocale = ref('en');
-const hideInherited = ref(false);
 const baselineOpen = ref(false);
 const previewOpen = ref(false);
 
 /** The organization's published notice — what this event is adding to. */
 const organizationContent = ref<PrivacyNoticeContent | null>(null);
+// The locales the event is offered in: every translated text needs each.
+const requiredLocales = ref<string[]>([]);
 const organizationPublishedVersion = ref<number | null>(null);
 const organizationPublishedAt = ref<string | null>(null);
 const publishedVersion = ref<number | null>(null);
@@ -477,6 +775,17 @@ const content = ref<PrivacyNoticeAddendum>(emptyAddendum());
 // only thing an edit can be compared against.
 const publishedSnapshot = ref(JSON.stringify(content.value));
 
+const {
+  dataCategory,
+  hasDataCategory,
+  toggleDataCategory,
+  setSpecialBasis,
+  recipient,
+  hasRecipient,
+  toggleRecipient,
+  setRecipientName,
+} = usePrivacyEntryEditor(content);
+
 const eventId = computed(() => event.value?.id);
 const organizationId = computed(() => event.value?.organizationId);
 const canEdit = computed(() => can('event.edit'));
@@ -486,8 +795,21 @@ const canEditOrganization = computed(
     canOrgFor(organizationId.value, 'organization.edit'),
 );
 
+const organizationFreeText = computed(
+  () => organizationContent.value?.mode === 'free_text',
+);
+
+// What publishing sends and the preview shows: under a free-text organization
+// notice, entries from before the switch are dropped rather than refused.
+const publishable = computed(() =>
+  publishableAddendum(organizationContent.value, content.value),
+);
+
+// Leftover entries count as a change: only publishing removes them.
 const hasUnpublishedChanges = computed(
-  () => JSON.stringify(content.value) !== publishedSnapshot.value,
+  () =>
+    JSON.stringify(content.value) !== publishedSnapshot.value ||
+    (organizationFreeText.value && hasStructuredEntries(content.value)),
 );
 
 /**
@@ -499,7 +821,7 @@ const hasUnpublishedChanges = computed(
 const publishDisabled = computed(
   () =>
     !organizationContent.value ||
-    (isEmptyAddendum(content.value) && publishedVersion.value === null) ||
+    (isEmptyAddendum(publishable.value) && publishedVersion.value === null) ||
     gaps.value.length > 0,
 );
 
@@ -509,13 +831,20 @@ const publishDisabled = computed(
  * rather than a statement, so there is nothing to check.
  */
 const gaps = computed(() =>
-  isEmptyAddendum(content.value)
+  isEmptyAddendum(publishable.value)
     ? []
-    : addendumGaps(organizationContent.value, content.value),
+    : addendumGaps(organizationContent.value, publishable.value, {
+        locales: requiredLocales.value,
+      }),
 );
 
 function emptyAddendum(): PrivacyNoticeAddendum {
-  return { dataCategories: [], recipients: [], additional: null };
+  return {
+    dataCategories: [],
+    recipients: [],
+    additional: null,
+    excluded: null,
+  };
 }
 
 /** Loads what is published into the editor and baselines the edit against it. */
@@ -547,6 +876,7 @@ async function loadPage() {
 
     loadPublished(context.content);
     organizationContent.value = context.organizationContent;
+    requiredLocales.value = context.requiredLocales;
     organizationPublishedVersion.value = context.organizationPublishedVersion;
     organizationPublishedAt.value = context.organizationPublishedAt;
     publishedVersion.value = context.publishedVersion;
@@ -560,44 +890,6 @@ async function loadPage() {
 }
 
 /* The organization baseline */
-
-const baselineGroups = computed(() => {
-  const notice = organizationContent.value;
-
-  return [
-    {
-      key: 'purposes',
-      label: t('baseline.purposes'),
-      items: (notice?.purposes ?? []).map(purposeLabel),
-    },
-    {
-      key: 'dataCategories',
-      label: t('baseline.dataCategories'),
-      items: (notice?.dataCategories ?? []).map(categoryLabel),
-    },
-    {
-      key: 'recipients',
-      label: t('baseline.recipients'),
-      items: (notice?.recipients ?? []).map((entry) =>
-        entry.name
-          ? `${recipientLabel(entry)} (${entry.name})`
-          : recipientLabel(entry),
-      ),
-    },
-  ];
-});
-
-const baselineRetention = computed(() => {
-  const retention = organizationContent.value?.retention;
-  if (!retention) {
-    return null;
-  }
-
-  return t('baseline.retentionSentence', {
-    months: retention.months,
-    anchor: gt(`privacy.retentionAnchor.${retention.anchor}`),
-  });
-});
 
 /**
  * The organization's notice as a registrant would read it, without this event's
@@ -624,7 +916,7 @@ const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
   return {
     ...published.value,
     notice: organizationContent.value
-      ? composePrivacyNotice(organizationContent.value, content.value)
+      ? composePrivacyNotice(organizationContent.value, publishable.value)
       : null,
     eventVersion: publishedVersion.value,
   };
@@ -651,69 +943,37 @@ function inheritedCategoryBasis(
   return entry.specialCategoryBasis ?? DEFAULT_SPECIAL_CATEGORY_BASIS;
 }
 
-function inheritedRecipient(key: PrivacyRecipientKey) {
+function inheritedRecipient(key: PrivacyRecipientRef) {
   return organizationContent.value?.recipients.find(
     (entry) => entry.key === key,
   );
 }
-function inheritsRecipient(key: PrivacyRecipientKey): boolean {
+function inheritsRecipient(key: PrivacyRecipientRef): boolean {
   return inheritedRecipient(key) !== undefined;
 }
 function inheritedRecipientName(key: PrivacyRecipientKey): string | null {
   return inheritedRecipient(key)?.name || null;
 }
 
-type EntryOrigin = 'organization' | 'event' | null;
-
-function categoryOrigin(key: PrivacyDataCategoryKey): EntryOrigin {
-  if (inheritsCategory(key)) {
-    return 'organization';
-  }
-
-  return hasDataCategory(key) ? 'event' : null;
-}
-
-function recipientOrigin(key: PrivacyRecipientKey): EntryOrigin {
-  if (inheritsRecipient(key)) {
-    return 'organization';
-  }
-
-  return hasRecipient(key) ? 'event' : null;
-}
-
-const hasInherited = computed(
-  () =>
-    (organizationContent.value?.dataCategories.length ?? 0) > 0 ||
-    (organizationContent.value?.recipients.length ?? 0) > 0,
-);
-
-// Both catalogues are long, and most of the entries are the organization's
-// rather than this event's — hiding them leaves the list the author came for.
-const visibleDataCategoryKeys = computed(() =>
-  PRIVACY_DATA_CATEGORY_KEYS.filter(
-    (key) => !hideInherited.value || !inheritsCategory(key),
-  ),
-);
-
-const visibleRecipientKeys = computed(() =>
-  PRIVACY_RECIPIENT_KEYS.filter(
-    (key) => !hideInherited.value || !inheritsRecipient(key),
-  ),
-);
-
 /**
- * Maps the `eventDataType` tags the form author put on this event's questions
- * onto data categories. Partial by construction — a free-text question can hold
- * anything — so it only ever proposes, and never proposes what the organization
- * already covers.
+ * The data categories this event's form asks for: its `privacyCategory` tags —
+ * what the registration gate checks — and the `eventDataType` fields mapped onto
+ * categories. Partial by construction — a free-text question can hold anything —
+ * so it only ever proposes, and never proposes what the organization already
+ * covers.
  */
-const suggestedCategories = computed<PrivacyDataCategoryKey[]>(() => {
+const formCategories = computed<PrivacyDataCategoryKey[]>(() => {
   const form = event.value?.form;
   if (!form) {
     return [];
   }
 
   const found = new Set<PrivacyDataCategoryKey>();
+  for (const { category } of extractPrivacyTags(form).tagged) {
+    if (isCatalogueCategory(category)) {
+      found.add(category);
+    }
+  }
   for (const tag of extractEventDataTypes(form)) {
     const category = EVENT_DATA_TYPE_DATA_CATEGORIES[tag];
     if (category) {
@@ -721,10 +981,32 @@ const suggestedCategories = computed<PrivacyDataCategoryKey[]>(() => {
     }
   }
 
-  return [...found].filter(
-    (key) => !hasDataCategory(key) && !inheritsCategory(key),
-  );
+  return [...found];
 });
+
+const suggestedCategories = computed<PrivacyDataCategoryKey[]>(() =>
+  formCategories.value.filter(
+    (key) => !hasDataCategory(key) && !inheritsCategory(key),
+  ),
+);
+
+// A tagged question the notice does not declare stops registrations
+// (docs/privacy.md, 5) — then it is no longer a suggestion.
+const suggestionBlocks = computed<boolean>(() => {
+  const form = event.value?.form;
+  if (!form) {
+    return false;
+  }
+  const tagged = new Set(
+    extractPrivacyTags(form).tagged.map((question) => question.category),
+  );
+
+  return suggestedCategories.value.some((key) => tagged.has(key));
+});
+
+function isCatalogueCategory(key: string): key is PrivacyDataCategoryKey {
+  return (PRIVACY_DATA_CATEGORY_KEYS as readonly string[]).includes(key);
+}
 
 function applySuggested() {
   suggestedCategories.value.forEach((key) => toggleDataCategory(key, true));
@@ -732,84 +1014,294 @@ function applySuggested() {
 
 /* Data categories */
 
-function dataCategory(key: PrivacyDataCategoryKey) {
-  return content.value.dataCategories?.find((entry) => entry.key === key);
+function hasCategoryNotes(key: PrivacyDataCategoryKey): boolean {
+  return isAdvisorySpecialCategory(key) || requiresConsentQuestion(key);
 }
-function hasDataCategory(key: PrivacyDataCategoryKey): boolean {
-  return dataCategory(key) !== undefined;
-}
-function toggleDataCategory(key: PrivacyDataCategoryKey, on: boolean) {
-  const entries = content.value.dataCategories ?? [];
 
-  content.value.dataCategories = on
-    ? [
-        ...entries,
-        // Pre-select the Art. 9 basis nearly every event actually relies on,
-        // rather than opening with an empty required field.
-        isSpecialCategory(key)
-          ? { key, specialCategoryBasis: DEFAULT_SPECIAL_CATEGORY_BASIS }
-          : { key },
-      ]
-    : entries.filter((entry) => entry.key !== key);
+/* What each section lists, and what waits behind "add more" */
+
+const ownPurposeKeys = computed(() =>
+  eventPurposeKeys.value.filter((key) => hasEventPurpose(key)),
+);
+const morePurposeKeys = computed(() =>
+  eventPurposeKeys.value.filter((key) => !hasEventPurpose(key)),
+);
+
+const inheritedCategoryKeys = computed(() =>
+  PRIVACY_DATA_CATEGORY_KEYS.filter((key) => inheritsCategory(key)),
+);
+// Inherited and the event's own, in catalogue order.
+const ownCategoryKeys = computed(() =>
+  PRIVACY_DATA_CATEGORY_KEYS.filter(
+    (key) => inheritsCategory(key) || hasDataCategory(key),
+  ),
+);
+const moreCategoryKeys = computed(() =>
+  PRIVACY_DATA_CATEGORY_KEYS.filter(
+    (key) => !inheritsCategory(key) && !hasDataCategory(key),
+  ),
+);
+const inheritedCategoryCount = computed(
+  () =>
+    inheritedCategoryKeys.value.length + inheritedCustomCategories.value.length,
+);
+
+const inheritedRecipientKeys = computed(() =>
+  PRIVACY_RECIPIENT_KEYS.filter((key) => inheritsRecipient(key)),
+);
+const ownRecipientKeys = computed(() =>
+  PRIVACY_RECIPIENT_KEYS.filter(
+    (key) => inheritsRecipient(key) || hasRecipient(key),
+  ),
+);
+const moreRecipientKeys = computed(() =>
+  PRIVACY_RECIPIENT_KEYS.filter(
+    (key) => !inheritsRecipient(key) && !hasRecipient(key),
+  ),
+);
+const inheritedRecipientCount = computed(
+  () =>
+    inheritedRecipientKeys.value.length +
+    inheritedCustomRecipients.value.length,
+);
+
+function sectionSummary(inherited: number, own: number): string {
+  const parts = [
+    inherited ? t('summary.inherited', { count: inherited }) : null,
+    own ? t('summary.own', { count: own }) : null,
+  ].filter((part): part is string => part !== null);
+
+  return parts.length ? parts.join(' · ') : t('summary.none');
 }
-function setSpecialBasis(
-  key: PrivacyDataCategoryKey,
-  value: SpecialCategoryBasisKey | null | undefined,
-) {
-  const entry = dataCategory(key);
+
+function categoryNames(keys: PrivacyDataCategoryKey[]): string {
+  return keys.map((key) => gt(`privacy.dataCategory.${key}`)).join(', ');
+}
+
+/* The event's own purposes */
+
+// The catalogue minus what the organization already declares: those rows are
+// the inherited ones above, kept or excluded rather than ticked.
+const eventPurposeKeys = computed(() =>
+  PRIVACY_PURPOSE_KEYS.filter(
+    (key) => !inheritedPurposes.value.some((entry) => entry.key === key),
+  ),
+);
+
+function eventPurpose(key: PrivacyPurposeKey) {
+  return content.value.purposes?.find((entry) => entry.key === key);
+}
+function hasEventPurpose(key: PrivacyPurposeKey): boolean {
+  return eventPurpose(key) !== undefined;
+}
+/**
+ * Like the organization's editor: a purpose brings its usual data and
+ * recipients, unless the organization already declares them. Unticking never
+ * removes those again.
+ */
+function toggleEventPurpose(key: PrivacyPurposeKey, on: boolean) {
+  const entries = content.value.purposes ?? [];
+  if (!on) {
+    content.value.purposes = entries.filter((entry) => entry.key !== key);
+    return;
+  }
+
+  const preset = PRIVACY_PURPOSE_PRESETS[key];
+  content.value.purposes = [...entries, { key, legalBasis: preset.legalBasis }];
+  for (const category of preset.dataCategories) {
+    if (!inheritsCategory(category) && !hasDataCategory(category)) {
+      toggleDataCategory(category, true);
+    }
+  }
+  for (const recipientKey of preset.recipients) {
+    if (!inheritsRecipient(recipientKey) && !hasRecipient(recipientKey)) {
+      toggleRecipient(recipientKey, true);
+    }
+  }
+}
+function setEventLegalBasis(key: PrivacyPurposeKey, value: LegalBasisKey) {
+  const entry = eventPurpose(key);
   if (entry) {
-    entry.specialCategoryBasis = value ?? null;
+    entry.legalBasis = value;
   }
 }
 
 /* Recipients */
 
-function recipient(key: PrivacyRecipientKey) {
-  return content.value.recipients?.find((entry) => entry.key === key);
+/* Exclusions: inherit, change or drop an organization entry */
+
+type ExclusionPart = keyof PrivacyNoticeExclusions;
+
+function isExcluded(part: ExclusionPart, key: string): boolean {
+  return (
+    (content.value.excluded?.[part] as string[] | undefined)?.includes(key) ??
+    false
+  );
 }
-function hasRecipient(key: PrivacyRecipientKey): boolean {
-  return recipient(key) !== undefined;
-}
-function toggleRecipient(key: PrivacyRecipientKey, on: boolean) {
-  const entries = content.value.recipients ?? [];
-  content.value.recipients = on
-    ? [...entries, { key }]
-    : entries.filter((entry) => entry.key !== key);
-}
-function setRecipientName(key: PrivacyRecipientKey, value: string) {
-  const entry = recipient(key);
-  if (entry) {
-    entry.name = value || null;
+
+function setExcluded(part: ExclusionPart, key: string, on: boolean) {
+  const excluded = { ...content.value.excluded };
+  const keys = new Set<string>(excluded[part] ?? []);
+  if (on) {
+    keys.add(key);
+  } else {
+    keys.delete(key);
   }
+  (excluded as Record<string, string[]>)[part] = [...keys];
+
+  const remaining = Object.values(excluded).some((list) => list?.length);
+  content.value.excluded = remaining ? excluded : null;
 }
+
+/**
+ * Whether the server would refuse excluding this key — the same check, run on
+ * the addendum as it would be with the key excluded.
+ */
+function excludeBlocked(part: ExclusionPart, key: string): boolean {
+  const organization = organizationContent.value;
+  if (!organization) {
+    return true;
+  }
+
+  const excluded = content.value.excluded ?? {};
+  const candidate = normalizeExclusions(organization, {
+    ...content.value,
+    excluded: { ...excluded, [part]: [...(excluded[part] ?? []), key] },
+  });
+
+  return refusedExclusions(organization, candidate).some(
+    (entry) => entry.part === part && entry.key === key,
+  );
+}
+
+function entryState(
+  part: ExclusionPart,
+  key: string,
+  restated: boolean,
+): InheritedEntryState {
+  if (isExcluded(part, key)) {
+    return 'exclude';
+  }
+
+  return restated ? 'override' : 'inherit';
+}
+
+function categoryState(key: PrivacyDataCategoryRef): InheritedEntryState {
+  return entryState(
+    'dataCategories',
+    key,
+    content.value.dataCategories?.some((entry) => entry.key === key) ?? false,
+  );
+}
+
+function setCategoryState(
+  key: PrivacyDataCategoryRef,
+  state: InheritedEntryState,
+) {
+  setExcluded('dataCategories', key, state === 'exclude');
+
+  const entries = (content.value.dataCategories ?? []).filter(
+    (entry) => entry.key !== key,
+  );
+  const inherited = organizationContent.value?.dataCategories.find(
+    (entry) => entry.key === key,
+  );
+  // An override starts as a copy of the organization's entry; the mandatory
+  // flag is the organization's to set, not the event's.
+  content.value.dataCategories =
+    state === 'override' && inherited
+      ? [...entries, withoutAllEvents(inherited)]
+      : entries;
+}
+
+function recipientState(key: PrivacyRecipientRef): InheritedEntryState {
+  return entryState('recipients', key, hasRecipient(key));
+}
+
+function setRecipientState(
+  key: PrivacyRecipientRef,
+  state: InheritedEntryState,
+) {
+  setExcluded('recipients', key, state === 'exclude');
+
+  const entries = (content.value.recipients ?? []).filter(
+    (entry) => entry.key !== key,
+  );
+  const inherited = inheritedRecipient(key);
+  content.value.recipients =
+    state === 'override' && inherited
+      ? [...entries, withoutAllEvents(inherited)]
+      : entries;
+}
+
+function withoutAllEvents<T extends { allEvents?: boolean | null }>(
+  entry: T,
+): Omit<T, 'allEvents'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { allEvents, ...rest } = entry;
+  return rest;
+}
+
+/** Why an entry cannot be excluded, for the caption under it. */
+function lockedReason(
+  part: ExclusionPart,
+  key: string,
+  allEvents: boolean | null | undefined,
+): string | null {
+  if (allEvents) {
+    return t('entry.allEvents');
+  }
+  if (part === 'recipients' && isAlwaysRecipient(key as PrivacyRecipientKey)) {
+    return t('entry.alwaysRecipient');
+  }
+  if (part === 'transferCountries' && excludeBlocked(part, key)) {
+    return t('entry.countryInUse');
+  }
+
+  return null;
+}
+
+const inheritedPurposes = computed(
+  () => organizationContent.value?.purposes ?? [],
+);
+
+// Catalogue categories are listed below anyway; the organization's own custom
+// ones have no row there, so they get one here.
+const inheritedCustomCategories = computed(() =>
+  (organizationContent.value?.dataCategories ?? []).filter((entry) =>
+    isCustomKey(entry.key),
+  ),
+);
+
+const inheritedCustomRecipients = computed(() =>
+  (organizationContent.value?.recipients ?? []).filter((entry) =>
+    isCustomKey(entry.key),
+  ),
+);
+
+const inheritedTransferCountries = computed(() =>
+  organizationContent.value?.thirdCountryTransfers.enabled
+    ? organizationContent.value.thirdCountryTransfers.countries
+    : [],
+);
+
+/**
+ * Categories the form's tags point at but this event excludes: registrants
+ * would hand them over without being told.
+ */
+const excludedFormCategories = computed<PrivacyDataCategoryKey[]>(() =>
+  formCategories.value.filter((key) => isExcluded('dataCategories', key)),
+);
 
 /* Additional information */
 
-function localeText(value: Translatable | null | undefined, loc: string) {
-  if (!value) {
-    return '';
-  }
-
-  return typeof value === 'string' ? value : (value[loc] ?? '');
-}
-
-const additionalForLocale = computed({
-  get: () => localeText(content.value.additional, additionalLocale.value),
-  set: (html: string) => {
-    const current =
-      !content.value.additional || typeof content.value.additional === 'string'
-        ? {}
-        : { ...content.value.additional };
-
-    if (html) {
-      current[additionalLocale.value] = html;
-    } else {
-      delete current[additionalLocale.value];
-    }
-
-    content.value.additional = Object.keys(current).length > 0 ? current : null;
+const additionalForLocale = useLocaleTextModel(
+  {
+    get: () => content.value.additional,
+    set: (value) => (content.value.additional = value),
   },
-});
+  additionalLocale,
+);
 
 /**
  * Only the languages this event's registrants read. The addendum is written by
@@ -868,7 +1360,7 @@ async function publish() {
 
   publishing.value = true;
   try {
-    const context = await publishEventAddendum(id, { ...content.value });
+    const context = await publishEventAddendum(id, { ...publishable.value });
     publishedVersion.value = context.publishedVersion;
     publishedAt.value = context.publishedAt;
     // From what came back, not from what was sent: the server sanitizes the
@@ -915,6 +1407,11 @@ $field-max: 32rem;
   }
 }
 
+.entry__label--excluded {
+  text-decoration: line-through;
+  color: var(--md3-on-surface-variant);
+}
+
 .baseline-chip {
   background-color: var(--md3-surface-container-high);
   color: var(--md3-on-surface);
@@ -953,29 +1450,28 @@ baseline:
   hint: 'Published by the organisation and shown for every one of its events. This event can add to it, but never change or replace it.'
   version: 'Version {version} · {date}'
   previewHint: 'The notice as it stands today, without this event’s additions.'
-  purposes: 'Why data is collected'
-  dataCategories: 'What is collected'
-  recipients: 'Who else receives it'
-  retention: 'How long it is kept'
-  retentionSentence: '{months} months {anchor}'
-  none: 'Nothing listed'
   open: 'Read the full notice'
   edit: 'Edit at the organisation'
-  freeText: 'Your organisation wrote its notice as free text, so nothing below can be matched against it. Read its notice before adding anything here.'
+  freeText: 'Your organisation wrote its notice as free text, so this event can only add text of its own. Read its notice before adding anything here.'
   missing:
     title: 'Your organisation has not published any privacy information yet.'
     detail: 'Until it does, registrants see no notice for this event — and nothing you add here reaches them.'
 addendum:
-  title: 'Additions for this event'
-  hint: 'Only what is specific to this event — a particular bus company, an insurer, photos published this season. What your organisation already declares is ticked and locked.'
-  hideInherited: 'Hide what the organisation covers'
+  purposes: 'Why data is collected'
+  transfers: 'Transfers outside the EEA'
+  excludedInForm: 'The form asks for {categories}, which this event excludes. Registrants would not be told about it.'
+  freeTextEntries:
+    title: 'Earlier additions are not shown'
+    detail: 'This event added entries before your organisation switched to free text. Registrants do not see them; publishing removes them. Add anything still needed as text below.'
   dataCategories: 'Data collected'
   recipients: 'Recipients'
   additional: 'Additional information'
   additionalHint: 'Only for this event, and not translated for you.'
   suggested: 'This event’s form appears to collect: {categories}.'
+  suggestedBlocking: 'This event’s form asks for {categories}. Until they are declared here, the event takes no registrations.'
   applySuggested: 'Add these'
 field:
+  legalBasis: 'Legal basis'
   additionalPlaceholder: 'Additional privacy information for this event…'
 status:
   none:
@@ -988,6 +1484,15 @@ status:
   withdraw: 'Publishing now withdraws this event’s additions — registrants then see your organisation’s notice on its own.'
 notify:
   publishFailed: 'Publishing failed'
+entry:
+  allEvents: 'Applies to every event of your organisation.'
+  alwaysRecipient: 'Always receives the data.'
+  countryInUse: 'A recipient listed here is located in this country.'
+readOnly: 'You can view this privacy information but not change it. Event directors can.'
+summary:
+  inherited: '{count} from your organisation'
+  own: '{count} of this event'
+  none: 'Nothing yet'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -998,29 +1503,28 @@ baseline:
   hint: 'Von der Organisation veröffentlicht und bei allen ihren Veranstaltungen angezeigt. Diese Veranstaltung kann sie ergänzen, aber nicht ändern oder ersetzen.'
   version: 'Version {version} · {date}'
   previewHint: 'Die Informationen im heutigen Stand, ohne die Ergänzungen dieser Veranstaltung.'
-  purposes: 'Wozu die Daten erhoben werden'
-  dataCategories: 'Welche Daten erhoben werden'
-  recipients: 'Wer sie außerdem erhält'
-  retention: 'Wie lange sie gespeichert werden'
-  retentionSentence: '{months} Monate {anchor}'
-  none: 'Nichts angegeben'
   open: 'Vollständige Informationen lesen'
   edit: 'Bei der Organisation bearbeiten'
-  freeText: 'Eure Organisation hat die Informationen als Freitext verfasst; die Angaben unten lassen sich deshalb nicht damit abgleichen. Lies sie durch, bevor du hier etwas ergänzt.'
+  freeText: 'Eure Organisation hat die Informationen als Freitext verfasst, deshalb kann diese Veranstaltung nur eigenen Text ergänzen. Lies sie durch, bevor du hier etwas ergänzt.'
   missing:
     title: 'Eure Organisation hat noch keine Datenschutzinformationen veröffentlicht.'
     detail: 'Bis dahin sehen Anmeldende zu dieser Veranstaltung keine Informationen – und auch nichts, was du hier ergänzt.'
 addendum:
-  title: 'Ergänzungen für diese Veranstaltung'
-  hint: 'Nur was für diese Veranstaltung besonders ist — ein bestimmtes Busunternehmen, eine Versicherung, in dieser Saison veröffentlichte Fotos. Was die Organisation bereits angibt, ist angehakt und gesperrt.'
-  hideInherited: 'Angaben der Organisation ausblenden'
+  purposes: 'Warum Daten erhoben werden'
+  transfers: 'Übermittlungen außerhalb des EWR'
+  excludedInForm: 'Das Formular fragt nach {categories}, die diese Veranstaltung ausschließt. Teilnehmende würden darüber nicht informiert.'
+  freeTextEntries:
+    title: 'Frühere Ergänzungen werden nicht angezeigt'
+    detail: 'Diese Veranstaltung hat Angaben ergänzt, bevor eure Organisation auf Freitext umgestellt hat. Teilnehmende sehen sie nicht; beim Veröffentlichen werden sie entfernt. Ergänze, was weiterhin nötig ist, unten als Text.'
   dataCategories: 'Erhobene Daten'
   recipients: 'Empfänger'
   additional: 'Zusätzliche Informationen'
   additionalHint: 'Gilt nur für diese Veranstaltung und wird nicht automatisch übersetzt.'
   suggested: 'Das Formular dieser Veranstaltung erhebt offenbar: {categories}.'
+  suggestedBlocking: 'Das Formular dieser Veranstaltung fragt nach {categories}. Solange sie hier nicht angegeben sind, nimmt die Veranstaltung keine Anmeldungen an.'
   applySuggested: 'Hinzufügen'
 field:
+  legalBasis: 'Rechtsgrundlage'
   additionalPlaceholder: 'Zusätzliche Datenschutzinformationen zu dieser Veranstaltung…'
 status:
   none:
@@ -1033,6 +1537,15 @@ status:
   withdraw: 'Beim Veröffentlichen werden die Ergänzungen dieser Veranstaltung zurückgezogen – Anmeldende sehen dann nur die Informationen eurer Organisation.'
 notify:
   publishFailed: 'Veröffentlichen fehlgeschlagen'
+entry:
+  allEvents: 'Gilt für alle Veranstaltungen eurer Organisation.'
+  alwaysRecipient: 'Erhält die Daten immer.'
+  countryInUse: 'Ein hier genannter Empfänger hat seinen Sitz in diesem Land.'
+readOnly: 'Du kannst diese Datenschutzinformationen ansehen, aber nicht ändern. Das kann die Leitung der Veranstaltung.'
+summary:
+  inherited: '{count} von der Organisation'
+  own: '{count} eigene'
+  none: 'Noch nichts angegeben'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -1043,29 +1556,28 @@ baseline:
   hint: "Publiées par l'organisation et affichées pour tous ses événements. Cet événement peut les compléter, jamais les modifier ni les remplacer."
   version: 'Version {version} · {date}'
   previewHint: "Les informations telles qu'elles sont aujourd'hui, sans les ajouts de cet événement."
-  purposes: 'Pourquoi les données sont collectées'
-  dataCategories: 'Ce qui est collecté'
-  recipients: 'Qui les reçoit également'
-  retention: 'Combien de temps elles sont conservées'
-  retentionSentence: '{months} mois {anchor}'
-  none: 'Rien indiqué'
   open: 'Lire les informations complètes'
   edit: "Modifier au niveau de l'organisation"
-  freeText: "Votre organisation a rédigé ses informations en texte libre ; rien ci-dessous ne peut donc y être comparé. Lisez-les avant d'ajouter quoi que ce soit ici."
+  freeText: "Votre organisation a rédigé ses informations en texte libre ; cet événement ne peut donc y ajouter que son propre texte. Lisez-les avant d'ajouter quoi que ce soit ici."
   missing:
     title: "Votre organisation n'a pas encore publié d'informations sur la protection des données."
     detail: "D'ici là, les personnes qui s'inscrivent ne voient aucune information pour cet événement — ni ce que vous ajoutez ici."
 addendum:
-  title: 'Ajouts pour cet événement'
-  hint: 'Uniquement ce qui est propre à cet événement — un transporteur précis, un assureur, des photos publiées cette saison. Ce que votre organisation déclare déjà est coché et verrouillé.'
-  hideInherited: "Masquer ce que couvre l'organisation"
+  purposes: 'Pourquoi les données sont collectées'
+  transfers: "Transferts hors de l'EEE"
+  excludedInForm: "Le formulaire demande {categories}, que cet événement exclut. Les participants n'en seraient pas informés."
+  freeTextEntries:
+    title: 'Les ajouts précédents ne sont pas affichés'
+    detail: 'Cet événement a ajouté des éléments avant que votre organisation ne passe au texte libre. Les participants ne les voient pas ; la publication les supprime. Ajoutez ci-dessous sous forme de texte ce qui reste nécessaire.'
   dataCategories: 'Données collectées'
   recipients: 'Destinataires'
   additional: 'Informations supplémentaires'
   additionalHint: 'Valables pour cet événement uniquement, et non traduites automatiquement.'
   suggested: 'Le formulaire de cet événement semble collecter : {categories}.'
+  suggestedBlocking: 'Le formulaire de cet événement demande {categories}. Tant qu’elles ne sont pas déclarées ici, l’événement n’accepte aucune inscription.'
   applySuggested: 'Ajouter'
 field:
+  legalBasis: 'Base juridique'
   additionalPlaceholder: 'Informations complémentaires pour cet événement…'
 status:
   none:
@@ -1078,6 +1590,15 @@ status:
   withdraw: "Publier maintenant retire les ajouts de cet événement — les personnes qui s'inscrivent ne verront plus que les informations de votre organisation."
 notify:
   publishFailed: 'Échec de la publication'
+entry:
+  allEvents: "S'applique à tous les événements de votre organisation."
+  alwaysRecipient: 'Reçoit toujours les données.'
+  countryInUse: 'Un destinataire indiqué ici est établi dans ce pays.'
+readOnly: "Tu peux consulter ces informations sur la protection des données, mais pas les modifier. La direction de l'événement le peut."
+summary:
+  inherited: '{count} de votre organisation'
+  own: '{count} de cet événement'
+  none: 'Rien pour l’instant'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1088,29 +1609,28 @@ baseline:
   hint: 'Zveřejněno organizací a zobrazeno u všech jejích akcí. Tato akce je může doplnit, nikoli změnit nebo nahradit.'
   version: 'Verze {version} · {date}'
   previewHint: 'Informace v dnešní podobě, bez doplnění této akce.'
-  purposes: 'Proč se údaje sbírají'
-  dataCategories: 'Co se sbírá'
-  recipients: 'Kdo je dále dostává'
-  retention: 'Jak dlouho se uchovávají'
-  retentionSentence: '{months} měsíců {anchor}'
-  none: 'Nic uvedeno'
   open: 'Přečíst celé informace'
   edit: 'Upravit u organizace'
-  freeText: 'Vaše organizace sepsala informace volným textem, položky níže s nimi proto nelze porovnat. Přečti si je, než tu něco doplníš.'
+  freeText: 'Vaše organizace sepsala informace volným textem, tato akce k nim proto může doplnit jen vlastní text. Přečti si je, než tu něco doplníš.'
   missing:
     title: 'Vaše organizace zatím nezveřejnila žádné informace o ochraně osobních údajů.'
     detail: 'Do té doby přihlašující se u této akce nevidí žádné informace – ani to, co tu doplníš.'
 addendum:
-  title: 'Doplnění pro tuto akci'
-  hint: 'Jen to, co je specifické pro tuto akci — konkrétní dopravce, pojišťovna, fotografie zveřejněné v této sezóně. Co organizace už uvádí, je zaškrtnuté a uzamčené.'
-  hideInherited: 'Skrýt to, co pokrývá organizace'
+  purposes: 'Proč se údaje shromažďují'
+  transfers: 'Předávání mimo EHP'
+  excludedInForm: 'Formulář se ptá na {categories}, které tato akce vylučuje. Účastníci by o tom nebyli informováni.'
+  freeTextEntries:
+    title: 'Dřívější doplňky se nezobrazují'
+    detail: 'Tato akce doplnila položky dřív, než vaše organizace přešla na volný text. Účastníci je nevidí; zveřejněním se odstraní. Co je stále potřeba, doplň níže jako text.'
   dataCategories: 'Sbírané údaje'
   recipients: 'Příjemci'
   additional: 'Další informace'
   additionalHint: 'Platí jen pro tuto akci a nepřekládá se automaticky.'
   suggested: 'Formulář této akce zřejmě sbírá: {categories}.'
+  suggestedBlocking: 'Formulář této akce se ptá na {categories}. Dokud zde nejsou uvedeny, akce nepřijímá registrace.'
   applySuggested: 'Přidat'
 field:
+  legalBasis: 'Právní základ'
   additionalPlaceholder: 'Další informace o ochraně osobních údajů pro tuto akci…'
 status:
   none:
@@ -1123,6 +1643,15 @@ status:
   withdraw: 'Zveřejněním se doplnění této akce stáhnou – přihlašující pak uvidí jen informace vaší organizace.'
 notify:
   publishFailed: 'Publikování se nezdařilo'
+entry:
+  allEvents: 'Platí pro všechny akce vaší organizace.'
+  alwaysRecipient: 'Údaje dostává vždy.'
+  countryInUse: 'Některý zde uvedený příjemce sídlí v této zemi.'
+readOnly: 'Tyto informace o ochraně údajů můžeš zobrazit, ale ne měnit. To může vedení akce.'
+summary:
+  inherited: '{count} od organizace'
+  own: '{count} vlastní'
+  none: 'Zatím nic'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1133,29 +1662,28 @@ baseline:
   hint: 'Opublikowane przez organizację i pokazywane przy wszystkich jej wydarzeniach. To wydarzenie może je uzupełnić, ale nie zmienić ani zastąpić.'
   version: 'Wersja {version} · {date}'
   previewHint: 'Informacje w dzisiejszym kształcie, bez uzupełnień tego wydarzenia.'
-  purposes: 'W jakim celu dane są zbierane'
-  dataCategories: 'Co jest zbierane'
-  recipients: 'Kto jeszcze je otrzymuje'
-  retention: 'Jak długo są przechowywane'
-  retentionSentence: '{months} miesięcy {anchor}'
-  none: 'Nic nie podano'
   open: 'Przeczytaj pełne informacje'
   edit: 'Edytuj w organizacji'
-  freeText: 'Wasza organizacja napisała informacje własnym tekstem, więc poniższych pozycji nie da się z nimi zestawić. Przeczytaj je, zanim coś tu dodasz.'
+  freeText: 'Wasza organizacja napisała informacje własnym tekstem, więc to wydarzenie może do nich dodać tylko własny tekst. Przeczytaj je, zanim coś tu dodasz.'
   missing:
     title: 'Wasza organizacja nie opublikowała jeszcze żadnych informacji o ochronie danych.'
     detail: 'Do tego czasu osoby zgłaszające się nie widzą przy tym wydarzeniu żadnych informacji – ani tego, co tu dodasz.'
 addendum:
-  title: 'Uzupełnienia dla tego wydarzenia'
-  hint: 'Tylko to, co jest specyficzne dla tego wydarzenia — konkretny przewoźnik, ubezpieczyciel, zdjęcia publikowane w tym sezonie. To, co organizacja już podaje, jest zaznaczone i zablokowane.'
-  hideInherited: 'Ukryj to, co obejmuje organizacja'
+  purposes: 'Dlaczego zbierane są dane'
+  transfers: 'Przekazywanie poza EOG'
+  excludedInForm: 'Formularz pyta o {categories}, które to wydarzenie wyklucza. Uczestnicy nie zostaliby o tym poinformowani.'
+  freeTextEntries:
+    title: 'Wcześniejsze uzupełnienia nie są wyświetlane'
+    detail: 'To wydarzenie dodało pozycje, zanim wasza organizacja przeszła na tekst własny. Uczestnicy ich nie widzą; publikacja je usunie. To, co nadal jest potrzebne, dodaj poniżej jako tekst.'
   dataCategories: 'Zbierane dane'
   recipients: 'Odbiorcy'
   additional: 'Dodatkowe informacje'
   additionalHint: 'Dotyczy tylko tego wydarzenia i nie jest tłumaczone automatycznie.'
   suggested: 'Formularz tego wydarzenia prawdopodobnie zbiera: {categories}.'
+  suggestedBlocking: 'Formularz tego wydarzenia pyta o {categories}. Dopóki nie zostaną tu podane, wydarzenie nie przyjmuje rejestracji.'
   applySuggested: 'Dodaj'
 field:
+  legalBasis: 'Podstawa prawna'
   additionalPlaceholder: 'Dodatkowe informacje o ochronie danych dla tego wydarzenia…'
 status:
   none:
@@ -1168,4 +1696,13 @@ status:
   withdraw: 'Publikacja wycofa uzupełnienia tego wydarzenia – osoby zgłaszające się zobaczą wtedy same informacje Waszej organizacji.'
 notify:
   publishFailed: 'Publikacja nie powiodła się'
+entry:
+  allEvents: 'Dotyczy wszystkich wydarzeń waszej organizacji.'
+  alwaysRecipient: 'Zawsze otrzymuje dane.'
+  countryInUse: 'Jeden z podanych tu odbiorców ma siedzibę w tym kraju.'
+readOnly: 'Możesz przeglądać te informacje o ochronie danych, ale nie możesz ich zmieniać. Może to zrobić kierownictwo wydarzenia.'
+summary:
+  inherited: '{count} od organizacji'
+  own: '{count} własne'
+  none: 'Jeszcze nic'
 </i18n>

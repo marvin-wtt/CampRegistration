@@ -6,6 +6,7 @@ export default {
     changes: {
       cleared: 'entfernt',
       file: 'Datei aktualisiert',
+      sensitive: 'geändert',
     },
     managerNotification: {
       subject: 'Neue Anmeldung | {{ event.name }}',

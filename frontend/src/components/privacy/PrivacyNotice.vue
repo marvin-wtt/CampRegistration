@@ -93,7 +93,7 @@
             v-for="recipient in builderNotice.recipients"
             :key="recipient.key"
           >
-            {{ gt(`privacy.recipient.${recipient.key}`) }}
+            {{ recipientLabel(recipient) }}
             <template v-if="recipient.name"> ({{ recipient.name }}) </template>
           </li>
         </ul>
@@ -105,9 +105,13 @@
           {{
             t('retentionSentence', {
               months: builderNotice.retention.months,
-              anchor: gt(
-                `privacy.retentionAnchor.${builderNotice.retention.anchor}`,
-              ),
+            })
+          }}
+        </p>
+        <p v-if="specialRetention">
+          {{
+            t('retentionSpecialSentence', {
+              weeks: specialRetention.weeks,
             })
           }}
         </p>
@@ -122,15 +126,13 @@
               <!-- Nothing counts down here, so there is no period to state:
                    what ends it is the withdrawal. -->
               <template v-if="isConsentBoundException(exception)">
-                {{ gt('privacy.retentionUntil.consent_withdrawn') }}
+                {{ gt('privacy.retentionUntil.consent_withdrawn')
+                }}<template v-if="exception.months">{{
+                  t('retentionAtMost', { months: exception.months })
+                }}</template>
               </template>
               <template v-else>
-                {{
-                  t('retentionSentenceShort', {
-                    months: exception.months,
-                    anchor: gt(`privacy.retentionAnchor.${exception.anchor}`),
-                  })
-                }}
+                {{ t('retentionSentenceShort', { months: exception.months }) }}
               </template>
               <template v-if="exception.reason">
                 ({{ to(exception.reason) }})
@@ -162,6 +164,10 @@
                 : '',
             })
           }}
+        </p>
+        <!-- Art. 13(1)(f): how to obtain a copy of the safeguards. -->
+        <p v-if="safeguardHasCopy">
+          {{ t('transferCopy', { email: notice.controller.contactEmail }) }}
         </p>
         <p v-if="transferNote">{{ transferNote }}</p>
       </section>
@@ -216,6 +222,10 @@
     <section>
       <h2>{{ t('section.dataProvision') }}</h2>
       <p>{{ t('dataProvision') }}</p>
+      <!-- Art. 13(2)(e): provision required by law, not only by contract. -->
+      <p v-if="statutoryPurposes">
+        {{ t('dataProvisionLegal', { purposes: statutoryPurposes }) }}
+      </p>
     </section>
 
     <!-- Fixed by law and identical for every organization, so it is generated
@@ -241,8 +251,16 @@
     <section>
       <h2>{{ t('section.complaint') }}</h2>
       <p>{{ t('complaint') }}</p>
+      <!-- Regional: the country does not identify the body, so the notice
+           links the list of authorities instead of naming one. -->
       <p v-if="notice.supervisoryAuthority">
-        {{ notice.supervisoryAuthority.name }}<br />
+        <template v-if="notice.supervisoryAuthority.regional">
+          {{ t('regionalAuthority') }}
+        </template>
+        <template v-else>
+          {{ notice.supervisoryAuthority.name }}
+        </template>
+        <br />
         <a
           :href="notice.supervisoryAuthority.website"
           target="_blank"
@@ -250,9 +268,6 @@
         >
           {{ notice.supervisoryAuthority.website }}
         </a>
-      </p>
-      <p v-if="notice.supervisoryAuthority?.regional">
-        {{ t('regionalAuthority') }}
       </p>
     </section>
   </div>
@@ -264,6 +279,8 @@ import { useI18n } from 'vue-i18n';
 import DOMPurify from 'dompurify';
 import {
   isConsentBoundException,
+  isCustomKey,
+  isSpecialCategory,
   retentionExceptions,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
@@ -278,8 +295,13 @@ const { t } = useI18n();
 // The catalogue vocabulary and country names are global
 const { t: gt } = useI18n({ useScope: 'global' });
 const { to } = useObjectTranslation();
-const { categoryLabel, purposeLabel, exceptionLabel, countryLabel } =
-  usePrivacyLabels();
+const {
+  categoryLabel,
+  purposeLabel,
+  exceptionLabel,
+  recipientLabel,
+  countryLabel,
+} = usePrivacyLabels();
 
 const countryName = computed<string>(() =>
   countryLabel(props.notice.controller.country),
@@ -320,6 +342,21 @@ const exceptions = computed(() =>
   retentionExceptions(props.notice.notice?.retention),
 );
 
+// Only stated where the notice lists a special category: elsewhere there is
+// nothing it would apply to.
+const specialRetention = computed(() => {
+  const notice = props.notice.notice;
+  const declaresSpecial = notice?.dataCategories.some(
+    (category) =>
+      isSpecialCategory(category.key) ||
+      (isCustomKey(category.key) && category.special === true),
+  );
+
+  return declaresSpecial
+    ? (notice?.retention?.specialCategories ?? null)
+    : null;
+});
+
 const hasConsentBoundException = computed<boolean>(() =>
   exceptions.value.some(isConsentBoundException),
 );
@@ -334,6 +371,21 @@ const transferNote = computed<string | null>(() =>
   props.notice.notice?.thirdCountryTransfers.note
     ? to(props.notice.notice.thirdCountryTransfers.note)
     : null,
+);
+
+// Contractual clauses and corporate rules are documents a copy can be had of;
+// an adequacy decision is public, a derogation has none.
+const safeguardHasCopy = computed<boolean>(() => {
+  const safeguard = builderNotice.value?.thirdCountryTransfers.safeguard;
+
+  return safeguard === 'scc' || safeguard === 'bcr';
+});
+
+const statutoryPurposes = computed<string>(() =>
+  (builderNotice.value?.purposes ?? [])
+    .filter((purpose) => purpose.legalBasis === 'legal_obligation')
+    .map(purposeLabel)
+    .join(', '),
 );
 
 const transferCountries = computed<string>(() =>
@@ -457,16 +509,20 @@ registrationNumber: 'Registration number'
 email: 'Email'
 phone: 'Phone'
 legitimateInterest: 'Our legitimate interest'
-retentionSentence: 'We keep your data for {months} months {anchor}.'
+retentionSentence: 'We keep your data for {months} months after the event ends.'
 retentionExceptionsIntro: 'Some of it we keep longer:'
-retentionSentenceShort: '{months} months {anchor}'
+retentionSentenceShort: '{months} months after the event ends'
+retentionSpecialSentence: 'Health and other sensitive details are deleted {weeks} weeks after the event ends.'
+retentionAtMost: ', at the latest {months} months after the event ends'
 retentionLegalNote: 'Where the law requires data to be kept for longer — under tax, accounting or insurance rules, for example — we keep it for as long as that obligation lasts, even once the period above has passed.'
 transferSentence: 'Your data is transferred to {countries}, on the basis of {safeguard}.'
+transferCopy: 'You can request a copy of these safeguards from {email}.'
 automatedYes: 'We use automated decision-making, including profiling, in the course of this processing.'
 automatedNo: 'We do not use automated decision-making or profiling.'
-dataProvision: 'Fields marked as required have to be filled in before the registration can be submitted; without them we cannot process it. All other fields are voluntary: leaving one blank does not affect whether your registration is accepted, but it does mean we cannot take that information into account — a dietary requirement or a medical condition we do not know about is one we cannot cater for.'
+dataProvision: 'Fields marked as required are needed to process your registration; it cannot be submitted without them. All other fields are voluntary. If you leave one blank, we cannot take that information into account — a dietary requirement or a medical condition we do not know about is one we cannot cater for.'
+dataProvisionLegal: 'We are required by law to collect the data for the following purposes: {purposes}.'
 noticeMissing: 'This organisation has not yet published privacy information for its events.'
-regionalAuthority: 'Depending on where the organisation is established, a regional supervisory authority may be competent instead.'
+regionalAuthority: 'The competent authority is the supervisory authority of the region where the organisation is established. A list of the authorities:'
 complaint: 'You have the right to lodge a complaint with a data protection supervisory authority.'
 rights:
   access: 'Access to your data (Art. 15 GDPR)'
@@ -500,16 +556,20 @@ registrationNumber: 'Registernummer'
 email: 'E-Mail'
 phone: 'Telefon'
 legitimateInterest: 'Unser berechtigtes Interesse'
-retentionSentence: 'Wir speichern deine Daten {months} Monate {anchor}.'
+retentionSentence: 'Wir speichern deine Daten {months} Monate nach Ende der Veranstaltung.'
 retentionExceptionsIntro: 'Einiges davon speichern wir länger:'
-retentionSentenceShort: '{months} Monate {anchor}'
+retentionSentenceShort: '{months} Monate nach Ende der Veranstaltung'
+retentionSpecialSentence: 'Gesundheitsangaben und andere sensible Daten löschen wir {weeks} Wochen nach Ende der Veranstaltung.'
+retentionAtMost: ', spätestens {months} Monate nach Ende der Veranstaltung'
 retentionLegalNote: 'Müssen Daten aufgrund gesetzlicher Vorgaben länger aufbewahrt werden – etwa nach steuer-, handels- oder versicherungsrechtlichen Vorschriften –, speichern wir sie so lange, wie diese Pflicht besteht, auch über den oben genannten Zeitraum hinaus.'
 transferSentence: 'Deine Daten werden nach {countries} übermittelt, gestützt auf {safeguard}.'
+transferCopy: 'Eine Kopie dieser Garantien kannst du bei {email} anfordern.'
 automatedYes: 'Im Rahmen dieser Verarbeitung findet eine automatisierte Entscheidungsfindung einschließlich Profiling statt.'
 automatedNo: 'Eine automatisierte Entscheidungsfindung oder ein Profiling findet nicht statt.'
-dataProvision: 'Als Pflichtfeld gekennzeichnete Angaben müssen ausgefüllt werden, bevor die Anmeldung abgeschickt werden kann; ohne sie können wir sie nicht bearbeiten. Alle übrigen Angaben sind freiwillig: Bleiben sie leer, hat das keinen Einfluss darauf, ob deine Anmeldung angenommen wird. Wir können sie dann aber auch nicht berücksichtigen – eine Ernährungsweise oder eine Erkrankung, von der wir nichts wissen, können wir nicht einplanen.'
+dataProvision: 'Als Pflichtfeld gekennzeichnete Angaben brauchen wir, um deine Anmeldung zu bearbeiten; ohne sie kann sie nicht abgeschickt werden. Alle übrigen Angaben sind freiwillig. Bleibt eine leer, können wir sie nicht berücksichtigen – eine Ernährungsweise oder eine Erkrankung, von der wir nichts wissen, können wir nicht einplanen.'
+dataProvisionLegal: 'Für folgende Zwecke sind wir gesetzlich verpflichtet, die Daten zu erheben: {purposes}.'
 noticeMissing: 'Diese Organisation hat noch keine Datenschutzinformationen für ihre Veranstaltungen veröffentlicht.'
-regionalAuthority: 'Je nach Sitz der Organisation kann stattdessen eine Landesdatenschutzbehörde zuständig sein.'
+regionalAuthority: 'Zuständig ist die Datenschutzaufsichtsbehörde des Bundeslandes, in dem die Organisation ihren Sitz hat. Eine Übersicht der Behörden:'
 complaint: 'Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren.'
 rights:
   access: 'Auskunft über deine Daten (Art. 15 DSGVO)'
@@ -543,16 +603,20 @@ registrationNumber: "Numéro d'enregistrement"
 email: 'E-mail'
 phone: 'Téléphone'
 legitimateInterest: 'Notre intérêt légitime'
-retentionSentence: 'Nous conservons vos données pendant {months} mois {anchor}.'
+retentionSentence: 'Nous conservons vos données pendant {months} mois après la fin de l’événement.'
 retentionExceptionsIntro: 'Certaines données sont conservées plus longtemps :'
-retentionSentenceShort: '{months} mois {anchor}'
+retentionSentenceShort: '{months} mois après la fin de l’événement'
+retentionSpecialSentence: 'Nous supprimons les données de santé et autres données sensibles {weeks} semaines après la fin de l’événement.'
+retentionAtMost: ', au plus tard {months} mois après la fin de l’événement'
 retentionLegalNote: "Lorsque la loi impose une conservation plus longue — en matière fiscale, comptable ou d'assurance, par exemple —, nous conservons les données aussi longtemps que dure cette obligation, même une fois la durée indiquée ci-dessus écoulée."
 transferSentence: 'Vos données sont transférées vers {countries}, sur la base de {safeguard}.'
+transferCopy: 'Vous pouvez demander une copie de ces garanties à {email}.'
 automatedYes: 'Ce traitement comporte une prise de décision automatisée, y compris un profilage.'
 automatedNo: "Nous n'avons recours ni à la décision automatisée ni au profilage."
-dataProvision: "Les champs signalés comme obligatoires doivent être remplis pour que l'inscription puisse être envoyée ; sans eux, nous ne pouvons pas la traiter. Tous les autres champs sont facultatifs : les laisser vides n'a aucune incidence sur l'acceptation de votre inscription, mais nous ne pourrons pas en tenir compte — un régime alimentaire ou un problème de santé que nous ignorons ne peut pas être pris en charge."
+dataProvision: 'Les champs signalés comme obligatoires sont nécessaires au traitement de votre inscription ; elle ne peut pas être envoyée sans eux. Tous les autres champs sont facultatifs. Si vous en laissez un vide, nous ne pourrons pas en tenir compte — un régime alimentaire ou un problème de santé que nous ignorons ne peut pas être pris en charge.'
+dataProvisionLegal: 'La loi nous oblige à collecter les données pour les finalités suivantes : {purposes}.'
 noticeMissing: "Cette organisation n'a pas encore publié d'informations relatives à la protection des données pour ses événements."
-regionalAuthority: "Selon le lieu d'établissement de l'organisation, une autorité de contrôle régionale peut être compétente."
+regionalAuthority: "L'autorité compétente est l'autorité de contrôle de la région où l'organisation est établie. Liste des autorités :"
 complaint: "Vous avez le droit d'introduire une réclamation auprès d'une autorité de contrôle en matière de protection des données."
 rights:
   access: 'Accès à vos données (art. 15 RGPD)'
@@ -586,16 +650,20 @@ registrationNumber: 'Registrační číslo'
 email: 'E-mail'
 phone: 'Telefon'
 legitimateInterest: 'Náš oprávněný zájem'
-retentionSentence: 'Tvoje údaje uchováváme {months} měsíců {anchor}.'
+retentionSentence: 'Tvoje údaje uchováváme {months} měsíců po skončení akce.'
 retentionExceptionsIntro: 'Něco z toho uchováváme déle:'
-retentionSentenceShort: '{months} měsíců {anchor}'
+retentionSentenceShort: '{months} měsíců po skončení akce'
+retentionSpecialSentence: 'Zdravotní a další citlivé údaje mažeme {weeks} týdnů po skončení akce.'
+retentionAtMost: ', nejpozději {months} měsíců po skončení akce'
 retentionLegalNote: 'Pokud musíme údaje uchovávat déle na základě zákona – například podle daňových, účetních nebo pojistných předpisů –, uchováváme je po celou dobu trvání této povinnosti, i po uplynutí výše uvedené lhůty.'
 transferSentence: 'Tvoje údaje jsou předávány do {countries} na základě {safeguard}.'
+transferCopy: 'Kopii těchto záruk si můžeš vyžádat na {email}.'
 automatedYes: 'V rámci tohoto zpracování dochází k automatizovanému rozhodování včetně profilování.'
 automatedNo: 'K automatizovanému rozhodování ani profilování nedochází.'
-dataProvision: 'Pole označená jako povinná je nutné vyplnit, aby šlo přihlášku odeslat; bez nich ji nemůžeme zpracovat. Všechna ostatní pole jsou dobrovolná: pokud je necháš prázdná, nemá to vliv na to, zda přihlášku přijmeme. Nemůžeme k nim ale přihlédnout – na stravovací potřebu nebo zdravotní obtíž, o které nevíme, se nedokážeme připravit.'
+dataProvision: 'Pole označená jako povinná potřebujeme ke zpracování tvé přihlášky; bez nich ji nelze odeslat. Všechna ostatní pole jsou dobrovolná. Pokud některé necháš prázdné, nemůžeme k té informaci přihlédnout – na stravovací potřebu nebo zdravotní obtíž, o které nevíme, se nedokážeme připravit.'
+dataProvisionLegal: 'Pro tyto účely nám shromažďování údajů ukládá zákon: {purposes}.'
 noticeMissing: 'Tato organizace zatím nezveřejnila informace o ochraně osobních údajů pro své akce.'
-regionalAuthority: 'Podle sídla organizace může být příslušný jiný, regionální dozorový úřad.'
+regionalAuthority: 'Příslušný je dozorový úřad regionu, kde má organizace sídlo. Přehled úřadů:'
 complaint: 'Máš právo podat stížnost u dozorového úřadu pro ochranu osobních údajů.'
 rights:
   access: 'Přístup k tvým údajům (čl. 15 GDPR)'
@@ -629,16 +697,20 @@ registrationNumber: 'Numer rejestrowy'
 email: 'E-mail'
 phone: 'Telefon'
 legitimateInterest: 'Nasz prawnie uzasadniony interes'
-retentionSentence: 'Przechowujemy Twoje dane przez {months} miesięcy {anchor}.'
+retentionSentence: 'Przechowujemy Twoje dane przez {months} miesięcy po zakończeniu wydarzenia.'
 retentionExceptionsIntro: 'Część z nich przechowujemy dłużej:'
-retentionSentenceShort: '{months} miesięcy {anchor}'
+retentionSentenceShort: '{months} miesięcy po zakończeniu wydarzenia'
+retentionSpecialSentence: 'Dane o zdrowiu i inne dane wrażliwe usuwamy {weeks} tygodni po zakończeniu wydarzenia.'
+retentionAtMost: ', najpóźniej {months} miesięcy po zakończeniu wydarzenia'
 retentionLegalNote: 'Jeżeli przepisy wymagają dłuższego przechowywania — na przykład podatkowe, rachunkowe lub ubezpieczeniowe — przechowujemy dane tak długo, jak trwa ten obowiązek, także po upływie wskazanego wyżej okresu.'
 transferSentence: 'Twoje dane są przekazywane do {countries} na podstawie {safeguard}.'
+transferCopy: 'Kopię tych zabezpieczeń możesz otrzymać, pisząc na {email}.'
 automatedYes: 'W ramach tego przetwarzania dochodzi do zautomatyzowanego podejmowania decyzji, w tym profilowania.'
 automatedNo: 'Nie stosujemy zautomatyzowanego podejmowania decyzji ani profilowania.'
-dataProvision: 'Pola oznaczone jako obowiązkowe trzeba wypełnić, aby wysłać zgłoszenie; bez nich nie możemy go rozpatrzyć. Wszystkie pozostałe pola są dobrowolne: pozostawienie ich pustymi nie wpływa na to, czy przyjmiemy zgłoszenie, ale nie będziemy mogli tych informacji uwzględnić — nie zadbamy o dietę ani o dolegliwość, o której nie wiemy.'
+dataProvision: 'Pola oznaczone jako obowiązkowe są potrzebne do rozpatrzenia twojego zgłoszenia; bez nich nie można go wysłać. Wszystkie pozostałe pola są dobrowolne. Jeśli zostawisz któreś puste, nie będziemy mogli uwzględnić tej informacji — nie zadbamy o dietę ani o dolegliwość, o której nie wiemy.'
+dataProvisionLegal: 'Do zbierania danych w następujących celach zobowiązują nas przepisy prawa: {purposes}.'
 noticeMissing: 'Ta organizacja nie opublikowała jeszcze informacji o ochronie danych dla swoich wydarzeń.'
-regionalAuthority: 'W zależności od siedziby organizacji właściwy może być regionalny organ nadzorczy.'
+regionalAuthority: 'Właściwy jest organ nadzorczy regionu, w którym organizacja ma siedzibę. Lista organów:'
 complaint: 'Masz prawo wnieść skargę do organu nadzorczego ds. ochrony danych.'
 rights:
   access: 'Dostęp do Twoich danych (art. 15 RODO)'

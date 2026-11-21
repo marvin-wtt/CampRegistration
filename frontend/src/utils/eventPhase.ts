@@ -5,16 +5,10 @@ export type EventPhase = 'ongoing' | 'upcoming' | 'recentlyEnded' | 'past';
 
 const SIX_WEEKS_MS = 6 * 7 * 24 * 60 * 60 * 1000;
 
+// The server's status, not the window: a deleted event's window stays as it
+// was, yet it never takes registrations again.
 function isRegistrationOpen(event: Event): boolean {
-  if (!event.registrationOpensAt && !event.registrationClosesAt) {
-    return false;
-  }
-  const now = new Date();
-  return (
-    (!event.registrationOpensAt ||
-      now >= new Date(event.registrationOpensAt)) &&
-    (!event.registrationClosesAt || now <= new Date(event.registrationClosesAt))
-  );
+  return event.registrationStatus === 'open';
 }
 
 export function phaseOf(event: Event): EventPhase {

@@ -55,9 +55,8 @@ describe('SafeDeleteDialog', () => {
   it('should show all props', async () => {
     const { bodyWrapper } = await createBodyWrapper();
 
-    const title = bodyWrapper.find(selector('title'));
-    expect(title.exists()).toBeTruthy();
-    expect(title.text()).toBe('Test title');
+    // The title is rendered by the shared DialogCard.
+    expect(bodyWrapper.find('.q-dialog').text()).toContain('Test title');
 
     const message = bodyWrapper.find(selector('message'));
     expect(message.exists()).toBeTruthy();

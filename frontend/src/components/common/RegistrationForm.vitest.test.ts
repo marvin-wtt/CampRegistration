@@ -47,6 +47,8 @@ describe('RegistrationForm', () => {
     freePlaces: 0,
     freePlacesTotal: 0,
     registrationStatus: 'closed' as const,
+    sensitiveDataPurgedAt: null,
+    registrationDataPurgedAt: null,
     logo: null,
     banner: null,
     form: {
@@ -543,6 +545,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         12000,
+        expect.anything(),
       );
     });
 
@@ -603,6 +606,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         undefined,
+        expect.anything(),
       );
     });
 
@@ -635,6 +639,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         12000,
+        expect.anything(),
       );
     });
   });
@@ -736,4 +741,97 @@ describe('RegistrationForm', () => {
   it.todo('should not submit when invalid');
 
   it.todo('should skip validation when moderating');
+
+  describe('consent', () => {
+    // The consent is hidden whatever is entered: a broken form, not a choice.
+    const hiddenConsentForm: object = {
+      pages: [
+        {
+          name: 'page1',
+          elements: [
+            {
+              type: 'comment',
+              name: 'allergies',
+              privacyCategory: 'allergies',
+            },
+            {
+              type: 'boolean',
+              name: 'consent',
+              visible: false,
+              privacyConsent: true,
+              privacyConsentFor: ['allergies'],
+            },
+          ],
+        },
+      ],
+    };
+
+    function mountConsent(submitFn: (...args: unknown[]) => Promise<unknown>) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            form: { ...simpleEventDetails.form, ...hiddenConsentForm },
+          },
+          submitFn: submitFn as never,
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      return { wrapper, survey };
+    }
+
+    it('blocks answers without their consent instead of dropping them', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const { survey } = mountConsent(submitFn);
+      survey.setValue('allergies', 'Peanuts');
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(submitFn).not.toHaveBeenCalled();
+      expect(survey.getValue('allergies')).toBe('Peanuts');
+      expect(survey.getQuestionByName('allergies').errors).toHaveLength(1);
+    });
+
+    it('submits once the answer is removed', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const { survey } = mountConsent(submitFn);
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(submitFn).toHaveBeenCalled();
+    });
+
+    it('explains a form that does not ask for the consent the server needs', async () => {
+      const consentMissing = new AxiosError(
+        'Unprocessable',
+        '422',
+        undefined,
+        undefined,
+        {
+          status: 422,
+          data: { errorCode: 'REGISTRATION_CONSENT_MISSING' },
+        } as never,
+      );
+      const submitFn = vi.fn().mockRejectedValueOnce(consentMissing);
+      const { wrapper, survey } = mountConsent(submitFn);
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(
+        wrapper
+          .find('[data-test="registration-submit-status-consentMissing"]')
+          .exists(),
+      ).toBe(true);
+      expect(
+        wrapper.find('[data-test="registration-consent-edit"]').exists(),
+      ).toBe(true);
+    });
+  });
 });

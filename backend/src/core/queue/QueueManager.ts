@@ -1,4 +1,4 @@
-import type { Queue, QueueOptions } from '#core/queue/Queue';
+import type { PrunedJobs, Queue, QueueOptions } from '#core/queue/Queue';
 import { RedisQueue } from '#core/queue/RedisQueue';
 import { DatabaseQueue } from '#core/queue/DatabaseQueue';
 import { MemoryQueue } from '#core/queue/MemoryQueue';
@@ -31,6 +31,28 @@ export class QueueManager {
       .forEach((result) => {
         logger.error('Failed to close queue', result.reason);
       });
+  }
+
+  /**
+   * Prunes every queue by its own retention. The database driver also prunes
+   * jobs left under names no queue registers any more; Redis keeps nothing
+   * past its retention (`removeOnComplete`/`removeOnFail`).
+   */
+  async prune(): Promise<PrunedJobs> {
+    const results = await Promise.all(this.all().map((queue) => queue.prune()));
+    if (this.config.queue.driver === 'database') {
+      results.push(
+        await DatabaseQueue.pruneUnregistered(Object.keys(this.queues)),
+      );
+    }
+
+    return results.reduce(
+      (sum, result) => ({
+        completed: sum.completed + result.completed,
+        failed: sum.failed + result.failed,
+      }),
+      { completed: 0, failed: 0 },
+    );
   }
 
   create<P, R = void, N extends string = string>(

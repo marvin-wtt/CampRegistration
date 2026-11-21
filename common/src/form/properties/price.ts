@@ -1,4 +1,8 @@
 import type { PropertyDefinition } from './ProptertyDefinition.js';
+import {
+  REGISTRATION_PROPERTY_CATEGORY,
+  REGISTRATION_PROPERTY_CATEGORY_INDEX,
+} from './category.js';
 
 // Major units of the event currency, added to the amount due while selected —
 // negative for a discount. Counts only on a question tagged `payment_amount`
@@ -14,5 +18,10 @@ export const choicePrice: PropertyDefinition = {
 
 export const booleanPrice: PropertyDefinition = {
   className: 'boolean',
-  propertyInfo: { name, category: 'general', visibleIndex: 4 },
+  propertyInfo: {
+    name,
+    category: REGISTRATION_PROPERTY_CATEGORY,
+    categoryIndex: REGISTRATION_PROPERTY_CATEGORY_INDEX,
+    visibleIndex: 2,
+  },
 };

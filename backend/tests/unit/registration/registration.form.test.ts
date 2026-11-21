@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FunctionFactory, SurveyModel } from 'survey-core';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { RegistrationForm } from '#app/registration/registration.form';
+import { registrationColumns } from '#app/registration/registration.columns';
 
 // `setVariables` reads these off the event to expose them as survey variables.
 function eventWith(elements: object[], freePlaces = 10): EventWithFreePlaces {
@@ -27,7 +28,7 @@ const errorsFor = (
   event: EventWithFreePlaces,
   data: unknown,
   locale?: string,
-) => new RegistrationForm(event, { locale }).load(data).dataErrors();
+) => new RegistrationForm(event, null, locale).load(data).dataErrors();
 
 describe('RegistrationForm.dataErrors', async () => {
   it('accepts data that fits the form', async () => {
@@ -90,7 +91,7 @@ describe('RegistrationForm.dataErrors', async () => {
     const groupErrors = (groupCountryMatch: string | undefined, data: object) =>
       new RegistrationForm(
         eventWith([{ type: 'country', name: 'country', groupCountryMatch }]),
-        { group: 'fr' },
+        'fr',
       )
         .load(data)
         .dataErrors();
@@ -395,7 +396,7 @@ describe('RegistrationForm.dataErrors', async () => {
       0,
     );
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       first_name: 'Jhon',
       waiting_list: false,
     });
@@ -414,7 +415,7 @@ describe('RegistrationForm.extractEventData', () => {
       { type: 'text', name: 'notes' },
     ]);
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       first_name: 'Jhon',
       email: 'jhon@example.com',
       notes: 'untagged',
@@ -443,7 +444,7 @@ describe('RegistrationForm.extractEventData', () => {
       },
     ]);
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       contacts: [
         { name: 'Mom', phone: '+49 123' },
         { name: 'Dad', phone: '+49 456' },
@@ -466,11 +467,78 @@ describe('RegistrationForm.getFileIds', () => {
       { type: 'file', name: 'empty' },
     ]);
 
-    const form = new RegistrationForm(event).load({
+    const form = new RegistrationForm(event, null).load({
       passport: 'file-1',
       documents: ['file-2', 'file-3'],
     });
 
     expect(form.getFileIds()).toEqual(['file-1', 'file-2', 'file-3']);
+  });
+});
+
+describe('RegistrationForm.consentColumns', () => {
+  const newsletter = {
+    type: 'boolean',
+    name: 'newsletter',
+    privacyConsent: true,
+    privacyConsentPurpose: ['newsletter'],
+  };
+  const columnsFor = (elements: object[], data: unknown) =>
+    new RegistrationForm(eventWith(elements), null).load(data).consentColumns();
+
+  it('records the newsletter consent asked for its purpose', () => {
+    expect(columnsFor([newsletter], { newsletter: true })).toEqual({
+      newsletterConsent: true,
+    });
+    expect(columnsFor([newsletter], { newsletter: false })).toEqual({
+      newsletterConsent: false,
+    });
+    expect(columnsFor([newsletter], {})).toEqual({ newsletterConsent: false });
+  });
+
+  it('is null when the form never asks', () => {
+    expect(
+      columnsFor(
+        [{ ...newsletter, privacyConsentPurpose: ['photo_publication'] }],
+        { newsletter: true },
+      ),
+    ).toEqual({ newsletterConsent: null });
+  });
+
+  it('ignores a purpose on a question that is no consent', () => {
+    expect(
+      columnsFor([{ ...newsletter, privacyConsent: false }], {
+        newsletter: true,
+      }),
+    ).toEqual({ newsletterConsent: null });
+  });
+
+  it('counts any yes of a consent repeated in a dynamic panel', () => {
+    const kids = {
+      type: 'paneldynamic',
+      name: 'kids',
+      templateElements: [newsletter],
+    };
+
+    expect(
+      columnsFor([kids], {
+        kids: [{ newsletter: false }, { newsletter: true }],
+      }),
+    ).toEqual({ newsletterConsent: true });
+  });
+
+  it('is stored with the eventDataType columns', () => {
+    const form = new RegistrationForm(
+      eventWith([
+        { type: 'text', name: 'first_name', eventDataType: 'first_name' },
+        newsletter,
+      ]),
+      null,
+    ).load({ first_name: 'Ann', newsletter: true });
+
+    expect(registrationColumns(form)).toMatchObject({
+      firstName: 'Ann',
+      newsletterConsent: true,
+    });
   });
 });

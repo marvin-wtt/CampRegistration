@@ -175,8 +175,16 @@
           </q-list>
         </section>
 
+        <!-- The server refuses these for the event team too. -->
         <div
-          v-if="canCreateRegistrationAsManager"
+          v-if="canCreateRegistrationAsManager && managerBlocked"
+          class="text-caption text-on-surface-variant text-center"
+          data-test="registration-override-blocked"
+        >
+          {{ t(`action.override_blocked.${managerBlocked}`) }}
+        </div>
+        <div
+          v-else-if="canCreateRegistrationAsManager"
           class="column items-center q-gutter-y-xs"
         >
           <m-btn
@@ -231,6 +239,12 @@ import {
 } from '@camp-registration/common/entities';
 import { forGroup } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
+import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
+import {
+  formPrivacyIssues,
+  hasPrivacyIssues,
+} from '@camp-registration/common/form';
+import type { PublishedPrivacyNotice } from '@camp-registration/common/privacy';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from '@/composables/errorText';
@@ -241,6 +255,7 @@ import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
+const { fetchEventNotice } = usePrivacyNoticeService();
 const route = useRoute();
 const router = useRouter();
 const quasar = useQuasar();
@@ -265,11 +280,8 @@ onUnmounted(() => {
 });
 
 watch(
-  [
-    () => event.value?.registrationOpensAt,
-    () => event.value?.registrationClosesAt,
-  ],
-  ([openAt, closeAt]) => startRegistrationOpenTimer(openAt, closeAt),
+  () => event.value?.registrationOpensAt,
+  (opensAt) => startRegistrationOpenTimer(opensAt),
 );
 
 useMeta(() => {
@@ -395,7 +407,19 @@ async function loadEvent() {
   }
 }
 
-type RegistrationStatus = EventRegistrationStatus | 'unavailable' | 'not_found';
+/** Why not even the event team can register (docs/privacy.md, 5 and 8). */
+const managerBlocked = computed<'purged' | 'privacy' | null>(() => {
+  if (
+    event.value?.sensitiveDataPurgedAt ||
+    event.value?.registrationDataPurgedAt
+  ) {
+    return 'purged';
+  }
+  return privacyBlocked.value ? 'privacy' : null;
+});
+
+type RegistrationStatus =
+  EventRegistrationStatus | 'unavailable' | 'not_found' | 'privacy';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
   if (knownError.value) {
@@ -406,7 +430,41 @@ const registrationStatus = computed<RegistrationStatus>(() => {
     return 'not_found';
   }
 
+  // Open, but the server would refuse it: say so before the form is filled.
+  if (event.value.registrationStatus === 'open' && privacyBlocked.value) {
+    return 'privacy';
+  }
+
   return event.value.registrationStatus;
+});
+
+// The same check the server's registration gate runs (docs/privacy.md, 5).
+const publishedNotice = ref<PublishedPrivacyNotice | null>(null);
+
+watch(
+  () => event.value?.id,
+  async (id) => {
+    publishedNotice.value = null;
+    if (!id) {
+      return;
+    }
+    try {
+      publishedNotice.value = await fetchEventNotice(id);
+    } catch {
+      // Without the notice nothing can be checked; the server still gates.
+    }
+  },
+  { immediate: true },
+);
+
+const privacyBlocked = computed<boolean>(() => {
+  if (!event.value || !publishedNotice.value) {
+    return false;
+  }
+
+  return hasPrivacyIssues(
+    formPrivacyIssues(event.value.form, publishedNotice.value.notice),
+  );
 });
 
 interface EventContact {
@@ -477,6 +535,8 @@ const statusText = computed<string>(() => {
       return t('error.upcoming');
     case 'closed':
       return t('error.closed');
+    case 'privacy':
+      return t('error.privacy');
     case 'not_found':
       return t('error.not_found');
     default:
@@ -489,12 +549,14 @@ async function submit(
   formData: Record<string, unknown>,
   locale: string,
   displayedTotal?: number,
+  displayedConsents?: Record<string, string>,
 ) {
   return api.createRegistration(eventId, {
     data: formData,
     locale,
     group: group.value ?? null,
     displayedTotal,
+    displayedConsents,
   });
 }
 
@@ -510,34 +572,26 @@ function updateBgColor(color: string | undefined) {
   bgColor.value = color;
 }
 
-function startRegistrationOpenTimer(
-  opensAt: string | null | undefined,
-  closesAt: string | null | undefined,
-) {
+// setTimeout fires immediately beyond this; a page open that long gets
+// reloaded anyway.
+const MAX_TIMEOUT = 2 ** 31 - 1;
+
+// Shows the form once registration opens. Closing is left to the server, so a
+// form being filled in is never pulled away.
+function startRegistrationOpenTimer(opensAt: string | null | undefined) {
   stopRegistrationOpenTimer();
-
-  const offset = 1000;
-
-  for (const timestamp of [opensAt, closesAt]) {
-    if (!timestamp) {
-      continue;
-    }
-
-    const delay = new Date(timestamp).getTime() - Date.now();
-    // Use negative offset to avoid data race between the status and the timestamp
-    if (delay < -offset) {
-      continue;
-    }
-
-    openTimer = setTimeout(
-      () => {
-        void loadEvent();
-      },
-      Math.max(delay, 0) + offset,
-    );
-
+  if (!opensAt) {
     return;
   }
+
+  // Refetch a moment late, so the server's status has already flipped.
+  const offset = 1000;
+  const delay = new Date(opensAt).getTime() - Date.now() + offset;
+  if (delay < 0 || delay > MAX_TIMEOUT) {
+    return;
+  }
+
+  openTimer = setTimeout(() => void loadEvent(), delay);
 }
 
 function stopRegistrationOpenTimer() {
@@ -636,6 +690,9 @@ group:
 action:
   open_form_anyway: 'Open form anyway'
   open_form_anyway_hint: 'Only the event team sees this'
+  override_blocked:
+    purged: 'Registration data of this event was deleted, so nobody can register any more, the event team included.'
+    privacy: 'The event team cannot register anyone either while the form asks for data the privacy notice does not cover.'
 
 date:
   opens: 'Opens on {date}'
@@ -643,6 +700,7 @@ date:
 error:
   upcoming: 'Registration for this event has not opened yet.'
   closed: 'Registration for this event is already closed.'
+  privacy: 'Registration is not possible at the moment because the form is not complete yet. Please contact the organizer.'
   unavailable: 'This event is not available.'
   not_found: 'The event you are looking for could not be found. Please check the URL.'
 </i18n>
@@ -661,6 +719,9 @@ group:
 action:
   open_form_anyway: 'Formular trotzdem öffnen'
   open_form_anyway_hint: 'Nur für das Veranstaltungsteam sichtbar'
+  override_blocked:
+    purged: 'Die Anmeldedaten dieser Veranstaltung wurden gelöscht, daher kann sich niemand mehr anmelden, auch nicht über das Veranstaltungsteam.'
+    privacy: 'Auch das Veranstaltungsteam kann niemanden anmelden, solange das Formular Daten abfragt, die die Datenschutzhinweise nicht abdecken.'
 
 date:
   opens: 'Öffnet am {date}'
@@ -668,6 +729,7 @@ date:
 error:
   upcoming: 'Die Anmeldung für diese Veranstaltung hat noch nicht begonnen.'
   closed: 'Die Anmeldung für diese Veranstaltung ist bereits geschlossen.'
+  privacy: 'Eine Anmeldung ist gerade nicht möglich, weil das Formular noch nicht vollständig ist. Bitte wende dich an den Veranstalter.'
   unavailable: 'Diese Veranstaltung ist nicht verfügbar.'
   not_found: 'Die gesuchte Veranstaltung konnte nicht gefunden werden. Bitte überprüfe die URL.'
 </i18n>
@@ -686,6 +748,9 @@ group:
 action:
   open_form_anyway: 'Ouvrir le formulaire quand même'
   open_form_anyway_hint: "Visible uniquement par l'équipe de l'événement"
+  override_blocked:
+    purged: "Les données d'inscription de cet événement ont été supprimées : plus personne ne peut s'inscrire, pas même via l'équipe de l'événement."
+    privacy: "L'équipe de l'événement ne peut inscrire personne non plus tant que le formulaire demande des données que la notice de confidentialité ne couvre pas."
 
 date:
   opens: 'Ouvre le {date}'
@@ -693,6 +758,7 @@ date:
 error:
   upcoming: "L'inscription à cet événement n'a pas encore commencé."
   closed: "L'inscription à cet événement est déjà terminée."
+  privacy: "L'inscription n'est pas possible pour le moment, car le formulaire n'est pas encore complet. Contacte l'organisateur."
   unavailable: "Cet événement n'est pas disponible."
   not_found: "L'événement que vous recherchez est introuvable. Veuillez vérifier l'URL."
 </i18n>
@@ -711,6 +777,9 @@ group:
 action:
   open_form_anyway: 'Otwórz formularz mimo to'
   open_form_anyway_hint: 'Widoczne tylko dla zespołu wydarzenia'
+  override_blocked:
+    purged: 'Dane zgłoszeń tego wydarzenia zostały usunięte, więc nikt nie może się już zarejestrować, również przez zespół wydarzenia.'
+    privacy: 'Zespół wydarzenia również nie może nikogo zarejestrować, dopóki formularz pyta o dane nieobjęte informacją o prywatności.'
 
 date:
   opens: 'Otwiera się {date}'
@@ -718,6 +787,7 @@ date:
 error:
   upcoming: 'Rejestracja na ten wydarzenie jeszcze się nie rozpoczęła.'
   closed: 'Rejestracja na ten wydarzenie jest już zamknięta.'
+  privacy: 'Rejestracja nie jest obecnie możliwa, ponieważ formularz nie jest jeszcze kompletny. Skontaktuj się z organizatorem.'
   unavailable: 'Ten wydarzenie jest niedostępny.'
   not_found: 'Nie znaleziono szukanego wydarzenia. Sprawdź adres URL.'
 </i18n>
@@ -736,6 +806,9 @@ group:
 action:
   open_form_anyway: 'Přesto otevřít formulář'
   open_form_anyway_hint: 'Viditelné pouze pro tým akce'
+  override_blocked:
+    purged: 'Údaje z přihlášek této akce byly smazány, takže se už nikdo nemůže registrovat, ani prostřednictvím týmu akce.'
+    privacy: 'Ani tým akce nemůže nikoho registrovat, dokud formulář požaduje údaje, které informace o ochraně osobních údajů nepokrývají.'
 
 date:
   opens: 'Otevírá se {date}'
@@ -743,6 +816,7 @@ date:
 error:
   upcoming: 'Registrace na tuto akci ještě nezačala.'
   closed: 'Registrace na tuto akci je již uzavřena.'
+  privacy: 'Registrace teď není možná, protože formulář ještě není úplný. Obrať se prosím na pořadatele.'
   unavailable: 'Tato akce není dostupná.'
   not_found: 'Požadovaná akce nebyla nalezena. Zkontrolujte prosím URL adresu.'
 </i18n>

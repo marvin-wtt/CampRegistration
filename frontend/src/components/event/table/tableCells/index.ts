@@ -1,6 +1,7 @@
 import { defineAsyncComponent } from 'vue';
 import TableComponentRegistry from '@/components/event/table/ComponentRegistry';
 import DefaultTableCell from '@/components/event/table/tableCells/DefaultTableCell.vue';
+import { PURGED_CELL } from '@/components/event/table/tableCells/purgedCell';
 import { formatAddress } from '@/utils/formatAddress';
 import {
   formatFormSelectCsvValue,
@@ -77,6 +78,9 @@ const NameTableCell = defineAsyncComponent(
 const PhoneNumberTableCell = defineAsyncComponent(
   () => import('@/components/event/table/tableCells/PhoneNumberTableCell.vue'),
 );
+const PurgedTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/PurgedTableCell.vue'),
+);
 const TextTableCell = defineAsyncComponent(
   () => import('@/components/event/table/tableCells/TextTableCell.vue'),
 );
@@ -138,6 +142,11 @@ const components = () => {
   TableComponentRegistry.register('language_skills', LanguageSkillsTableCell);
   TableComponentRegistry.register('name', NameTableCell);
   TableComponentRegistry.register('phone_number', PhoneNumberTableCell);
+  // Chosen by the table model for deleted columns, never by a template.
+  TableComponentRegistry.register(PURGED_CELL, PurgedTableCell, {
+    internal: true,
+    toCsv: (_value, ctx) => ctx.purgedLabel,
+  });
   TableComponentRegistry.register('status', StatusTableCell);
   TableComponentRegistry.register('text', TextTableCell, {
     optionsComponent: TextOptionsEditor,

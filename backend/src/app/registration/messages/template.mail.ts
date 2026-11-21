@@ -31,6 +31,7 @@ import { renderTemplate, TemplateError } from '#core/mail/templating';
 import { renderEmailLinks } from '#core/mail/links';
 import config from '#config/index';
 import { RegistrationMessage } from './base.mail.js';
+import { RegistrationForm } from '../registration.form.js';
 import type { RenderableMessage } from './renderable-message.js';
 import type {
   RegistrationMessageProps,
@@ -176,6 +177,39 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     };
   }
 
+  private mailAnswers?: Record<string, unknown>;
+
+  /**
+   * The answers a template may print: special-category ones cleared through
+   * the form (docs/privacy.md, 6). Done here, at render time, so the mail shows
+   * the snapshot it was queued with. A form that can't be read yields none —
+   * never all of them.
+   */
+  private answers(): Record<string, unknown> {
+    if (this.mailAnswers) {
+      return this.mailAnswers;
+    }
+
+    const { event, registration } = this.payload;
+    try {
+      // `freePlaces` only feeds `visibleIf`, which moves no stored answer.
+      this.mailAnswers = new RegistrationForm(
+        { ...event, freePlaces: 0 },
+        registration.group,
+        registration.locale,
+      )
+        .load(registration.data)
+        .withoutSensitiveAnswers();
+    } catch (error) {
+      logger.warn(
+        `Registration ${registration.id}: answers left out of the mail, form unreadable: ${describeError(error)}`,
+      );
+      this.mailAnswers = {};
+    }
+
+    return this.mailAnswers;
+  }
+
   private context(changes: string): object {
     const event = this.payload.event;
 
@@ -190,7 +224,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       registration: {
         id: this.payload.registration.id,
         status: this.payload.registration.status,
-        data: this.payload.registration.data,
+        data: this.answers(),
         computedData: {
           firstName: this.payload.registration.firstName,
           lastName: this.payload.registration.lastName,

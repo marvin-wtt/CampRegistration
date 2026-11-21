@@ -3,7 +3,7 @@ import type { Event, Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
-import { computedRegistrationData } from '#app/registration/registration.helper.js';
+import { registrationColumns } from '#app/registration/registration.columns.js';
 import { localeForCountry } from '@camp-registration/common/locales';
 import { computeAmountDue } from '@camp-registration/common/utils';
 import {
@@ -12,6 +12,7 @@ import {
   type Registrant,
 } from './registration-answers';
 import { seedRegistrationUpload } from './file.seeder';
+import prisma from '../client';
 
 type Data = NonNullable<Parameters<(typeof RegistrationFactory)['create']>[0]>;
 
@@ -26,6 +27,8 @@ export class RegistrationSeeder {
     overrides: Data = {},
     { birthdayOn }: { birthdayOn?: Date } = {},
   ): Promise<void> {
+    const stamp = await this.privacyStamp();
+
     for (let i = 0; i < n; i++) {
       const registrant = this.createRegistrant(overrides, birthdayOn);
 
@@ -49,6 +52,7 @@ export class RegistrationSeeder {
         ...this.computedData(data, waitingList, registrant.group, locale),
         locale,
         data,
+        ...stamp,
         files: files.length
           ? { connect: files.map((id) => ({ id })) }
           : undefined,
@@ -63,6 +67,32 @@ export class RegistrationSeeder {
         ...overrides,
       });
     }
+  }
+
+  /**
+   * The notice versions a registrant submitting now would be shown, as the
+   * registration service stamps them. Retention deadlines are derived from
+   * these (docs/privacy.md, 8), so unstamped seeds would have none.
+   */
+  private async privacyStamp(): Promise<Data> {
+    const latest = (scope: 'ORGANIZATION' | 'EVENT', scopeId: string) =>
+      prisma.privacyNoticeVersion.findFirst({
+        where: { scope, scopeId },
+        orderBy: { version: 'desc' },
+        select: { id: true },
+      });
+
+    const [organization, event] = await Promise.all([
+      latest('ORGANIZATION', this.event.organizationId),
+      latest('EVENT', this.event.id),
+    ]);
+
+    return {
+      ...(organization
+        ? { organizationPrivacyNotice: { connect: { id: organization.id } } }
+        : {}),
+      ...(event ? { eventPrivacyNotice: { connect: { id: event.id } } } : {}),
+    };
   }
 
   private createRegistrant(overrides: Data, birthdayOn?: Date): Registrant {
@@ -171,11 +201,12 @@ export class RegistrationSeeder {
   ): Partial<Prisma.RegistrationCreateInput> {
     const form = new RegistrationForm(
       { ...this.event, freePlaces: freePlacesFor(this.event, waitingList) },
-      { locale, group },
+      group,
+      locale,
     ).load(data);
 
     return {
-      ...computedRegistrationData(form.extractEventData()),
+      ...registrationColumns(form),
       group,
       // As the API stores it on submission: what the form showed.
       quotedAmount: computeAmountDue(this.event, form.paymentAmounts(), group),

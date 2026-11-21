@@ -1,5 +1,6 @@
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
+import { notRetentionPurged } from '#app/event/event.util';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
@@ -7,13 +8,16 @@ import {
   assertAmountWithinLimit,
   assertPriceUnchanged,
 } from './registration.price-check.js';
-import { RegistrationForm } from '#app/registration/registration.form';
+import {
+  RegistrationForm,
+  registrationForms,
+} from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
-  computedRegistrationData,
   CUSTOM_FILE_FIELD_PREFIX,
   customFileSlots,
 } from '#app/registration/registration.helper';
+import { registrationColumns } from '#app/registration/registration.columns';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
@@ -23,7 +27,23 @@ import {
   registrationAuditPolicy,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
+import { batchesById } from '#core/database/batches';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import {
+  assertConsentsGiven,
+  assertConsentTextsUnchanged,
+} from './registration.privacy.js';
+
+/** Registrations read per round trip by the bulk operations. */
+const BATCH_SIZE = 100;
+
+/** What the bulk operations read of a registration. */
+const BULK_REGISTRATION_SELECT = {
+  id: true,
+  data: true,
+  locale: true,
+  group: true,
+} as const satisfies Prisma.RegistrationSelect;
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -98,32 +118,40 @@ export class RegistrationService extends BaseService {
   /**
    * `displayedTotal` is what the form showed: a submission whose price changed
    * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
+   * `displayedConsents` does the same for the consent wording.
    */
   async createRegistration(
     event: EventWithFreePlaces,
-    data: Pick<Registration, 'data' | 'locale' | 'group'>,
+    data: Pick<Registration, 'locale' | 'group'> & { form: RegistrationForm },
     fileField: string,
     displayedTotal?: number,
+    displayedConsents?: Record<string, string>,
   ) {
-    // Built in the locale the data was validated in: event variables such as
-    // `{event.price}` resolve per locale, so computed values can differ.
-    // Resolved by validation: one of the event's countries, defaulted for a
-    // single-group event.
-    const { group } = data;
-
-    const form = new RegistrationForm(event, {
-      locale: data.locale,
-      group,
-    }).load(data.data);
+    // Loaded by validation, in the locale and for the group it resolved: event
+    // variables such as `{event.price}` resolve per locale and group, so
+    // computed values can differ.
+    const { form, group } = data;
 
     const formData = form.data;
-    const eventData = form.extractEventData();
-    const computedData = computedRegistrationData(eventData);
+    const computedData = registrationColumns(form);
     // Stored whether or not anyone is asked to pay: the form showed it, so it
     // is what this person agreed to, at its group's price.
     const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
     assertAmountWithinLimit(quotedAmount);
     assertPriceUnchanged(quotedAmount, displayedTotal);
+
+    // Which privacy information this person was shown, resolved before the
+    // transaction: it is a read of published state, and the create runs
+    // Serializable. Sensitive answers need the consent they rest on
+    // (docs/privacy.md, 5), checked against that same notice.
+    const { stamp: privacyStamp, notice } =
+      await this.privacyNoticeService.getNoticeForRegistration(
+        event.id,
+        event.organizationId,
+      );
+    assertConsentsGiven(form, notice);
+    const consentTexts = form.givenConsentTexts();
+    assertConsentTextsUnchanged(consentTexts, displayedConsents);
 
     const fileIds = form.getFileIds();
 
@@ -163,16 +191,11 @@ export class RegistrationService extends BaseService {
       return registrationCount >= event.maxParticipants[group];
     };
 
-    // Which privacy information this person was shown, resolved before the
-    // transaction: it is a read of published state, and the create runs
-    // Serializable.
-    const privacyStamp = await this.privacyNoticeService.getStampForEvent(
-      event.id,
-      event.organizationId,
-    );
-
     return this.transaction(
       async (transaction) => {
+        // Re-read inside the transaction: a deletion that started after this
+        // request loaded the event must still stop it.
+        await assertNotPurged(transaction, event.id);
         const waitingList = await isWaitingList(transaction);
 
         const status = waitingList
@@ -183,14 +206,15 @@ export class RegistrationService extends BaseService {
 
         const registration = await transaction.registration.create({
           data: {
-            ...data,
             ...computedData,
+            locale: data.locale,
             group,
-            id: undefined, // Force new ID generation
             data: formData,
             status,
             quotedAmount,
             currency: event.currency,
+            consentTexts:
+              Object.keys(consentTexts).length > 0 ? consentTexts : undefined,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -261,15 +285,21 @@ export class RegistrationService extends BaseService {
 
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
       let formFileIds: string[] | undefined;
+      let formData: Record<string, unknown> | undefined;
+      let sensitive = false;
 
       if (data.data) {
         // Read as the form it was answered in: the group's `{event.*}` values
         // and the locale can change what the form shows and computes.
-        const form = new RegistrationForm(event, {
-          locale: before.locale,
-          group: data.group ?? before.group,
-        }).load(data.data);
-        computedData = computedRegistrationData(form.extractEventData());
+        const form = new RegistrationForm(
+          event,
+          data.group ?? before.group,
+          before.locale,
+        ).load(data.data);
+        sensitive = form.sensitiveAnswers().length > 0;
+        // Stored as the form leaves it, like a new registration.
+        formData = form.data;
+        computedData = registrationColumns(form);
         formFileIds = form.getFileIds();
       }
       if (data.customFiles) {
@@ -307,10 +337,16 @@ export class RegistrationService extends BaseService {
         : undefined;
 
       const after = await tx.registration.update({
-        where: { id: registrationId },
+        where: {
+          id: registrationId,
+          // Sensitive answers deleted for good never come back through an edit
+          // (docs/privacy.md, 8). Part of the write, so a deletion that started
+          // since is caught too.
+          ...(sensitive ? { event: notRetentionPurged } : {}),
+        },
         data: {
           ...computedData,
-          data: data.data,
+          data: formData,
           customData: data.customData,
           status: data.status,
           group: data.group,
@@ -382,35 +418,127 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationsComputedDataByEvent(event: EventWithFreePlaces) {
-    const registrations = await this.queryRegistrations(event.id);
+    const formFor = registrationForms(event);
 
-    // One form per (locale, group) a registration was answered in.
-    const forms = new Map<string, RegistrationForm>();
-    const formFor = ({ locale, group }: Registration) => {
-      const key = `${locale}|${group ?? ''}`;
-      let form = forms.get(key);
-      if (!form) {
-        form = new RegistrationForm(event, { locale, group });
-        forms.set(key, form);
+    // A batch at a time: in parallel within one, bounded in memory overall.
+    for await (const batch of this.registrationBatchesOfEvent(event.id)) {
+      await Promise.all(
+        batch.map((registration) => {
+          const form = formFor(registration).load(registration.data);
+
+          return this.prisma.registration.update({
+            where: { id: registration.id },
+            data: registrationColumns(form),
+          });
+        }),
+      );
+    }
+  }
+
+  /**
+   * Clears the answers to special-category questions in every registration of
+   * the event and detaches the files uploaded to them; the file cleanup removes
+   * those. No mails, no audit entry per registration. Returns how many changed.
+   */
+  async clearSensitiveAnswers(event: EventWithFreePlaces): Promise<number> {
+    const formFor = registrationForms(event);
+    let cleared = 0;
+
+    for await (const batch of this.registrationBatchesOfEvent(event.id)) {
+      for (const { id } of batch) {
+        if (await this.clearSensitiveAnswersOf(formFor, id)) {
+          cleared++;
+        }
       }
-      return form;
-    };
+    }
 
-    const results = registrations.map((registration) => {
-      const form = formFor(registration).load(registration.data);
-      const computedData = computedRegistrationData(form.extractEventData());
+    return cleared;
+  }
 
-      return this.prisma.registration.update({
-        where: { id: registration.id },
-        data: {
-          ...computedData,
-        },
-        include: {
-          bed: { include: { room: true } },
-        },
+  /**
+   * One registration of `clearSensitiveAnswers`, locked while it is read and
+   * written, so an edit saved meanwhile is neither overwritten nor lost.
+   * Returns whether anything was cleared.
+   */
+  private async clearSensitiveAnswersOf(
+    formFor: ReturnType<typeof registrationForms>,
+    registrationId: string,
+  ): Promise<boolean> {
+    return this.transaction(async (tx) => {
+      // Locked before the read below, so that read sees the latest version.
+      await tx.$queryRaw`SELECT id FROM registrations WHERE id = ${registrationId} FOR UPDATE`;
+      const registration = await tx.registration.findUnique({
+        where: { id: registrationId },
+        select: BULK_REGISTRATION_SELECT,
       });
+      if (!registration) {
+        return false;
+      }
+
+      const form = formFor(registration).load(registration.data);
+      if (form.sensitiveAnswers().length === 0) {
+        return false;
+      }
+
+      // From here on the form holds the cleared response: the computed columns
+      // and files are read from it, so no copy of an answer stays.
+      const data = form.withoutSensitiveAnswers();
+      await tx.registration.update({
+        where: { id: registrationId },
+        data: { ...registrationColumns(form), data },
+      });
+      await this.fileService.detachFilesExcept(
+        tx,
+        'registrationId',
+        registrationId,
+        form.getFileIds(),
+        { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
+      );
+
+      return true;
+    });
+  }
+
+  /** The event's registrations, read in batches by id. */
+  private registrationBatchesOfEvent(eventId: string) {
+    return batchesById(
+      (page) =>
+        this.prisma.registration.findMany({
+          ...page,
+          where: { eventId, ...page.where },
+          select: BULK_REGISTRATION_SELECT,
+        }),
+      BATCH_SIZE,
+    );
+  }
+
+  /**
+   * Deletes every registration of the event in one statement, within the
+   * caller's transaction if there is one. Bed assignments, files and audit
+   * entries are only detached. No mails, no audit entry per registration.
+   * Returns how many were deleted.
+   */
+  async deleteRegistrationsForEvent(eventId: string): Promise<number> {
+    const { count } = await this.db.registration.deleteMany({
+      where: { eventId },
     });
 
-    await Promise.all(results);
+    return count;
+  }
+}
+
+/** Deleted data is never restored (docs/privacy.md, 8). */
+async function assertNotPurged(
+  tx: PrismaTransaction,
+  eventId: string,
+): Promise<void> {
+  const open = await tx.event.count({
+    where: { id: eventId, ...notRetentionPurged },
+  });
+  if (open === 0) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'Registration data of this event was deleted; it takes no registrations.',
+    );
   }
 }

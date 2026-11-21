@@ -6,6 +6,7 @@ export default {
     changes: {
       cleared: 'odstraněno',
       file: 'soubor aktualizován',
+      sensitive: 'změněno',
     },
     managerNotification: {
       subject: 'Nová registrace | {{ event.name }}',

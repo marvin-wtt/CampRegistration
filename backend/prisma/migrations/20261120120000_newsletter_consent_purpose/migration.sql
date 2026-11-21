@@ -1,0 +1,3 @@
+-- This is an empty migration.
+-- It hosts the data migration in `migration.ts`, which turns the
+-- `newsletter_consent` data tag of saved forms into a consent purpose.

@@ -1,4 +1,8 @@
 import {
+  REGISTRATION_PROPERTY_CATEGORY,
+  REGISTRATION_PROPERTY_CATEGORY_INDEX,
+} from '../properties/category.js';
+import {
   ExpressionValidator,
   type ItemValue,
   type PanelModel,
@@ -25,8 +29,9 @@ export const groupCountryMatchProperty: IJsonPropertyInfo = {
   name: GROUP_COUNTRY_MATCH,
   choices: [...GROUP_COUNTRY_MATCH_MODES],
   default: 'strict',
-  category: 'general',
-  visibleIndex: 4,
+  category: REGISTRATION_PROPERTY_CATEGORY,
+  categoryIndex: REGISTRATION_PROPERTY_CATEGORY_INDEX,
+  visibleIndex: 1,
 };
 
 // Every country by its name in every app locale; SurveyJS picks the locale.

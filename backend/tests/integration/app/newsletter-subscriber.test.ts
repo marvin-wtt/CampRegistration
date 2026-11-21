@@ -351,17 +351,19 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['import1@example.com'],
       });
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['import2@example.com'],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -377,13 +379,14 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: [],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -394,13 +397,14 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: Prisma.DbNull,
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -412,13 +416,14 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         await createNewsletterAndEventWithManager();
       // emails array contains a falsy value
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['', 'valid@example.com'],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -430,17 +435,19 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['shared@example.com'],
       });
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['shared@example.com'],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -457,6 +464,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['existing@example.com'],
       });
@@ -467,7 +475,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -478,11 +486,13 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['de@example.com'],
         group: 'de',
       });
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['fr@example.com'],
         group: 'fr',
@@ -490,7 +500,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, group: 'de', consentConfirmed: true })
+        .send({ eventId: event.id, group: 'de' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -502,35 +512,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(subscriber?.email).toBe('de@example.com');
     });
 
-    it('should import all registrations regardless of consent when requireConsent is false', async () => {
-      const { accessToken, newsletter, event } =
-        await createNewsletterAndEventWithManager();
-      await RegistrationFactory.create({
-        event: { connect: { id: event.id } },
-        emails: ['consent-true@example.com'],
-        newsletterConsent: true,
-      });
-      await RegistrationFactory.create({
-        event: { connect: { id: event.id } },
-        emails: ['consent-null@example.com'],
-        newsletterConsent: null,
-      });
-
-      const { body } = await request()
-        .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({
-          eventId: event.id,
-          requireConsent: false,
-          consentConfirmed: true,
-        })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      // requireConsent=false uses `{ not: false }`, so true and null both pass
-      expect(body.data.added).toBe(2);
-    });
-
-    it('should only import registrations with explicit consent when requireConsent is true', async () => {
+    it('should only import registrations whose form recorded newsletter consent', async () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
@@ -543,6 +525,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         emails: ['consent-false@example.com'],
         newsletterConsent: false,
       });
+      // A form that never asked records no consent, which is no basis either.
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
         emails: ['consent-null@example.com'],
@@ -551,11 +534,10 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, requireConsent: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      // requireConsent=true uses `newsletterConsent: true`, so only the explicit true passes
       expect(body.data.added).toBe(1);
 
       const subscriber = await prisma.newsletterSubscriber.findFirst({
@@ -564,21 +546,11 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(subscriber?.email).toBe('consent-true@example.com');
     });
 
-    it('should respond with `400` when consent is neither required nor confirmed', async () => {
-      const { accessToken, newsletter, event } =
-        await createNewsletterAndEventWithManager();
-
-      await request()
-        .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, requireConsent: false })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
-    });
-
     it('should set subscriber name from firstName and lastName', async () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['named@example.com'],
         firstName: 'Alice',
@@ -587,7 +559,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -601,6 +573,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['firstonly@example.com'],
         firstName: 'Bob',
@@ -609,7 +582,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -623,6 +596,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['lastonly@example.com'],
         firstName: null,
@@ -631,7 +605,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -645,6 +619,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
+        newsletterConsent: true,
         event: { connect: { id: event.id } },
         emails: ['noname@example.com'],
         firstName: null,
@@ -653,7 +628,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -700,7 +675,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, consentConfirmed: true })
+        .send({ eventId: event.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });

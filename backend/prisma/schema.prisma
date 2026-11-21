@@ -25,18 +25,19 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
 
-  eventRoles             EventManager[]
-  tokens                 Token[]
-  newsletterManagers     NewsletterManager[]
-  sentNewsletterMessages NewsletterMessage[]
-  sentMessages           Message[]
-  organizationMembers    OrganizationMember[]
-  reviewedOrganizations  Organization[]       @relation("OrganizationReviewer")
-  twoFactor              UserTwoFactor?
-  paidExpenses           Expense[]            @relation("ExpensePaidBy")
-  createdExpenses        Expense[]            @relation("ExpenseCreatedBy")
-  receivedPayouts        Payout[]             @relation("PayoutRecipient")
-  createdPayouts         Payout[]             @relation("PayoutCreatedBy")
+  eventRoles                    EventManager[]
+  tokens                        Token[]
+  newsletterManagers            NewsletterManager[]
+  sentNewsletterMessages        NewsletterMessage[]
+  sentMessages                  Message[]
+  organizationMembers           OrganizationMember[]
+  reviewedOrganizations         Organization[]        @relation("OrganizationReviewer")
+  twoFactor                     UserTwoFactor?
+  paidExpenses                  Expense[]             @relation("ExpensePaidBy")
+  createdExpenses               Expense[]             @relation("ExpenseCreatedBy")
+  receivedPayouts               Payout[]              @relation("PayoutRecipient")
+  createdPayouts                Payout[]              @relation("PayoutCreatedBy")
+  postponedEventRetentionStates EventRetentionState[] @relation("EventRetentionStatePostponedBy")
 
   @@map("users")
 }
@@ -154,40 +155,45 @@ model OrganizationInvitation {
 }
 
 model Event {
-  id                      String           @id @unique(map: "events_id_unique") @default(ulid()) @db.Char(26)
-  organizationId          String           @map("organization_id") @db.Char(26)
-  listed                  Boolean
-  registrationOpensAt     DateTime?        @map("registration_opens_at") @db.DateTime(0)
-  registrationClosesAt    DateTime?        @map("registration_closes_at") @db.DateTime(0)
-  confirmationMode        ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
+  id                       String           @id @unique(map: "events_id_unique") @default(ulid()) @db.Char(26)
+  organizationId           String           @map("organization_id") @db.Char(26)
+  listed                   Boolean
+  registrationOpensAt      DateTime?        @map("registration_opens_at") @db.DateTime(0)
+  registrationClosesAt     DateTime?        @map("registration_closes_at") @db.DateTime(0)
+  confirmationMode         ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
   /// ![Array<string>]
-  countries               Json             @db.Json
+  countries                Json             @db.Json
   /// ![string | Record<string, string>]
-  name                    Json             @db.Json
+  name                     Json             @db.Json
   /// ![string | Record<string, string>]
-  organizer               Json             @db.Json
+  organizer                Json             @db.Json
   /// ![string | Record<string, string>]
-  contactEmail            Json             @map("contact_email") @db.Json
+  contactEmail             Json             @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
-  maxParticipants         Json             @map("max_participants") @db.Json
-  minAge                  Int              @map("min_age") @db.UnsignedInt
-  maxAge                  Int              @map("max_age") @db.UnsignedInt
-  startAt                 DateTime         @map("start_at") @db.DateTime(0)
-  endAt                   DateTime         @map("end_at") @db.DateTime(0)
-  timezone                String           @default("Europe/Berlin") @db.VarChar(64)
+  maxParticipants          Json             @map("max_participants") @db.Json
+  minAge                   Int              @map("min_age") @db.UnsignedInt
+  maxAge                   Int              @map("max_age") @db.UnsignedInt
+  startAt                  DateTime         @map("start_at") @db.DateTime(0)
+  endAt                    DateTime         @map("end_at") @db.DateTime(0)
+  timezone                 String           @default("Europe/Berlin") @db.VarChar(64)
   /// Minor units of `currency`: one for every group, or one per group.
   /// ![number | Record<string, number>]
-  price                   Json             @db.Json
-  currency                String           @default("EUR") @db.Char(3)
+  price                    Json             @db.Json
+  currency                 String           @default("EUR") @db.Char(3)
   /// ![string | Record<string, string>]
-  location                Json?            @db.Json
+  location                 Json?            @db.Json
   /// ![Record<string, unknown>]
-  form                    Json             @db.Json
+  form                     Json             @db.Json
   /// ![Record<string, unknown>]
-  themes                  Json             @default("{}") @db.Json
-  retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
-  createdAt               DateTime?        @default(now()) @map("created_at")
-  updatedAt               DateTime?        @updatedAt @map("updated_at")
+  themes                   Json             @default("{}") @db.Json
+  /// When the answers to special-category questions were deleted for good
+  /// (docs/privacy.md, 8). Implied by `registrationDataPurgedAt`.
+  sensitiveDataPurgedAt    DateTime?        @map("sensitive_data_purged_at") @db.DateTime(0)
+  /// When all registration data was deleted for good. The event never takes
+  /// registrations again.
+  registrationDataPurgedAt DateTime?        @map("registration_data_purged_at") @db.DateTime(0)
+  createdAt                DateTime?        @default(now()) @map("created_at")
+  updatedAt                DateTime?        @updatedAt @map("updated_at")
 
   organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
   eventManager         EventManager[]
@@ -208,6 +214,7 @@ model Event {
   expenses             Expense[]
   payouts              Payout[]
   finance              EventFinance?
+  retentionStates      EventRetentionState[]
 
   @@index([organizationId], map: "events_organization_id_index")
   @@map("events")
@@ -304,6 +311,10 @@ model Registration {
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
   eventPrivacyNoticeVersionId        String?            @map("event_privacy_notice_version_id") @db.Char(26)
   platformPrivacyPolicyUpdatedAt     DateTime?          @map("platform_privacy_policy_updated_at")
+  // The wording of each consent given, as shown, by question name — proof
+  // under Art. 7(1). Null on registrations predating it; do not backfill.
+  /// ![Record<string, string>]
+  consentTexts                       Json?              @map("consent_texts") @db.Json
   createdAt                          DateTime           @default(now()) @map("created_at")
   updatedAt                          DateTime?          @updatedAt @map("updated_at")
 
@@ -959,4 +970,36 @@ model AuditDeletedUser {
 
   @@index([deletedAt], map: "audit_deleted_users_deleted_at_index")
   @@map("audit_deleted_users")
+}
+
+/// Mirrors `EVENT_RETENTION_DEADLINE_KINDS` (common/src/privacy).
+enum EventRetentionDeadlineKind {
+  sensitive
+  registrations
+}
+
+/// What an event's deadline of one kind cannot be computed from: its
+/// postponement and the reminders sent (docs/privacy.md, 8). The deadline
+/// itself is derived from the stamped notices whenever it is needed. Dates are
+/// calendar dates (`YYYY-MM-DD`) in the event's time zone.
+model EventRetentionState {
+  id             String                     @id @default(ulid()) @db.Char(26)
+  eventId        String                     @map("event_id") @db.Char(26)
+  kind           EventRetentionDeadlineKind
+  postponedUntil String?                    @map("postponed_until") @db.Char(10)
+  postponeReason String?                    @map("postpone_reason") @db.Text
+  postponedAt    DateTime?                  @map("postponed_at") @db.DateTime(0)
+  postponedById  String?                    @map("postponed_by_id") @db.Char(26)
+  /// The deadline the last reminder was for: a moved deadline is reminded anew.
+  remindedFor    String?                    @map("reminded_for") @db.Char(10)
+  /// The most urgent stage sent for `remindedFor` (days before).
+  remindedStage  Int?                       @map("reminded_stage")
+  createdAt      DateTime                   @default(now()) @map("created_at")
+  updatedAt      DateTime                   @updatedAt @map("updated_at")
+
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postponedBy User? @relation("EventRetentionStatePostponedBy", fields: [postponedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([eventId, kind])
+  @@map("event_retention_states")
 }

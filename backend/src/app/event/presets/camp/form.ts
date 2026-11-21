@@ -659,6 +659,7 @@ export default {
         {
           type: 'comment',
           name: 'medical_restrictions',
+          privacyCategory: 'health',
           title: {
             en: 'Medical Restrictions',
             de: 'Medizinische Einschränkungen',
@@ -680,6 +681,8 @@ export default {
         {
           type: 'comment',
           name: 'food_intolerance',
+          // Intolerances are health data, a religious diet a special category.
+          privacyCategory: 'allergies',
           title: {
             en: 'Special nutrition',
             de: 'Besondere Ernährung',
@@ -689,12 +692,13 @@ export default {
             default: 'Special nutrition',
           },
           description: {
-            en: 'e.g. vegetarian, vegan, allergies or intolerances.',
-            de: 'z.B. vegetarisch, vegan, Allergien oder Unverträglichkeiten.',
-            fr: 'p.ex. végétarien, végétalien, allergies ou intolérances.',
-            pl: 'np. wegetariańska, wegańska, alergie lub nietolerancje.',
-            cs: 'např. vegetariánská, veganská, alergie nebo intolerance.',
-            default: 'e.g. vegetarian, vegan, allergies or intolerances.',
+            en: 'e.g. vegetarian or vegan. Please enter allergies and intolerances above.',
+            de: 'z.B. vegetarisch oder vegan. Allergien und Unverträglichkeiten bitte oben angeben.',
+            fr: 'p.ex. végétarien ou végétalien. Indique les allergies et intolérances ci-dessus.',
+            pl: 'np. wegetariańska lub wegańska. Alergie i nietolerancje podaj powyżej.',
+            cs: 'např. vegetariánská nebo veganská. Alergie a intolerance uveď výše.',
+            default:
+              'e.g. vegetarian or vegan. Please enter allergies and intolerances above.',
           },
         },
       ],
@@ -784,6 +788,8 @@ export default {
         {
           type: 'boolean',
           name: 'consent_forward_list_participants',
+          privacyConsent: true,
+          privacyConsentPurpose: ['transport'],
           title: {
             en: 'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
             de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer der Veranstaltung weitergeleitet werden dürfen.',
@@ -796,7 +802,49 @@ export default {
         },
         {
           type: 'boolean',
+          name: 'consent_health',
+          privacyConsent: true,
+          privacyConsentPurpose: ['medical_care', 'catering'],
+          privacyConsentFor: ['health', 'allergies'],
+          // Asked last and only once health data was entered — "no known
+          // allergies" counts. Then agreed to, never preselected, or the
+          // data left out (docs/privacy.md, 5).
+          visibleIf:
+            '{medical_restrictions} notempty or {food_intolerance} notempty',
+          requireTrue: true,
+          requireTrueErrorText: {
+            en: 'Please agree, or leave the health and nutrition fields empty.',
+            de: 'Bitte willige ein oder lass die Felder zu Gesundheit und Ernährung leer.',
+            fr: 'Donne ton accord ou laisse vides les champs santé et alimentation.',
+            pl: 'Wyraź zgodę lub pozostaw pola dotyczące zdrowia i diety puste.',
+            cs: 'Dej souhlas, nebo nech pole o zdraví a stravě prázdná.',
+            default:
+              'Please agree, or leave the health and nutrition fields empty.',
+          },
+          title: {
+            en: "I agree that {first_name}'s health and diet details are used for care during the event and shared with the team and, if needed, medical staff.",
+            de: 'Ich willige ein, dass die Gesundheits- und Ernährungsangaben von {first_name} zur Betreuung während der Veranstaltung genutzt und an das Team sowie bei Bedarf an medizinisches Personal weitergegeben werden.',
+            fr: "J'accepte que les données de santé et d'alimentation de {first_name} servent à sa prise en charge pendant l'événement et soient transmises à l'équipe et, si besoin, au personnel médical.",
+            pl: 'Zgadzam się na wykorzystanie danych o zdrowiu i diecie {first_name} do opieki podczas wydarzenia oraz na ich przekazanie zespołowi, a w razie potrzeby personelowi medycznemu.',
+            cs: 'Souhlasím s využitím údajů o zdraví a stravě {first_name} k péči během akce a s jejich předáním týmu, případně zdravotníkům.',
+            default:
+              "I agree that {first_name}'s health and diet details are used for care during the event and shared with the team and, if needed, medical staff.",
+          },
+          description: {
+            en: 'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.',
+            de: 'Freiwillig – sonst lass diese Felder leer. Jederzeit beim Veranstalter widerrufbar.',
+            fr: "Facultatif – sinon laisse ces champs vides. Révocable à tout moment auprès de l'organisateur.",
+            pl: 'Dobrowolne – w przeciwnym razie pozostaw te pola puste. Zgodę można w każdej chwili wycofać u organizatora.',
+            cs: 'Dobrovolné – jinak nech tato pole prázdná. Souhlas lze kdykoli odvolat u pořadatele.',
+            default:
+              'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.',
+          },
+        },
+        {
+          type: 'boolean',
           name: 'consent_privacy',
+          privacyConsent: true,
+          privacyConsentPurpose: ['photo_publication'],
           title: {
             en: 'I agree that photographs of the participant, {first_name} {last_name}, may be taken and made available to the organizer for the purpose of media coverage and advertising.',
             de: 'Ich stimme zu, dass von dem Teilnehmenden, {first_name} {last_name} Aufnahmen erstellt werden dürfen und dem Veranstalter zum Zwecke der Berichterstattung in Medien und für Werbezwecke zur Verfügung gestellt werden.',
@@ -838,7 +886,8 @@ export default {
               'I would like to receive updates by email about future events and similar offers.',
           },
           isRequired: true,
-          eventDataType: 'newsletter_consent',
+          privacyConsent: true,
+          privacyConsentPurpose: ['newsletter'],
         },
         {
           type: 'boolean',

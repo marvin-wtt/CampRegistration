@@ -45,6 +45,10 @@ export default {
     funding_body: 'Der Zuwendungsgeber',
     medical_provider: 'Ärztinnen, Ärzte und Rettungsdienste',
     public_authority: 'Behörden',
+    partner_organization: 'Partner- oder mitveranstaltende Organisationen',
+    participants: 'Andere Teilnehmende',
+    it_service_provider:
+      'IT-Dienstleister (z. B. E-Mail, Cloud-Speicher, Buchhaltung)',
     payment_provider: 'Der Zahlungsdienstleister',
     platform_operator: 'Der Betreiber dieser Anmeldeplattform',
   },
@@ -86,11 +90,6 @@ export default {
       'Nur zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen, etwa ein Unfallbericht für einen Versicherungsstreit.',
   },
 
-  retentionAnchor: {
-    event_end: 'nach Ende der Veranstaltung',
-    submission: 'nach Absenden der Anmeldung',
-  },
-
   retentionUntil: {
     period: 'für eine feste Dauer',
     consent_withdrawn: 'bis die zugrunde liegende Einwilligung widerrufen wird',
@@ -110,7 +109,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Rechtsgrundlage',
-      art9Other: 'Andere Rechtsgrundlage wählen',
       art9Advisory:
         'Für sich genommen nicht sensibel. Wenn das Formular halal oder koscher zur Auswahl stellt, wähle zusätzlich „Religionszugehörigkeit“; werden Allergien erfasst, wähle „Allergien“.',
       consentQuestion:
@@ -118,10 +116,6 @@ export default {
       recipientName: 'Name (optional)',
       recipientNameHint:
         'Den konkreten Empfänger zu nennen ist klarer als nur die Kategorie.',
-    },
-    origin: {
-      organization: 'Von der Organisation',
-      event: 'Hier ergänzt',
     },
     action: {
       publish: 'Veröffentlichen',
@@ -157,12 +151,16 @@ export default {
       'Für besondere Kategorien personenbezogener Daten fehlt eine Rechtsgrundlage nach Art. 9',
     custom_category_label:
       'Eine selbst hinzugefügte Kategorie hat keinen Namen',
+    custom_recipient_label:
+      'Ein von dir hinzugefügter Empfänger hat keinen Namen',
     automated_details:
       'Automatisierte Entscheidungsfindung ist angegeben, aber die Logik wird nicht erläutert',
     recipients: 'Es wurden keine Empfänger angegeben',
     retention: 'Es wurde keine Speicherdauer festgelegt',
     retention_exception:
       'Einer Ausnahme fehlt die Frist oder die Angabe, wofür sie gilt',
+    special_category_retention:
+      'Für Gesundheitsangaben und andere sensible Daten fehlt die Frist, oder sie ist länger als die allgemeine',
     retention_exception_consent_basis:
       'Daten, die bis zum Widerruf gespeichert werden, gehören zu einem Zweck, der nicht auf einer Einwilligung beruht',
     transfer_countries:

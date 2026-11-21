@@ -47,6 +47,8 @@ export class RegistrationResource extends JsonResource<
       // file slots (`field = 'custom:<slot>'`).
       customFiles: customFileSlots(this.data.files ?? []),
       locale: this.data.locale,
+      // The proof of what each consent said, as the person saw it.
+      consentTexts: this.data.consentTexts ?? null,
       room: this.data.bed ? this.data.bed.room.name : null,
       // Use snake case because form keys should be snake case too
       updatedAt: this.data.updatedAt?.toISOString() ?? null,

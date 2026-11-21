@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
-import moment from 'moment';
 import { QueueManager } from '#core/queue/QueueManager';
+import type { PrunedJobs } from '#core/queue/Queue';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
 import type { QueueInfo } from '@camp-registration/common/entities';
@@ -45,37 +45,7 @@ export class QueueService extends BaseService {
     await queue.deleteFailed();
   }
 
-  /** Prunes old terminal job records: completed >30d and failed >90d ago. */
-  async deleteOldJobs(): Promise<{ completed: number; failed: number }> {
-    const completed = await this.deleteCompletedJobs();
-    const failed = await this.deleteFailedJobs();
-
-    return { completed, failed };
-  }
-
-  private async deleteCompletedJobs(): Promise<number> {
-    const { count } = await this.prisma.job.deleteMany({
-      where: {
-        status: 'COMPLETED',
-        finishedAt: {
-          lt: moment().subtract(30, 'days').toDate(),
-        },
-      },
-    });
-
-    return count;
-  }
-
-  private async deleteFailedJobs(): Promise<number> {
-    const { count } = await this.prisma.job.deleteMany({
-      where: {
-        status: 'FAILED',
-        finishedAt: {
-          lt: moment().subtract(90, 'days').toDate(),
-        },
-      },
-    });
-
-    return count;
+  async deleteOldJobs(): Promise<PrunedJobs> {
+    return this.queueManager.prune();
   }
 }

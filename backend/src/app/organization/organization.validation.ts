@@ -5,6 +5,7 @@ import type {
   OrganizationQuery,
   OrganizationReviewData,
 } from '@camp-registration/common/entities';
+import { EEA_COUNTRY_CODES } from '@camp-registration/common/utils';
 
 const index = z.object({
   query: z
@@ -46,7 +47,7 @@ const organizationBody = {
     .max(255)
     .nullable()
     .optional(),
-  country: z.string().length(2).toLowerCase(),
+  country: z.enum(EEA_COUNTRY_CODES),
   addressStreet: z.string().min(1).max(255),
   addressZipCode: z.string().min(1).max(20),
   addressCity: z.string().min(1).max(255),

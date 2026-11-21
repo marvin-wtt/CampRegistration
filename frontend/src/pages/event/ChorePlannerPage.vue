@@ -5,271 +5,419 @@
     :loading
     class="chore-planner-page row justify-center"
   >
-    <div
-      class="planner-content col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-md"
-    >
-      <page-header
-        :title="t('title')"
-        :subtitle="t('subtitle')"
-      >
-        <template #actions>
-          <m-btn
-            v-if="canCreate && chores.length > 0 && !quasar.screen.lt.sm"
-            :label="t('action.quick')"
-            icon="bolt"
-            outline
-            @click="openAssignmentDialog()"
-          />
-          <m-btn
-            v-if="canCreate && chores.length > 0"
-            :label="t('action.series')"
-            color="primary"
-            icon="event_repeat"
-            @click="planSeries()"
-          />
-          <q-space />
-          <m-btn
-            icon="more_vert"
-            square
-            round
-            text
-            :aria-label="t('action.more')"
-          >
-            <q-menu>
-              <q-list>
-                <q-item
-                  v-close-popup
-                  clickable
-                  @click="openChoreManager"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="tune" />
-                  </q-item-section>
-                  <q-item-section>{{ t('action.chores') }}</q-item-section>
-                </q-item>
-                <q-item
-                  v-if="chores.length > 0"
-                  v-close-popup
-                  clickable
-                  @click="openFairness"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="balance" />
-                  </q-item-section>
-                  <q-item-section>{{ t('action.fairness') }}</q-item-section>
-                </q-item>
-                <q-item
-                  v-if="
-                    can('event.chore_assignments.edit') &&
-                    assignments.length > 0
-                  "
-                  v-close-popup
-                  clickable
-                  @click="removePerson()"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="person_remove" />
-                  </q-item-section>
-                  <q-item-section>
-                    {{ t('action.removePerson') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-if="
-                    can('event.chore_assignments.edit') &&
-                    assignments.length > 0
-                  "
-                  v-close-popup
-                  clickable
-                  @click="openRebalance()"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="swap_horiz" />
-                  </q-item-section>
-                  <q-item-section>
-                    {{ t('action.rebalance') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-if="assignments.length > 0"
-                  v-close-popup
-                  clickable
-                  @click="print"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="print" />
-                  </q-item-section>
-                  <q-item-section>{{ t('action.print') }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </m-btn>
-        </template>
-      </page-header>
+    <registration-data-purged-state
+      v-if="registrationsPurged"
+      class="col-12"
+    />
 
-      <!-- Empty state -->
+    <template v-else>
       <div
-        v-if="!loading && chores.length === 0"
-        class="empty-state col column no-wrap items-center justify-center"
+        class="planner-content col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-md"
       >
-        <q-icon
-          name="checklist"
-          size="64px"
-          class="empty-icon"
-        />
-        <div class="text-h6 q-mt-md">
-          {{ t('empty.title') }}
-        </div>
-        <div class="text-body2 text-grey-6 q-mt-xs text-center">
-          {{ t('empty.message') }}
-        </div>
-        <m-btn
-          v-if="can('event.chores.create')"
-          class="q-mt-lg"
-          :label="t('action.addChore')"
-          color="primary"
-          icon="add"
-          @click="openChoreManager"
-        />
-      </div>
-
-      <template v-else>
-        <!-- View + filter -->
-        <div class="row items-center q-col-gutter-sm">
-          <div class="col-12 col-sm-auto">
-            <q-btn-toggle
-              v-model="view"
-              :class="{ 'full-width': quasar.screen.lt.sm }"
-              class="compact-toggle"
-              spread
-              no-caps
-              rounded
-              unelevated
-              toggle-color="primary"
-              :options="viewOptions"
+        <page-header
+          :title="t('title')"
+          :subtitle="t('subtitle')"
+        >
+          <template #actions>
+            <m-btn
+              v-if="canCreate && chores.length > 0 && !quasar.screen.lt.sm"
+              :label="t('action.quick')"
+              icon="bolt"
+              outline
+              @click="openAssignmentDialog()"
             />
+            <m-btn
+              v-if="canCreate && chores.length > 0"
+              :label="t('action.series')"
+              color="primary"
+              icon="event_repeat"
+              @click="planSeries()"
+            />
+            <q-space />
+            <m-btn
+              icon="more_vert"
+              square
+              round
+              text
+              :aria-label="t('action.more')"
+            >
+              <q-menu>
+                <q-list>
+                  <q-item
+                    v-if="canManageChores"
+                    v-close-popup
+                    clickable
+                    @click="openChoreManager"
+                  >
+                    <q-item-section avatar>
+                      <q-icon name="tune" />
+                    </q-item-section>
+                    <q-item-section>{{ t('action.chores') }}</q-item-section>
+                  </q-item>
+                  <q-item
+                    v-if="chores.length > 0"
+                    v-close-popup
+                    clickable
+                    @click="openFairness"
+                  >
+                    <q-item-section avatar>
+                      <q-icon name="balance" />
+                    </q-item-section>
+                    <q-item-section>{{ t('action.fairness') }}</q-item-section>
+                  </q-item>
+                  <q-item
+                    v-if="canEdit && assignments.length > 0"
+                    v-close-popup
+                    clickable
+                    @click="removePerson()"
+                  >
+                    <q-item-section avatar>
+                      <q-icon name="person_remove" />
+                    </q-item-section>
+                    <q-item-section>
+                      {{ t('action.removePerson') }}
+                    </q-item-section>
+                  </q-item>
+                  <q-item
+                    v-if="canEdit && assignments.length > 0"
+                    v-close-popup
+                    clickable
+                    @click="openRebalance()"
+                  >
+                    <q-item-section avatar>
+                      <q-icon name="swap_horiz" />
+                    </q-item-section>
+                    <q-item-section>
+                      {{ t('action.rebalance') }}
+                    </q-item-section>
+                  </q-item>
+                  <q-item
+                    v-if="assignments.length > 0"
+                    v-close-popup
+                    clickable
+                    @click="print"
+                  >
+                    <q-item-section avatar>
+                      <q-icon name="print" />
+                    </q-item-section>
+                    <q-item-section>{{ t('action.print') }}</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </m-btn>
+          </template>
+        </page-header>
+
+        <!-- Empty state -->
+        <div
+          v-if="!loading && chores.length === 0"
+          class="empty-state col column no-wrap items-center justify-center"
+        >
+          <q-icon
+            name="checklist"
+            size="64px"
+            class="empty-icon"
+          />
+          <div class="text-h6 q-mt-md">
+            {{ t('empty.title') }}
           </div>
-          <!-- Scrolls sideways on phones rather than wrapping into rows. -->
-          <div
-            v-if="chores.length > 1"
-            class="col-12 col-sm"
-          >
-            <div class="chip-scroll row no-wrap">
-              <filter-chip
-                v-for="chore in chores"
-                :key="chore.id"
-                clickable
-                :active="filterChoreIds.includes(chore.id)"
-                @click="toggleChoreFilter(chore.id)"
-              >
-                {{ to(chore.name) }}
-              </filter-chip>
+          <div class="text-body2 text-grey-6 q-mt-xs text-center">
+            {{ t('empty.message') }}
+          </div>
+          <m-btn
+            v-if="can('event.chores.create')"
+            class="q-mt-lg"
+            :label="t('action.addChore')"
+            color="primary"
+            icon="add"
+            @click="openChoreManager"
+          />
+        </div>
+
+        <template v-else>
+          <!-- View + filter -->
+          <div class="row items-center q-col-gutter-sm">
+            <div class="col-12 col-sm-auto">
+              <q-btn-toggle
+                v-model="view"
+                :class="{ 'full-width': quasar.screen.lt.sm }"
+                class="compact-toggle"
+                spread
+                no-caps
+                rounded
+                unelevated
+                toggle-color="primary"
+                :options="viewOptions"
+              />
+            </div>
+            <!-- Scrolls sideways on phones rather than wrapping into rows. -->
+            <div
+              v-if="chores.length > 1"
+              class="col-12 col-sm"
+            >
+              <div class="chip-scroll row no-wrap">
+                <filter-chip
+                  v-for="chore in chores"
+                  :key="chore.id"
+                  clickable
+                  :active="filterChoreIds.includes(chore.id)"
+                  @click="toggleChoreFilter(chore.id)"
+                >
+                  {{ to(chore.name) }}
+                </filter-chip>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Today -->
-        <template v-if="view === 'today'">
-          <div class="row items-center no-wrap">
-            <q-btn
-              icon="chevron_left"
-              flat
-              round
-              :aria-label="t('nav.previousDay')"
-              :disable="day <= dateRange.min"
-              @click="day = addDays(day, -1)"
-            />
-            <div class="col row justify-center no-wrap">
-              <!-- A menu on wide screens, a dialog on phones. -->
+          <!-- Today -->
+          <template v-if="view === 'today'">
+            <div class="row items-center no-wrap">
               <q-btn
+                icon="chevron_left"
+                flat
+                round
+                :aria-label="t('nav.previousDay')"
+                :disable="day <= dateRange.min"
+                @click="day = addDays(day, -1)"
+              />
+              <div class="col row justify-center no-wrap">
+                <!-- A menu on wide screens, a dialog on phones. -->
+                <q-btn
+                  flat
+                  rounded
+                  no-caps
+                  icon-right="arrow_drop_down"
+                  class="day-picker-btn text-subtitle1 text-weight-medium"
+                  :aria-label="t('nav.pickDay')"
+                >
+                  <span class="ellipsis">{{ dayTitle }}</span>
+                  <q-popup-proxy
+                    ref="dayPicker"
+                    cover
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-date
+                      :model-value="day"
+                      mask="YYYY-MM-DD"
+                      :options="isPickableDay"
+                      :events="hasDuties"
+                      event-color="primary"
+                      first-day-of-week="1"
+                      @update:model-value="pickDay"
+                    >
+                      <div
+                        class="day-picker-legend row items-center no-wrap text-caption"
+                      >
+                        <span class="day-picker-dot" />
+                        {{ t('nav.daysWithDuties') }}
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-btn>
+              </div>
+              <q-btn
+                icon="chevron_right"
+                flat
+                round
+                :aria-label="t('nav.nextDay')"
+                :disable="day >= dateRange.max"
+                @click="day = addDays(day, 1)"
+              />
+            </div>
+
+            <div class="row items-center q-gutter-sm">
+              <div class="text-caption text-grey-7">
+                {{ dayAssignments.length > 0 ? daySummary : '' }}
+              </div>
+              <q-space />
+              <q-btn
+                v-if="focusDate === today && day !== today"
+                :label="t('nav.today')"
+                color="primary"
                 flat
                 rounded
                 no-caps
-                icon-right="arrow_drop_down"
-                class="day-picker-btn text-subtitle1 text-weight-medium"
-                :aria-label="t('nav.pickDay')"
+                @click="day = today"
+              />
+              <q-btn
+                v-if="canEdit && plannedToday.length > 0 && day <= today"
+                icon="done_all"
+                :label="t('action.allDone')"
+                color="positive"
+                outline
+                rounded
+                no-caps
+                @click="markAllDone"
+              />
+            </div>
+
+            <!-- Swipe left/right for the next/previous day. -->
+            <div v-touch-swipe.horizontal="onSwipe">
+              <q-card
+                v-if="dayAssignments.length > 0"
+                flat
+                bordered
+                class="rounded-xl overflow-hidden"
               >
-                <span class="ellipsis">{{ dayTitle }}</span>
-                <q-popup-proxy
-                  ref="dayPicker"
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-date
-                    :model-value="day"
-                    mask="YYYY-MM-DD"
-                    :options="isPickableDay"
-                    :events="hasDuties"
-                    event-color="primary"
-                    first-day-of-week="1"
-                    @update:model-value="pickDay"
-                  >
-                    <div
-                      class="day-picker-legend row items-center no-wrap text-caption"
-                    >
-                      <span class="day-picker-dot" />
-                      {{ t('nav.daysWithDuties') }}
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-btn>
-            </div>
-            <q-btn
-              icon="chevron_right"
-              flat
-              round
-              :aria-label="t('nav.nextDay')"
-              :disable="day >= dateRange.max"
-              @click="day = addDays(day, 1)"
-            />
-          </div>
-
-          <div class="row items-center q-gutter-sm">
-            <div class="text-caption text-grey-7">
-              {{ dayAssignments.length > 0 ? daySummary : '' }}
-            </div>
-            <q-space />
-            <q-btn
-              v-if="focusDate === today && day !== today"
-              :label="t('nav.today')"
-              color="primary"
-              flat
-              rounded
-              no-caps
-              @click="day = today"
-            />
-            <q-btn
-              v-if="canEdit && plannedToday.length > 0 && day <= today"
-              icon="done_all"
-              :label="t('action.allDone')"
-              color="positive"
-              outline
-              rounded
-              no-caps
-              @click="markAllDone"
-            />
-          </div>
-
-          <!-- Swipe left/right for the next/previous day. -->
-          <div v-touch-swipe.horizontal="onSwipe">
-            <q-card
-              v-if="dayAssignments.length > 0"
-              flat
-              bordered
-              class="rounded-xl overflow-hidden"
-            >
-              <q-list separator>
-                <chore-assignment-card
-                  v-for="assignment in dayAssignments"
-                  :key="assignment.id"
-                  v-bind="cardProps(assignment)"
-                  v-on="cardHandlers(assignment)"
+                <q-list separator>
+                  <chore-assignment-card
+                    v-for="assignment in dayAssignments"
+                    :key="assignment.id"
+                    v-bind="cardProps(assignment)"
+                    v-on="cardHandlers(assignment)"
+                  />
+                </q-list>
+              </q-card>
+              <div
+                v-else
+                class="empty-state column no-wrap items-center"
+              >
+                <q-icon
+                  name="event_available"
+                  size="48px"
+                  class="empty-icon"
                 />
-              </q-list>
-            </q-card>
+                <div class="text-body1 q-mt-sm">{{ t('noDuties') }}</div>
+                <m-btn
+                  v-if="canCreate"
+                  class="q-mt-md"
+                  :label="t('action.quick')"
+                  icon="bolt"
+                  outline
+                  @click="openAssignmentDialog({ date: day })"
+                />
+              </div>
+            </div>
+          </template>
+
+          <!-- Week -->
+          <template v-else-if="view === 'week'">
+            <div class="row items-center no-wrap">
+              <q-btn
+                icon="chevron_left"
+                flat
+                round
+                :aria-label="t('nav.previousWeek')"
+                :disable="weekStart <= mondayOf(dateRange.min)"
+                @click="weekStart = addDays(weekStart, -7)"
+              />
+              <div
+                class="col text-center text-subtitle1 text-weight-medium ellipsis"
+              >
+                {{ weekLabel }}
+              </div>
+              <q-btn
+                icon="chevron_right"
+                flat
+                round
+                :aria-label="t('nav.nextWeek')"
+                :disable="weekStart >= mondayOf(dateRange.max)"
+                @click="weekStart = addDays(weekStart, 7)"
+              />
+            </div>
             <div
-              v-else
+              v-if="focusDate === today && weekStart !== mondayOf(today)"
+              class="row justify-center"
+            >
+              <q-btn
+                :label="t('nav.thisWeek')"
+                color="primary"
+                flat
+                rounded
+                no-caps
+                @click="weekStart = mondayOf(today)"
+              />
+            </div>
+            <chore-week-grid
+              :chores="visibleChores"
+              :assignments="filteredAssignments"
+              :week-start="weekStart"
+              :names="names"
+              :can-create="canCreate"
+              :agenda="quasar.screen.lt.md"
+              :event-start="eventStart"
+              :event-end="eventEnd"
+              @open="editAssignment"
+              @create="(target) => openAssignmentDialog(target)"
+            />
+          </template>
+
+          <!-- List -->
+          <template v-else>
+            <div
+              v-if="pastGroups.length > 0"
+              class="row"
+            >
+              <q-btn-toggle
+                v-model="listRange"
+                :class="{ 'full-width': quasar.screen.lt.sm }"
+                class="compact-toggle"
+                spread
+                no-caps
+                rounded
+                unelevated
+                toggle-color="secondary"
+                :options="listRangeOptions"
+                data-test="chore-list-range"
+              />
+            </div>
+
+            <div
+              v-for="group in shownGroups"
+              :key="group.date"
+            >
+              <div class="row items-center q-mb-xs">
+                <div class="text-subtitle2 text-weight-medium">
+                  {{ d(parseLocalDate(group.date), 'dateFull') }}
+                </div>
+                <q-space />
+                <q-btn
+                  v-if="canDelete"
+                  icon="more_horiz"
+                  flat
+                  round
+                  :aria-label="t('action.more')"
+                >
+                  <q-menu>
+                    <q-list>
+                      <q-item
+                        v-close-popup
+                        clickable
+                        @click="deleteDay(group.date)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="delete_sweep"
+                            color="negative"
+                          />
+                        </q-item-section>
+                        <q-item-section>{{
+                          t('action.deleteDay')
+                        }}</q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
+              </div>
+              <q-card
+                flat
+                bordered
+                class="rounded-xl overflow-hidden"
+              >
+                <q-list separator>
+                  <chore-assignment-card
+                    v-for="assignment in group.items"
+                    :key="assignment.id"
+                    v-bind="cardProps(assignment)"
+                    v-on="cardHandlers(assignment)"
+                  />
+                </q-list>
+              </q-card>
+            </div>
+
+            <div
+              v-if="!showingPast && upcomingGroups.length === 0"
               class="empty-state column no-wrap items-center"
             >
               <q-icon
@@ -277,184 +425,40 @@
                 size="48px"
                 class="empty-icon"
               />
-              <div class="text-body1 q-mt-sm">{{ t('noDuties') }}</div>
+              <div class="text-body1 q-mt-sm">
+                {{
+                  assignments.length === 0
+                    ? t('noAssignments')
+                    : t('noUpcoming')
+                }}
+              </div>
               <m-btn
                 v-if="canCreate"
                 class="q-mt-md"
-                :label="t('action.quick')"
-                icon="bolt"
-                outline
-                @click="openAssignmentDialog({ date: day })"
+                :label="t('action.series')"
+                color="primary"
+                icon="event_repeat"
+                @click="planSeries()"
               />
             </div>
-          </div>
+          </template>
         </template>
+      </div>
 
-        <!-- Week -->
-        <template v-else-if="view === 'week'">
-          <div class="row items-center no-wrap">
-            <q-btn
-              icon="chevron_left"
-              flat
-              round
-              :aria-label="t('nav.previousWeek')"
-              :disable="weekStart <= mondayOf(dateRange.min)"
-              @click="weekStart = addDays(weekStart, -7)"
-            />
-            <div
-              class="col text-center text-subtitle1 text-weight-medium ellipsis"
-            >
-              {{ weekLabel }}
-            </div>
-            <q-btn
-              icon="chevron_right"
-              flat
-              round
-              :aria-label="t('nav.nextWeek')"
-              :disable="weekStart >= mondayOf(dateRange.max)"
-              @click="weekStart = addDays(weekStart, 7)"
-            />
-          </div>
-          <div
-            v-if="focusDate === today && weekStart !== mondayOf(today)"
-            class="row justify-center"
-          >
-            <q-btn
-              :label="t('nav.thisWeek')"
-              color="primary"
-              flat
-              rounded
-              no-caps
-              @click="weekStart = mondayOf(today)"
-            />
-          </div>
-          <chore-week-grid
-            :chores="visibleChores"
-            :assignments="filteredAssignments"
-            :week-start="weekStart"
-            :names="names"
-            :can-create="canCreate"
-            :agenda="quasar.screen.lt.md"
-            :event-start="eventStart"
-            :event-end="eventEnd"
-            @open="editAssignment"
-            @create="(target) => openAssignmentDialog(target)"
-          />
-        </template>
-
-        <!-- List -->
-        <template v-else>
-          <div
-            v-if="pastGroups.length > 0"
-            class="row"
-          >
-            <q-btn-toggle
-              v-model="listRange"
-              :class="{ 'full-width': quasar.screen.lt.sm }"
-              class="compact-toggle"
-              spread
-              no-caps
-              rounded
-              unelevated
-              toggle-color="secondary"
-              :options="listRangeOptions"
-              data-test="chore-list-range"
-            />
-          </div>
-
-          <div
-            v-for="group in shownGroups"
-            :key="group.date"
-          >
-            <div class="row items-center q-mb-xs">
-              <div class="text-subtitle2 text-weight-medium">
-                {{ d(parseLocalDate(group.date), 'dateFull') }}
-              </div>
-              <q-space />
-              <q-btn
-                v-if="canDelete"
-                icon="more_horiz"
-                flat
-                round
-                :aria-label="t('action.more')"
-              >
-                <q-menu>
-                  <q-list>
-                    <q-item
-                      v-close-popup
-                      clickable
-                      @click="deleteDay(group.date)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon
-                          name="delete_sweep"
-                          color="negative"
-                        />
-                      </q-item-section>
-                      <q-item-section>{{
-                        t('action.deleteDay')
-                      }}</q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
-            </div>
-            <q-card
-              flat
-              bordered
-              class="rounded-xl overflow-hidden"
-            >
-              <q-list separator>
-                <chore-assignment-card
-                  v-for="assignment in group.items"
-                  :key="assignment.id"
-                  v-bind="cardProps(assignment)"
-                  v-on="cardHandlers(assignment)"
-                />
-              </q-list>
-            </q-card>
-          </div>
-
-          <div
-            v-if="!showingPast && upcomingGroups.length === 0"
-            class="empty-state column no-wrap items-center"
-          >
-            <q-icon
-              name="event_available"
-              size="48px"
-              class="empty-icon"
-            />
-            <div class="text-body1 q-mt-sm">
-              {{
-                assignments.length === 0 ? t('noAssignments') : t('noUpcoming')
-              }}
-            </div>
-            <m-btn
-              v-if="canCreate"
-              class="q-mt-md"
-              :label="t('action.series')"
-              color="primary"
-              icon="event_repeat"
-              @click="planSeries()"
-            />
-          </div>
-        </template>
-      </template>
-    </div>
-
-    <q-page-sticky
-      v-if="canCreate && chores.length > 0 && quasar.screen.lt.sm"
-      position="bottom-right"
-      :offset="[16, 16]"
-    >
-      <q-btn
-        fab
-        icon="bolt"
-        color="primary"
-        :aria-label="t('action.quick')"
-        @click="openAssignmentDialog()"
-      />
-    </q-page-sticky>
+      <q-page-sticky
+        v-if="canCreate && chores.length > 0 && quasar.screen.lt.sm"
+        position="bottom-right"
+        :offset="[16, 16]"
+      >
+        <q-btn
+          fab
+          icon="bolt"
+          color="primary"
+          :aria-label="t('action.quick')"
+          @click="openAssignmentDialog()"
+        />
+      </q-page-sticky>
+    </template>
   </page-state-handler>
 </template>
 
@@ -467,9 +471,11 @@ import { useI18n } from 'vue-i18n';
 import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { storeToRefs } from 'pinia';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRoomStore } from '@/stores/room-store';
 import { usePermissions } from '@/composables/permissions';
+import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatPersonName } from '@/utils/formatters';
@@ -564,9 +570,18 @@ const names = computed<Map<string, string>>(
     ),
 );
 
+const { registrationsPurged } = storeToRefs(eventDetailsStore);
 const canCreate = computed(() => can('event.chore_assignments.create'));
 const canEdit = computed(() => can('event.chore_assignments.edit'));
 const canDelete = computed(() => can('event.chore_assignments.delete'));
+// Without chores the manager opens straight into creating one.
+const canManageChores = computed(() =>
+  chores.value.length === 0
+    ? can('event.chores.create')
+    : can('event.chores.create') ||
+      can('event.chores.edit') ||
+      can('event.chores.delete'),
+);
 
 const eventStart = computed(() => eventDetailsStore.data?.startAt.slice(0, 10));
 const eventEnd = computed(() => eventDetailsStore.data?.endAt.slice(0, 10));

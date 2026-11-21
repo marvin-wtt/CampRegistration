@@ -45,11 +45,12 @@ export const SUPERVISORY_AUTHORITIES: Record<string, SupervisoryAuthority> = {
     name: 'Commission Nationale de l’Informatique et des Libertés (CNIL)',
     website: 'https://www.cnil.fr',
   },
-  // Events in Germany answer to the authority of their Land, not the federal
-  // one; the notice must point at the state body, so this is flagged regional.
+  // Non-public bodies answer to the authority of their Land, not the BfDI.
+  // Regional: the notice names no body and links the list of all of them.
   DE: {
-    name: 'Der Bundesbeauftragte für den Datenschutz und die Informationsfreiheit',
-    website: 'https://www.bfdi.bund.de',
+    name: 'Datenschutzaufsichtsbehörden der Länder',
+    website:
+      'https://www.datenschutzkonferenz-online.de/datenschutzaufsichtsbehoerden.html',
     regional: true,
   },
   GR: {

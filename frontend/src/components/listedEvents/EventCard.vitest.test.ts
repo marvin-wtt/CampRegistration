@@ -50,6 +50,8 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   freePlaces: null,
   freePlacesTotal: 100,
   registrationStatus: 'open',
+  sensitiveDataPurgedAt: null,
+  registrationDataPurgedAt: null,
   logo: null,
   banner: null,
   ...overrides,

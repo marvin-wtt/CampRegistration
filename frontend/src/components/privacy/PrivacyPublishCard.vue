@@ -1,7 +1,7 @@
 <template>
   <q-card
     flat
-    bordered
+    class="rounded-xl bg-surface-container-low"
   >
     <!-- A passed slot is not the same as a rendered one: both pages pass a
          default slot whose contents are conditional, and an empty section with

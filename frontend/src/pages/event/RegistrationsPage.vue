@@ -1,6 +1,11 @@
 <template>
   <page-state-handler :error>
+    <registration-data-purged-state
+      v-if="event?.registrationDataPurgedAt"
+      class="absolute fit"
+    />
     <result-table-interactive
+      v-else
       class="absolute fit"
       :loading
       :questions="columns"
@@ -23,6 +28,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
 import { extractFormFields } from '@camp-registration/common/form';
 import type {
@@ -45,7 +51,7 @@ const router = useRouter();
 const route = useRoute();
 const { getStringQueryParam } = useRouteQueryParams();
 const quasar = useQuasar();
-const { locale } = useI18n();
+const { locale } = useI18n({ useScope: 'global' });
 const { to } = useObjectTranslation();
 
 // Started during setup, not awaited: the stores flag themselves loading before

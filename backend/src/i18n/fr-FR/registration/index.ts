@@ -6,6 +6,7 @@ export default {
     changes: {
       cleared: 'supprimé',
       file: 'fichier mis à jour',
+      sensitive: 'modifié',
     },
     managerNotification: {
       subject: 'Nouvelle inscription | {{ event.name }}',

@@ -57,8 +57,16 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .optional() satisfies ZodType<
           RegistrationCreateData['displayedTotal']
         >,
+        // Untrusted, never stored: compared with the server's rendering only
+        displayedConsents: z
+          .record(z.string().max(255), z.string().max(20_000))
+          .optional() satisfies ZodType<
+          RegistrationCreateData['displayedConsents']
+        >,
       })
-      .superRefine(async ({ data, locale, group }, ctx) => {
+      // Hands on the form it checked, so what is stored is what was validated.
+      .transform(async (body, ctx) => {
+        const { data, locale, group } = body;
         if (event.countries.length > 1 && !group) {
           // Only a page loaded before the group step existed sends none.
           ctx.addIssue({
@@ -66,10 +74,10 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
             path: ['group'],
             message: 'A group is required. Please reload the page.',
           });
-          return;
+          return z.NEVER;
         }
 
-        const form = new RegistrationForm(event, { locale, group }).load(data);
+        const form = new RegistrationForm(event, group, locale).load(data);
 
         for (const error of await form.dataErrors()) {
           ctx.addIssue({
@@ -78,7 +86,9 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
             message: `${error.message} '${error.path}'`,
           });
         }
-      }) satisfies ZodType<RegistrationCreateData>,
+
+        return { ...body, form };
+      }) satisfies ZodType<RegistrationCreateData & { form: RegistrationForm }>,
   });
 
 const update = (event: EventWithRelations) =>

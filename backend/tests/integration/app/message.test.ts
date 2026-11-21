@@ -321,6 +321,51 @@ describe('/api/v1/events/:eventId/messages', () => {
       ]);
     });
 
+    it('should leave special-category answers out of the mail', async () => {
+      const { event, accessToken } = await crateEventWithManager({
+        form: {
+          elements: [
+            { type: 'text', name: 'first_name' },
+            {
+              type: 'comment',
+              name: 'allergies',
+              privacyCategory: 'allergies',
+            },
+          ],
+        },
+      });
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        data: { first_name: 'Max', allergies: 'nuts' },
+        emails: ['test@example.com'],
+      });
+
+      // Neither by name nor by walking every answer.
+      const template =
+        '{{ registration.data.first_name }}|{{ registration.data.allergies }}|' +
+        '{{#each registration.data}}{{this}};{{/each}}';
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/messages`)
+        .send({
+          registrationIds: [registration.id],
+          subject: 'Hello',
+          body: template,
+          priority: 'normal',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      await assertMessages(body.data.id, [
+        {
+          subject: 'Hello',
+          body: 'Max||Max;',
+          priority: 'normal',
+          replyTo: event.contactEmail as string,
+          emails: ['test@example.com'],
+        },
+      ]);
+    });
+
     it('should send the subject as plain text without HTML entities', async () => {
       const { event, accessToken } = await crateEventWithManager({
         name: "Camp d'enfants & <co>",
@@ -612,6 +657,38 @@ describe('/api/v1/events/:eventId/messages', () => {
       expectEmailCount(0);
       expect(await prisma.messageDelivery.count()).toBe(0);
       expect(await prisma.message.count()).toBe(0);
+    });
+
+    it('should leave special-category answers out of the preview', async () => {
+      const { event, accessToken } = await crateEventWithManager({
+        form: {
+          elements: [
+            { type: 'text', name: 'first_name' },
+            {
+              type: 'comment',
+              name: 'allergies',
+              privacyCategory: 'allergies',
+            },
+          ],
+        },
+      });
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        data: { first_name: 'Max', allergies: 'nuts' },
+        emails: ['test@example.com'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/messages/preview`)
+        .send({
+          registrationId: registration.id,
+          subject: 'Hello',
+          body: '<p>{{ registration.data.first_name }}|{{ registration.data.allergies }}</p>',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.body).toBe('<p>Max|</p>');
     });
 
     it("should fill in the event's texts in the language of the registration's country", async () => {

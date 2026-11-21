@@ -93,6 +93,30 @@ export async function seedE2eEvents(): Promise<void> {
     form: { name: 'Closed event', elements: [] },
   });
 
+  // Open, but refused for privacy reasons: the form asks for allergies, which
+  // the organization's notice does not declare. Unlisted, so the listing
+  // baselines don't change.
+  await EventFactory.create({
+    price: E2E_EVENT_PRICE,
+    id: E2E_PRIVACY_BLOCKED_EVENT_ID,
+    name: 'Privacy Blocked Event',
+    startAt: '2027-07-01T09:00:00.000Z',
+    endAt: '2027-07-14T17:00:00.000Z',
+    location: 'Lakeside Camp',
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    contactEmail: 'privacy-event@example.com',
+    registrationOpensAt: '2020-06-01T09:00:00.000Z',
+    registrationClosesAt: null,
+    form: {
+      name: 'Privacy blocked event',
+      elements: [
+        { name: 'first_name', type: 'text', required: true },
+        { name: 'allergies', type: 'comment', privacyCategory: 'allergies' },
+      ],
+    },
+  });
+
   // Two groups, chosen before the form. Unlisted, so the listing baselines
   // don't change. The address is strict (the default), the nationality warns.
   await EventFactory.create({
@@ -214,6 +238,7 @@ export async function seedE2eEvents(): Promise<void> {
 }
 
 export const E2E_GROUP_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG01';
+export const E2E_PRIVACY_BLOCKED_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCP01';
 export const E2E_WAITLIST_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCW01';
 export const E2E_GROUP_CLOSED_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG20';
 export const E2E_GROUP_UPCOMING_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG10';

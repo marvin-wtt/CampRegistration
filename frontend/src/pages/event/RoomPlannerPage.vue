@@ -5,7 +5,15 @@
     padding
     class="room-planner row justify-center"
   >
-    <div class="planner-content col-12 col-md-11 col-lg-10 column no-wrap">
+    <registration-data-purged-state
+      v-if="registrationsPurged"
+      class="col-12"
+    />
+
+    <div
+      v-else
+      class="planner-content col-12 col-md-11 col-lg-10 column no-wrap"
+    >
       <page-header
         :title="t('title')"
         :subtitle="t('subtitle')"
@@ -278,6 +286,7 @@
 import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
+import { storeToRefs } from 'pinia';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useRoomStore } from '@/stores/room-store';
@@ -297,6 +306,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from '@/composables/permissions';
+import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useEventSettings } from '@/composables/eventSettings';
@@ -311,6 +321,7 @@ const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomStore();
 const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
+const { registrationsPurged } = storeToRefs(eventDetailsStore);
 
 const addLoading = ref(false);
 

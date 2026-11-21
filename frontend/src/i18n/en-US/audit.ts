@@ -123,6 +123,22 @@ export default {
         archivedAt: 'Archived',
       },
     },
+    retention: {
+      label: 'Data retention',
+      actions: {
+        postponed: 'Deadline postponed',
+        sensitive_purged: 'Sensitive data deleted',
+        registrations_purged: 'All registrations deleted',
+      },
+      fields: {
+        count: 'Registrations affected',
+        postponedUntil: 'Postponed until',
+      },
+      kinds: {
+        sensitive: 'Sensitive data',
+        registrations: 'All registration data',
+      },
+    },
     payout: {
       label: 'Payout',
       actions: {
