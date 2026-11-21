@@ -118,6 +118,15 @@ class NewsletterSeeder extends BaseSeeder {
     });
 
     for (let i = 0; i < options.subscribers; i++) {
+      // Every tenth one was added recently and hasn't confirmed yet.
+      if (i % 10 === 9) {
+        await NewsletterSubscriberFactory.pending({
+          newsletter: { connect: { id: newsletter.id } },
+          subscribedAt: seedDate(-(i % 7)),
+        });
+        continue;
+      }
+
       await NewsletterSubscriberFactory.create({
         newsletter: { connect: { id: newsletter.id } },
         subscribedAt: seedDate(-subscribedDaysAgo(i)),

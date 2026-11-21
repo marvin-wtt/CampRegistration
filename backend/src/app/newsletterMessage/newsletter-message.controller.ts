@@ -33,7 +33,7 @@ export class NewsletterMessageController extends BaseController {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
 
-    const subscribers = await this.subscriberService.getSubscribers(
+    const subscribers = await this.subscriberService.getConfirmedSubscribers(
       newsletter.id,
     );
 
