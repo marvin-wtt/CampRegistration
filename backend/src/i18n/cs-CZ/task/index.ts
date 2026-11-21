@@ -3,17 +3,15 @@ export default {
     dueReminder: {
       subject: 'Úkol s termínem {{ dueDate }}: {{ task.title }}',
       preview:
-        'Úkol „{{ task.title }}“ pro {{ event.name }} má termín {{ dueDate }}',
+        '„{{ task.title }}“ k akci {{ event.name }} má termín {{ dueDate }}',
       text: {
-        title: 'Blíží se termín úkolu',
+        title: 'Brzy termín: {{ task.title }}',
         information:
-          'Úkol „{{ task.title }}“ pro akci {{ event.name }} je přiřazen vám a má termín {{ dueDate }}.',
+          'Tento úkol k akci {{ event.name }} je přiřazený tobě a má termín {{ dueDate }}.',
         button: 'Otevřít úkoly',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
       },
       footer: {
-        cause: '$t(email:footer.cause) je vám tento úkol přiřazen.',
+        cause: '$t(email:footer.cause) je ti tento úkol přiřazený.',
       },
     },
   },

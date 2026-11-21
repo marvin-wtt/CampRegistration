@@ -3,20 +3,22 @@ interface Props {
   primaryColor: string;
   href: string;
   cssClass?: string;
+  align?: 'left' | 'center';
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), { align: 'center' });
 </script>
 
 <template>
   <mj-button
+    :align="align"
     :background-color="primaryColor"
     color="#ffffff"
-    font-size="15px"
-    font-weight="600"
-    border-radius="6px"
-    padding="0 36px"
-    inner-padding="14px 28px"
+    font-size="16px"
+    font-weight="700"
+    border-radius="10px"
+    padding="4px 40px 0"
+    inner-padding="16px 36px"
     :href="href"
     :css-class="cssClass"
   >

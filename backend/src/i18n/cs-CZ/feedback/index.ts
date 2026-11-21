@@ -5,12 +5,12 @@ export default {
     text: {
       title: 'Nová zpětná vazba',
       replyNote:
-        'Na tento e-mail můžete odpovědět a přímo kontaktovat uživatele, pokud poskytl e-mailovou adresu.',
+        'Odpověz na tento e-mail a ozvi se přímo odesílateli, pokud zanechal adresu.',
       senderLabel: 'Od',
       messageLabel: 'Zpráva',
     },
     footer: {
-      cause: '$t(email:footer.cause) jste správce.',
+      cause: '$t(email:footer.cause) jsi správce.',
     },
   },
 };

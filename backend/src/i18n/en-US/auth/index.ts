@@ -1,35 +1,31 @@
 export default {
   email: {
     resetPassword: {
-      subject: 'Reset password',
-      preview: 'Reset your password now to regain access to your account.',
+      subject: 'Reset your password',
+      preview: 'Choose a new password to get back into your account.',
       text: {
-        title: 'Hey there,',
+        title: 'Reset your password',
         information:
-          'You forgot your password? No problem. You can set a new one here.',
-        button: 'Reset password',
+          'Forgot your password? No worries. Choose a new one with the button below.',
+        button: 'Choose a new password',
         accidental:
-          'If you did not request a password reset, you can ignore this email.',
-        greeting: 'Best regards,',
-        teamName: '{{ appName }} team',
+          'Didn’t request this? Just ignore this email. Your password stays the same.',
       },
       footer: {
-        cause: '$t(email:footer.cause) you have requested a new password.',
+        cause:
+          '$t(email:footer.cause) a new password was requested for your account.',
       },
     },
 
     verifyEmail: {
-      subject: 'Verify your email',
-      preview: 'Verify your email to activate your account.',
+      subject: 'Confirm your email address',
+      preview: 'One click and your account is ready.',
       text: {
-        title: 'Hey there,',
+        title: 'Confirm your email address',
         information:
-          'Please confirm your email to confirm the account belongs to you. You can login directly after confirmation',
-        button: 'Confirm email',
-        accidental:
-          'If you did not create an account, please do not click the link and contact us.',
-        greeting: 'Best regards,',
-        teamName: '{{ appName }} team',
+          'One last step: confirm that this address is yours. You can sign in right after.',
+        button: 'Confirm email address',
+        accidental: 'Didn’t create an account? Just ignore this email.',
       },
       footer: {
         cause: '$t(email:footer.cause) you created an account.',

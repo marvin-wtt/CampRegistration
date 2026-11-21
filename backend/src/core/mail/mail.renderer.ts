@@ -11,6 +11,7 @@ import { addressLikeToString } from '#core/mail/mail.utils.js';
 import logger from '#core/logger';
 import type { DefaultEmailProps, LocalContext } from '#views/emails/types';
 import { htmlToPreviewText } from '#core/mail/emailPreview';
+import { tint } from '#core/mail/emailColors';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;
@@ -54,6 +55,7 @@ export class MailRenderer {
       subject: options.envelope.subject,
       appName: config.appName,
       primaryColor: config.primaryColor,
+      primaryTint: tint(config.primaryColor, 0.9),
       sentTo: this.tg('email:footer.sentTo', { envelope }),
       ...options.context,
     };

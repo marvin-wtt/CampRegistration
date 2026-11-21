@@ -11,6 +11,7 @@ export interface BaseEmailProps {
   subject: string;
   appName: string;
   primaryColor: string;
+  primaryTint: string;
   sentTo: string;
 }
 
@@ -37,8 +38,6 @@ export interface ActionCardProps extends BaseEmailProps {
   title: string;
   information: string;
   button: string;
-  greeting: string;
-  teamName: string;
   url: string;
   /** Small print under the button, e.g. what to do if the mail was unexpected. */
   accidental?: string;

@@ -5,12 +5,10 @@ export default {
       preview:
         '« {{ task.title }} » pour {{ event.name }} est à rendre le {{ dueDate }}',
       text: {
-        title: 'Une tâche arrive à échéance',
+        title: 'Bientôt à échéance : {{ task.title }}',
         information:
-          'La tâche « {{ task.title }} » pour {{ event.name }} t’est assignée et arrive à échéance le {{ dueDate }}.',
+          'Cette tâche pour {{ event.name }} t’est assignée et arrive à échéance le {{ dueDate }}.',
         button: 'Ouvrir les tâches',
-        greeting: 'Bien à toi,',
-        teamName: 'Équipe {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) cette tâche t’est assignée.',

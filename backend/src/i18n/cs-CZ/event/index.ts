@@ -2,22 +2,20 @@ export default {
   email: {
     retentionDue: {
       subject: 'Končí doba uchování: {{ event.name }}',
-      preview: 'Přihlášky akce {{ event.name }} je třeba projít',
+      preview: 'Je čas zkontrolovat údaje z přihlášek k akci {{ event.name }}',
       text: {
-        title: 'Končí doba uchování',
+        title: 'Je čas zkontrolovat {{ event.name }}',
         information:
-          'Informace o ochraně osobních údajů zveřejněné k akci {{ event.name }} říkají přihlášeným, že se jejich údaje uchovávají {{ months }} měsíců $t(event:email.retentionDue.anchor.{{anchor}}). U této akce tato doba končí {{ dueAt }}.',
+          'Podle tvých informací o ochraně osobních údajů k akci {{ event.name }} se údaje z přihlášek uchovávají {{ months }} měsíců $t(event:email.retentionDue.anchor.{{anchor}}). Tato doba končí {{ dueAt }}.',
         action:
-          'Projdi prosím přihlášky akce a smaž, co už není potřeba. Jen vy dokážete posoudit, co je třeba uchovat dál.',
+          'Projdi přihlášky a smaž, co už nepotřebuješ. Jen ty víš, co je potřeba uchovat dál.',
         exceptions:
-          'Vaše informace o ochraně osobních údajů uvádějí také výjimky, které se uchovávají déle. Nemaž, co spadá pod ně.',
+          'Tvoje informace o ochraně osobních údajů uvádějí i výjimky, které se uchovávají déle. Ty ponech.',
         consentBound:
-          'Některé údaje se uchovávají tak dlouho, dokud trvá souhlas, na kterém stojí. Zůstávají, dokud osoba souhlas neodvolá, a pak musí být bez zbytečného odkladu smazány.',
+          'Údaje založené na souhlasu se smějí uchovávat, dokud souhlas platí. Jakmile ho někdo odvolá, bez odkladu je smaž.',
         noAutomaticDeletion:
-          'Nic nebylo smazáno automaticky. Tato platforma nikdy nemaže údaje akce sama — rozhodnutí i provedení jsou na vás.',
+          'Nic nebylo smazáno automaticky. Údaje akcí nikdy nemažeme sami — rozhodnutí je na tobě.',
         button: 'Otevřít akci',
-        greeting: 'S pozdravem,',
-        teamName: 'Tým {{ appName }}',
       },
       // Pulled into the sentence above by nesting: the payload carries the
       // catalogue key, not a phrase.

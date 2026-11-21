@@ -4,30 +4,25 @@ export default {
       subject: 'Organisation wartet auf Prüfung: {{ organization.name }}',
       preview: '{{ organization.name }} wartet auf die Verifizierung',
       text: {
-        title: 'Eine neue Organisation muss geprüft werden',
+        title: 'Neue Organisation zu prüfen',
         information:
-          '{{ organization.name }} wurde zur Verifizierung eingereicht. ' +
-          'Bis zur Verifizierung kann sie keine Veranstaltungen veröffentlichen und keine Newsletter versenden.',
-        button: 'Organisationen prüfen',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
+          '{{ organization.name }} wartet auf die Verifizierung. ' +
+          'Bis dahin kann sie keine Veranstaltungen veröffentlichen und keine Newsletter versenden.',
+        button: 'Organisation prüfen',
       },
       footer: {
         cause: '$t(email:footer.cause) du Administrator bist.',
       },
     },
     verified: {
-      subject: 'Deine Organisation wurde verifiziert',
+      subject: 'Deine Organisation ist verifiziert',
       preview:
         '{{ organization.name }} kann jetzt Veranstaltungen veröffentlichen',
       text: {
-        title: 'Deine Organisation wurde verifiziert',
+        title: '{{ organization.name }} ist verifiziert',
         information:
-          '{{ organization.name }} wurde verifiziert. ' +
-          'Du kannst jetzt ihre Veranstaltungen veröffentlichen und Newsletter versenden.',
+          'Gute Nachrichten: Du kannst jetzt Veranstaltungen veröffentlichen und Newsletter versenden.',
         button: 'Organisation öffnen',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
       },
       footer: {
         cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
@@ -35,17 +30,14 @@ export default {
     },
     rejected: {
       subject: 'Deine Organisation konnte nicht verifiziert werden',
-      preview: '{{ organization.name }} benötigt deine Aufmerksamkeit',
+      preview: '{{ organization.name }} braucht deine Aufmerksamkeit',
       text: {
-        title: 'Deine Organisation konnte nicht verifiziert werden',
+        title: 'Wir konnten {{ organization.name }} nicht verifizieren',
         information:
-          '{{ organization.name }} wurde nicht verifiziert. ' +
-          'Bis dahin kann sie keine Veranstaltungen veröffentlichen und keine Newsletter versenden. ' +
-          'Wenn du die registrierten Angaben korrigierst, wird sie erneut geprüft.',
+          'Bis zur Verifizierung kann sie keine Veranstaltungen veröffentlichen und keine Newsletter versenden. ' +
+          'Aktualisiere ihre Angaben und wir prüfen sie erneut.',
         reasonLabel: 'Grund',
-        button: 'Angaben prüfen',
-        greeting: 'Viele Grüße',
-        teamName: '{{ appName }} Team',
+        button: 'Angaben aktualisieren',
       },
       footer: {
         cause: '$t(email:footer.cause) du diese Organisation verwaltest.',

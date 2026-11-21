@@ -30,8 +30,6 @@ describe('retention reminder translations', () => {
       'text.consentBound',
       'text.noAutomaticDeletion',
       'text.button',
-      'text.greeting',
-      'text.teamName',
       'footer.cause',
     ];
 
