@@ -84,6 +84,18 @@ export interface RegistrationManagerNotificationProps extends ActionCardProps {
   eventName: string;
 }
 
+export interface TaskReminderGroup {
+  eventName: string;
+  url: string;
+  tasks: { title: string; when: string }[];
+}
+
+/** One task renders as a plain action card; several as `groups` per event. */
+export interface TaskReminderProps extends ActionCardProps {
+  groups: TaskReminderGroup[];
+  groupLinkLabel: string;
+}
+
 export interface NewsletterProps extends BaseEmailProps {
   preview: string;
   body: string;

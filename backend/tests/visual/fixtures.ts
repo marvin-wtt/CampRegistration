@@ -10,6 +10,7 @@ import type {
   RegistrationManagerNotificationProps,
   NewsletterProps,
   RegistrationMessageProps,
+  TaskReminderProps,
   LocalContext,
 } from '#views/emails/types';
 import { htmlToPreviewText } from '#core/mail/emailPreview';
@@ -215,6 +216,56 @@ export const fixtures: EmailFixture[] = [
       button: 'View registrations',
       url,
     } satisfies LocalContext<RegistrationManagerNotificationProps>,
+  },
+  {
+    template: 'task-reminder',
+    name: 'task-reminder-single',
+    subject: 'Due tomorrow: Pack the bus',
+    context: {
+      preview:
+        'This task for Summer Camp 2026 is assigned to you and due tomorrow (22.11.2026).',
+      reason:
+        'You are receiving this email because this task is assigned to you.',
+      title: 'Due tomorrow: Pack the bus',
+      information:
+        'This task for Summer Camp 2026 is assigned to you and due tomorrow (22.11.2026).',
+      groups: [],
+      groupLinkLabel: 'Open tasks',
+      button: 'Open tasks',
+      url,
+    } satisfies LocalContext<TaskReminderProps>,
+  },
+  {
+    template: 'task-reminder',
+    name: 'task-reminder-digest',
+    subject: '3 tasks due soon',
+    context: {
+      preview: 'Buy snacks · Pack the bus · Print name tags',
+      reason:
+        'You are receiving this email because these tasks are assigned to you.',
+      title: '3 tasks due soon',
+      information: 'These tasks are assigned to you and due today or tomorrow.',
+      groups: [
+        {
+          eventName: 'Summer Camp 2026',
+          url,
+          tasks: [
+            { title: 'Buy snacks', when: 'Due today · 21.11.2026' },
+            { title: 'Pack the bus', when: 'Due tomorrow · 22.11.2026' },
+          ],
+        },
+        {
+          eventName: 'Winter Retreat 2027',
+          url,
+          tasks: [
+            { title: 'Print name tags', when: 'Due tomorrow · 22.11.2026' },
+          ],
+        },
+      ],
+      groupLinkLabel: 'Open tasks',
+      button: 'Open tasks',
+      url,
+    } satisfies LocalContext<TaskReminderProps>,
   },
   {
     template: 'newsletter',

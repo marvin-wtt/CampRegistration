@@ -2,18 +2,23 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { MailBase } from '#core/mail/mail.base';
 import { translate } from '@camp-registration/common/utils';
 import { generateUrl } from '#utils/url';
-import { resolveActionCardText } from '#core/mail/actionCardText';
-import type { ActionCardProps, LocalContext } from '#views/emails/types';
+import type { LocalContext, TaskReminderProps } from '#views/emails/types';
 
 export interface TaskDueReminderPayload {
-  task: { id: string; title: string; dueDate: string };
-  event: { id: string; name: Prisma.JsonValue };
   recipient: { name: string | null; email: string; locale: string | null };
+  /** Ordered by due date. */
+  tasks: {
+    title: string;
+    dueDate: string;
+    /** Relative to the event's local date when the reminder was queued. */
+    due: 'today' | 'tomorrow';
+    event: { id: string; name: Prisma.JsonValue };
+  }[];
 }
 
-/** Reminds a task's assignee that it is due soon. */
+/** Reminds an assignee of their tasks that are due soon, in one mail. */
 export class TaskDueReminderMessage extends MailBase<TaskDueReminderPayload> {
-  static readonly type = 'task:due-reminder';
+  static readonly type = 'task:due-digest';
 
   protected to() {
     const { name, email } = this.payload.recipient;
@@ -33,34 +38,79 @@ export class TaskDueReminderMessage extends MailBase<TaskDueReminderPayload> {
   }
 
   protected subject(): string {
-    return this.getT()('subject', this.context());
+    return this.title();
   }
 
   protected content() {
     const t = this.getT();
-    const { event } = this.payload;
+    const tasks = this.tasks();
+    const [first] = tasks;
+    const single = tasks.length === 1;
+
+    const groups = single
+      ? []
+      : [...Map.groupBy(tasks, (task) => task.eventId).values()].map(
+          (group) => ({
+            eventName: group[0].eventName,
+            url: tasksUrl(group[0].eventId),
+            tasks: group.map(({ title, label }) => ({ title, when: label })),
+          }),
+        );
 
     return {
-      template: 'action-card',
+      template: 'task-reminder',
       context: {
-        ...resolveActionCardText(t, this.context()),
-        url: generateUrl(['management', 'events', event.id, 'tasks']),
-      } satisfies LocalContext<ActionCardProps>,
+        preview: single
+          ? t('single.information', first)
+          : tasks.map(({ title }) => title).join(' · '),
+        title: this.title(),
+        information: single
+          ? t('single.information', first)
+          : t('multiple.information'),
+        groups,
+        groupLinkLabel: t('button'),
+        button: t('button'),
+        url: tasksUrl(first.eventId),
+        reason: t(single ? 'footer.cause' : 'footer.causeMultiple'),
+      } satisfies LocalContext<TaskReminderProps>,
     };
   }
 
-  private context() {
+  private title(): string {
+    const t = this.getT();
+    const tasks = this.tasks();
+
+    return tasks.length === 1
+      ? t(`single.title.${tasks[0].due}`, { title: tasks[0].title })
+      : t('multiple.title', { count: tasks.length });
+  }
+
+  private tasks() {
     const locale = this.getLocale();
-    const { event, task } = this.payload;
+    const t = this.getT();
 
-    return {
-      task: { title: task.title },
-      event: {
-        name: translate(event.name as string | Record<string, string>, locale),
-      },
-      dueDate: formatDueDate(task.dueDate, locale),
-    };
+    return this.payload.tasks.map((task) => {
+      const date = formatDueDate(task.dueDate, locale);
+
+      return {
+        title: task.title,
+        eventId: task.event.id,
+        eventName:
+          translate(
+            task.event.name as string | Record<string, string>,
+            locale,
+          ) ?? '',
+        due: task.due,
+        // "tomorrow (22.11.2026)" inside a sentence, "Due tomorrow · …" in a list.
+        when: t(`when.${task.due}`, { date }),
+        label: t(`label.${task.due}`, { date }),
+      };
+    });
   }
+}
+
+function tasksUrl(eventId: string): string {
+  return generateUrl(['management', 'events', eventId, 'tasks']);
 }
 
 /** `YYYY-MM-DD` as a numeric date in the recipient's locale. */
