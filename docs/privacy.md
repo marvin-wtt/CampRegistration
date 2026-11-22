@@ -703,8 +703,11 @@ verification:
   `REGISTRATION_CONSENT_MISSING`) when a tagged question relying on consent has an
   answer while its consent is not `true` (`assertConsentsGiven`), whoever submits
   — a manager creating a registration included. Read through the
-  survey model (`unconsentedQuestions`), like the client's clearing and the mail
-  filter, so SurveyJS decides where an answer lives. A consent counts for the
+  survey model (`unconsentedQuestions`), like the client's check and the mail
+  filter, so SurveyJS decides where an answer lives. The client skips answers the
+  person cannot see (`visibleOnly`): SurveyJS drops them on completion, so they
+  never reach the server, and blocking on them would stop the form without a
+  visible reason. A consent counts for the
   answers in its own dynamic panel entry, an enclosing one or at the top level;
   one asked in other entries only when given in all of them. The client checks
   against the same `consentBasedCategories`, once the notice is loaded. Tags alone are read off the

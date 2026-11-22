@@ -7,7 +7,6 @@ import {
   formPrivacyIssues,
   hasPrivacyIssues,
   uncoveredConsentCategories,
-  clearUnconsentedAnswers,
   specialCategoryAnswerKeys,
   taggedSpecialCategories,
   unconsentedQuestions,
@@ -338,31 +337,50 @@ describe('unconsentedQuestions', () => {
   });
 });
 
-describe('clearUnconsentedAnswers', () => {
-  it('clears what a declined consent covers, comments included', () => {
-    const model = new SurveyModel({
-      elements: [
+describe('unconsentedQuestions with visibleOnly', () => {
+  // Answered, then hidden again: SurveyJS keeps the value until completion.
+  const askedIf = (data: Record<string, unknown>, elements: object[]) => {
+    const model = new SurveyModel({ elements });
+    model.data = data;
+    return unconsentedQuestions(model, consentBased, { visibleOnly: true }).map(
+      (question) => question.name,
+    );
+  };
+  const hasAllergies = { type: 'boolean', name: 'has_allergies' };
+  const shownIfAllergies = { visibleIf: '{has_allergies} = true' };
+
+  it('skips an answer whose question is hidden', () => {
+    expect(
+      askedIf({ has_allergies: false, allergies: 'Nuts' }, [
+        hasAllergies,
+        { ...allergies, ...shownIfAllergies },
+        { ...healthConsent, ...shownIfAllergies },
+      ]),
+    ).toEqual([]);
+  });
+
+  it('skips an answer inside a hidden panel', () => {
+    expect(
+      askedIf({ has_allergies: false, allergies: 'Nuts' }, [
+        hasAllergies,
         {
-          type: 'checkbox',
-          name: 'allergies',
-          privacyCategory: 'allergies',
-          choices: ['nuts'],
-          showOtherItem: true,
+          type: 'panel',
+          name: 'health',
+          ...shownIfAllergies,
+          elements: [allergies, healthConsent],
         },
-        { type: 'text', name: 'first_name' },
-        healthConsent,
-      ],
-    });
-    model.data = {
-      first_name: 'Jane',
-      allergies: ['nuts', 'other'],
-      'allergies-Comment': 'milk',
-      consent_health: false,
-    };
+      ]),
+    ).toEqual([]);
+  });
 
-    clearUnconsentedAnswers(model);
-
-    expect(model.data).toEqual({ first_name: 'Jane', consent_health: false });
+  it('still reports a visible answer whose consent the form hides', () => {
+    expect(
+      askedIf({ has_allergies: false, allergies: 'Nuts' }, [
+        hasAllergies,
+        allergies,
+        { ...healthConsent, ...shownIfAllergies },
+      ]),
+    ).toEqual(['allergies']);
   });
 });
 

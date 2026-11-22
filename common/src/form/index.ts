@@ -29,7 +29,6 @@ export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
   answeredSpecialCategoryQuestions,
   clearSpecialCategoryAnswers,
-  clearUnconsentedAnswers,
   consentAnswers,
   consentTexts,
   isSpecialCategory,
@@ -38,6 +37,7 @@ export {
   taggedSpecialCategories,
   uncoveredConsentCategories,
   unconsentedQuestions,
+  type UnconsentedOptions,
   type ConsentQuestion,
   type FormPrivacyTags,
   type PrivacyTaggedQuestion,

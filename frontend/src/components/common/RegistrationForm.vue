@@ -501,7 +501,10 @@ function createModel(eventId: string, form: object): SurveyModel {
     if (props.moderation) {
       return;
     }
-    const missing = unconsentedQuestions(sender, props.consentCategories);
+    // Hidden answers are dropped on completion, so they never reach the server.
+    const missing = unconsentedQuestions(sender, props.consentCategories, {
+      visibleOnly: true,
+    });
     if (missing.length === 0) {
       return;
     }

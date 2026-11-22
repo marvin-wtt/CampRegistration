@@ -290,15 +290,26 @@ function consentGiven(
   );
 }
 
+export interface UnconsentedOptions {
+  /**
+   * Skip answers the person cannot see: SurveyJS drops a hidden question's
+   * value only on completion, after the form's own check ran. The server reads
+   * the data as sent, so it checks everything.
+   */
+  visibleOnly?: boolean;
+}
+
 /**
  * Questions answered although no consent covering their category was given,
  * read through the survey model — which knows where every answer lives.
  * Categories outside `consentCategories` rest on another basis and are never
  * reported; without it, every category some consent question covers counts.
+ * A hidden consent question still counts as not given.
  */
 export function unconsentedQuestions(
   survey: SurveyModel,
   consentCategories?: ReadonlySet<string>,
+  options: UnconsentedOptions = {},
 ): Question[] {
   const questions = survey.getAllQuestions(false, false, true);
   const consents = questions.filter(isConsentQuestion);
@@ -311,22 +322,15 @@ export function unconsentedQuestions(
       typeof category === 'string' &&
       relying.has(category) &&
       !question.isEmpty() &&
+      (!options.visibleOnly || isShown(question)) &&
       !consentGiven(question, category, consents)
     );
   });
 }
 
-/**
- * Clears the answers a declined consent does not cover, so they are never
- * sent (docs/privacy.md, 5). The form calls it before submitting.
- */
-export function clearUnconsentedAnswers(
-  survey: SurveyModel,
-  consentCategories?: ReadonlySet<string>,
-): void {
-  for (const question of unconsentedQuestions(survey, consentCategories)) {
-    question.clearValue();
-  }
+/** Whether the person can see the question: itself and every panel above it. */
+function isShown(question: Question): boolean {
+  return question.isVisible && question.isParentVisible;
 }
 
 /**
