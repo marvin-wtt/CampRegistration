@@ -133,6 +133,7 @@ const assertEventResponseBody = (
     freePlaces: data.maxParticipants,
     freePlacesTotal: sumParticipants(data.maxParticipants),
     sensitiveDataPurgedAt: null,
+    sensitiveDataClearedAt: null,
     registrationDataPurgedAt: null,
     registrationStatus: eventRegistrationStatus({
       ...data,
@@ -870,6 +871,7 @@ describe('/api/v1/events', () => {
         freePlacesTotal: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
         sensitiveDataPurgedAt: null,
+        sensitiveDataClearedAt: null,
         registrationDataPurgedAt: null,
         logo: null,
         banner: null,
