@@ -29,7 +29,7 @@ type EventSettingCreateData = OptionalByKeys<
 >[];
 
 // The child records a new event starts with, cloned or from a preset.
-export interface EventSeed {
+interface EventSeed {
   tableTemplates?: TableTemplateCreateData;
   messageTemplates?: MessageTemplateCreateData;
   files?: FileCreateData;
@@ -42,7 +42,7 @@ export interface EventSeed {
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
 // it is written once by the retention job and never by an author. A new event
 // is never archived.
-export type EventCreateData = Omit<
+type EventCreateData = Omit<
   Event,
   'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt' | 'archivedAt'
 >;

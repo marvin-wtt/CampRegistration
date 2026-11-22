@@ -24,18 +24,9 @@
   </div>
 </template>
 
-<script lang="ts">
-const tones = ['primary', 'secondary', 'tertiary'] as const;
-
-/** A stable tone per event, so its avatar looks the same everywhere. */
-export function eventTone(eventId: string): (typeof tones)[number] {
-  const hash = [...eventId].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return tones[hash % tones.length] ?? 'primary';
-}
-</script>
-
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
+import { eventTone } from '@/utils/eventTone';
 
 const {
   eventId,

@@ -17,10 +17,3 @@ export const generalLimiter = createRateLimiter('General', {
 export const staticLimiter = createRateLimiter('Static', {
   limit: 500,
 });
-
-export default {
-  authLimiter,
-  refreshLimiter,
-  generalLimiter,
-  staticLimiter,
-};

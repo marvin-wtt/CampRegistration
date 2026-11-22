@@ -10,7 +10,7 @@ import { E2E_ROLE_USERS } from './user.seeder.js';
  * Crockford base32 only: `I`, `L`, `O` and `U` are not valid ULID characters.
  */
 export const E2E_ORGANIZATION_ID = '01JHP0CXJFR4MQS8SF1HQJ8RGZ';
-export const E2E_PENDING_ORGANIZATION_ID = '01JHP0CXJFR4MQS8SF1HQJ8PND';
+const E2E_PENDING_ORGANIZATION_ID = '01JHP0CXJFR4MQS8SF1HQJ8PND';
 
 export async function seedE2eOrganizations(): Promise<void> {
   await OrganizationFactory.create({

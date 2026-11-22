@@ -20,5 +20,3 @@ export const RedisEnvSchema = z.object({
     .describe('Database number to use in Redis')
     .default(0),
 });
-
-export type RedisEnv = z.output<typeof RedisEnvSchema>;

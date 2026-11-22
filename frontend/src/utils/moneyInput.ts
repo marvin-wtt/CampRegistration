@@ -4,7 +4,7 @@ import {
 } from '@camp-registration/common/utils';
 
 /** Enough digits for any receipt, short of what the API refuses. */
-export const MAX_AMOUNT_DIGITS = 9;
+const MAX_AMOUNT_DIGITS = 9;
 
 /**
  * The digits typed into a cash-register style amount field, as minor units:

@@ -19,7 +19,7 @@ interface SelectData {
   value: string;
 }
 
-export interface FormField extends SelectData {
+interface FormField extends SelectData {
   question: Question;
 }
 
@@ -154,7 +154,7 @@ export function extractFormFields(form: object, prefix?: string): SelectData[] {
 }
 
 /** Every field the form stores an answer under, calculated ones included. */
-export function collectStoredFields(model: SurveyModel): FormField[] {
+function collectStoredFields(model: SurveyModel): FormField[] {
   return model
     .getAllQuestions()
     .flatMap((q) => collectFields(q, STORELESS_TYPES));

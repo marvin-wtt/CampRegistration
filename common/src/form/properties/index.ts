@@ -11,6 +11,4 @@ const properties: PropertyDefinition[] = [
   showPaymentTotal,
 ];
 
-export { eventDataType, properties };
-
 export default properties;

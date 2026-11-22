@@ -15,7 +15,7 @@ export type PayoutStatusKey =
  * paying. An outdated payout can't be signed any more; once paid and signed,
  * it is done even if a receipt changed later (settled by a new payout).
  */
-export function payoutStatusKey(payout: Payout): PayoutStatusKey {
+function payoutStatusKey(payout: Payout): PayoutStatusKey {
   const signed = isSigned(payout);
   if (payout.outdated && (!signed || !payout.paidOn)) {
     return 'outdated';

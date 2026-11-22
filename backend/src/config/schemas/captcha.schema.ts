@@ -48,5 +48,3 @@ export const CaptchaEnvSchema = z
       }
     }
   });
-
-export type CaptchaEnv = z.output<typeof CaptchaEnvSchema>;

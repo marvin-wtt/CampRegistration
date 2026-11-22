@@ -21,7 +21,7 @@ export function customFileSlots(
   );
 }
 
-export class RegistrationEventDataHelper {
+class RegistrationEventDataHelper {
   constructor(private readonly dataByTags: Record<string, unknown[]>) {}
 
   private stringValue(name: string): string | undefined {

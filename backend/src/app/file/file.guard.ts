@@ -7,9 +7,9 @@ type File = Exclude<Request['models']['file'], undefined>;
 
 type MaybePromise<T> = T | Promise<T>;
 
-export type FileGuardResolver = (req: Request) => MaybePromise<GuardFn>;
+type FileGuardResolver = (req: Request) => MaybePromise<GuardFn>;
 
-export type FileAccessType = 'view' | 'edit' | 'delete';
+type FileAccessType = 'view' | 'edit' | 'delete';
 
 export type FileGuardResolvers = Partial<
   Record<FileAccessType, FileGuardResolver>
@@ -97,7 +97,7 @@ async function resolveFileAccessGuard(
   return resolver(req);
 }
 
-export function fileAccessGuard(accessType: FileAccessType): GuardFn {
+function fileAccessGuard(accessType: FileAccessType): GuardFn {
   return async (req) => {
     const guard = await resolveFileAccessGuard(req, accessType);
 

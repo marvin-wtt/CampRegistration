@@ -4,7 +4,7 @@ import type {
   SETTING_KEYS,
 } from '@camp-registration/common/settings';
 
-export type MessageTemplateTrigger =
+type MessageTemplateTrigger =
   | 'registration_submitted'
   | 'registration_confirmed'
   | 'registration_waitlisted'
@@ -12,7 +12,7 @@ export type MessageTemplateTrigger =
   | 'registration_updated'
   | 'registration_canceled';
 
-export interface PresetMessageTemplate {
+interface PresetMessageTemplate {
   subject: Record<AppLocale, string>;
   body: Record<AppLocale, string>;
 }

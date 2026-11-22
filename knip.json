@@ -1,0 +1,37 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [".claude/hooks/*.mjs"]
+    },
+    "common": {
+      "entry": ["src/*/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "backend": {
+      "entry": [
+        "src/entry.cjs",
+        "src/views/emails/*.vue",
+        "prisma/migrations/*/migration.ts"
+      ],
+      "project": ["src/**/*.{ts,vue}", "prisma/**/*.ts", "scripts/**/*.mjs"],
+      "ignoreDependencies": ["reflect-metadata", "@camp-registration/web"]
+    },
+    "frontend": {
+      "entry": [
+        "src/boot/*.ts",
+        "src/**/*.vitest.{test,spec}.ts",
+        "test/vitest/**/*.ts",
+        "scripts/**/*.mjs",
+        "postcss.config.js"
+      ],
+      "project": ["src/**/*.{ts,vue}", "scripts/**/*.mjs"],
+      "ignoreDependencies": [
+        "vite-plugin-checker",
+        "@intlify/unplugin-vue-i18n"
+      ],
+      "vitest": false
+    },
+    "e2e": {}
+  }
+}

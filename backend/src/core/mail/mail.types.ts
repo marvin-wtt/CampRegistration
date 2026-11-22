@@ -26,17 +26,17 @@ export interface Envelope {
   dsn?: boolean | undefined;
 }
 
-export interface TextContent {
+interface TextContent {
   text: string;
 }
 
-export interface ViewContent {
+interface ViewContent {
   template: string;
   context: Record<string, unknown>;
   text?: string;
 }
 
-export interface HtmlContent extends Partial<TextContent> {
+interface HtmlContent extends Partial<TextContent> {
   html: string;
 }
 

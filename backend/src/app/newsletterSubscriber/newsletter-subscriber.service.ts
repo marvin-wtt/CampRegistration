@@ -8,7 +8,7 @@ import {
 import type { NewsletterSubscriber } from '#generated/prisma/client';
 
 /** How long a confirmation link stays valid; pending entries are then deleted. */
-export const CONFIRMATION_VALID_DAYS = 30;
+const CONFIRMATION_VALID_DAYS = 30;
 
 function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');

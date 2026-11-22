@@ -7,7 +7,7 @@
  */
 
 /** Injected centrally by `MailRenderer.renderFile` — never set by a mailable. */
-export interface BaseEmailProps {
+interface BaseEmailProps {
   subject: string;
   appName: string;
   primaryColor: string;
@@ -84,7 +84,7 @@ export interface RegistrationManagerNotificationProps extends ActionCardProps {
   eventName: string;
 }
 
-export interface TaskReminderGroup {
+interface TaskReminderGroup {
   eventName: string;
   url: string;
   tasks: { title: string; when: string }[];

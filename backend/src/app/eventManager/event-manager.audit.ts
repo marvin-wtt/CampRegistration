@@ -40,7 +40,7 @@ export const eventManagerAuditPolicy: AuditChangePolicy<
  * subject is the user id (resolved to a name at read time) or, for a pending
  * invitation, a masked email.
  */
-export function managerIdentity(
+function managerIdentity(
   manager: AuditedManager | null | undefined,
 ): AuditDetails {
   if (!manager) {

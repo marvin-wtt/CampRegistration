@@ -9,7 +9,7 @@ function createClient(): PrismaClient {
   return new PrismaClient({ adapter });
 }
 
-export const prisma: PrismaClient = createClient();
+const prisma: PrismaClient = createClient();
 
 export async function verifyDatabaseConnection() {
   // The mariadb driver adapter connects lazily, so `$connect()` resolves even

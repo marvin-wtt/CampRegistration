@@ -57,15 +57,4 @@ const functions: FunctionRegistrationParams[] = [
   },
 ];
 
-export {
-  isMinor,
-  isAdult,
-  subtractYears,
-  htmlDate,
-  translate,
-  isWaitingList,
-  daysBetween,
-  functions,
-};
-
 export default functions;

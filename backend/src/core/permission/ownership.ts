@@ -39,7 +39,7 @@ function ownerFields(model: ModelKey): readonly string[] {
   return fields;
 }
 
-export function isOwnedBy(
+function isOwnedBy(
   model: ModelKey,
   record: object,
   userId: string | undefined,

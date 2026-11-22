@@ -47,7 +47,10 @@ export const eventOrganizationVerified = (req: Request): boolean => {
   );
 };
 
-// Common guard for aoi and meta route
+/**
+ * Common guard for aoi and meta route
+ * @alias
+ */
 export const eventPubliclyVisible: GuardFn = eventOrganizationVerified;
 
 export const eventViewGuard: GuardFn = or(
@@ -71,7 +74,7 @@ async function prepareRequestModels(req: Request) {
   req.setModelOrFail('event', event);
 }
 
-export const eventFileViewGuard = async (req: Request): Promise<GuardFn> => {
+const eventFileViewGuard = async (req: Request): Promise<GuardFn> => {
   await prepareRequestModels(req);
   const file = req.modelOrFail('file');
 
@@ -82,13 +85,13 @@ export const eventFileViewGuard = async (req: Request): Promise<GuardFn> => {
   return or(hasEventPermission('event.files.view'), fileAccess);
 };
 
-export const eventFileEditGuard = async (req: Request): Promise<GuardFn> => {
+const eventFileEditGuard = async (req: Request): Promise<GuardFn> => {
   await prepareRequestModels(req);
 
   return hasEventPermission('event.files.edit');
 };
 
-export const eventFileDeleteGuard = async (req: Request): Promise<GuardFn> => {
+const eventFileDeleteGuard = async (req: Request): Promise<GuardFn> => {
   await prepareRequestModels(req);
 
   return hasEventPermission('event.files.delete');

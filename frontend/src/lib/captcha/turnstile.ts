@@ -1,7 +1,7 @@
 const SCRIPT_URL =
   'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
-export interface TurnstileRenderOptions {
+interface TurnstileRenderOptions {
   sitekey: string;
   action?: string;
   execution?: 'render' | 'execute';

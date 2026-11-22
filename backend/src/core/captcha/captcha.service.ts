@@ -7,7 +7,7 @@ import config, { type AppConfig } from '#config/index';
 import type { CaptchaCspSources, CaptchaProvider } from './captcha.provider.js';
 import { TurnstileProvider } from './turnstile.provider.js';
 
-export function createCaptchaProvider(
+function createCaptchaProvider(
   captchaConfig: AppConfig['captcha'],
 ): CaptchaProvider | undefined {
   switch (captchaConfig.driver) {

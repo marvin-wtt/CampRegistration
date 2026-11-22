@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 
 export type CellValue = string | number | Date | null;
 
-export interface SheetColumn {
+interface SheetColumn {
   header: string;
   /** Characters; a guess is fine, Excel users resize anyway. */
   width?: number;

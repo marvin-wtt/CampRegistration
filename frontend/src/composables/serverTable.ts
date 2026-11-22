@@ -2,7 +2,6 @@ import { nextTick, ref, watch, type Component } from 'vue';
 import type { QTable } from 'quasar';
 import {
   useServerList,
-  type ServerListQueryContext,
   type UseServerListOptions,
 } from '@/composables/serverList';
 
@@ -11,8 +10,6 @@ export interface ServerTablePagination {
   descending: boolean;
   rowsPerPage: number;
 }
-
-export type ServerTableQueryContext = ServerListQueryContext;
 
 export type UseServerTableOptions<TRow, TQuery> = Omit<
   UseServerListOptions<TRow, TQuery>,

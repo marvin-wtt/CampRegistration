@@ -118,7 +118,7 @@ export function addConditionBadge(
   });
 }
 
-export function buildEditorModePreset(
+function buildEditorModePreset(
   mode: EditorMode,
   context: EditorModeContext,
   activeTab?: string,
@@ -153,7 +153,7 @@ export function buildEditorModePreset(
 }
 
 // English stays available as the survey's default locale, as before presets.
-export function surveyLocales(eventLocales: string[]): string[] {
+function surveyLocales(eventLocales: string[]): string[] {
   return [...new Set(['en', ...eventLocales])];
 }
 

@@ -205,5 +205,3 @@ export function useExpenseFilters(
 
   return { choices, flags, active, filtered, reset };
 }
-
-export type ExpenseFilters = ReturnType<typeof useExpenseFilters>;
