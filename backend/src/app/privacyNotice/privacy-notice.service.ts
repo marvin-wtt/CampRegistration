@@ -2,15 +2,23 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#core/router/ApiError';
+import { perRequest } from '#core/context/requestContext';
+import { localesForCountries } from '@camp-registration/common/locales';
 import { sanitizeHtmlContent, sanitizePlainText } from '#utils/sanitize';
 import {
   addendumGaps,
   composePrivacyNotice,
   emptyPrivacyNoticeContent,
+  hasStructuredEntries,
   isEmptyAddendum,
+  normalizeExclusions,
   privacyNoticeCompleteness,
+  publishableAddendum,
+  refusedExclusions,
   retentionExceptions,
   supervisoryAuthorityFor,
+  withoutRefused,
+  type ComposedPrivacyNotice,
   type EventPrivacyNotice,
   type OrganizationPrivacyNotice,
   type PrivacyDataCategoryEntry,
@@ -62,7 +70,10 @@ export class PrivacyNoticeService extends BaseService {
   ): Promise<OrganizationPrivacyNotice> {
     const published = await this.latestVersion('ORGANIZATION', organizationId);
 
-    return this.toOrganizationNotice(published);
+    return this.toOrganizationNotice(
+      published,
+      await this.organizationLocales(organizationId),
+    );
   }
 
   /**
@@ -75,7 +86,8 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeContent,
   ): Promise<OrganizationPrivacyNotice> {
     const sanitized = this.sanitizeContent(content);
-    const completeness = privacyNoticeCompleteness(sanitized);
+    const locales = await this.organizationLocales(organizationId);
+    const completeness = privacyNoticeCompleteness(sanitized, { locales });
 
     if (!completeness.complete) {
       throw new ApiError(
@@ -90,7 +102,7 @@ export class PrivacyNoticeService extends BaseService {
       sanitized,
     );
 
-    return this.toOrganizationNotice(published);
+    return this.toOrganizationNotice(published, locales);
   }
 
   /**
@@ -120,7 +132,11 @@ export class PrivacyNoticeService extends BaseService {
       this.latestVersion('EVENT', eventId),
     ]);
 
-    return this.toEventNotice(organizationVersion, eventVersion);
+    return this.toEventNotice(
+      organizationVersion,
+      eventVersion,
+      await this.eventLocales(eventId),
+    );
   }
 
   /**
@@ -145,12 +161,43 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeAddendum,
   ): Promise<EventPrivacyNotice> {
     const sanitized = this.sanitizeAddendum(content);
+    const locales = await this.eventLocales(eventId);
     const organizationVersion = await this.latestVersion(
       'ORGANIZATION',
       organizationId,
     );
+    const organizationContent =
+      (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
+      null;
 
-    if (isEmptyAddendum(sanitized)) {
+    // Composition drops structured entries under a free-text notice, so
+    // accepting them would publish statements no registrant is shown.
+    if (
+      organizationContent?.mode === 'free_text' &&
+      hasStructuredEntries(sanitized)
+    ) {
+      throw new ApiError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        'The organization notice is free text; an event can only add text to it.',
+      );
+    }
+
+    // Undeclared and restated keys hide nothing, so they are dropped rather
+    // than stored for a later organization entry to vanish under.
+    const addendum = normalizeExclusions(organizationContent, sanitized);
+
+    // Composition would ignore these; publishing them would mislead the author.
+    const refused = refusedExclusions(organizationContent, addendum);
+    if (refused.length > 0) {
+      throw new ApiError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        `These entries cannot be excluded: ${refused
+          .map((entry) => `${entry.part}.${entry.key} (${entry.reason})`)
+          .join(', ')}`,
+      );
+    }
+
+    if (isEmptyAddendum(addendum)) {
       if (!(await this.latestVersion('EVENT', eventId))) {
         throw new ApiError(
           httpStatus.UNPROCESSABLE_ENTITY,
@@ -158,11 +205,7 @@ export class PrivacyNoticeService extends BaseService {
         );
       }
     } else {
-      const gaps = addendumGaps(
-        (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
-          null,
-        sanitized,
-      );
+      const gaps = addendumGaps(organizationContent, addendum, { locales });
 
       if (gaps.length > 0) {
         throw new ApiError(
@@ -172,9 +215,9 @@ export class PrivacyNoticeService extends BaseService {
       }
     }
 
-    const eventVersion = await this.appendVersion('EVENT', eventId, sanitized);
+    const eventVersion = await this.appendVersion('EVENT', eventId, addendum);
 
-    return this.toEventNotice(organizationVersion, eventVersion);
+    return this.toEventNotice(organizationVersion, eventVersion, locales);
   }
 
   /**
@@ -208,12 +251,7 @@ export class PrivacyNoticeService extends BaseService {
         registrationNumber: organization.registrationNumber,
       },
       supervisoryAuthority: supervisoryAuthorityFor(organization.country),
-      notice: organizationVersion
-        ? composePrivacyNotice(
-            organizationVersion.content as PrivacyNoticeContent,
-            eventVersion?.content as PrivacyNoticeAddendum | undefined,
-          )
-        : null,
+      notice: composeVersions(organizationVersion, eventVersion),
       organizationVersion: organizationVersion?.version ?? null,
       eventVersion: eventVersion?.version ?? null,
     };
@@ -234,9 +272,9 @@ export class PrivacyNoticeService extends BaseService {
     toOrganizationId: string,
   ): Promise<void> {
     const eventVersion = await this.latestVersion('EVENT', fromEventId);
-    const content = eventVersion?.content as PrivacyNoticeAddendum | undefined;
+    const source = eventVersion?.content as PrivacyNoticeAddendum | undefined;
 
-    if (!content || isEmptyAddendum(content)) {
+    if (!source) {
       return;
     }
 
@@ -244,11 +282,26 @@ export class PrivacyNoticeService extends BaseService {
       'ORGANIZATION',
       toOrganizationId,
     );
-    const gaps = addendumGaps(
+    const organizationContent =
       (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
-        null,
-      content,
+      null;
+    // Under a free-text target notice only the source's text can be shown.
+    // Exclusions are re-read against the target organization; any it would
+    // ignore are dropped, since cloning must not fail on them.
+    const normalized = normalizeExclusions(
+      organizationContent,
+      publishableAddendum(organizationContent, source),
     );
+    const refused = refusedExclusions(organizationContent, normalized);
+    const content = withoutRefused(normalized, refused);
+
+    if (isEmptyAddendum(content)) {
+      return;
+    }
+
+    // Held to what publishing requires, the new event's locales included.
+    const locales = await this.eventLocales(toEventId);
+    const gaps = addendumGaps(organizationContent, content, { locales });
 
     if (gaps.length > 0) {
       return;
@@ -261,23 +314,49 @@ export class PrivacyNoticeService extends BaseService {
     );
   }
 
-  /** Resolved once per registration, at submission, and then never recomputed. */
-  async getStampForEvent(
+  /** The notice registrants currently read, or null before any is published. */
+  async getComposedNotice(
     eventId: string,
     organizationId: string,
-  ): Promise<PrivacyNoticeStamp> {
-    const [organizationVersion, eventVersion, platformPolicy] =
-      await Promise.all([
-        this.latestVersion('ORGANIZATION', organizationId),
-        this.latestVersion('EVENT', eventId),
-        this.legalService.getDocument('PRIVACY_POLICY'),
-      ]);
+  ): Promise<ComposedPrivacyNotice | null> {
+    const [organizationVersion, eventVersion] = await Promise.all([
+      this.latestVersion('ORGANIZATION', organizationId),
+      this.latestVersion('EVENT', eventId),
+    ]);
 
-    return {
-      organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
-      eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
-      platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
-    };
+    return composeVersions(organizationVersion, eventVersion);
+  }
+
+  /**
+   * What a registrant submitting now is shown, resolved once per registration:
+   * the stamp stored with it, and the composed notice its consents are checked
+   * against — the same versions, so the check and the proof agree. Read once
+   * per request: the route's compliance guard and the create share it.
+   */
+  getNoticeForRegistration(
+    eventId: string,
+    organizationId: string,
+  ): Promise<{
+    stamp: PrivacyNoticeStamp;
+    notice: ComposedPrivacyNotice | null;
+  }> {
+    return perRequest(`registration-notice:${eventId}`, async () => {
+      const [organizationVersion, eventVersion, platformPolicy] =
+        await Promise.all([
+          this.latestVersion('ORGANIZATION', organizationId),
+          this.latestVersion('EVENT', eventId),
+          this.legalService.getDocument('PRIVACY_POLICY'),
+        ]);
+
+      return {
+        stamp: {
+          organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
+          eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
+          platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
+        },
+        notice: composeVersions(organizationVersion, eventVersion),
+      };
+    });
   }
 
   /**
@@ -334,10 +413,35 @@ export class PrivacyNoticeService extends BaseService {
     });
   }
 
+  /** The locales an event is offered in, which its notice must be read in. */
+  private async eventLocales(eventId: string): Promise<string[]> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { countries: true },
+    });
+
+    return event ? localesForCountries(event.countries) : [];
+  }
+
+  /**
+   * Every locale one of the organization's events is offered in: its notice
+   * is shown with each of them (Art. 12). None yet means any locale will do.
+   */
+  private async organizationLocales(organizationId: string): Promise<string[]> {
+    const events = await this.prisma.event.findMany({
+      where: { organizationId },
+      select: { countries: true },
+    });
+
+    return localesForCountries(events.flatMap((event) => event.countries));
+  }
+
   private toOrganizationNotice(
     version: PrivacyNoticeVersion | null,
+    requiredLocales: string[],
   ): OrganizationPrivacyNotice {
     return {
+      requiredLocales,
       content:
         (version?.content as PrivacyNoticeContent | undefined) ??
         emptyPrivacyNoticeContent(),
@@ -349,8 +453,10 @@ export class PrivacyNoticeService extends BaseService {
   private toEventNotice(
     organizationVersion: PrivacyNoticeVersion | null,
     eventVersion: PrivacyNoticeVersion | null,
+    requiredLocales: string[],
   ): EventPrivacyNotice {
     return {
+      requiredLocales,
       content:
         (eventVersion?.content as PrivacyNoticeAddendum | undefined) ?? {},
       organizationContent:
@@ -439,6 +545,7 @@ export class PrivacyNoticeService extends BaseService {
   ): PrivacyRecipientEntry[] {
     return recipients.map((recipient) => ({
       ...recipient,
+      label: this.sanitizePlainTranslatable(recipient.label),
       name: recipient.name ? sanitizePlainText(recipient.name) : recipient.name,
     }));
   }
@@ -493,4 +600,17 @@ export class PrivacyNoticeService extends BaseService {
       Object.entries(value).map(([locale, text]) => [locale, sanitize(text)]),
     );
   }
+}
+
+/** The notice registrants read, or null before the organization published. */
+function composeVersions(
+  organizationVersion: PrivacyNoticeVersion | null,
+  eventVersion: PrivacyNoticeVersion | null,
+): ComposedPrivacyNotice | null {
+  return organizationVersion
+    ? composePrivacyNotice(
+        organizationVersion.content as PrivacyNoticeContent,
+        eventVersion?.content as PrivacyNoticeAddendum | undefined,
+      )
+    : null;
 }

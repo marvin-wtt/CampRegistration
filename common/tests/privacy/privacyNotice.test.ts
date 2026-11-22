@@ -12,6 +12,7 @@ import {
   gapsInSection,
   isEmptyAddendum,
   privacyNoticeCompleteness,
+  maxSpecialCategoryWeeks,
   supervisoryAuthorityFor,
   type PrivacyNoticeContent,
 } from '../../src/privacy/index.js';
@@ -22,7 +23,11 @@ function completeContent(): PrivacyNoticeContent {
     purposes: [{ key: 'registration_administration', legalBasis: 'contract' }],
     dataCategories: [{ key: 'identity' }],
     recipients: [{ key: 'platform_operator' }],
-    retention: { months: 24, anchor: 'event_end', exceptions: [] },
+    retention: {
+      months: 24,
+      exceptions: [],
+      specialCategories: { weeks: 4 },
+    },
   };
 }
 
@@ -124,7 +129,7 @@ describe('privacyNoticeCompleteness', () => {
 
   it('rejects a non-positive retention period', () => {
     const content = completeContent();
-    content.retention = { months: 0, anchor: 'event_end', exceptions: [] };
+    content.retention = { months: 0, exceptions: [] };
 
     expect(privacyNoticeCompleteness(content).gaps).toContain('retention');
   });
@@ -137,7 +142,7 @@ describe('privacyNoticeCompleteness', () => {
   it('accepts an exception scoped to a purpose from the catalogue', () => {
     const content = completeContent();
     content.retention!.exceptions = [
-      { scope: 'payment_and_invoicing', months: 120, anchor: 'event_end' },
+      { scope: 'payment_and_invoicing', months: 120 },
     ];
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
@@ -145,9 +150,7 @@ describe('privacyNoticeCompleteness', () => {
 
   it('requires a name for an exception the author invented', () => {
     const content = completeContent();
-    content.retention!.exceptions = [
-      { scope: customKey('1'), months: 36, anchor: 'event_end' },
-    ];
+    content.retention!.exceptions = [{ scope: customKey('1'), months: 36 }];
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
       'retention_exception',
@@ -159,9 +162,7 @@ describe('privacyNoticeCompleteness', () => {
 
   it('rejects an exception with no period', () => {
     const content = completeContent();
-    content.retention!.exceptions = [
-      { scope: 'insurance', months: 0, anchor: 'event_end' },
-    ];
+    content.retention!.exceptions = [{ scope: 'insurance', months: 0 }];
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
       'retention_exception',
@@ -172,9 +173,9 @@ describe('privacyNoticeCompleteness', () => {
     const content = completeContent();
     content.retention = {
       months: 24,
-      anchor: 'event_end',
       // @ts-expect-error legacy shape: exceptions used to be free text
       exceptions: { en: 'Tax records' },
+      specialCategories: { weeks: 4 },
     };
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
@@ -210,6 +211,21 @@ describe('privacyNoticeCompleteness — custom entries', () => {
     );
 
     content.dataCategories[1]!.label = { en: 'Swimming ability' };
+
+    expect(privacyNoticeCompleteness(content).complete).toBe(true);
+  });
+
+  it('requires a name for a custom recipient', () => {
+    const content = completeContent();
+    content.recipients.push({ key: customKey('abc') });
+
+    expect(privacyNoticeCompleteness(content).gaps).toContain(
+      'custom_recipient_label',
+    );
+
+    content.recipients[content.recipients.length - 1]!.label = {
+      en: 'Local sports club',
+    };
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
   });
@@ -330,7 +346,7 @@ describe('isEmptyAddendum', () => {
     );
     expect(
       isEmptyAddendum({
-        retention: { months: 12, anchor: 'event_end', exceptions: [] },
+        retention: { months: 12, exceptions: [] },
       }),
     ).toBe(false);
   });
@@ -359,7 +375,7 @@ describe('composePrivacyNotice', () => {
       purposes: [
         { key: 'registration_administration', legalBasis: 'legal_obligation' },
       ],
-      retention: { months: 6, anchor: 'submission', exceptions: [] },
+      retention: { months: 6, exceptions: [] },
     });
 
     expect(composed.purposes).toEqual([
@@ -367,8 +383,9 @@ describe('composePrivacyNotice', () => {
     ]);
     expect(composed.retention).toEqual({
       months: 6,
-      anchor: 'submission',
       exceptions: [],
+      // Not restated by the event, so the organization's period applies.
+      specialCategories: { weeks: 4 },
     });
   });
 
@@ -377,12 +394,10 @@ describe('composePrivacyNotice', () => {
       ...completeContent(),
       retention: {
         months: 24,
-        anchor: 'event_end',
         exceptions: [
           {
             scope: 'payment_and_invoicing',
             months: 120,
-            anchor: 'event_end',
           },
         ],
       },
@@ -391,10 +406,7 @@ describe('composePrivacyNotice', () => {
     const composed = composePrivacyNotice(organization, {
       retention: {
         months: 6,
-        anchor: 'submission',
-        exceptions: [
-          { scope: 'photo_publication', months: 36, anchor: 'event_end' },
-        ],
+        exceptions: [{ scope: 'photo_publication', months: 36 }],
       },
     });
 
@@ -412,12 +424,10 @@ describe('composePrivacyNotice', () => {
       ...completeContent(),
       retention: {
         months: 24,
-        anchor: 'event_end',
         exceptions: [
           {
             scope: 'payment_and_invoicing',
             months: 120,
-            anchor: 'event_end',
           },
         ],
       },
@@ -426,15 +436,12 @@ describe('composePrivacyNotice', () => {
     const composed = composePrivacyNotice(organization, {
       retention: {
         months: 24,
-        anchor: 'event_end',
-        exceptions: [
-          { scope: 'payment_and_invoicing', months: 84, anchor: 'event_end' },
-        ],
+        exceptions: [{ scope: 'payment_and_invoicing', months: 84 }],
       },
     });
 
     expect(composed.retention?.exceptions).toEqual([
-      { scope: 'payment_and_invoicing', months: 84, anchor: 'event_end' },
+      { scope: 'payment_and_invoicing', months: 84 },
     ]);
   });
 
@@ -530,6 +537,7 @@ describe('privacyNoticeCompleteness — consent-bound retention', () => {
     content.retention!.exceptions.push({
       scope: 'photo_publication',
       until: 'consent_withdrawn',
+      months: 60,
     });
 
     expect(privacyNoticeCompleteness(content)).toEqual({
@@ -543,6 +551,7 @@ describe('privacyNoticeCompleteness — consent-bound retention', () => {
     content.retention!.exceptions.push({
       scope: 'registration_administration',
       until: 'consent_withdrawn',
+      months: 60,
     });
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
@@ -556,11 +565,25 @@ describe('privacyNoticeCompleteness — consent-bound retention', () => {
     content.retention!.exceptions.push({
       scope: customKey('1'),
       until: 'consent_withdrawn',
+      months: 60,
     });
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
       'retention_exception',
     );
+  });
+
+  it('requires an upper limit for consent that is never withdrawn', () => {
+    const content = completeContent();
+    content.purposes.push({ key: 'photo_publication', legalBasis: 'consent' });
+    content.retention!.exceptions.push({
+      scope: 'photo_publication',
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content).gaps).toEqual([
+      'retention_exception',
+    ]);
   });
 
   it('routes the new gap to the retention step', () => {
@@ -615,15 +638,113 @@ describe('addendumGaps', () => {
       addendumGaps(completeContent(), {
         retention: {
           months: 24,
-          anchor: 'event_end',
           exceptions: [
             {
               scope: 'registration_administration',
               until: 'consent_withdrawn',
+              months: 60,
             },
           ],
         },
       }),
     ).toEqual(['retention_exception_consent_basis']);
+  });
+});
+
+describe('privacyNoticeCompleteness — sensitive data retention', () => {
+  it('requires a period for special categories', () => {
+    const content = completeContent();
+    delete content.retention!.specialCategories;
+
+    expect(privacyNoticeCompleteness(content).gaps).toEqual([
+      'special_category_retention',
+    ]);
+  });
+
+  it('refuses a period longer than the main one', () => {
+    const content = completeContent();
+    content.retention!.specialCategories = {
+      weeks: maxSpecialCategoryWeeks(24) + 1,
+    };
+
+    expect(privacyNoticeCompleteness(content).gaps).toEqual([
+      'special_category_retention',
+    ]);
+  });
+
+  it('lets an event replace the period it inherits', () => {
+    const composed = composePrivacyNotice(completeContent(), {
+      retention: {
+        months: 24,
+        exceptions: [],
+        specialCategories: { weeks: 2 },
+      },
+    });
+
+    expect(composed.retention?.specialCategories).toEqual({
+      weeks: 2,
+    });
+  });
+
+  it('does not blame an event for a period its organization lacks', () => {
+    const organization = completeContent();
+    delete organization.retention!.specialCategories;
+
+    expect(
+      addendumGaps(organization, {
+        dataCategories: [
+          { key: 'health', specialCategoryBasis: 'explicit_consent' },
+        ],
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe('privacyNoticeCompleteness — translations', () => {
+  const withExplanation = (
+    legitimateInterest: string | Record<string, string>,
+  ) => {
+    const content = completeContent();
+    content.purposes = [
+      {
+        key: 'photo_documentation',
+        legalBasis: 'legitimate_interests',
+        legitimateInterest,
+      },
+    ];
+    return content;
+  };
+
+  it('requires a translated text in every locale the notice is read in', () => {
+    const gaps = privacyNoticeCompleteness(
+      withExplanation({ de: 'Erinnerungen', fr: '' }),
+      { locales: ['de', 'fr'] },
+    ).gaps;
+
+    expect(gaps).toEqual(['legitimate_interest_explanation']);
+  });
+
+  it('accepts it once every locale has text', () => {
+    expect(
+      privacyNoticeCompleteness(
+        withExplanation({ de: 'Erinnerungen', fr: 'Souvenirs' }),
+        { locales: ['de', 'fr'] },
+      ).complete,
+    ).toBe(true);
+  });
+
+  it('lets an untranslated text serve every locale', () => {
+    expect(
+      privacyNoticeCompleteness(withExplanation('Memories'), {
+        locales: ['de', 'fr'],
+      }).complete,
+    ).toBe(true);
+  });
+
+  it('accepts any locale when none is required', () => {
+    expect(
+      privacyNoticeCompleteness(withExplanation({ de: 'Erinnerungen' }))
+        .complete,
+    ).toBe(true);
   });
 });

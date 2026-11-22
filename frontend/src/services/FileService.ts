@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import { fileSlotPath } from '@camp-registration/common/form';
 import type {
   ServiceFileCreateData,
   ServiceFileUpdateData,
@@ -62,6 +63,7 @@ export function useFileService() {
     });
   }
 
+  /** Absolute, for where a root-relative link has no page to resolve against. */
   function getEventFileSlotUrl(
     eventId: string,
     slot: string,
@@ -70,15 +72,7 @@ export function useFileService() {
     // Without one, the server uses the event's only group, if it has one.
     group?: string | null,
   ): string {
-    const params = {
-      ...(locale ? { locale } : {}),
-      ...(group ? { group } : {}),
-    };
-
-    return api.getUri({
-      url: `events/${eventId}/files/slots/${slot}/`,
-      params: Object.keys(params).length > 0 ? params : undefined,
-    });
+    return `${window.origin}${fileSlotPath(eventId, slot, { locale, group })}`;
   }
 
   return {

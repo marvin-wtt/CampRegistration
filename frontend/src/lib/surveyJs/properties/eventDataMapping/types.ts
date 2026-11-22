@@ -172,22 +172,6 @@ export const waitingList: EventDataType = {
   },
 };
 
-export const newsletterConsent: EventDataType = {
-  element: {
-    value: 'newsletter_consent',
-    text: {
-      en: 'Newsletter Consent',
-      de: 'Newsletter-Einwilligung',
-      fr: 'Consentement newsletter',
-      pl: 'Zgoda na newsletter',
-      cs: 'Souhlas s newsletterem',
-    },
-  },
-  fit: (obj) => {
-    return obj.getType() === 'boolean';
-  },
-};
-
 // Questions tagged here adjust the event's price while shown: an expression
 // by its value, a boolean or select question by the prices it then offers
 // (`pricedQuestions.ts`). Tagged calculated values always count: rules the

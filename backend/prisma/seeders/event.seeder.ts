@@ -248,6 +248,53 @@ class EventSeeder extends BaseSeeder {
 
     await new RegistrationSeeder(winter).seed(26, { status: 'ACCEPTED' });
     await new EventFileSeeder(winter).seedFormSlots();
+
+    // A form asking for allergies without a consent question (the notice
+    // declares allergies on explicit consent): the privacy check refuses its
+    // registrations, the dashboard says why, and the public page says
+    // registration is unavailable.
+    await EventFactory.create({
+      id: EVENT_IDS.forest,
+      organization,
+      name: 'Forest Week',
+      organizer: 'Youth Adventures UK',
+      listed: true,
+      countries: ['gb'],
+      maxParticipants: 20,
+      minAge: 8,
+      maxAge: 12,
+      startAt: seedDate(70, '15:00'),
+      endAt: seedDate(75, '10:00'),
+      registrationOpensAt: seedDate(-5, '08:00'),
+      registrationClosesAt: seedDate(50, '23:59'),
+      price: 9000,
+      location: 'Oakwood Lodge',
+      form: {
+        title: 'Forest Week',
+        elements: [
+          {
+            name: 'first_name',
+            type: 'text',
+            title: 'First name',
+            required: true,
+            eventDataType: 'first_name',
+          },
+          {
+            name: 'last_name',
+            type: 'text',
+            title: 'Last name',
+            required: true,
+            eventDataType: 'last_name',
+          },
+          {
+            name: 'allergies',
+            type: 'comment',
+            title: 'Allergies or intolerances',
+            privacyCategory: 'allergies',
+          },
+        ],
+      },
+    });
   }
 
   /**

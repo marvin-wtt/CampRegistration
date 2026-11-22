@@ -88,8 +88,10 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
-    // Written only by the retention reminder job, never on create or update.
-    retentionReminderSentAt: null,
+    // Written only by the retention workflow, never on create or update.
+    sensitiveDataPurgedAt: null,
+    sensitiveDataClearedAt: null,
+    registrationDataPurgedAt: null,
     archivedAt: null,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
@@ -130,6 +132,9 @@ const assertEventResponseBody = (
     location: data.location,
     freePlaces: data.maxParticipants,
     freePlacesTotal: sumParticipants(data.maxParticipants),
+    sensitiveDataPurgedAt: null,
+    sensitiveDataClearedAt: null,
+    registrationDataPurgedAt: null,
     registrationStatus: eventRegistrationStatus({
       ...data,
       startAt:
@@ -865,6 +870,9 @@ describe('/api/v1/events', () => {
         freePlaces: expect.anything(),
         freePlacesTotal: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
+        sensitiveDataPurgedAt: null,
+        sensitiveDataClearedAt: null,
+        registrationDataPurgedAt: null,
         logo: null,
         banner: null,
         archivedAt: null,

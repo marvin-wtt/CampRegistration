@@ -10,6 +10,8 @@ export interface CsvFormatContext {
   ) => string;
   translateCountry: (country: string) => string;
   getFormSelectOptions: (fieldName: string) => SelectOptions | undefined;
+  /** Exported for a deleted answer, so it never reads as an empty one. */
+  purgedLabel: string;
 }
 
 // Generic fallback used by cell renderers that have no CSV-specific

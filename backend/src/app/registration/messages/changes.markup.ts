@@ -8,12 +8,16 @@ import type { RegistrationChange } from '../registration.changes.js';
 export interface ChangeLabels {
   cleared: string;
   file: string;
+  sensitive: string;
 }
 
 const LIST_STYLE = 'margin:0 0 1em 0;padding-left:1.5em;';
 const ITEM_STYLE = 'margin-bottom:0.25em;';
 
 function valueMarkup(change: RegistrationChange, labels: ChangeLabels): string {
+  if (change.isSensitive) {
+    return `<em>${escapeHtml(labels.sensitive)}</em>`;
+  }
   if (change.isFile) {
     return `<em>${escapeHtml(labels.file)}</em>`;
   }
@@ -24,6 +28,9 @@ function valueMarkup(change: RegistrationChange, labels: ChangeLabels): string {
 }
 
 function valueText(change: RegistrationChange, labels: ChangeLabels): string {
+  if (change.isSensitive) {
+    return labels.sensitive;
+  }
   if (change.isFile) {
     return labels.file;
   }

@@ -3,14 +3,16 @@ import { auth } from '#core/auth/auth.middleware';
 import { guard } from '#core/guard';
 import { captcha } from '#core/captcha/captcha.middleware';
 import { or, and } from '#core/guard';
-import { hasEventPermission } from '#app/event/event.guard';
 import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';
 import { resolve } from '#core/ioc/container';
 import {
-  registrationOpen,
+  eventNotPurged,
   eventOrganizationVerified,
+  eventPrivacyCompliant,
+  hasEventPermission,
+  registrationOpen,
 } from '#app/event/event.guard';
 
 export class RegistrationRouter extends ModuleRouter {
@@ -45,12 +47,18 @@ export class RegistrationRouter extends ModuleRouter {
     this.router.post(
       '/',
       guard(
-        or(
-          and(registrationOpen, eventOrganizationVerified),
-          hasEventPermission('event.registrations.create'),
+        and(
+          or(
+            and(registrationOpen, eventOrganizationVerified),
+            hasEventPermission('event.registrations.create'),
+          ),
+          // After the access check: its 409 must not tell a stranger more.
+          eventNotPurged,
         ),
       ),
       captcha('registration'),
+      // After the bot check: it reads the privacy notice and parses the form.
+      guard(eventPrivacyCompliant),
       controller(registrationController, 'store'),
     );
     this.router.patch(

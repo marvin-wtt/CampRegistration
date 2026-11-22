@@ -6,9 +6,14 @@
     :prevent-leave="preventLeave"
     class="row justify-center"
   >
+    <registration-data-purged-state
+      v-if="eventDetailsStore.data?.registrationDataPurgedAt"
+      class="col-12"
+    />
+
     <!-- Empty state -->
     <div
-      v-if="canSend && registrations.length === 0"
+      v-else-if="canSend && registrations.length === 0"
       class="empty-state col-12 column items-center justify-center"
     >
       <q-icon
@@ -167,6 +172,7 @@ import MessageDetailsDialog from '@/components/event/contact/MessageDetailsDialo
 import type { Contact, ContactDraft } from '@/components/event/contact/Contact';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import RegistrationDataPurgedState from '@/components/privacy/RegistrationDataPurgedState.vue';
 import { useProfileStore } from '@/stores/profile-store';
 import { usePermissions } from '@/composables/permissions';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';

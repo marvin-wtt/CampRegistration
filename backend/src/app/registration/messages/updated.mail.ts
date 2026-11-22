@@ -18,6 +18,7 @@ export class RegistrationUpdatedMessage extends RegistrationEventMessage {
     const labels = {
       cleared: t('registration:email.changes.cleared'),
       file: t('registration:email.changes.file'),
+      sensitive: t('registration:email.changes.sensitive'),
     };
 
     if (format === 'text') {

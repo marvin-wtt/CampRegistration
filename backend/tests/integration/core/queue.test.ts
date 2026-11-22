@@ -7,6 +7,10 @@ import { AppConfig } from '#config';
 import { Container } from 'inversify';
 import { TYPES } from '#core/ioc/types';
 import { type JobContext, getJobContext } from '#core/context/jobContext';
+import { DatabaseQueue } from '#core/queue/DatabaseQueue';
+import type { JobStatus } from '#generated/prisma/client.js';
+import moment from 'moment';
+import prisma from '../utils/prisma.js';
 
 const DEFAULTS = {
   retryDelay: 100,
@@ -242,6 +246,49 @@ describe('Queue', () => {
         await waitUntil(async () => (await q.all('FAILED')).length === 1, {
           timeout: 10_000,
         });
+
+        await q.close();
+      });
+
+      it('deletes a completed job at once with zero retention', async () => {
+        const q = createQueue<{ x: number }, void, 'test'>(
+          uniqueName(`q-retain-${name}`),
+          { ...DEFAULTS, retention: { completed: 0, failed: 60_000 } },
+        );
+
+        let handled = 0;
+        q.process(async () => {
+          handled++;
+        });
+
+        await q.add('test', { x: 1 });
+        await waitUntil(async () => handled === 1, { timeout: 5_000 });
+        await waitUntil(async () => (await q.all()).length === 0, {
+          timeout: 5_000,
+        });
+
+        await q.close();
+      });
+
+      it('prunes finished jobs older than the retention', async () => {
+        const q = createQueue<{}, void, 'test'>(uniqueName(`q-prune-${name}`), {
+          ...DEFAULTS,
+          maxAttempts: 1,
+          retention: { completed: 60_000, failed: 1 },
+        });
+
+        q.process(async () => {
+          throw new Error('always bad');
+        });
+
+        await q.add('test', {});
+        await waitUntil(async () => (await q.all('FAILED')).length === 1, {
+          timeout: 10_000,
+        });
+        await wait(20);
+
+        expect((await q.prune()).failed).toBe(1);
+        expect(await q.all('FAILED')).toEqual([]);
 
         await q.close();
       });
@@ -513,4 +560,77 @@ describe('Queue', () => {
       });
     },
   );
+});
+
+describe('DatabaseQueue.prune', () => {
+  it('deletes only finished jobs past the default retention', async () => {
+    const name = uniqueName('q-db-prune');
+    const jobs: { status: JobStatus; days: number }[] = [
+      { status: 'PENDING', days: 365 },
+      { status: 'RUNNING', days: 365 },
+      { status: 'COMPLETED', days: 29 },
+      { status: 'COMPLETED', days: 31 }, // DELETED
+      { status: 'FAILED', days: 89 },
+      { status: 'FAILED', days: 91 }, // DELETED
+    ];
+    for (const [i, { status, days }] of jobs.entries()) {
+      const finished = status === 'COMPLETED' || status === 'FAILED';
+      await prisma.job.create({
+        data: {
+          queue: name,
+          name: `test-job-${i.toString()}`,
+          status,
+          createdAt: moment().subtract(400, 'days').toDate(),
+          finishedAt: finished
+            ? moment().subtract(days, 'days').toDate()
+            : null,
+          payload: {},
+        },
+      });
+    }
+    // Another queue's jobs are its own to prune.
+    await prisma.job.create({
+      data: {
+        queue: `${name}-other`,
+        name: 'other',
+        status: 'COMPLETED',
+        finishedAt: moment().subtract(365, 'days').toDate(),
+        payload: {},
+      },
+    });
+
+    const queue = new DatabaseQueue(name);
+
+    expect(await queue.prune()).toEqual({ completed: 1, failed: 1 });
+    expect(await prisma.job.count({ where: { queue: name } })).toBe(4);
+    expect(await prisma.job.count({ where: { queue: `${name}-other` } })).toBe(
+      1,
+    );
+
+    await queue.close();
+  });
+
+  it('should prune finished jobs of queue names nobody registers', async () => {
+    const finished = (queue: string, days: number) =>
+      prisma.job.create({
+        data: {
+          queue,
+          name: 'job',
+          status: 'COMPLETED',
+          finishedAt: moment().subtract(days, 'days').toDate(),
+          payload: {},
+        },
+      });
+    await finished('registered', 365);
+    await finished('renamed-away', 365); // DELETED
+    await finished('renamed-away', 1);
+
+    // Other tests may leave old jobs under their own names, pruned here too.
+    const pruned = await DatabaseQueue.pruneUnregistered(['registered']);
+    expect(pruned.completed).toBeGreaterThanOrEqual(1);
+    expect(await prisma.job.count({ where: { queue: 'registered' } })).toBe(1);
+    expect(await prisma.job.count({ where: { queue: 'renamed-away' } })).toBe(
+      1,
+    );
+  });
 });

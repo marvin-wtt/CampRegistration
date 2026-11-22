@@ -3,6 +3,7 @@ import {
   type JobOptions,
   type Job,
   type JobStatus,
+  type PrunedJobs,
   type QueueJobCounts,
   Queue,
   type QueuedJob,
@@ -103,5 +104,9 @@ class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   deleteFailed(): Promise<void> {
     return Promise.resolve();
+  }
+
+  prune(): Promise<PrunedJobs> {
+    return Promise.resolve({ completed: 0, failed: 0 });
   }
 }

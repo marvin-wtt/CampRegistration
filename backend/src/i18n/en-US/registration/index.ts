@@ -5,6 +5,7 @@ export default {
     changes: {
       cleared: 'removed',
       file: 'file updated',
+      sensitive: 'changed',
     },
     managerNotification: {
       subject: 'New registration | {{ event.name }}',

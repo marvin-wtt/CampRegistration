@@ -6,7 +6,6 @@ import type {
   ResetPasswordProps,
   ActionCardProps,
   OrganizationRejectedProps,
-  EventRetentionDueProps,
   RegistrationManagerNotificationProps,
   NewsletterProps,
   RegistrationMessageProps,
@@ -179,29 +178,6 @@ export const fixtures: EmailFixture[] = [
       button: 'Update details',
       url,
     } satisfies LocalContext<OrganizationRejectedProps>,
-  },
-  {
-    template: 'event-retention-due',
-    subject: 'Retention period ending: Summer Camp 2026',
-    context: {
-      preview: 'Time to review the registration data of Summer Camp 2026',
-      reason: 'You are receiving this email because you can delete this event.',
-      title: 'Time to review Summer Camp 2026',
-      information:
-        'Your privacy information for Summer Camp 2026 says registration data is kept for 12 months after the event ends. That period ends on January 15, 2026.',
-      action:
-        'Review the registrations and delete what you no longer need. Only you can tell what still has to be kept.',
-      hasExceptions: true,
-      exceptions:
-        'Your privacy information also lists exceptions that are kept longer. Leave those in place.',
-      hasConsentBoundData: true,
-      consentBound:
-        'Data based on consent may be kept as long as the consent stands. Delete it promptly once someone withdraws it.',
-      noAutomaticDeletion:
-        'Nothing has been deleted automatically. We never erase event data on our own — the decision is yours.',
-      button: 'Open event',
-      url,
-    } satisfies LocalContext<EventRetentionDueProps>,
   },
   {
     template: 'registration-manager-notification',

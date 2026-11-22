@@ -82,6 +82,8 @@ export function useCsvExport() {
       translateCountry,
       getFormSelectOptions: (fieldName: string) =>
         FormSelectCache.get(event, fieldName),
+      // From the calling table's messages.
+      purgedLabel: t('purgedValue'),
     };
 
     const headerRow = columns.map((column) => to(column.label));

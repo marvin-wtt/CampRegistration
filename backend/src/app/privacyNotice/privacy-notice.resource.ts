@@ -18,7 +18,9 @@ export class OrganizationPrivacyNoticeResource extends JsonResource<
   transform(): OrganizationPrivacyNoticeDetails {
     return {
       ...this.data,
-      completeness: privacyNoticeCompleteness(this.data.content),
+      completeness: privacyNoticeCompleteness(this.data.content, {
+        locales: this.data.requiredLocales,
+      }),
     };
   }
 }

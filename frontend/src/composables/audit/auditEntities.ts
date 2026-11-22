@@ -10,6 +10,7 @@ import {
   useFinanceCategoryAuditView,
   usePayoutAuditView,
 } from '@/composables/audit/entities/finance';
+import { useRetentionAuditView } from '@/composables/audit/entities/retention';
 import { useAdminAccessGrantAuditView } from '@/composables/audit/entities/adminAccessGrant';
 
 // Every audited entity type's view. Typed over `AuditEntityType`, so a new
@@ -24,6 +25,7 @@ export function useAuditEntities(): Record<AuditEntityType, AuditEntityView> {
     expense: useExpenseAuditView(),
     financeCategory: useFinanceCategoryAuditView(),
     payout: usePayoutAuditView(),
+    retention: useRetentionAuditView(),
     adminAccessGrant: useAdminAccessGrantAuditView(),
   };
 }

@@ -126,7 +126,9 @@ export interface PermissionScopes {
 - **Resolve once per scope**: `EventManagerService.getManagerAuthorization`,
   `NewsletterManagerService.getManagerPermissions` and
   `OrganizationMemberService.getMemberPermissions` are the only places their scope's permissions are computed; the
-  guard, the profile resource and (for events) the SSE subscriber all go through them.
+  guard, the profile resource and (for events) the SSE subscriber all go through them. A bulk lookup over many
+  records (`EventManagerService.usersWithManagerPermission`) resolves each record with the same helper
+  (`recordPermissions`) instead of a role list of its own.
 - **Type safety**: use `ScopePermission<'event'>` (or `EventScopedPermission`) for event-only APIs. `Permission` is the
   union of all three scopes — passing an organization string to a event API must be a compile error, not a silent
   `false`.

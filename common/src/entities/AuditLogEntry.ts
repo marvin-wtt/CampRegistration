@@ -9,6 +9,7 @@ export const AUDIT_ENTITY_TYPES = [
   'expense',
   'financeCategory',
   'payout',
+  'retention',
   'adminAccessGrant',
 ] as const;
 

@@ -75,7 +75,10 @@ const tokens = computed<
           label: t('token.registration.data.label'),
           caption: t('token.registration.data.caption'),
           items: form
-            ? extractFormFields(form).map((field) => ({
+            ? // Special-category answers never reach a mail, so aren't offered.
+              extractFormFields(form, undefined, {
+                withoutSpecialCategories: true,
+              }).map((field) => ({
                 ...field,
                 value: replaceWildcard(field.value),
               }))

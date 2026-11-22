@@ -9,6 +9,7 @@ import '@/lib/surveyJs/creatorSetup';
 import type { Ace } from 'ace-builds';
 import { config as aceConfig } from 'ace-builds';
 import { onBeforeUnmount, ref, watch, watchEffect } from 'vue';
+import { useRouter } from 'vue-router';
 import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
@@ -29,12 +30,16 @@ import type {
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import { formLintOptions, setVariables } from '@camp-registration/common/form';
+import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
+import type { ConsentQuestionTexts } from '@/lib/surveyJs/consentQuestion';
+import { attachPrivacyIssues } from '@/lib/surveyJs/privacyIssues';
+import { APP_LOCALES } from '@/i18n/locales';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
   addDesignerFileSlotResolver,
-  addFileSlotResolver,
   addMarkdownRenderer,
 } from '@/lib/surveyJs/textProcessing';
+import { addFileSlotResolver } from '@camp-registration/common/form';
 import { useAPIService } from '@/services/APIService';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
 import {
@@ -66,6 +71,7 @@ const props = defineProps<{
 
 const quasar = useQuasar();
 const { t, locale } = useI18n();
+const { t: gt } = useI18n({ useScope: 'global' });
 const api = useAPIService();
 
 // Tabs and survey locales come from the mode preset (see `applyMode`).
@@ -297,6 +303,59 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
   }
 });
 
+// Each question keeping the event from taking registrations says what to do
+// (docs/privacy.md, 5); the event dashboard says it for the event as a whole.
+const router = useRouter();
+const privacyIssues = attachPrivacyIssues(creator, {
+  message: ({ kind, category, column }) => {
+    const message = t(`privacy.${kind}`, { category: categoryName(category) });
+    return column ? t('privacy.inColumn', { column, message }) : message;
+  },
+  action: (kind) =>
+    t(kind === 'uncovered' ? 'privacy.addConsent' : 'privacy.openNotice'),
+  consentTexts,
+  openPrivacySettings: () => {
+    void router.push({ name: 'management.event.settings.privacy' });
+  },
+});
+
+usePrivacyNoticeService()
+  .fetchEventNotice(props.event.id)
+  .then(({ notice }) => privacyIssues.setNotice(notice))
+  .catch(() => {
+    // Without the notice there is nothing to compare; the server still gates.
+  });
+
+function categoryName(category: string, locale?: string): string {
+  const key = `privacy.dataCategory.${category}`;
+  return locale ? gt(key, {}, { locale }) : gt(key);
+}
+
+/** A consent question's wording in every form locale, the presets' way. */
+function consentTexts(category: string): ConsentQuestionTexts {
+  const inEveryLocale = (text: (locale: string) => string) =>
+    Object.fromEntries(APP_LOCALES.map((locale) => [locale, text(locale)]));
+  // Mid-sentence: lowercased, except in German, where nouns keep the capital.
+  const nameIn = (locale: string) => {
+    const name = categoryName(category, locale);
+    return locale === 'de'
+      ? name
+      : name.charAt(0).toLowerCase() + name.slice(1);
+  };
+
+  return {
+    title: inEveryLocale((locale) =>
+      t('privacy.consent.title', { category: nameIn(locale) }, { locale }),
+    ),
+    description: inEveryLocale((locale) =>
+      t('privacy.consent.description', {}, { locale }),
+    ),
+    error: inEveryLocale((locale) =>
+      t('privacy.consent.error', {}, { locale }),
+    ),
+  };
+}
+
 creator.saveSurveyFunc = (
   saveNo: number,
   callback: (saveNo: number, success: boolean) => void,
@@ -305,6 +364,7 @@ creator.saveSurveyFunc = (
     .saveFormFunc(creator.JSON)
     .then(() => {
       callback(saveNo, true);
+      privacyIssues.refresh();
     })
     .catch(() => {
       callback(saveNo, false);
@@ -516,6 +576,16 @@ mode:
   standard: 'Standard'
   expert: 'Expert'
   condition: 'Has conditions — edit them in Standard mode'
+privacy:
+  undeclared: 'Add “{category}” to the privacy information. Until then, nobody can register.'
+  uncovered: 'Add a consent question for “{category}”. Until then, nobody can register.'
+  openNotice: 'Open privacy settings'
+  inColumn: 'Column “{column}”: {message}'
+  addConsent: 'Add consent question'
+  consent:
+    title: 'I agree that the information on {category} given in this form is used to look after the participant during the event and shared with the event team.'
+    description: 'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.'
+    error: 'Please agree, or leave those fields empty.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -527,6 +597,16 @@ mode:
   standard: 'Standard'
   expert: 'Experte'
   condition: 'Hat Bedingungen – im Standardmodus bearbeiten'
+privacy:
+  undeclared: 'Ergänze „{category}“ in den Datenschutzinformationen. Bis dahin kann sich niemand anmelden.'
+  uncovered: 'Füge eine Einwilligungsfrage für „{category}“ hinzu. Bis dahin kann sich niemand anmelden.'
+  openNotice: 'Datenschutzeinstellungen öffnen'
+  inColumn: 'Spalte „{column}“: {message}'
+  addConsent: 'Einwilligungsfrage hinzufügen'
+  consent:
+    title: 'Ich willige ein, dass die Angaben zu {category} aus diesem Formular zur Betreuung während der Veranstaltung genutzt und an das Veranstaltungsteam weitergegeben werden.'
+    description: 'Freiwillig – sonst lass diese Felder leer. Jederzeit beim Veranstalter widerrufbar.'
+    error: 'Bitte willige ein oder lass diese Felder leer.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -538,6 +618,16 @@ mode:
   standard: 'Standard'
   expert: 'Expert'
   condition: 'Contient des conditions – modifiables en mode standard'
+privacy:
+  undeclared: 'Ajoute « {category} » aux informations sur la protection des données. D’ici là, personne ne peut s’inscrire.'
+  uncovered: 'Ajoute une question de consentement pour « {category} ». D’ici là, personne ne peut s’inscrire.'
+  openNotice: 'Ouvrir les paramètres de confidentialité'
+  inColumn: 'Colonne « {column} » : {message}'
+  addConsent: 'Ajouter une question de consentement'
+  consent:
+    title: 'J’accepte que les informations sur {category} données dans ce formulaire servent à la prise en charge du participant pendant l’événement et soient transmises à l’équipe.'
+    description: 'Facultatif – sinon laisse ces champs vides. Révocable à tout moment auprès de l’organisateur.'
+    error: 'Donne ton accord ou laisse ces champs vides.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -549,6 +639,16 @@ mode:
   standard: 'Standardowy'
   expert: 'Ekspert'
   condition: 'Ma warunki – edytuj je w trybie standardowym'
+privacy:
+  undeclared: 'Dodaj kategorię „{category}” do informacji o ochronie danych. Do tego czasu nikt nie może się zarejestrować.'
+  uncovered: 'Dodaj pytanie o zgodę obejmujące kategorię „{category}”. Do tego czasu nikt nie może się zarejestrować.'
+  openNotice: 'Otwórz ustawienia prywatności'
+  inColumn: 'Kolumna „{column}”: {message}'
+  addConsent: 'Dodaj pytanie o zgodę'
+  consent:
+    title: 'Zgadzam się na wykorzystanie podanych w tym formularzu informacji ({category}) do opieki nad uczestnikiem podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia.'
+    description: 'Dobrowolne – w przeciwnym razie pozostaw te pola puste. Zgodę można w każdej chwili wycofać u organizatora.'
+    error: 'Wyraź zgodę lub pozostaw te pola puste.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -560,4 +660,14 @@ mode:
   standard: 'Standardní'
   expert: 'Expert'
   condition: 'Obsahuje podmínky – upravte je ve standardním režimu'
+privacy:
+  undeclared: 'Doplň kategorii „{category}“ do informací o ochraně údajů. Do té doby se nikdo nemůže registrovat.'
+  uncovered: 'Přidej otázku na souhlas pro kategorii „{category}“. Do té doby se nikdo nemůže registrovat.'
+  openNotice: 'Otevřít nastavení ochrany údajů'
+  inColumn: 'Sloupec „{column}“: {message}'
+  addConsent: 'Přidat otázku na souhlas'
+  consent:
+    title: 'Souhlasím, aby údaje ({category}) z tohoto formuláře byly použity k péči o účastníka během akce a předány týmu akce.'
+    description: 'Dobrovolné – jinak nech tato pole prázdná. Souhlas lze kdykoli odvolat u pořadatele.'
+    error: 'Dej souhlas, nebo nech tato pole prázdná.'
 </i18n>

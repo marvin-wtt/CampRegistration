@@ -1,3 +1,5 @@
+import { uniformSpaces } from './uniformSpaces.js';
+
 /**
  * Money is carried as integer minor units (cents) plus an ISO 4217 currency
  * code everywhere past the input boundary — never as a float, so sums and
@@ -38,25 +40,24 @@ export function fromMinorUnits(minor: number, currency: string): number {
   return minor / 10 ** currencyFractionDigits(currency);
 }
 
-/** Formats minor units for display, e.g. `formatMoney(1250, 'EUR', 'de-DE')` → `12,50 €`. */
+/**
+ * Formats minor units for display, e.g. `formatMoney(1250, 'EUR', 'de-DE')` →
+ * `12,50 €`, with uniform spaces so every engine writes it alike.
+ */
 export function formatMoney(
   minor: number,
   currency: string,
   locale?: string,
 ): string {
   const major = fromMinorUnits(minor, currency);
+  const format = (tag: string | undefined) =>
+    new Intl.NumberFormat(tag, { style: 'currency', currency }).format(major);
 
   try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-    }).format(major);
+    return uniformSpaces(format(locale));
   } catch {
     // Unknown locale tag — fall back to the runtime's default locale.
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency,
-    }).format(major);
+    return uniformSpaces(format(undefined));
   }
 }
 

@@ -26,6 +26,12 @@ export class MailService {
 
     this.queue = queueManager.create<unknown>('mail', {
       retryDelay: 1000 * 30,
+      // A job carries the registration it was written for, answers included.
+      // The send is recorded in MessageDelivery; failures stay for retries.
+      retention: {
+        completed: 0,
+        failed: 1000 * 60 * 60 * 24 * 14,
+      },
       limit: {
         max: 49,
         duration: 1000 * 60 * 30, // 30 minutes
@@ -35,6 +41,10 @@ export class MailService {
 
   startWorker() {
     this.queue.process(async (job) => {
+      if (this.mailableRegistry.isRetired(job.name)) {
+        logger.info(`Dropped mail of retired type "${job.name}"`);
+        return;
+      }
       await this.sendMail(this.mailableRegistry.createFromJob(job));
     });
   }

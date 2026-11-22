@@ -9,7 +9,10 @@ import {
 import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
-import { emptyPrivacyNoticeContent } from '@camp-registration/common/privacy';
+import {
+  emptyPrivacyNoticeContent,
+  type PrivacyNoticeContent,
+} from '@camp-registration/common/privacy';
 import { eventListed } from './fixtures/registration.fixtures.js';
 
 /** An organization whose notice was never published — the blocked state. */
@@ -156,6 +159,7 @@ describe('privacy notices', () => {
             recipients: [
               { key: 'event_staff' },
               { key: 'platform_operator', name: '<i>Acme</i>' },
+              { key: 'custom:1', label: { en: '<u>Sports club</u>' } },
             ],
           }),
         })
@@ -165,6 +169,7 @@ describe('privacy notices', () => {
       expect(body.data.content.purposes[0].label.en).toBe('Archery');
       expect(body.data.content.dataCategories[0].label.en).toBe('Skill');
       expect(body.data.content.recipients[1].name).toBe('Acme');
+      expect(body.data.content.recipients[2].label.en).toBe('Sports club');
     });
 
     it('should append a version and never overwrite the previous one', async () => {
@@ -182,7 +187,11 @@ describe('privacy notices', () => {
         .put(publishUrl(organization.id))
         .send({
           content: completePrivacyNoticeContent({
-            retention: { months: 6, anchor: 'submission', exceptions: [] },
+            retention: {
+              months: 6,
+              exceptions: [],
+              specialCategories: { weeks: 4 },
+            },
           }),
         })
         .auth(accessToken, { type: 'bearer' })
@@ -196,11 +205,50 @@ describe('privacy notices', () => {
 
       expect(versions).toHaveLength(2);
       expect(versions[0]?.content).toMatchObject({
-        retention: { months: 24, anchor: 'event_end' },
+        retention: { months: 24 },
       });
       expect(versions[1]?.content).toMatchObject({
-        retention: { months: 6, anchor: 'submission' },
+        retention: { months: 6 },
       });
+    });
+
+    it('should accept and drop the anchor older versions still store', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+      const base = completePrivacyNoticeContent();
+
+      // As the editor sends back content loaded from an older version.
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: {
+            ...base,
+            purposes: [
+              ...base.purposes,
+              { key: 'photo_publication', legalBasis: 'consent' },
+            ],
+            retention: {
+              months: 24,
+              anchor: 'event_end',
+              exceptions: [
+                {
+                  scope: 'photo_publication',
+                  until: 'consent_withdrawn',
+                  months: 36,
+                  anchor: 'event_end',
+                },
+              ],
+              specialCategories: { weeks: 4, anchor: 'event_end' },
+            },
+          },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const version = await prisma.privacyNoticeVersion.findFirstOrThrow({
+        where: { scope: 'ORGANIZATION', scopeId: organization.id },
+      });
+      expect(JSON.stringify(version.content)).not.toContain('anchor');
     });
 
     it('should not append a version when nothing changed', async () => {
@@ -233,7 +281,11 @@ describe('privacy notices', () => {
         .put(publishUrl(organization.id))
         .send({
           content: completePrivacyNoticeContent({
-            retention: { months: 6, anchor: 'submission', exceptions: [] },
+            retention: {
+              months: 6,
+              exceptions: [],
+              specialCategories: { weeks: 4 },
+            },
           }),
         })
         .auth(accessToken, { type: 'bearer' })
@@ -483,6 +535,154 @@ describe('privacy notices', () => {
         .expect(200);
     });
 
+    describe('exclusions', () => {
+      const eventOf = async (data: Partial<PrivacyNoticeContent> = {}) => {
+        const organization = await OrganizationFactory.create(
+          {},
+          {
+            privacyNotice: completePrivacyNoticeContent({
+              purposes: [
+                { key: 'registration_administration', legalBasis: 'contract' },
+                { key: 'medical_care', legalBasis: 'contract' },
+              ],
+              dataCategories: [
+                { key: 'identity' },
+                { key: 'health', specialCategoryBasis: 'explicit_consent' },
+              ],
+              ...data,
+            }),
+          },
+        );
+
+        return EventFactory.create({
+          organization: { connect: { id: organization.id } },
+        });
+      };
+
+      const publish = async (eventId: string, content: object) =>
+        request()
+          .put(`/api/v1/events/${eventId}/privacy-notice/addendum`)
+          .send({ content })
+          .auth(await eventManagerToken(eventId), { type: 'bearer' });
+
+      it('should drop excluded organization entries from the published notice', async () => {
+        const event = await eventOf();
+
+        await publish(event.id, {
+          excluded: { purposes: ['medical_care'], dataCategories: ['health'] },
+        }).then((res) => expect(res.status).toBe(200));
+
+        const { body } = await request()
+          .get(`/api/v1/events/${event.id}/privacy-notice`)
+          .expect(200);
+        const keys = (entries: { key: string }[]) =>
+          entries.map((entry) => entry.key);
+
+        expect(keys(body.data.notice.purposes)).not.toContain('medical_care');
+        expect(keys(body.data.notice.dataCategories)).not.toContain('health');
+      });
+
+      it('should drop exclusions of keys the organization does not declare', async () => {
+        const event = await eventOf();
+
+        const { body } = await publish(event.id, {
+          excluded: { purposes: ['medical_care', 'newsletter'] },
+        });
+
+        expect(body.data.content.excluded).toStrictEqual({
+          purposes: ['medical_care'],
+        });
+      });
+
+      it('should refuse excluding an entry that applies to every event', async () => {
+        const event = await eventOf({
+          dataCategories: [
+            { key: 'identity' },
+            {
+              key: 'health',
+              specialCategoryBasis: 'explicit_consent',
+              allEvents: true,
+            },
+          ],
+        });
+
+        await publish(event.id, {
+          excluded: { dataCategories: ['health'] },
+        }).then((res) => expect(res.status).toBe(422));
+      });
+
+      it('should refuse excluding an always-present recipient', async () => {
+        const event = await eventOf();
+
+        await publish(event.id, {
+          excluded: { recipients: ['platform_operator'] },
+        }).then((res) => expect(res.status).toBe(422));
+      });
+
+      it('should refuse excluding the last category', async () => {
+        const event = await eventOf();
+
+        await publish(event.id, {
+          excluded: { dataCategories: ['identity', 'health'] },
+        }).then((res) => expect(res.status).toBe(422));
+      });
+    });
+
+    describe('under a free-text organization notice', () => {
+      const freeTextEvent = async () => {
+        const organization = await OrganizationFactory.create(
+          {},
+          {
+            privacyNotice: {
+              ...emptyPrivacyNoticeContent(),
+              mode: 'free_text',
+              freeText: { en: '<p>Our notice</p>' },
+            },
+          },
+        );
+
+        return EventFactory.create({
+          organization: { connect: { id: organization.id } },
+        });
+      };
+
+      it('should refuse structured entries no registrant would see', async () => {
+        const event = await freeTextEvent();
+
+        await request()
+          .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+          .send({
+            content: {
+              dataCategories: [
+                { key: 'health', specialCategoryBasis: 'explicit_consent' },
+              ],
+            },
+          })
+          .auth(await eventManagerToken(event.id), { type: 'bearer' })
+          .expect(422);
+      });
+
+      it('should refuse exclusions, which are structured too', async () => {
+        const event = await freeTextEvent();
+
+        await request()
+          .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+          .send({ content: { excluded: { purposes: ['medical_care'] } } })
+          .auth(await eventManagerToken(event.id), { type: 'bearer' })
+          .expect(422);
+      });
+
+      it('should accept free text of its own', async () => {
+        const event = await freeTextEvent();
+
+        await request()
+          .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+          .send({ content: { additional: { en: '<p>Bus to camp</p>' } } })
+          .auth(await eventManagerToken(event.id), { type: 'bearer' })
+          .expect(200);
+      });
+    });
+
     it('should sanitize the addendum free text', async () => {
       const organization = await OrganizationFactory.create();
       const event = await EventFactory.create({
@@ -547,12 +747,11 @@ describe('privacy notices', () => {
           privacyNotice: completePrivacyNoticeContent({
             retention: {
               months: 24,
-              anchor: 'event_end',
+              specialCategories: { weeks: 4 },
               exceptions: [
                 {
                   scope: 'payment_and_invoicing',
                   months: 120,
-                  anchor: 'event_end',
                 },
               ],
             },
@@ -569,10 +768,8 @@ describe('privacy notices', () => {
           content: {
             retention: {
               months: 24,
-              anchor: 'event_end',
-              exceptions: [
-                { scope: 'photo_publication', months: 36, anchor: 'event_end' },
-              ],
+              specialCategories: { weeks: 4 },
+              exceptions: [{ scope: 'photo_publication', months: 36 }],
             },
           },
         })
@@ -648,7 +845,11 @@ describe('privacy notices', () => {
         .put(`/api/v1/organizations/${organization.id}/privacy-notice`)
         .send({
           content: completePrivacyNoticeContent({
-            retention: { months: 1, anchor: 'submission', exceptions: [] },
+            retention: {
+              months: 1,
+              exceptions: [],
+              specialCategories: { weeks: 4 },
+            },
           }),
         })
         .auth(accessToken, { type: 'bearer' })
@@ -661,7 +862,7 @@ describe('privacy notices', () => {
 
       // The proof of what this person was shown must survive later edits.
       expect(registration.organizationPrivacyNotice?.content).toMatchObject({
-        retention: { months: 24, anchor: 'event_end' },
+        retention: { months: 24 },
       });
     });
   });

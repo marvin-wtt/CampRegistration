@@ -45,6 +45,10 @@ export default {
     funding_body: 'Poskytovatel dotace',
     medical_provider: 'Lékaři a záchranná služba',
     public_authority: 'Orgány veřejné moci',
+    partner_organization: 'Partnerská nebo spolupořádající organizace',
+    participants: 'Ostatní účastníci',
+    it_service_provider:
+      'Poskytovatelé IT služeb (např. e-mail, cloudové úložiště, účetnictví)',
     payment_provider: 'Poskytovatel platebních služeb',
     platform_operator: 'Provozovatel této přihlašovací platformy',
   },
@@ -83,11 +87,6 @@ export default {
       'Jen pro určení, výkon nebo obhajobu právních nároků, například záznam o úrazu uchovaný pro spor s pojišťovnou.',
   },
 
-  retentionAnchor: {
-    event_end: 'po skončení akce',
-    submission: 'po odeslání přihlášky',
-  },
-
   retentionUntil: {
     period: 'po pevně danou dobu',
     consent_withdrawn: 'dokud není odvolán souhlas, na kterém stojí',
@@ -107,7 +106,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Právní základ',
-      art9Other: 'Zvolit jiný právní základ',
       art9Advisory:
         'Samo o sobě není citlivé. Pokud formulář nabízí halal nebo košer, zaškrtni také „Náboženské vyznání“; pokud sbírá alergie, zaškrtni „Alergie“.',
       consentQuestion:
@@ -115,10 +113,6 @@ export default {
       recipientName: 'Název (volitelné)',
       recipientNameHint:
         'Uvést konkrétního příjemce je srozumitelnější než jen kategorii.',
-    },
-    origin: {
-      organization: 'Od organizace',
-      event: 'Doplněno zde',
     },
     action: {
       publish: 'Zveřejnit',
@@ -153,11 +147,14 @@ export default {
     special_category_basis:
       'Zvláštní kategorie údajů nemají právní základ podle čl. 9',
     custom_category_label: 'Vlastní přidaná kategorie nemá název',
+    custom_recipient_label: 'Vámi přidaný příjemce nemá název',
     automated_details:
       'Automatizované rozhodování je uvedeno, ale jeho logika není vysvětlena',
     recipients: 'Nebyli uvedeni žádní příjemci',
     retention: 'Nebyla stanovena doba uchování',
     retention_exception: 'U výjimky chybí doba nebo údaj, čeho se týká',
+    special_category_retention:
+      'Pro zdravotní a další citlivé údaje chybí doba, nebo je delší než obecná',
     retention_exception_consent_basis:
       'Údaje uchovávané do odvolání souhlasu patří k účelu, který na souhlasu nestojí',
     transfer_countries: 'U předávání mimo EHP není uvedena cílová země',

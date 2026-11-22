@@ -5,6 +5,7 @@ export default {
     changes: {
       cleared: 'odstraněno',
       file: 'soubor aktualizován',
+      sensitive: 'změněno',
     },
     managerNotification: {
       subject: 'Nová přihláška | {{ event.name }}',
