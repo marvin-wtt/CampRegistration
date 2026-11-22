@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SurveyModel } from 'survey-core';
 import { fakeEventData } from '../../util/faker.js';
-import { setVariables } from '../../../src/form/index.js';
+import {
+  PARTICIPANT_ROLE,
+  setVariables,
+  takesPlace,
+} from '../../../src/form/index.js';
 import '../../../src/form/index.js';
 
 describe('questions', () => {
@@ -58,5 +62,18 @@ describe('questions', () => {
 
       expect(context.survey.validate()).toBeFalsy();
     });
+  });
+});
+
+describe('takesPlace', () => {
+  it('counts participants and registrations without a role', () => {
+    expect(takesPlace(PARTICIPANT_ROLE)).toBe(true);
+    expect(takesPlace(null)).toBe(true);
+    expect(takesPlace(undefined)).toBe(true);
+    expect(takesPlace('')).toBe(true);
+  });
+
+  it('never counts staff', () => {
+    expect(takesPlace('counselor')).toBe(false);
   });
 });

@@ -13,23 +13,18 @@ import { useRouter } from 'vue-router';
 import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
-import {
-  Base,
-  type ITheme,
-  type PageModel,
-  type PanelModel,
-  type SurveyElement,
-  type SurveyModel,
-  Serializer,
-} from 'survey-core';
+import type { ITheme, SurveyModel } from 'survey-core';
 import FileSelectionDialog from '@/components/event/settings/files/FileSelectionDialog.vue';
 import type {
   EventDetails,
   ServiceFile,
-  SurveyJSEventData,
+  FormJson,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { formLintOptions, setVariables } from '@camp-registration/common/form';
+import {
+  formLintOptions,
+  prepareEventSurvey,
+} from '@camp-registration/common/form';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import type { ConsentQuestionTexts } from '@/lib/surveyJs/consentQuestion';
 import { attachPrivacyIssues } from '@/lib/surveyJs/privacyIssues';
@@ -39,7 +34,6 @@ import {
   addDesignerFileSlotResolver,
   addMarkdownRenderer,
 } from '@/lib/surveyJs/textProcessing';
-import { addFileSlotResolver } from '@camp-registration/common/form';
 import { useAPIService } from '@/services/APIService';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
 import {
@@ -53,7 +47,13 @@ import {
 } from '@/lib/surveyJs/editorModes';
 import { createPreviewGroupAction } from '@/lib/surveyJs/previewGroup';
 import { countryName } from '@/utils/countries';
-import { fieldFromParts } from '@/utils/fileField';
+import { addToBothToolbars } from '@/lib/surveyJs/creatorToolbars';
+import { attachCreatorFiles } from '@/lib/surveyJs/creatorFiles';
+import { attachNameRules } from '@/lib/surveyJs/nameRules';
+import {
+  addRestrictedAccessRules,
+  restrictToolbox,
+} from '@/lib/surveyJs/restrictedAccess';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
 import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
@@ -63,7 +63,7 @@ import { readAsDataURL } from '@/utils/readAsDataURL';
 const props = defineProps<{
   event: EventDetails;
   restrictedAccess: boolean;
-  saveFormFunc: (form: SurveyJSEventData) => Promise<void>;
+  saveFormFunc: (form: FormJson) => Promise<void>;
   saveThemeFunc: (theme: ITheme) => Promise<void>;
   // Resolves to the file's slot (its `field`).
   saveFileFunc: (file: File) => Promise<string>;
@@ -105,26 +105,18 @@ const MODE_STORAGE_KEY = 'formEditor.mode';
 
 const mode = ref<EditorMode>(readStoredMode());
 
-// On narrow screens the creator hides its top toolbar and shows a footer bar
-// instead, so the dropdown goes into both — one instance each, as a container
-// restyles the actions it holds. The footer one is icon-only to save width.
-const modeActions = (
-  [
-    [creator.toolbar, false],
-    [creator.footerToolbar, true],
-  ] as const
-).map(([toolbar, compact]) => {
-  const modeAction = createEditorModeAction({
-    mode: mode.value,
-    title: (value) => t(`mode.${value}`),
-    tooltip: (value) => `${t('mode.label')}: ${t(`mode.${value}`)}`,
-    onSelect: selectMode,
-    compact,
-    verticalPosition: compact ? 'top' : 'bottom',
-  });
-  toolbar.actions.unshift(modeAction.action);
-  return modeAction;
-});
+const modeActions = addToBothToolbars(
+  creator,
+  (placement) =>
+    createEditorModeAction({
+      mode: mode.value,
+      title: (value) => t(`mode.${value}`),
+      tooltip: (value) => `${t('mode.label')}: ${t(`mode.${value}`)}`,
+      onSelect: selectMode,
+      ...placement,
+    }),
+  'start',
+);
 
 // Re-translates the dropdowns on locale changes.
 watchEffect(() => {
@@ -136,29 +128,24 @@ watchEffect(() => {
 const previewGroup = ref<string | null>(props.event.countries[0] ?? null);
 
 if (props.event.countries.length > 1) {
-  const groupActions = (
-    [
-      [creator.toolbar, false],
-      [creator.footerToolbar, true],
-    ] as const
-  ).map(([toolbar, compact]) => {
-    const groupAction = createPreviewGroupAction(creator, {
-      countries: props.event.countries,
-      group: previewGroup.value ?? '',
-      title: (country) => countryName(country, locale.value),
-      tooltip: (country) =>
-        t('preview.group', { group: countryName(country, locale.value) }),
-      onSelect: (country) => {
-        previewGroup.value = country;
-        // Rebuilds the open tab's survey, now answered for the new group.
-        creator.getPlugin(creator.activeTab)?.update?.();
-      },
-      compact,
-      verticalPosition: compact ? 'top' : 'bottom',
-    });
-    toolbar.actions.push(groupAction.action);
-    return groupAction;
-  });
+  const groupActions = addToBothToolbars(
+    creator,
+    (placement) =>
+      createPreviewGroupAction(creator, {
+        countries: props.event.countries,
+        group: previewGroup.value ?? '',
+        title: (country) => countryName(country, locale.value),
+        tooltip: (country) =>
+          t('preview.group', { group: countryName(country, locale.value) }),
+        onSelect: (country) => {
+          previewGroup.value = country;
+          // Rebuilds the open tab's survey, now answered for the new group.
+          creator.getPlugin(creator.activeTab)?.update?.();
+        },
+        ...placement,
+      }),
+    'end',
+  );
 
   watchEffect(() => {
     groupActions.forEach((action) => action.update(previewGroup.value ?? ''));
@@ -183,8 +170,9 @@ function applyMode() {
     eventLocales: props.event.locales,
     restrictedAccess: props.restrictedAccess,
   });
-  // A preset rebuilds the toolbox, so the restriction goes on top every time.
-  applyRestrictedToolbox();
+  if (props.restrictedAccess) {
+    restrictToolbox(creator);
+  }
 }
 
 function selectMode(value: EditorMode) {
@@ -209,20 +197,8 @@ function readStoredMode(): EditorMode {
   }
 }
 
-function applyRestrictedToolbox() {
-  if (!props.restrictedAccess) {
-    return;
-  }
-
-  const panelItem = creator.toolbox.getItemByName('panel');
-  // Allow restricted users to add only panels. If you want to hide the entire Toolbox, set `creator.showToolbox = false;`
-  creator.toolbox.clearItems();
-  creator.toolbox.addItem(panelItem);
-
-  // Change the default question type to "panel"
-  creator.currentAddQuestionType = 'panel';
-
-  creator.showAddQuestionButton = false;
+if (props.restrictedAccess) {
+  addRestrictedAccessRules(creator);
 }
 
 applyMode();
@@ -279,28 +255,10 @@ function applySurveyTheme(isDark: boolean) {
   }
 }
 
-// Restrict valueName characters
-creator.onPropertyDisplayCustomError.add((_, options) => {
-  if (!['name', 'valueName'].includes(options.propertyName)) {
-    return;
-  }
-
-  // An error was thrown here in production - not sure why it should be nullish
-  if (!options.value) {
-    return;
-  }
-
-  // Internal variables start with _
-  if (options.value.startsWith('_')) {
-    options.error = 'Underscore is not allowed here.';
-    return;
-  }
-
-  // Dots are used to access objects
-  if (options.value.includes('.')) {
-    options.error = 'Dots are not allowed here.';
-    return;
-  }
+attachNameRules(creator, {
+  message: (issue) => t(`names.${issue}`),
+  blocked: ({ name, issue }) =>
+    t('names.blocked', { name, reason: t(`names.${issue}`) }),
 });
 
 // Each question keeping the event from taking registrations says what to do
@@ -412,11 +370,9 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     emphasizeForwardNavigation(survey);
-    const group = previewGroup.value;
-    setVariables(survey, props.event, { group });
-    addFileSlotResolver(survey, resolveFileSlot);
-    survey.onLocaleChangedEvent.add((sender) => {
-      setVariables(sender, props.event, { group });
+    prepareEventSurvey(survey, props.event, {
+      group: previewGroup.value,
+      resolveFileSlot,
     });
   }
 
@@ -436,126 +392,25 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 });
 
-creator.onUploadFile.add((_, options) => {
-  const files = options.files;
-
-  const eventId = props.event.id;
-  if (!eventId || files.length == 0) {
-    options.callback('error', '');
-    return;
-  }
-
-  const file = files[0]!;
-
-  props
-    .saveFileFunc(file)
-    .then((slot) =>
-      options.callback(
-        'success',
-        isTextProcessed(options.element, options.propertyName.toString())
-          ? `{_file.${slot}}`
-          : api.getEventFileSlotUrl(props.event.id, slot),
-      ),
-    )
-    .catch(() => options.callback('error', ''));
+attachCreatorFiles(creator, {
+  upload: (file) => props.saveFileFunc(file),
+  slotUrl: (slot) => api.getEventFileSlotUrl(props.event.id, slot),
+  choose: (field) =>
+    new Promise((resolve) => {
+      quasar
+        .dialog({
+          component: FileSelectionDialog,
+          componentProps: {
+            accept: 'image/*',
+            accessLevel: 'public',
+            field,
+          },
+        })
+        // Event files stand in for uploads: the creator only reads their URL.
+        .onOk((files: ServiceFile[]) => resolve(files as unknown as File[]))
+        .onCancel(() => resolve([]));
+    }),
 });
-
-// Only localizable strings (logo, image links) go through text processing, so
-// only they can hold a `{_file.<slot>}` placeholder. Everything else — theme
-// and header backgrounds among them — is used verbatim and needs a real URL.
-function isTextProcessed(element: Base | ITheme, propertyName: string) {
-  return (
-    element instanceof Base &&
-    !!Serializer.findProperty(element.getType(), propertyName)?.isLocalizable
-  );
-}
-
-// Named survey elements (pages, panels, questions) share their type with
-// every other instance of it, so `elementType` alone would give every page's
-// backgroundImage the same field. Theme/header targets have no `name` and
-// stay one field per survey, which is what's wanted there anyway.
-function elementInstanceName(element: Base | ITheme): string | undefined {
-  return 'name' in element && typeof element.name === 'string'
-    ? element.name
-    : undefined;
-}
-
-creator.onOpenFileChooser.add((_, options) => {
-  const baseField = fieldFromParts([
-    options.elementType.toString(),
-    elementInstanceName(options.element),
-    options.propertyName.toString(),
-  ]);
-
-  quasar
-    .dialog({
-      component: FileSelectionDialog,
-      componentProps: {
-        accept: 'image/*',
-        accessLevel: 'public',
-        field: baseField,
-      },
-    })
-    .onOk((files: ServiceFile[]) => {
-      options.callback(files as unknown as File[]);
-    })
-    .onCancel(() => {
-      options.callback([]);
-    });
-});
-
-creator.onElementAllowOperations.add((_, options) => {
-  if (!props.restrictedAccess) {
-    return;
-  }
-  // Disallow restricted users to change question types, delete questions, or copy them
-  options.allowChangeType = false;
-  options.allowCopy = false;
-  const obj = options.element as SurveyElement;
-  if (obj.isQuestion) {
-    options.allowDelete = false;
-  }
-  if (obj.isPage || obj.isPanel) {
-    options.allowDelete =
-      (obj as PanelModel | PageModel).questions.length === 0;
-  }
-});
-
-creator.onCollectionItemAllowOperations.add((_, options) => {
-  if (!props.restrictedAccess) {
-    return;
-  }
-  // Disallow restricted users to delete columns via adorers on the design surface
-  options.allowDelete = !isObjColumn(options.item);
-});
-
-creator.onConfigureTablePropertyEditor.add((_, options) => {
-  if (!props.restrictedAccess) {
-    return;
-  }
-  // Disallow restricted users to add or delete matrix columns via the Property Grid
-  options.allowAddRemoveItems = options.propertyName !== 'columns';
-});
-
-creator.onPropertyGetReadOnly.add((_, options) => {
-  if (!props.restrictedAccess) {
-    return;
-  }
-  // Disallow restricted users to change cell question type in matrices
-  if (options.property.name === 'cellType') {
-    options.readOnly = true;
-  }
-  // Disallow restricted users to modify the `name` property for questions and matrix columns
-  const obj = options.element as SurveyElement;
-  const disallowedProperties = ['name', 'eventDataType'];
-  if (disallowedProperties.includes(options.property.name)) {
-    options.readOnly = obj.isQuestion || isObjColumn(options.element);
-  }
-});
-
-function isObjColumn(obj: Base) {
-  return !!obj && obj.getType() === 'matrixdropdowncolumn';
-}
 </script>
 
 <style lang="scss">
@@ -568,6 +423,11 @@ function isObjColumn(obj: Base) {
 </style>
 
 <i18n lang="yaml" locale="en">
+names:
+  underscore: 'Names starting with an underscore are reserved for the platform.'
+  separator: 'Names cannot contain a dot.'
+  variable: 'This name is reserved for the event details.'
+  blocked: 'The name “{name}” cannot be used. {reason} Change it before leaving the JSON editor.'
 preview:
   group: 'Preview as group: {group}'
 mode:
@@ -589,6 +449,11 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+names:
+  underscore: 'Namen, die mit einem Unterstrich beginnen, sind für die Plattform reserviert.'
+  separator: 'Namen dürfen keinen Punkt enthalten.'
+  variable: 'Dieser Name ist für die Veranstaltungsdaten reserviert.'
+  blocked: 'Der Name „{name}“ kann nicht verwendet werden. {reason} Ändere ihn, bevor du den JSON-Editor verlässt.'
 preview:
   group: 'Vorschau als Gruppe: {group}'
 mode:
@@ -610,6 +475,11 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+names:
+  underscore: 'Les noms commençant par un tiret bas sont réservés à la plateforme.'
+  separator: 'Les noms ne peuvent pas contenir de point.'
+  variable: 'Ce nom est réservé aux informations de l’événement.'
+  blocked: 'Le nom « {name} » ne peut pas être utilisé. {reason} Modifie-le avant de quitter l’éditeur JSON.'
 preview:
   group: 'Aperçu pour le groupe : {group}'
 mode:
@@ -631,6 +501,11 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+names:
+  underscore: 'Nazwy zaczynające się od podkreślnika są zarezerwowane dla platformy.'
+  separator: 'Nazwy nie mogą zawierać kropki.'
+  variable: 'Ta nazwa jest zarezerwowana dla danych wydarzenia.'
+  blocked: 'Nazwy „{name}” nie można użyć. {reason} Zmień ją przed opuszczeniem edytora JSON.'
 preview:
   group: 'Podgląd dla grupy: {group}'
 mode:
@@ -652,6 +527,11 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+names:
+  underscore: 'Názvy začínající podtržítkem jsou vyhrazeny pro platformu.'
+  separator: 'Názvy nesmí obsahovat tečku.'
+  variable: 'Tento název je vyhrazen pro údaje o akci.'
+  blocked: 'Název „{name}“ nelze použít. {reason} Změň ho, než opustíš editor JSON.'
 preview:
   group: 'Náhled pro skupinu: {group}'
 mode:

@@ -6,6 +6,14 @@ import type {
 import { Serializer } from 'survey-core';
 import type { Localized } from '../../locales.js';
 
+/** The role that takes a place at the event; any other is staff. */
+export const PARTICIPANT_ROLE = 'participant';
+
+/** Whether a registration takes a place: a participant, or one without a role. */
+export function takesPlace(role: string | null | undefined): boolean {
+  return !role || role === PARTICIPANT_ROLE;
+}
+
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];
   updateChoices: (question: Question, value: ItemValue[] | undefined) => void;
@@ -25,7 +33,7 @@ const roleQuestion: RoleQuestionConfiguration = {
     } satisfies Localized,
     choices: [
       {
-        value: 'participant',
+        value: PARTICIPANT_ROLE,
         text: {
           de: 'Teilnehmer',
           en: 'Participant',

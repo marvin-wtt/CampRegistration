@@ -77,8 +77,7 @@ export class EventDetailsResource extends JsonResource<
   transform(): EventDetailsResourceData {
     return {
       ...new EventResource(this.data).transform(),
-      // TODO Replace prisma schema with correct definition
-      form: this.data.form as unknown as EventDetailsResourceData['form'],
+      form: this.data.form,
       themes: this.data.themes as unknown as EventDetailsResourceData['themes'],
     };
   }

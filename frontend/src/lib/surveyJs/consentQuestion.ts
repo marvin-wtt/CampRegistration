@@ -25,7 +25,7 @@ export function consentQuestionJson(
   );
   // Only top-level questions: a nested one may share its name with another,
   // and the condition could not see it anyway.
-  const condition = covered.every((question) => !question.within)
+  const condition = covered.every((question) => !question.nested)
     ? covered
         .map((question) => `{${question.valueName ?? question.name}} notempty`)
         .join(' or ')

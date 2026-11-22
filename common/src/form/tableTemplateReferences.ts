@@ -6,7 +6,8 @@ import {
   type TableColumnTemplate,
   type TableTemplate,
 } from '../entities/index.js';
-import { buildFieldIndex, storedValues, withoutWildcard } from './fields.js';
+import { buildFieldIndex, questionAtPath, storedValues } from './fields.js';
+import { pathPatterns, valuesAtPath, withoutWildcard } from './answerPaths.js';
 
 /** `registrations` counts those that still hold the field or value. */
 export type TableTemplateIssue =
@@ -52,22 +53,6 @@ function pathSet(paths: Iterable<string>): Set<string> {
   return set;
 }
 
-/**
- * The spellings a path can be known under: a numeric key is either a name
- * (a matrix row `1`) or an array index, read the same as `*`.
- */
-function candidates(path: string): string[] {
-  return path.split('.').reduce<string[]>(
-    (prefixes, key) => {
-      const keys = /^\d+$/.test(key) ? [key, '*'] : [key];
-      return prefixes.flatMap((prefix) =>
-        keys.map((k) => (prefix ? `${prefix}.${k}` : k)),
-      );
-    },
-    [''],
-  );
-}
-
 function hasComment(question: Question): boolean {
   return (
     question.hasComment ||
@@ -91,29 +76,6 @@ function mappedValues(column: TableColumnTemplate): string[] {
       ? [String(value)]
       : [];
   });
-}
-
-// The non-empty values at a path, with `*` reading every array entry.
-function valuesAt(value: unknown, keys: readonly string[]): unknown[] {
-  if (value == null || value === '') {
-    return [];
-  }
-
-  if (keys.length === 0) {
-    return Array.isArray(value) ? value : [value];
-  }
-
-  const [key, ...rest] = keys as [string, ...string[]];
-  if (key === '*') {
-    return Array.isArray(value)
-      ? value.flatMap((entry: unknown) => valuesAt(entry, rest))
-      : [];
-  }
-  if (typeof value !== 'object') {
-    return [];
-  }
-
-  return valuesAt((value as Record<string, unknown>)[key], rest);
 }
 
 /**
@@ -185,9 +147,10 @@ export class TableTemplateReferenceChecker {
       return [];
     }
 
-    const question = candidates(field.slice(FORM_PREFIX.length))
-      .map((path) => this.questions.get(path))
-      .find((entry) => entry !== undefined);
+    const question = questionAtPath(
+      this.questions,
+      field.slice(FORM_PREFIX.length),
+    );
     const allowed = question ? storedValues(question) : undefined;
     if (!allowed) {
       return [];
@@ -211,7 +174,7 @@ export class TableTemplateReferenceChecker {
         ? [this.computedFields, field.slice(COMPUTED_PREFIX.length)]
         : [this.rowFields, field];
 
-    return candidates(path).some((candidate) => known.has(candidate));
+    return pathPatterns(path).some((pattern) => known.has(pattern));
   }
 
   // How many registrations hold the field, or that value in it.
@@ -219,9 +182,8 @@ export class TableTemplateReferenceChecker {
     const key = value === undefined ? field : `${field}\u0000${value}`;
     let count = this.usage.get(key);
     if (count === undefined) {
-      const keys = field.split('.');
       count = this.registrations.filter((registration) => {
-        const values = valuesAt(registration, keys);
+        const values = valuesAtPath(field, registration);
         return value === undefined
           ? values.length > 0
           : values.some((entry) => String(entry) === value);

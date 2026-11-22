@@ -566,7 +566,7 @@ registrations over a configuration mistake.
 
 - **[implemented]** One nullable JSON column, `Registration.consentTexts`, keyed by
   where the answer lives: `{ "consent_privacy": "I agree that photographs of …" }`,
-  `kids[0].consent_health` inside a dynamic panel
+  `kids.0.consent_health` inside a dynamic panel
   (migration `20261118120000_add_registration_consent_texts`). Existing
   registrations stay `null`, like the notice stamp. Managers see it in the
   registration resource.

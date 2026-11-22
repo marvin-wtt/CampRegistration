@@ -1,18 +1,19 @@
-import { IJsonPropertyInfo } from 'survey-core';
+import type { IJsonPropertyInfo } from 'survey-core';
+import type { PropertyDefinition } from './PropertyDefinition.js';
 import {
   REGISTRATION_PROPERTY_CATEGORY,
   REGISTRATION_PROPERTY_CATEGORY_INDEX,
 } from './category.js';
+import { EVENT_DATA_TYPE_PROPERTY } from './accessors.js';
 
-// `name`/`type` are wire-level keys serialized into saved form JSON
-// (`Event.form`). A data migration rewrites existing forms' `campDataType`
-// keys to `eventDataType` in lockstep with this rename — see the data
-// migration co-located with the `rename_camp_tables_to_event` schema
-// migration.
+/** The property grid editor the frontend registers for the tag. */
+export const EVENT_DATA_TYPE_EDITOR = 'eventDataMapping';
+
+// Existing forms' former `campDataType` keys were rewritten by the data
+// migration co-located with the `rename_camp_tables_to_event` migration.
 const propertyInfo: IJsonPropertyInfo = {
-  name: 'eventDataType',
-  className: 'question',
-  type: 'eventDataMapping',
+  name: EVENT_DATA_TYPE_PROPERTY,
+  type: EVENT_DATA_TYPE_EDITOR,
   default: undefined,
   isRequired: false,
   category: REGISTRATION_PROPERTY_CATEGORY,
@@ -20,14 +21,14 @@ const propertyInfo: IJsonPropertyInfo = {
   visibleIndex: 0,
 };
 
-export default {
-  className: propertyInfo.className ?? '',
-  propertyInfo: propertyInfo,
+export const questionDataType: PropertyDefinition = {
+  className: 'question',
+  propertyInfo,
 };
 
 // Calculated values take the tag too: one tagged `payment_amount` adjusts the
 // price without a question the registrant sees.
-export const calculatedValueDataType = {
+export const calculatedValueDataType: PropertyDefinition = {
   className: 'calculatedvalue',
-  propertyInfo: { ...propertyInfo, className: undefined },
+  propertyInfo: { ...propertyInfo },
 };

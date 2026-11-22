@@ -7,7 +7,6 @@ import {
   formPrivacyIssues,
   hasPrivacyIssues,
   uncoveredConsentCategories,
-  specialCategoryAnswerKeys,
   taggedSpecialCategories,
   unconsentedQuestions,
 } from '../../../src/form/index.js';
@@ -115,7 +114,7 @@ describe('extractPrivacyTags', () => {
     });
 
     expect(tags.tagged).toEqual([
-      { name: 'allergies', within: 'children', category: 'allergies' },
+      { name: 'allergies', nested: true, category: 'allergies' },
     ]);
   });
 
@@ -138,12 +137,12 @@ describe('extractPrivacyTags', () => {
       .map((question) => question.name);
 
     expect(extractPrivacyTags(form).tagged).toEqual([
-      { name: 'meds', within: 'kids', category: 'medication' },
+      { name: 'meds', nested: true, category: 'medication' },
     ]);
     expect(new Set(fromSurvey)).toEqual(new Set(['meds']));
   });
 
-  it('marks the rows of a dropdown matrix, stored by name, as any row', () => {
+  it('marks the columns of a dropdown matrix as nested', () => {
     const tags = extractPrivacyTags({
       elements: [
         {
@@ -156,7 +155,7 @@ describe('extractPrivacyTags', () => {
     });
 
     expect(tags.tagged).toEqual([
-      { name: 'meds', within: 'kids.*', category: 'medication' },
+      { name: 'meds', nested: true, category: 'medication' },
     ]);
   });
 
@@ -166,30 +165,6 @@ describe('extractPrivacyTags', () => {
     });
 
     expect(tags.consents).toEqual([]);
-  });
-});
-
-describe('specialCategoryAnswerKeys', () => {
-  it('lists the answer keys of special-category questions only', () => {
-    const form = {
-      pages: [
-        {
-          elements: [
-            allergies,
-            { type: 'text', name: 'diet', privacyCategory: 'dietary' },
-            {
-              type: 'paneldynamic',
-              name: 'children',
-              templateElements: [{ ...medication, valueName: 'meds' }],
-            },
-          ],
-        },
-      ],
-    };
-
-    expect(specialCategoryAnswerKeys(form)).toEqual(
-      new Set(['allergies', 'children.meds']),
-    );
   });
 });
 
@@ -432,11 +407,11 @@ describe('consentTexts', () => {
     };
 
     expect(consentTexts(model)).toEqual({
-      'kids[0].consent_health': 'For this child.',
-      'kids[1].consent_health': 'For this child.',
+      'kids.0.consent_health': 'For this child.',
+      'kids.1.consent_health': 'For this child.',
     });
     expect(Object.keys(consentTexts(model, { givenOnly: true }))).toEqual([
-      'kids[0].consent_health',
+      'kids.0.consent_health',
     ]);
   });
 
@@ -467,8 +442,8 @@ describe('consentTexts', () => {
     };
 
     expect(consentTexts(model)).toEqual({
-      'groups[0].kids[0].consent_health': 'For Anna.',
-      'groups[1].kids[0].consent_health': 'For Ben.',
+      'groups.0.kids.0.consent_health': 'For Anna.',
+      'groups.1.kids.0.consent_health': 'For Ben.',
     });
   });
 });

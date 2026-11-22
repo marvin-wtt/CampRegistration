@@ -649,7 +649,7 @@ describe('RegistrationForm', () => {
   describe('redirect after submit', () => {
     function mountWithRedirect(
       submitFn: () => Promise<void>,
-      options: { url?: string; moderation?: boolean } = {},
+      options: { url?: string; mode?: 'register' | 'moderate' } = {},
     ) {
       const wrapper = mount(RegistrationForm, {
         props: {
@@ -663,7 +663,7 @@ describe('RegistrationForm', () => {
           },
           submitFn,
           uploadFileFn: () => Promise.reject(new Error()),
-          moderation: options.moderation ?? false,
+          mode: options.mode ?? 'register',
         },
       });
       return wrapper
@@ -718,7 +718,7 @@ describe('RegistrationForm', () => {
     it('never redirects a manager editing a registration', async () => {
       const assign = mockAssign();
       const survey = mountWithRedirect(() => Promise.resolve(), {
-        moderation: true,
+        mode: 'moderate',
       });
 
       survey.doComplete();

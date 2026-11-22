@@ -1,6 +1,4 @@
 import {
-  MatrixDropdownRowModelBase,
-  MatrixDynamicRowModel,
   PanelModel,
   QuestionPanelDynamicModel,
   SurveyModel,
@@ -19,8 +17,9 @@ import {
   unconsentedQuestions,
   extractEventData,
   extractPaymentAmounts,
-  addEventFileSlotResolver,
-  setVariables,
+  answerPathOf,
+  joinPath,
+  prepareEventSurvey,
 } from '@camp-registration/common/form';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { withTimeout } from '#utils/promiseUtils';
@@ -81,7 +80,6 @@ const FILE_TYPE = 'file';
 // is async, so this only bounds a fallback.
 const ASYNC_VALIDATION_TIMEOUT_MS = 5_000;
 
-const PATH_SEPARATOR = '.';
 const LABEL_SEPARATOR = ' > ';
 
 const ISSUE_MESSAGES: Record<IDataIssue['type'], string> = {
@@ -105,36 +103,9 @@ const fileValues = (question: Question): unknown[] => {
   return Array.isArray(value) ? value : [value];
 };
 
-// The location of a question's value in the form data, in the notation
-// `setData()` uses for its issues: `panel[1].question`, `matrix[0].column` for
-// a dynamic matrix row, `matrix.row.column` for a named one.
-const questionPath = (question: Question): string => {
-  const name = question.getValueName();
-  const parent = question.parentQuestion;
-  // Typed as always set, but null for a question that is not nested.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!parent) {
-    return name;
-  }
-
-  const parentPath = questionPath(parent);
-  const row: unknown = question.data;
-
-  if (parent instanceof QuestionPanelDynamicModel) {
-    const index = parent.panels.findIndex((panel) =>
-      panel.questions.includes(question),
-    );
-    return `${parentPath}[${String(index)}].${name}`;
-  }
-  if (row instanceof MatrixDynamicRowModel) {
-    return `${parentPath}[${String(row.rowIndex - 1)}].${name}`;
-  }
-  if (row instanceof MatrixDropdownRowModelBase) {
-    return `${parentPath}.${String(row.rowName)}.${name}`;
-  }
-
-  return `${parentPath}.${name}`;
-};
+// SurveyJS reports where an issue sits as `panel[1].question`; the form's
+// own notation is `panel.1.question`.
+const issuePath = (path: string): string => path.replace(/\[(\d+)]/g, '.$1');
 
 /** A plain-data entry with whether its answer must never be printed. */
 interface SensitivityEntry extends PlainDataEntry {
@@ -202,36 +173,45 @@ function flattenEntries<T extends PlainDataEntry & { data?: T[] }>(
     return [
       {
         entry,
-        path: nested.map((part) => part.path).join(PATH_SEPARATOR),
+        path: joinPath(...nested.map((part) => part.path)),
         label: nested.map((part) => part.label).join(LABEL_SEPARATOR),
       },
     ];
   });
 }
 
+// A promise would outlive the loan: another response could be loaded into the
+// form before it settles.
+type NotAPromise<T> = T extends PromiseLike<unknown> ? never : T;
+
+/** A stored registration, as `registrationForms` reads it. */
+export interface StoredResponse {
+  group: string | null;
+  locale: string;
+  data: unknown;
+}
+
 /**
  * One form per group and locale of an event, for code that walks many of its
  * registrations: building the survey is the costly part, loading a response
- * into it is not.
+ * into it is not. A form is lent with the response loaded, for a synchronous
+ * read only — what it returns is all that leaves the loan.
  */
 export function registrationForms(event: EventWithFreePlaces) {
   const forms = new Map<string, RegistrationForm>();
 
-  return ({
-    group,
-    locale,
-  }: {
-    group: string | null;
-    locale: string;
-  }): RegistrationForm => {
-    const key = `${group ?? ''}|${locale}`;
+  return <T>(
+    response: StoredResponse,
+    read: (form: RegistrationForm) => NotAPromise<T>,
+  ): T => {
+    const key = `${response.group ?? ''}|${response.locale}`;
     let form = forms.get(key);
     if (!form) {
-      form = new RegistrationForm(event, group, locale);
+      form = new RegistrationForm(event, response.group, response.locale);
       forms.set(key, form);
     }
 
-    return form;
+    return read(form.load(response.data));
   };
 }
 
@@ -252,12 +232,8 @@ export class RegistrationForm {
     locale = 'en-US',
   ) {
     this.survey = new SurveyModel(event.form);
-
-    // SurveyJS resolves `de-DE` to its `de` strings, but not `de_DE`.
-    this.survey.locale = locale.replace('_', '-');
-    setVariables(this.survey, event, { group });
-    // The links the browser writes too: consent texts holding one are compared.
-    addEventFileSlotResolver(this.survey, event.id);
+    // As the browser sets it up: consent texts are compared with its own.
+    prepareEventSurvey(this.survey, event, { group, locale });
   }
 
   /** Replaces the response the form holds, running the form's logic on it. */
@@ -284,7 +260,7 @@ export class RegistrationForm {
    */
   async dataErrors(): Promise<FormDataError[]> {
     const structuralErrors = this.issues.map((issue) => ({
-      path: issue.path,
+      path: issuePath(issue.path),
       message: ISSUE_MESSAGES[issue.type],
     }));
 
@@ -295,7 +271,7 @@ export class RegistrationForm {
         fileValues(question).some((value) => typeof value !== 'string'),
       )
       .map((question) => ({
-        path: questionPath(question),
+        path: answerPathOf(question),
         message: 'Invalid file reference',
       }));
 
@@ -439,7 +415,7 @@ export class RegistrationForm {
   private validationErrors(): FormDataError[] {
     const errors = [
       ...this.survey.getAllQuestions(true, undefined, true).map((question) => ({
-        path: questionPath(question),
+        path: answerPathOf(question),
         element: question,
       })),
       ...this.panels(),
@@ -465,7 +441,10 @@ export class RegistrationForm {
 
       return panels
         .filter((panel) => panel instanceof PanelModel)
-        .map((panel) => ({ path: `${prefix}${panel.name}`, element: panel }));
+        .map((panel) => ({
+          path: joinPath(prefix, panel.name),
+          element: panel,
+        }));
     };
 
     const staticPanels = this.survey.pages.flatMap((page) => located('', page));
@@ -474,14 +453,14 @@ export class RegistrationForm {
       .getAllQuestions(true, undefined, true)
       .filter((question) => question instanceof QuestionPanelDynamicModel)
       .flatMap((question) => {
-        const path = questionPath(question);
+        const path = answerPathOf(question);
 
         return question.panels.flatMap((panel, index) => {
-          const itemPath = `${path}[${String(index)}]`;
+          const itemPath = joinPath(path, index);
 
           return [
             { path: itemPath, element: panel },
-            ...located(`${itemPath}${PATH_SEPARATOR}`, panel),
+            ...located(itemPath, panel),
           ];
         });
       });

@@ -1,50 +1,36 @@
-import type { EventDataType } from '@/lib/surveyJs/properties/eventDataMapping/EventDataType';
-import { type IPropertyGridEditor } from 'survey-creator-core';
 import {
-  waitingList,
-  country,
-  dateOfBirth,
-  email,
-  address,
-  role,
-  firstName,
-  gender,
-  lastName,
-  name,
-  phone,
-  paymentAmount,
-} from '@/lib/surveyJs/properties/eventDataMapping/types';
+  editorLocalization,
+  type IPropertyGridEditor,
+} from 'survey-creator-core';
+import {
+  EVENT_DATA_TYPE_EDITOR,
+  EVENT_DATA_TYPE_PROPERTY,
+  eventDataTagsFor,
+  eventDataTypeOf,
+  isEventDataTag,
+} from '@camp-registration/common/form';
 
-const dataTypes: EventDataType[] = [];
-
-dataTypes.push(address);
-dataTypes.push(country);
-dataTypes.push(dateOfBirth);
-dataTypes.push(email);
-dataTypes.push(firstName);
-dataTypes.push(gender);
-dataTypes.push(lastName);
-dataTypes.push(name);
-dataTypes.push(phone);
-dataTypes.push(paymentAmount);
-dataTypes.push(role);
-dataTypes.push(waitingList);
-
+// The tags come from the registry in `common`; their labels are the creator's
+// `pv.eventDataType.<tag>` strings (`form-editor-translations.ts`).
 const editor: IPropertyGridEditor = {
-  fit: (prop) => {
-    return prop.type === 'eventDataMapping';
-  },
-  getJSON: (obj, prop, options) => {
-    const isExpression = obj.getType() === 'expression';
-
-    const types = isExpression
-      ? dataTypes
-      : dataTypes.filter((value) => value.fit(obj, prop, options));
-    const choices = types.map((value) => value.element);
+  fit: (prop) => prop.type === EVENT_DATA_TYPE_EDITOR,
+  getJSON: (obj) => {
+    const tags: string[] = eventDataTagsFor(obj);
+    // A legacy tag the element still carries stays selectable as itself.
+    const current = eventDataTypeOf(obj);
+    if (current && isEventDataTag(current) && !tags.includes(current)) {
+      tags.push(current);
+    }
 
     return {
       type: 'dropdown',
-      choices,
+      choices: tags.map((tag) => ({
+        value: tag,
+        text: editorLocalization.getPropertyValueInEditor(
+          EVENT_DATA_TYPE_PROPERTY,
+          tag,
+        ),
+      })),
       showOtherItem: true,
       storeOthersAsComment: false,
     };

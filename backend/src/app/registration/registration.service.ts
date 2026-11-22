@@ -18,6 +18,8 @@ import {
   customFileSlots,
 } from '#app/registration/registration.helper';
 import { registrationColumns } from '#app/registration/registration.columns';
+import { isFull } from '#app/registration/registration.capacity';
+import { takesPlace } from '@camp-registration/common/form';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
@@ -44,6 +46,26 @@ const BULK_REGISTRATION_SELECT = {
   locale: true,
   group: true,
 } as const satisfies Prisma.RegistrationSelect;
+
+/** A submission validation accepted, as the controller hands it over. */
+export interface NewRegistration extends Pick<
+  Registration,
+  'locale' | 'group'
+> {
+  /** Loaded by validation, in the locale and for the group it resolved. */
+  form: RegistrationForm;
+  /** The form's upload session, whose files the registration takes over. */
+  fileField: string;
+  /**
+   * What the form showed — untrusted, only compared: a submission whose
+   * price or consent wording changed meanwhile is refused, never charged or
+   * stored differently.
+   */
+  displayed?: {
+    total?: number | undefined;
+    consents?: Record<string, string> | undefined;
+  };
+}
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -115,22 +137,8 @@ export class RegistrationService extends BaseService {
     return { total };
   }
 
-  /**
-   * `displayedTotal` is what the form showed: a submission whose price changed
-   * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
-   * `displayedConsents` does the same for the consent wording.
-   */
-  async createRegistration(
-    event: EventWithFreePlaces,
-    data: Pick<Registration, 'locale' | 'group'> & { form: RegistrationForm },
-    fileField: string,
-    displayedTotal?: number,
-    displayedConsents?: Record<string, string>,
-  ) {
-    // Loaded by validation, in the locale and for the group it resolved: event
-    // variables such as `{event.price}` resolve per locale and group, so
-    // computed values can differ.
-    const { form, group } = data;
+  async createRegistration(event: EventWithFreePlaces, input: NewRegistration) {
+    const { form, group, displayed = {} } = input;
 
     const formData = form.data;
     const computedData = registrationColumns(form);
@@ -138,7 +146,7 @@ export class RegistrationService extends BaseService {
     // is what this person agreed to, at its group's price.
     const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
     assertAmountWithinLimit(quotedAmount);
-    assertPriceUnchanged(quotedAmount, displayedTotal);
+    assertPriceUnchanged(quotedAmount, displayed.total);
 
     // Which privacy information this person was shown, resolved before the
     // transaction: it is a read of published state, and the create runs
@@ -151,52 +159,19 @@ export class RegistrationService extends BaseService {
       );
     assertConsentsGiven(form, notice);
     const consentTexts = form.givenConsentTexts();
-    assertConsentTextsUnchanged(consentTexts, displayedConsents);
+    assertConsentTextsUnchanged(consentTexts, displayed.consents);
 
     const fileIds = form.getFileIds();
-
-    const isWaitingList = async (
-      transaction: Prisma.TransactionClient,
-    ): Promise<boolean> => {
-      // Only participants can be placed on the waiting list
-      if (computedData.role && computedData.role !== 'participant') {
-        return false;
-      }
-
-      // Single max participants for all participants
-      if (typeof event.maxParticipants === 'number') {
-        const registrationCount = await transaction.registration.count({
-          where: {
-            eventId: event.id,
-            OR: [{ role: 'participant' }, { role: null }],
-          },
-        });
-        return registrationCount >= event.maxParticipants;
-      }
-
-      // Max participants per group
-      // Throw error when group is missing
-      if (!group || !(group in event.maxParticipants)) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid or missing group');
-      }
-
-      const registrationCount = await transaction.registration.count({
-        where: {
-          eventId: event.id,
-          OR: [{ role: 'participant' }, { role: null }],
-          group,
-        },
-      });
-
-      return registrationCount >= event.maxParticipants[group];
-    };
 
     return this.transaction(
       async (transaction) => {
         // Re-read inside the transaction: a deletion that started after this
         // request loaded the event must still stop it.
         await assertNotPurged(transaction, event.id);
-        const waitingList = await isWaitingList(transaction);
+        // Staff never wait for a place.
+        const waitingList =
+          takesPlace(computedData.role) &&
+          (await isFull(transaction, event, group));
 
         const status = waitingList
           ? 'WAITLISTED'
@@ -207,7 +182,7 @@ export class RegistrationService extends BaseService {
         const registration = await transaction.registration.create({
           data: {
             ...computedData,
-            locale: data.locale,
+            locale: input.locale,
             group,
             data: formData,
             status,
@@ -224,7 +199,10 @@ export class RegistrationService extends BaseService {
               privacyStamp.eventPrivacyNoticeVersionId,
             ),
             event: { connect: { id: event.id } },
-            files: this.fileService.getFileConnectInput(fileIds, fileField),
+            files: this.fileService.getFileConnectInput(
+              fileIds,
+              input.fileField,
+            ),
           },
         });
 
@@ -433,14 +411,12 @@ export class RegistrationService extends BaseService {
     // A batch at a time: in parallel within one, bounded in memory overall.
     for await (const batch of this.registrationBatchesOfEvent(event.id)) {
       await Promise.all(
-        batch.map((registration) => {
-          const form = formFor(registration).load(registration.data);
-
-          return this.prisma.registration.update({
+        batch.map((registration) =>
+          this.prisma.registration.update({
             where: { id: registration.id },
-            data: registrationColumns(form),
-          });
-        }),
+            data: formFor(registration, registrationColumns),
+          }),
+        ),
       );
     }
   }
@@ -485,24 +461,33 @@ export class RegistrationService extends BaseService {
         return false;
       }
 
-      const form = formFor(registration).load(registration.data);
-      if (form.sensitiveAnswers().length === 0) {
+      const cleared = formFor(registration, (form) => {
+        if (form.sensitiveAnswers().length === 0) {
+          return null;
+        }
+        // Columns and files are read off the cleared response, so no copy of
+        // an answer stays.
+        const previous = form.getFileIds();
+        const data = form.withoutSensitiveAnswers();
+
+        return {
+          data: { ...registrationColumns(form), data },
+          removed: removedFiles({ previous, next: form.getFileIds() }),
+        };
+      });
+      if (!cleared) {
         return false;
       }
 
-      // From here on the form holds the cleared response: the computed columns
-      // and files are read from it, so no copy of an answer stays.
-      const previousFileIds = form.getFileIds();
-      const data = form.withoutSensitiveAnswers();
       await tx.registration.update({
         where: { id: registrationId },
-        data: { ...registrationColumns(form), data },
+        data: cleared.data,
       });
       await this.fileService.detachFiles(
         tx,
         'registrationId',
         registrationId,
-        removedFiles({ previous: previousFileIds, next: form.getFileIds() }),
+        cleared.removed,
       );
 
       return true;
