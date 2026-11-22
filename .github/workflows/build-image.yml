@@ -79,7 +79,14 @@ jobs:
         env:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        # --fail ignores 3xx, so a login redirect would pass; require a 2xx.
         run: |
-          curl --fail-with-body --silent --show-error \
-            --request GET "$COOLIFY_WEBHOOK" \
-            --header "Authorization: Bearer $COOLIFY_TOKEN"
+          status=$(curl --silent --show-error \
+            --output response.txt --write-out '%{http_code}' \
+            --request POST "$COOLIFY_WEBHOOK" \
+            --header "Authorization: Bearer $COOLIFY_TOKEN")
+          cat response.txt
+          if [[ "$status" != 2* ]]; then
+            echo "::error::Coolify returned HTTP $status"
+            exit 1
+          fi
