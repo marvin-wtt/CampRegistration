@@ -27,6 +27,18 @@ export function isRetentionPurged(event: RetentionPurgeState): boolean {
   return !!event.sensitiveDataPurgedAt || !!event.registrationDataPurgedAt;
 }
 
+/**
+ * Whether the deletion of the sensitive answers is complete: every
+ * registration cleared, or all of them deleted. Until then an interrupted run
+ * leaves answers stored, which are shown as such.
+ */
+export function isSensitiveDataCleared(event: {
+  sensitiveDataClearedAt: Date | string | null;
+  registrationDataPurgedAt: Date | string | null;
+}): boolean {
+  return !!event.sensitiveDataClearedAt || !!event.registrationDataPurgedAt;
+}
+
 /** How far ahead one postponement may move a deadline. */
 export const MAX_RETENTION_POSTPONE_MONTHS = 12;
 

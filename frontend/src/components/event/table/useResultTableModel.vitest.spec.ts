@@ -363,7 +363,12 @@ describe('useResultTableModel purged columns', () => {
     { data: { name: 'Ann' } },
   ] as unknown as Registration[];
 
-  function build(sensitiveDataPurgedAt: string | null) {
+  const DELETED = '2026-11-01T00:00:00.000Z';
+
+  function build(
+    sensitiveDataPurgedAt: string | null,
+    sensitiveDataClearedAt = sensitiveDataPurgedAt,
+  ) {
     const model = useResultTableModel({
       questions: ref<TableColumnTemplate[]>([]),
       registrations: ref(registrations),
@@ -381,6 +386,7 @@ describe('useResultTableModel purged columns', () => {
         countries: ['de'],
         form,
         sensitiveDataPurgedAt,
+        sensitiveDataClearedAt,
         registrationDataPurgedAt: null,
       } as unknown as EventDetails),
     });
@@ -396,8 +402,17 @@ describe('useResultTableModel purged columns', () => {
     ]);
   });
 
+  it('shows the answers an interrupted deletion left stored', () => {
+    const model = build(DELETED, null);
+
+    expect(model.columns.value.map((column) => column.purged)).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+
   it('marks deleted answers, unsortable and always shown', () => {
-    const model = build('2026-11-01T00:00:00.000Z');
+    const model = build(DELETED);
     const [name, allergies] = model.columns.value;
 
     expect(name?.purged).toBeUndefined();
@@ -408,7 +423,7 @@ describe('useResultTableModel purged columns', () => {
   });
 
   it('keeps deleted columns out of the search', () => {
-    const model = build('2026-11-01T00:00:00.000Z');
+    const model = build(DELETED);
     model.searchFilter.value = 'Ann';
     expect(model.rows.value).toHaveLength(1);
 

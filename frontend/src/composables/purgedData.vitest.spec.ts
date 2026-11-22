@@ -50,6 +50,8 @@ describe('lockPurgedQuestions', () => {
       {
         form: form as unknown as EventDetails['form'],
         sensitiveDataPurgedAt,
+        // Locking starts with the deletion, before it completes.
+        sensitiveDataClearedAt: null,
         registrationDataPurgedAt: null,
       },
       'Deleted',
@@ -85,6 +87,7 @@ describe('lockPurgedQuestions', () => {
       {
         form: form as unknown as EventDetails['form'],
         sensitiveDataPurgedAt: '2026-11-01T00:00:00.000Z',
+        sensitiveDataClearedAt: '2026-11-01T00:00:00.000Z',
         registrationDataPurgedAt: null,
       },
       'Deleted',

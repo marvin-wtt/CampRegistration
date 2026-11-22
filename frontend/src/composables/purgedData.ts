@@ -4,12 +4,18 @@ import {
   isSpecialCategory,
   specialCategoryAnswerKeys,
 } from '@camp-registration/common/form';
-import { isRetentionPurged } from '@camp-registration/common/privacy';
+import {
+  isRetentionPurged,
+  isSensitiveDataCleared,
+} from '@camp-registration/common/privacy';
 import type { Question, SurveyModel } from 'survey-core';
 
 type PurgeState = Pick<
   EventDetails,
-  'form' | 'sensitiveDataPurgedAt' | 'registrationDataPurgedAt'
+  | 'form'
+  | 'sensitiveDataPurgedAt'
+  | 'sensitiveDataClearedAt'
+  | 'registrationDataPurgedAt'
 >;
 
 /**
@@ -53,7 +59,9 @@ export function usePurgedFields(
 ) {
   const keys = computed<Set<string>>(() => {
     const current = toValue(event);
-    if (!current || !isRetentionPurged(current)) {
+    // Shown as deleted only once they are: an interrupted run leaves some
+    // stored, which the table still shows (locking starts earlier).
+    if (!current || !isSensitiveDataCleared(current)) {
       return new Set();
     }
 

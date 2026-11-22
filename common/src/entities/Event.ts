@@ -47,8 +47,10 @@ export interface Event extends Identifiable {
   freePlaces: PerGroup<number> | null;
   freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
-  /** When sensitive answers were deleted for good (docs/privacy.md, 8). */
+  /** When deleting the sensitive answers began, for good (docs/privacy.md, 8). */
   sensitiveDataPurgedAt: string | null;
+  /** When every registration's sensitive answers were cleared. */
+  sensitiveDataClearedAt: string | null;
   /** When all registration data was deleted for good; implies the above. */
   registrationDataPurgedAt: string | null;
   logo: string | null;
@@ -72,6 +74,7 @@ type EventServerFields =
   | 'freePlacesTotal'
   | 'registrationStatus'
   | 'sensitiveDataPurgedAt'
+  | 'sensitiveDataClearedAt'
   | 'registrationDataPurgedAt'
   | 'logo'
   | 'banner'

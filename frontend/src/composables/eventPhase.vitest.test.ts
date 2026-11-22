@@ -11,6 +11,7 @@ function event(overrides: Partial<Event> = {}): Event {
     timezone: 'Europe/Berlin',
     registrationStatus: 'closed',
     sensitiveDataPurgedAt: null,
+    sensitiveDataClearedAt: null,
     registrationDataPurgedAt: null,
     registrationOpensAt: '2026-03-01T00:00:00',
     registrationClosesAt: '2026-07-01T00:00:00',

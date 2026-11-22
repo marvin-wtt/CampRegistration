@@ -65,6 +65,7 @@ function eventWith(
     maxParticipants: Object.fromEntries(countries.map((c) => [c, 10])),
     registrationStatus: 'open',
     sensitiveDataPurgedAt: null,
+    sensitiveDataClearedAt: null,
     registrationDataPurgedAt: null,
     startAt: '2027-01-26T09:00:00',
     endAt: '2027-02-02T17:00:00',
