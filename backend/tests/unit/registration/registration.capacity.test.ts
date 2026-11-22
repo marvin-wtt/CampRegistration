@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Prisma } from '#generated/prisma/client.js';
-import { isFull, TAKES_PLACE } from '#app/registration/registration.capacity';
+import {
+  isFull,
+  participantsOnly,
+} from '#app/registration/registration.capacity';
 
 function transaction(taken: number) {
   const count = vi.fn().mockResolvedValue(taken);
@@ -17,7 +20,7 @@ describe('isFull', () => {
       isFull(tx, { id: 'event', maxParticipants: 10 }, null),
     ).resolves.toBe(true);
     expect(count).toHaveBeenCalledWith({
-      where: { eventId: 'event', ...TAKES_PLACE },
+      where: { eventId: 'event', ...participantsOnly },
     });
   });
 
@@ -36,7 +39,7 @@ describe('isFull', () => {
       isFull(tx, { id: 'event', maxParticipants: { de: 5, fr: 8 } }, 'fr'),
     ).resolves.toBe(false);
     expect(count).toHaveBeenCalledWith({
-      where: { eventId: 'event', group: 'fr', ...TAKES_PLACE },
+      where: { eventId: 'event', group: 'fr', ...participantsOnly },
     });
   });
 

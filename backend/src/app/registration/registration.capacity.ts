@@ -5,10 +5,10 @@ import type { Prisma } from '#generated/prisma/client.js';
 import ApiError from '#core/router/ApiError';
 
 /**
- * The registrations that take a place, as `takesPlace` decides for one: a
- * participant, or one without a role. Staff never fill the event.
+ * A filter for participants' registrations, as `isParticipant` decides for
+ * one. Only they count against the event's places; staff never fill it.
  */
-export const TAKES_PLACE = {
+export const participantsOnly = {
   OR: [{ role: PARTICIPANT_ROLE }, { role: null }, { role: '' }],
 } satisfies Prisma.RegistrationWhereInput;
 
@@ -24,7 +24,7 @@ export async function isFull(
   const limit = event.maxParticipants;
   if (typeof limit === 'number') {
     const taken = await tx.registration.count({
-      where: { eventId: event.id, ...TAKES_PLACE },
+      where: { eventId: event.id, ...participantsOnly },
     });
     return taken >= limit;
   }
@@ -33,7 +33,7 @@ export async function isFull(
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid or missing group');
   }
   const taken = await tx.registration.count({
-    where: { eventId: event.id, group, ...TAKES_PLACE },
+    where: { eventId: event.id, group, ...participantsOnly },
   });
 
   return taken >= limit[group];

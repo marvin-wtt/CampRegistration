@@ -19,7 +19,7 @@ import {
 } from '#app/registration/registration.helper';
 import { registrationColumns } from '#app/registration/registration.columns';
 import { isFull } from '#app/registration/registration.capacity';
-import { takesPlace } from '@camp-registration/common/form';
+import { isParticipant } from '@camp-registration/common/form';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
@@ -170,7 +170,7 @@ export class RegistrationService extends BaseService {
         await assertNotPurged(transaction, event.id);
         // Staff never wait for a place.
         const waitingList =
-          takesPlace(computedData.role) &&
+          isParticipant(computedData.role) &&
           (await isFull(transaction, event, group));
 
         const status = waitingList

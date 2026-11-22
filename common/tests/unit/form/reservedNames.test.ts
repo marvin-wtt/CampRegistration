@@ -60,6 +60,14 @@ describe('reservedNameUses', () => {
     ]);
   });
 
+  it('skips panel names, which key no answer', () => {
+    expect(
+      reservedNameUses({
+        elements: [{ type: 'panel', name: 'event', elements: [] }],
+      }),
+    ).toEqual([]);
+  });
+
   it('finds nothing in a form without reserved names', () => {
     expect(
       reservedNameUses({ elements: [{ type: 'text', name: 'name' }] }),

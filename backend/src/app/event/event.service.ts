@@ -1,4 +1,4 @@
-import { TAKES_PLACE } from '#app/registration/registration.capacity';
+import { participantsOnly } from '#app/registration/registration.capacity';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
@@ -176,7 +176,7 @@ export class EventService extends BaseService {
   private eventResourceInclude() {
     return {
       registrations: {
-        where: TAKES_PLACE,
+        where: participantsOnly,
         select: { group: true },
       },
       organization: {

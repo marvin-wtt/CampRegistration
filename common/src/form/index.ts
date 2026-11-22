@@ -77,7 +77,7 @@ export {
   type EventSurveyOptions,
 } from './eventSurvey.js';
 export type { GroupCountryMatch } from './questions/groupCountryMatch.js';
-export { PARTICIPANT_ROLE, takesPlace } from './questions/role.question.js';
+export { PARTICIPANT_ROLE, isParticipant } from './questions/role.question.js';
 export {
   PAYMENT_TOTAL_MODES,
   type PaymentTotalMode,

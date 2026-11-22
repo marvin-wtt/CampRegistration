@@ -1,4 +1,4 @@
-import { takesPlace } from '@camp-registration/common/form';
+import { isParticipant } from '@camp-registration/common/form';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
@@ -684,7 +684,7 @@ export class ChoreAssignmentService extends BaseService {
 
     return registrations.map((registration) => ({
       id: registration.id,
-      staff: !takesPlace(registration.role),
+      staff: !isParticipant(registration.role),
       group: registration.group,
       roomId: registration.bed?.roomId ?? null,
     }));

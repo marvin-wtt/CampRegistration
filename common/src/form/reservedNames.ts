@@ -33,6 +33,7 @@ export interface ReservedNameUse {
 }
 
 interface ElementJson {
+  type?: unknown;
   name?: unknown;
   valueName?: unknown;
   elements?: unknown;
@@ -51,7 +52,7 @@ function asElements(value: unknown): ElementJson[] {
 
 /**
  * The names in a form's JSON that key an answer and are reserved: those of
- * questions, panels' and matrices' nested questions, and matrix columns.
+ * questions (in panels and dynamic panels too) and matrix columns.
  * Read off the JSON, so a form the editor can't load yet is checked too.
  */
 export function reservedNameUses(form: unknown): ReservedNameUse[] {
@@ -70,8 +71,11 @@ export function reservedNameUses(form: unknown): ReservedNameUse[] {
 
   const walk = (elements: ElementJson[]) => {
     for (const element of elements) {
-      check(element.name);
-      check(element.valueName);
+      // A plain panel stores nothing of its own.
+      if (element.type !== 'panel') {
+        check(element.name);
+        check(element.valueName);
+      }
       walk(asElements(element.elements));
       walk(asElements(element.templateElements));
       walk(asElements(element.columns));

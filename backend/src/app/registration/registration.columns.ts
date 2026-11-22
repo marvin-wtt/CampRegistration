@@ -79,7 +79,8 @@ export function computedRegistrationData(
     dateOfBirth: date(answers, 'date_of_birth'),
     emails: all(answers, 'email'),
     phoneNumbers: all(answers, 'phone'),
-    role: first(answers, 'role'),
+    // An empty answer is no role: the registration is a participant's.
+    role: first(answers, 'role') || null,
     gender: first(answers, 'gender'),
   };
 }

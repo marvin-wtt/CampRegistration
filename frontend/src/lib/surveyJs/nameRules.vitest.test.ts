@@ -31,13 +31,13 @@ describe('attachNameRules', () => {
     const { creator } = createCreator();
     const question = creator.survey.getQuestionByName('first_name');
     const event = {
-      obj: question,
+      element: question,
       propertyName: 'name',
       value: 'event',
       error: '',
     };
 
-    creator.onPropertyDisplayCustomError.fire(creator, event as never);
+    creator.onPropertyDisplayCustomError.fire(creator, event);
 
     expect(event.error).toBe('issue:variable');
   });
@@ -46,20 +46,20 @@ describe('attachNameRules', () => {
     const { creator } = createCreator();
     const question = creator.survey.getQuestionByName('first_name');
     const title = {
-      obj: question,
+      element: question,
       propertyName: 'title',
       value: '_x',
       error: '',
     };
     const name = {
-      obj: question,
+      element: question,
       propertyName: 'name',
       value: 'age',
       error: '',
     };
 
-    creator.onPropertyDisplayCustomError.fire(creator, title as never);
-    creator.onPropertyDisplayCustomError.fire(creator, name as never);
+    creator.onPropertyDisplayCustomError.fire(creator, title);
+    creator.onPropertyDisplayCustomError.fire(creator, name);
 
     expect(title.error).toBe('');
     expect(name.error).toBe('');
@@ -76,6 +76,38 @@ describe('attachNameRules', () => {
 
     expect(creator.activeTab).toBe('json');
     expect(notify).toHaveBeenCalledWith('blocked:kids.meds:separator', 'error');
+  });
+
+  it('keeps names the form already held, whose answers are stored', () => {
+    const { creator, notify } = createCreator();
+    creator.JSON = { elements: [{ type: 'text', name: '_legacy' }] };
+    creator.switchTab('json');
+    jsonPlugin(creator).model.text = JSON.stringify({
+      elements: [
+        { type: 'text', name: '_legacy' },
+        { type: 'text', name: 'added' },
+      ],
+    });
+
+    creator.switchTab('designer');
+
+    expect(creator.activeTab).toBe('designer');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+  });
+
+  it('ignores panel names in the property grid', () => {
+    const { creator } = createCreator();
+    creator.JSON = { elements: [{ type: 'panel', name: 'box' }] };
+    const event = {
+      element: creator.survey.getPanelByName('box'),
+      propertyName: 'name',
+      value: 'event',
+      error: '',
+    };
+
+    creator.onPropertyDisplayCustomError.fire(creator, event);
+
+    expect(event.error).toBe('');
   });
 
   it('leaves the JSON tab once the names are fine', () => {

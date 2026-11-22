@@ -4,7 +4,7 @@ import { fakeEventData } from '../../util/faker.js';
 import {
   PARTICIPANT_ROLE,
   setVariables,
-  takesPlace,
+  isParticipant,
 } from '../../../src/form/index.js';
 import '../../../src/form/index.js';
 
@@ -65,15 +65,15 @@ describe('questions', () => {
   });
 });
 
-describe('takesPlace', () => {
+describe('isParticipant', () => {
   it('counts participants and registrations without a role', () => {
-    expect(takesPlace(PARTICIPANT_ROLE)).toBe(true);
-    expect(takesPlace(null)).toBe(true);
-    expect(takesPlace(undefined)).toBe(true);
-    expect(takesPlace('')).toBe(true);
+    expect(isParticipant(PARTICIPANT_ROLE)).toBe(true);
+    expect(isParticipant(null)).toBe(true);
+    expect(isParticipant(undefined)).toBe(true);
+    expect(isParticipant('')).toBe(true);
   });
 
   it('never counts staff', () => {
-    expect(takesPlace('counselor')).toBe(false);
+    expect(isParticipant('counselor')).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import type { Registration } from '@camp-registration/common/entities';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { zonedInstant } from '@camp-registration/common/utils';
+import { isParticipant } from '@camp-registration/common/form';
 
 export function useRegistrationHelper() {
   const eventDetailsStore = useEventDetailsStore();
@@ -112,7 +113,7 @@ export function useRegistrationHelper() {
   }
 
   function participant(registration: Registration): boolean {
-    return role(registration) === 'participant';
+    return isParticipant(registration.computedData.role);
   }
 
   function email(registration: Registration): string | undefined {

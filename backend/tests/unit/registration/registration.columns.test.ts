@@ -116,6 +116,12 @@ describe('computedRegistrationData', () => {
     ).toMatchObject({ dateOfBirth: null });
   });
 
+  it('stores an empty role answer as no role, a participant', () => {
+    expect(computedRegistrationData({ role: [''] })).toMatchObject({
+      role: null,
+    });
+  });
+
   it('takes the first text answer of a tag', () => {
     expect(
       computedRegistrationData({ first_name: [null, 7, 'Ann', 'Bea'] }),
