@@ -30,3 +30,25 @@ export function programItemMinutesRange(
 
   return { start, end: start + (item.duration ?? 60) };
 }
+
+/** A duration in minutes as e.g. "1 hr 30 min", in the given locale. */
+export function formatProgramItemDuration(
+  minutes: number,
+  locale: string,
+): string {
+  const unit = (value: number, unit: 'hour' | 'minute') =>
+    new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit,
+      unitDisplay: 'short',
+    }).format(value);
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) {
+    return unit(rest, 'minute');
+  }
+  return rest === 0
+    ? unit(hours, 'hour')
+    : `${unit(hours, 'hour')} ${unit(rest, 'minute')}`;
+}

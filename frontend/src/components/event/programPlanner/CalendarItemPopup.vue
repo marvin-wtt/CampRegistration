@@ -1,188 +1,65 @@
 <template>
-  <q-popup-proxy
-    ref="popupProxyRef"
-    :no-parent-event="noParentEvent"
-    transition-show="scale"
-    transition-hide="fade"
-    :offset="[10, 10]"
-    class="event-popup-menu"
+  <!-- Marks the parent element whose clicks open the popup -->
+  <span
+    v-if="!noParentEvent"
+    ref="anchor"
+    hidden
+  />
+
+  <!-- A popover on larger screens keeps the calendar in view for a quick
+       look; phones get a bottom sheet with thumb-sized actions instead. -->
+  <bottom-sheet
+    v-if="quasar.screen.lt.sm"
+    v-model="open"
+    no-padding
   >
-    <q-card
-      flat
-      class="event-popup"
-    >
-      <q-card-actions
-        v-if="hasActions"
-        align="right"
-      >
-        <q-btn
-          v-if="!item.date && editable"
-          v-close-popup
-          icon="event"
-          size="sm"
-          flat
-          rounded
-          @click="emit('schedule')"
-        >
-          <q-tooltip>{{ t('action.schedule') }}</q-tooltip>
-        </q-btn>
-        <q-btn
-          v-if="item.date && editable"
-          v-close-popup
-          icon="inbox"
-          size="sm"
-          flat
-          rounded
-          @click="emit('move-to-backlog')"
-        >
-          <q-tooltip>{{ t('action.moveToBacklog') }}</q-tooltip>
-        </q-btn>
-        <q-btn
-          v-if="creatable"
-          v-close-popup
-          icon="content_copy"
-          size="sm"
-          flat
-          rounded
-          @click="onDuplicate"
-        >
-          <q-tooltip>{{ t('action.duplicate') }}</q-tooltip>
-        </q-btn>
-        <q-btn
-          v-if="editable"
-          v-close-popup
-          icon="edit"
-          size="sm"
-          flat
-          rounded
-          @click="onEdit"
-        >
-          <q-tooltip>{{ t('action.edit') }}</q-tooltip>
-        </q-btn>
-        <q-btn
-          v-if="deletable"
-          v-close-popup
-          icon="delete"
-          size="sm"
-          flat
-          rounded
-          color="negative"
-          @click="onDelete"
-        >
-          <q-tooltip>{{ t('action.delete') }}</q-tooltip>
-        </q-btn>
-        <q-btn
-          v-close-popup
-          class="gt-xs"
-          icon="close"
-          size="sm"
-          flat
-          rounded
-        />
-      </q-card-actions>
-
-      <q-card-section>
-        <q-list>
-          <!-- title -->
-          <q-item>
-            <q-item-section avatar>
-              <q-icon
-                name="circle"
-                :style="{ color: item.color }"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label class="text-h6">
-                {{ to(item.title) }}
-              </q-item-label>
-              <q-item-label caption>
-                {{ dateTime }}
-              </q-item-label>
-            </q-item-section>
-            <q-item-section
-              v-if="!hasActions"
-              class="gt-xs"
-              side
-              top
-            >
-              <q-btn
-                v-close-popup
-                icon="close"
-                size="sm"
-                flat
-                rounded
-              />
-            </q-item-section>
-          </q-item>
-
-          <!-- plan (only shown when not 'both') -->
-          <q-item v-if="item.plan !== 'both'">
-            <q-item-section avatar>
-              <plan-letter-icon
-                :plan="item.plan === 'a' ? 'a' : 'b'"
-                size="1.5em"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>
-                {{ item.plan === 'a' ? t('plan.a') : t('plan.b') }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-
-          <q-item v-if="item.location">
-            <q-item-section avatar>
-              <q-icon name="place" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>
-                {{ to(item.location) }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-
-          <q-item v-if="item.details">
-            <q-item-section avatar>
-              <q-icon name="description" />
-            </q-item-section>
-            <q-item-section style="white-space: pre-line">
-              {{ to(item.details) }}
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card-section>
-
-      <q-card-actions
-        v-if="plannerLink"
-        class="q-pt-none"
-        align="right"
-      >
-        <m-btn
-          v-close-popup
-          :label="t('action.openPlanner')"
-          :to="plannerLink"
-          icon-right="chevron_right"
-          primary
-          text
-          no-caps
-        />
-      </q-card-actions>
-    </q-card>
-  </q-popup-proxy>
+    <calendar-item-details
+      variant="sheet"
+      v-bind="detailsProps"
+      v-on="detailsListeners"
+    />
+  </bottom-sheet>
+  <!-- Opens at the click rather than under the item: a tall item would
+       otherwise squeeze it into the little space left below. Side and
+       height are set in `show()`, as Quasar doesn't fit a click-anchored
+       menu into the space on its side. -->
+  <q-menu
+    v-else
+    ref="menu"
+    v-model="open"
+    no-parent-event
+    touch-position
+    :self="placement.self"
+    :max-height="placement.maxHeight"
+    :offset="[8, 8]"
+    transition-show="jump-down"
+    transition-hide="fade"
+    class="item-popover"
+  >
+    <calendar-item-details
+      variant="popover"
+      v-bind="detailsProps"
+      v-on="detailsListeners"
+    />
+  </q-menu>
 </template>
 
 <script lang="ts" setup>
 import type { ProgramItem } from '@camp-registration/common/entities';
-import { useObjectTranslation } from '@/composables/objectTranslation';
-import { computed, useTemplateRef } from 'vue';
-import { useI18n } from 'vue-i18n';
-import type { QPopupProxy } from 'quasar';
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  useTemplateRef,
+} from 'vue';
+import { type QMenu, useQuasar } from 'quasar';
 import type { RouteLocationRaw } from 'vue-router';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
+import CalendarItemDetails from '@/components/event/programPlanner/CalendarItemDetails.vue';
 
-const { locale, t } = useI18n();
-const { to } = useObjectTranslation();
+const quasar = useQuasar();
 
 const {
   item,
@@ -211,136 +88,91 @@ const emit = defineEmits<{
   (e: 'move-to-backlog'): void;
 }>();
 
-// Without any action, the top bar would only hold the close button, so that
-// moves into the title row instead.
-const hasActions = computed<boolean>(() => editable || deletable || creatable);
+const open = ref(false);
 
-const popupProxyRef = useTemplateRef<QPopupProxy>('popupProxyRef');
+const menu = useTemplateRef<QMenu>('menu');
+
+const MARGIN = 16;
+
+const placement = ref<{
+  self: 'top left' | 'bottom left';
+  maxHeight: string | undefined;
+}>({ self: 'top left', maxHeight: undefined });
+
+// The event positions the popover at the click, opening towards whichever
+// side has more room and no taller than that room — long details then
+// scroll inside it rather than pushing it off screen.
+async function show(evt?: Event) {
+  if (!menu.value) {
+    open.value = true;
+    return;
+  }
+  if (evt instanceof MouseEvent) {
+    const below = window.innerHeight - evt.clientY;
+    const above = evt.clientY;
+    placement.value =
+      below >= above
+        ? { self: 'top left', maxHeight: `${below - MARGIN}px` }
+        : { self: 'bottom left', maxHeight: `${above - MARGIN}px` };
+    await nextTick();
+  }
+  menu.value.show(evt);
+}
 
 defineExpose({
-  show: (evt?: Event) => popupProxyRef.value?.show(evt),
-  hide: (evt?: Event) => popupProxyRef.value?.hide(evt),
+  show,
+  hide: () => (open.value = false),
 });
 
-const dateTime = computed<string>(() => {
-  if (!item.date) {
-    return '';
-  }
+const detailsProps = computed(() => ({
+  item,
+  editable,
+  deletable,
+  creatable,
+  plannerLink,
+}));
 
-  const start = item.time
-    ? new Date(`${item.date}T${item.time}`)
-    : new Date(item.date);
-  const end = item.duration
-    ? new Date(start.getTime() + item.duration * 60000)
-    : start;
+// Every action closes the popup before it is passed on
+function closeThen(action: () => void) {
+  return () => {
+    open.value = false;
+    action();
+  };
+}
 
-  const fullDay = !item.time && !item.duration;
+const detailsListeners = {
+  close: closeThen(() => undefined),
+  edit: closeThen(() => emit('edit')),
+  delete: closeThen(() => emit('delete')),
+  duplicate: closeThen(() => emit('duplicate')),
+  schedule: closeThen(() => emit('schedule')),
+  'move-to-backlog': closeThen(() => emit('move-to-backlog')),
+};
 
-  return new Intl.DateTimeFormat(locale.value, {
-    month: 'long',
-    day: '2-digit',
-    weekday: 'long',
-    hour: fullDay ? undefined : 'numeric',
-    minute: fullDay ? undefined : 'numeric',
-  }).formatRange(start, end);
+const anchor = useTemplateRef<HTMLElement>('anchor');
+let parent: HTMLElement | null = null;
+
+function onParentClick(evt: MouseEvent) {
+  void show(evt);
+}
+
+onMounted(() => {
+  parent = anchor.value?.parentElement ?? null;
+  parent?.addEventListener('click', onParentClick);
 });
 
-function onDelete() {
-  emit('delete');
-}
-
-function onEdit() {
-  emit('edit');
-}
-
-function onDuplicate() {
-  emit('duplicate');
-}
+onUnmounted(() => {
+  parent?.removeEventListener('click', onParentClick);
+});
 </script>
 
 <style>
-/* The QMenu container clips its content at the default 4px radius;
-   round it to match the card inside. Unscoped because the menu is
-   teleported outside this component. */
-.q-menu.event-popup-menu {
+/* Unscoped: the menu is teleported outside this component */
+.q-menu.item-popover {
+  /* The details bring their own padding; the theme's would leave a gap
+     below the pinned actions for the scrolled text to show through */
+  padding: 0;
   border-radius: 16px;
+  background: var(--md3-surface-container-high);
 }
 </style>
-
-<style scoped>
-.event-popup {
-  min-width: 300px;
-  max-width: 380px;
-
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 16px;
-
-  background: var(--md3-surface-container);
-  color: var(--md3-on-surface);
-}
-</style>
-
-<i18n lang="yaml" locale="en">
-plan:
-  a: 'Plan A (good weather)'
-  b: 'Plan B (bad weather)'
-action:
-  schedule: 'Schedule'
-  moveToBacklog: 'Move to backlog'
-  duplicate: 'Duplicate'
-  edit: 'Edit'
-  delete: 'Delete'
-  openPlanner: 'Open in planner'
-</i18n>
-
-<i18n lang="yaml" locale="de">
-plan:
-  a: 'Plan A (gutes Wetter)'
-  b: 'Plan B (schlechtes Wetter)'
-action:
-  schedule: 'Einplanen'
-  moveToBacklog: 'In Backlog verschieben'
-  duplicate: 'Duplizieren'
-  edit: 'Bearbeiten'
-  delete: 'Löschen'
-  openPlanner: 'Im Planer öffnen'
-</i18n>
-
-<i18n lang="yaml" locale="fr">
-plan:
-  a: 'Plan A (beau temps)'
-  b: 'Plan B (mauvais temps)'
-action:
-  schedule: 'Planifier'
-  moveToBacklog: 'Déplacer vers le backlog'
-  duplicate: 'Dupliquer'
-  edit: 'Modifier'
-  delete: 'Supprimer'
-  openPlanner: 'Ouvrir dans le planificateur'
-</i18n>
-
-<i18n lang="yaml" locale="pl">
-plan:
-  a: 'Plan A (dobra pogoda)'
-  b: 'Plan B (zła pogoda)'
-action:
-  schedule: 'Zaplanuj'
-  moveToBacklog: 'Przenieś do backlogu'
-  duplicate: 'Duplikuj'
-  edit: 'Edytuj'
-  delete: 'Usuń'
-  openPlanner: 'Otwórz w planerze'
-</i18n>
-
-<i18n lang="yaml" locale="cs">
-plan:
-  a: 'Plán A (dobré počasí)'
-  b: 'Plán B (špatné počasí)'
-action:
-  schedule: 'Naplánovat'
-  moveToBacklog: 'Přesunout do backlogu'
-  duplicate: 'Duplikovat'
-  edit: 'Upravit'
-  delete: 'Smazat'
-  openPlanner: 'Otevřít v plánovači'
-</i18n>

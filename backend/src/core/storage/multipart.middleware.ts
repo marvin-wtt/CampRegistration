@@ -9,6 +9,7 @@ import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import logger from '#core/logger';
 import { isPathInside } from '#core/storage/safe-path';
+import { emptyStringsToNull } from '#core/router/string.middleware';
 
 type ParameterType = string | Field | readonly Field[] | null | undefined;
 
@@ -109,7 +110,7 @@ const formatterMiddleware = async (
 ) => {
   // Convert null prototypes to objects
   // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
-  req.body = removePrototype(req.body) as unknown;
+  req.body = emptyStringsToNull(removePrototype(req.body));
 
   const files = getAllFiles(req);
 

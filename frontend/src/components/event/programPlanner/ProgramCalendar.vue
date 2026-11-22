@@ -33,7 +33,10 @@
           <q-calendar-day
             ref="calendarRef"
             class="fit"
-            :class="{ 'cal--dragging': isDraggingEvent }"
+            :class="{
+              'cal--dragging': isDraggingEvent,
+              'cal--placing': !!placingItem,
+            }"
             v-model="selectedDate"
             view="day"
             no-active-date
@@ -59,7 +62,22 @@
             @click-head-day="onDayEventAdd"
           >
             <template #head-day-event="{ scope: { timestamp } }">
-              <div class="column">
+              <!-- QCalendar only makes the date header a drop target; this
+                   row holds the all-day items, so it has to be one too -->
+              <div
+                class="cal-day-events column"
+                @click="
+                  (e) => onDayEventAdd({ event: e, scope: { timestamp } })
+                "
+                @dragenter="
+                  (e) => onDragEnter(e, 'head-day', dayEventsScope(timestamp))
+                "
+                @dragover="
+                  (e) => onDragOver(e, 'head-day', dayEventsScope(timestamp))
+                "
+                @dragleave="onDayEventsDragLeave"
+                @drop="(e) => onDrop(e, 'head-day', dayEventsScope(timestamp))"
+              >
                 <!-- One row: the publish badge and the zoom/print actions
                      used to be two stacked rows — merged to reclaim a full
                      row of height per day column, which adds up with many
@@ -203,7 +221,9 @@
                 <calendar-day-item
                   v-for="event in getFullDayEvents(timestamp.date)"
                   :key="event.id"
-                  :class="{ 'cal-drag-source': draggingGroupIds.has(event.id) }"
+                  :class="{
+                    'cal-drag-source': draggingGroupIds.has(event.id),
+                  }"
                   :event="event"
                   :view-both="viewBoth"
                   :show-all-translations="settings.showAllTranslations"
@@ -233,9 +253,11 @@
                 class="cal-create-overlay"
                 :class="{
                   'cal-create-overlay--readonly':
-                    !canCreate || selectedEventIds.size > 0,
+                    !placingItem && (!canCreate || selectedEventIds.size > 0),
                 }"
-                :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
+                :style="{
+                  pointerEvents: isDraggingEvent ? 'none' : undefined,
+                }"
                 @mousedown.left.prevent="
                   (e) => onOverlayMouseDown(e, timestamp, timeDurationHeight)
                 "
@@ -320,6 +342,15 @@
             </template>
           </q-calendar-day>
         </div>
+
+        <!-- Overlays the day headers: the day is sized to fit without
+             scrolling, so at the bottom it would hide the last slots. -->
+        <calendar-placing-banner
+          v-if="placingItem"
+          :item="placingItem"
+          :show-all-translations="settings.showAllTranslations"
+          @cancel="cancelPlacing"
+        />
       </div>
 
       <calendar-backlog-panel
@@ -329,6 +360,7 @@
         :editable="canUpdate"
         :deletable="canDelete"
         :creatable="canCreate"
+        :placing="!!placingItem"
         @add="onBacklogAdd"
         @edit="onEventEdit"
         @delete="onEventDelete"
@@ -365,12 +397,19 @@ import type {
 import ProgramItemAddDialog from '@/components/event/programPlanner/dialogs/ProgramItemAddDialog.vue';
 import ProgramItemEditDialog from '@/components/event/programPlanner/dialogs/ProgramItemEditDialog.vue';
 import CalendarSettingsDialog from '@/components/event/programPlanner/dialogs/CalendarSettingsDialog.vue';
+import CalendarPrintDialog, {
+  type CalendarPrintChoice,
+  type CalendarPrintOptions,
+} from '@/components/event/programPlanner/dialogs/CalendarPrintDialog.vue';
 import ProgramPublicLinkDialog from '@/components/event/programPlanner/dialogs/ProgramPublicLinkDialog.vue';
 import CalendarBacklogPanel from '@/components/event/programPlanner/CalendarBacklogPanel.vue';
 import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
+import CalendarPlacingBanner from '@/components/event/programPlanner/CalendarPlacingBanner.vue';
 import {
+  addDays,
   daysBetweenDates,
   formatLocalDate,
+  formatMinutesAsTime,
   isoToLocalDate,
   parseLocalDate,
   parseTimeToMinutes,
@@ -378,6 +417,7 @@ import {
 import { openPrintIframe } from '@/utils/printIframe';
 import { programItemMinutesRange } from '@/utils/programItem';
 import { useEventSettings } from '@/composables/eventSettings';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { usePermissions } from '@/composables/permissions';
 import { useEventBirthdays } from '@/composables/eventBirthdays';
@@ -387,6 +427,7 @@ import { useProgramPublishedDayStore } from '@/stores/program-published-day-stor
 import { useRegistrationsStore } from '@/stores/registration-store';
 
 const { t, locale } = useI18n();
+const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const { can } = usePermissions();
 
@@ -925,13 +966,22 @@ function planForNewEvent(
 }
 
 interface CalendarEvent {
-  event: PointerEvent;
+  event: MouseEvent;
   scope: {
     timestamp: Timestamp;
   };
 }
 
 function onDayEventAdd({ scope }: CalendarEvent) {
+  if (placingItem.value) {
+    placeItem(
+      placingItem.value,
+      scope.timestamp.date,
+      null,
+      placingItem.value.plan,
+    );
+    return;
+  }
   if (!canCreate.value) {
     return;
   }
@@ -1171,15 +1221,92 @@ function onMoveToBacklog(id: string) {
   pushUndo(actions);
 }
 
+// Tap-to-place: "schedule" on a backlog item arms the calendar, and the next
+// tap on a time slot or day header puts it there, keeping its duration. The
+// item being deleted or scheduled elsewhere meanwhile ends placing.
+const placingId = ref<string | null>(null);
+const placingItem = computed<ProgramItem | null>(() => {
+  const item = events.find((value) => value.id === placingId.value);
+  return item && !item.date ? item : null;
+});
+
 function onScheduleFromBacklog(event: ProgramItem) {
   if (!canUpdate.value) {
     return;
   }
-  emit('update', event.id, {
-    date: anchorDate.value,
-    time: null,
-    duration: null,
+  clearSelection();
+  placingId.value = event.id;
+}
+
+function cancelPlacing() {
+  placingId.value = null;
+  hoverSlot.value = null;
+}
+
+function placingPlanAt(
+  item: ProgramItem,
+  e: MouseEvent,
+  date: string,
+  startMinutes: number,
+): ProgramItem['plan'] {
+  return planForDrop(
+    planFromDropX(e, item.plan),
+    item.plan,
+    date,
+    startMinutes,
+    item.duration ?? 60,
+    new Set([item.id]),
+  );
+}
+
+function placeItem(
+  item: ProgramItem,
+  date: string,
+  time: string | null,
+  plan: ProgramItem['plan'],
+) {
+  cancelPlacing();
+  const entry: UndoEntry = [
+    {
+      type: 'update',
+      id: item.id,
+      data: { date: item.date, time: item.time, plan: item.plan },
+    },
+  ];
+  pushUndo(entry);
+  emit('update', item.id, {
+    date,
+    time,
+    ...(plan !== item.plan ? { plan } : {}),
   });
+
+  quasar.notify({
+    color: 'inverse-surface',
+    textColor: 'inverse-on-surface',
+    message: t('placing.scheduled', { title: to(item.title) }),
+    actions: [
+      {
+        label: t('placing.undo'),
+        color: 'inverse-primary',
+        handler: () => undo(entry),
+      },
+    ],
+  });
+}
+
+function placeAtSlot(
+  item: ProgramItem,
+  e: MouseEvent,
+  timestamp: Timestamp,
+  timeDurationHeight: (minutes: number) => number,
+) {
+  const start = slotStartAt(e, timeDurationHeight);
+  placeItem(
+    item,
+    timestamp.date,
+    formatMinutesAsTime(start),
+    placingPlanAt(item, e, timestamp.date, start),
+  );
 }
 
 function onEventDelete(event: ProgramItem) {
@@ -1206,9 +1333,80 @@ function onEventDelete(event: ProgramItem) {
     });
 }
 
-function printCalendar(date: string, days: number) {
+// Print choices are offered again next time; the plan always starts from the
+// one in view
+let lastPrintOptions: Omit<CalendarPrintOptions, 'plan'> | null = null;
+
+// Asks what to print first. Only the page's print lets the range be changed;
+// a day's print is for its day.
+function printCalendar(date: string, days: number, editableRange: boolean) {
+  const birthdaysAvailable = can('event.registrations.view');
+  const initial: CalendarPrintOptions = {
+    locale: null,
+    location: true,
+    details: false,
+    monochrome: false,
+    birthdays: settings.showBirthdays && birthdaysAvailable,
+    ...lastPrintOptions,
+    plan: activePlan.value,
+  };
+  const eventDays = {
+    from: isoToLocalDate(event.startAt),
+    to: isoToLocalDate(event.endAt),
+  };
+
+  quasar
+    .dialog({
+      component: CalendarPrintDialog,
+      componentProps: {
+        locales: event.locales ?? [],
+        initial,
+        range: editableRange
+          ? { start: date, end: addDays(date, days - 1) }
+          : null,
+        eventDays,
+        selectable: settings.browseOutsideEventDates ? undefined : eventDays,
+        birthdaysAvailable,
+      },
+    })
+    .onOk(({ options, range }: CalendarPrintChoice) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { plan, ...remembered } = options;
+      lastPrintOptions = remembered;
+
+      const start = range?.start ?? date;
+      const count = range
+        ? daysBetweenDates(parseLocalDate(start), parseLocalDate(range.end)) + 1
+        : days;
+      void openCalendarPrint(start, count, options);
+    });
+}
+
+async function openCalendarPrint(
+  date: string,
+  days: number,
+  options: CalendarPrintOptions,
+) {
+  // Names and ages only — the sheet needs nothing else of the registrations
+  const birthdays: Record<string, { name: string; age: number }[]> = {};
+  if (options.birthdays) {
+    await registrationsStore.fetchData();
+    for (let i = 0; i < days; i++) {
+      const day = addDays(date, i);
+      const list = birthdaysOn(day);
+      if (list.length) {
+        birthdays[day] = list.map(({ name, age }) => ({ name, age }));
+      }
+    }
+  }
+
   const printData = {
     locale: locale.value,
+    printLocale: options.locale,
+    showLocation: options.location,
+    showDetails: options.details,
+    monochrome: options.monochrome,
+    birthdays,
     event: {
       name: event.name,
       startAt: event.startAt,
@@ -1218,7 +1416,7 @@ function printCalendar(date: string, days: number) {
     events: events,
     date,
     days,
-    plan: activePlan.value,
+    plan: options.plan,
     dayStart: settings.dayStart,
     dayEnd: settings.dayEnd,
     interval: settings.timeInterval,
@@ -1239,11 +1437,11 @@ function printCalendar(date: string, days: number) {
 }
 
 function onPrint() {
-  printCalendar(selectedDate.value, range.value);
+  printCalendar(selectedDate.value, range.value, true);
 }
 
 function onPrintDay(date: string) {
-  printCalendar(date, 1);
+  printCalendar(date, 1, false);
 }
 
 function onSettingsOpen() {
@@ -1339,7 +1537,7 @@ let lastPreviewKey: string | null = null;
 // halves, and a full-width `both` event is never demoted by a plain move —
 // that transition is reserved for the horizontal resize handles.
 function planFromDropX(
-  e: DragEvent,
+  e: MouseEvent,
   currentPlan: ProgramItem['plan'],
 ): 'a' | 'b' | null {
   if (!viewBoth.value || currentPlan === 'both') {
@@ -1464,6 +1662,9 @@ function onOverlayMouseDown(
   timestamp: Timestamp,
   timeDurationHeight: (minutes: number) => number,
 ) {
+  if (placingItem.value) {
+    return;
+  }
   const hadSelection = selectedEventIds.value.size > 0;
   clearSelection();
   if (hadSelection || !canCreate.value || quasar.platform.is.mobile) {
@@ -1477,6 +1678,10 @@ function onOverlayClick(
   timestamp: Timestamp,
   timeDurationHeight: (minutes: number) => number,
 ) {
+  if (placingItem.value) {
+    placeAtSlot(placingItem.value, e, timestamp, timeDurationHeight);
+    return;
+  }
   const hadSelection = selectedEventIds.value.size > 0;
   clearSelection();
   if (hadSelection || !canCreate.value || !quasar.platform.is.mobile) {
@@ -1577,14 +1782,8 @@ function onBodyClick(
   if (!canCreate.value) {
     return;
   }
-  const bodyEl = e.currentTarget as HTMLElement;
-  const pxPerMinute = timeDurationHeight(60) / 60;
-  const dayStartMinutes = intervalStart.value * settings.timeInterval;
-  const y = e.clientY - bodyEl.getBoundingClientRect().top;
-  const raw = y / pxPerMinute + dayStartMinutes;
-  const snapped =
-    Math.floor(raw / settings.timeInterval) * settings.timeInterval;
-  const time = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+  const snapped = slotStartAt(e, timeDurationHeight);
+  const time = formatMinutesAsTime(snapped);
 
   quasar
     .dialog({
@@ -1608,6 +1807,20 @@ function onBodyClick(
     });
 }
 
+// Start of the interval under the pointer, in minutes since midnight.
+function slotStartAt(
+  e: MouseEvent,
+  timeDurationHeight: (minutes: number) => number,
+): number {
+  const bodyEl = e.currentTarget as HTMLElement;
+  const pxPerMinute = timeDurationHeight(60) / 60;
+  const dayStartMinutes = intervalStart.value * settings.timeInterval;
+  const y = e.clientY - bodyEl.getBoundingClientRect().top;
+  const raw = y / pxPerMinute + dayStartMinutes;
+
+  return Math.floor(raw / settings.timeInterval) * settings.timeInterval;
+}
+
 interface HoverSlot {
   date: string;
   startMinutes: number;
@@ -1617,8 +1830,9 @@ interface HoverSlot {
   pxPerMinute: number;
 }
 
-// Highlights the exact interval a click would create an event in — desktop
-// only, since there's no persistent hover state on touch devices.
+// Highlights the exact interval a click would create an event in, or where
+// the item being placed would land — desktop only, since there's no
+// persistent hover state on touch devices.
 const hoverSlot = ref<HoverSlot | null>(null);
 
 function onBodyMouseMove(
@@ -1626,8 +1840,9 @@ function onBodyMouseMove(
   timestamp: Timestamp,
   timeDurationHeight: (minutes: number) => number,
 ) {
+  const placing = placingItem.value;
   if (
-    !canCreate.value ||
+    !(canCreate.value || placing) ||
     quasar.platform.is.mobile ||
     dragSelection.value ||
     isDraggingEvent.value ||
@@ -1637,20 +1852,19 @@ function onBodyMouseMove(
     return;
   }
 
-  const bodyEl = e.currentTarget as HTMLElement;
-  const pxPerMinute = timeDurationHeight(60) / 60;
-  const dayStartMinutes = intervalStart.value * settings.timeInterval;
-  const y = e.clientY - bodyEl.getBoundingClientRect().top;
-  const raw = y / pxPerMinute + dayStartMinutes;
-  const start = Math.floor(raw / settings.timeInterval) * settings.timeInterval;
+  const start = slotStartAt(e, timeDurationHeight);
+  const end =
+    start + (placing ? (placing.duration ?? 60) : settings.timeInterval);
 
   hoverSlot.value = {
     date: timestamp.date,
     startMinutes: start,
-    endMinutes: start + settings.timeInterval,
-    plan: planForNewEvent(timestamp.date, start, start + settings.timeInterval),
-    dayStartMinutes,
-    pxPerMinute,
+    endMinutes: end,
+    plan: placing
+      ? placingPlanAt(placing, e, timestamp.date, start)
+      : planForNewEvent(timestamp.date, start, end),
+    dayStartMinutes: intervalStart.value * settings.timeInterval,
+    pxPerMinute: timeDurationHeight(60) / 60,
   };
 }
 
@@ -1840,6 +2054,25 @@ function onDragOver(
   return false;
 }
 
+// The all-day row is wired up by hand (see the template), with the same scope
+// shape QCalendar hands its own drop targets.
+function dayEventsScope(timestamp: Timestamp): { scope: DragAndDropScope } {
+  return { scope: { timestamp, droppable: false } };
+}
+
+// Moving onto one of the row's own children fires dragleave on the row —
+// that is not leaving it, and must not drop the highlight.
+function onDayEventsDragLeave(e: DragEvent) {
+  if (
+    e.currentTarget instanceof Element &&
+    e.relatedTarget instanceof Node &&
+    e.currentTarget.contains(e.relatedTarget)
+  ) {
+    return;
+  }
+  onDragLeave(e);
+}
+
 function onDragLeave(e: DragEvent): boolean {
   if (e.currentTarget instanceof Element) {
     e.currentTarget.classList.remove('droppable');
@@ -2022,14 +2255,12 @@ function onDrop(
       eventUpdate = {
         date: scope.timestamp.date,
         time: null,
-        duration: null,
       };
       break;
     default:
       eventUpdate = {
         date: null,
         time: null,
-        duration: null,
       };
   }
 
@@ -2045,6 +2276,7 @@ function onDrop(
       details: event.details,
       color: event.color,
       plan: event.plan,
+      duration: event.duration,
       ...eventUpdate,
     } as ProgramItemCreateData);
 
@@ -2239,6 +2471,7 @@ function onKeydown(e: KeyboardEvent) {
   }
   if (e.key === 'Escape') {
     clearSelection();
+    cancelPlacing();
   } else if (e.key === 'ArrowRight') {
     onNextNavigation();
   } else if (e.key === 'ArrowLeft') {
@@ -2293,25 +2526,31 @@ function onKeydown(e: KeyboardEvent) {
     pushUndo(actions);
   } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    const entry = undoStack[undoStack.length - 1];
-    if (!entry) {
-      return;
-    }
-    const blocked = entry.some(
-      (action) =>
-        (action.type === 'update' && !canUpdate.value) ||
-        (action.type === 'delete' && !canCreate.value),
-    );
-    if (blocked) {
-      return;
-    }
-    undoStack.pop();
-    for (const action of entry) {
-      if (action.type === 'update') {
-        emit('update', action.id, action.data);
-      } else {
-        emit('add', action.eventData);
-      }
+    undo();
+  }
+}
+
+// Reverts `entry`, the latest gesture by default. An entry already undone (or
+// pushed out of the stack) is ignored, so a stale snackbar can't replay it.
+function undo(entry: UndoEntry | undefined = undoStack[undoStack.length - 1]) {
+  const index = entry ? undoStack.indexOf(entry) : -1;
+  if (!entry || index === -1) {
+    return;
+  }
+  const blocked = entry.some(
+    (action) =>
+      (action.type === 'update' && !canUpdate.value) ||
+      (action.type === 'delete' && !canCreate.value),
+  );
+  if (blocked) {
+    return;
+  }
+  undoStack.splice(index, 1);
+  for (const action of entry) {
+    if (action.type === 'update') {
+      emit('update', action.id, action.data);
+    } else {
+      emit('add', action.eventData);
     }
   }
 }
@@ -2365,6 +2604,14 @@ function onPreviousNavigation() {
   background: var(--md3-primary);
 }
 
+.cal-day-events {
+  // Leaves some empty room below the items, so a day that already has some
+  // still offers space to drop onto
+  min-height: 100%;
+  padding-bottom: 6px;
+  cursor: cell;
+}
+
 .droppable {
   box-shadow: inset 0 0 0 1px var(--md3-primary);
   background: color-mix(in srgb, var(--md3-primary) 8%, transparent);
@@ -2385,6 +2632,19 @@ function onPreviousNavigation() {
   .cal-event:not(.cal-drag-source),
   .cal-day-event:not(.cal-drag-source) {
     pointer-events: none;
+  }
+}
+
+// While placing, every tap must reach the slot or day header underneath.
+.cal--placing {
+  .cal-event,
+  .cal-day-event {
+    pointer-events: none;
+  }
+
+  .cal-create-overlay,
+  .q-calendar-day__head--day {
+    cursor: copy;
   }
 }
 
@@ -2557,6 +2817,9 @@ dialog:
 actions:
   printDay: 'Print this day'
 birthday: '{name} turns {age}'
+placing:
+  scheduled: '"{title}" scheduled'
+  undo: 'Undo'
 public:
   day:
     unpublished: 'Not published'
@@ -2576,6 +2839,9 @@ dialog:
 actions:
   printDay: 'Diesen Tag drucken'
 birthday: '{name} wird {age}'
+placing:
+  scheduled: '„{title}“ eingeplant'
+  undo: 'Rückgängig'
 public:
   day:
     unpublished: 'Nicht veröffentlicht'
@@ -2595,6 +2861,9 @@ dialog:
 actions:
   printDay: 'Imprimer ce jour'
 birthday: '{name} fête ses {age} ans'
+placing:
+  scheduled: '« {title} » planifié'
+  undo: 'Annuler'
 public:
   day:
     unpublished: 'Non publié'
@@ -2614,6 +2883,9 @@ dialog:
 actions:
   printDay: 'Drukuj ten dzień'
 birthday: '{name} obchodzi {age}. urodziny'
+placing:
+  scheduled: 'Zaplanowano „{title}”'
+  undo: 'Cofnij'
 public:
   day:
     unpublished: 'Nieopublikowany'
@@ -2633,6 +2905,9 @@ dialog:
 actions:
   printDay: 'Vytisknout tento den'
 birthday: '{name} slaví {age}. narozeniny'
+placing:
+  scheduled: '„{title}“ naplánováno'
+  undo: 'Zpět'
 public:
   day:
     unpublished: 'Nezveřejněno'
