@@ -29,7 +29,10 @@
       v-else
       ref="sheetRef"
       class="print-sheet"
-      :class="isPortrait ? 'print-sheet--portrait' : 'print-sheet--landscape'"
+      :class="[
+        isPortrait ? 'print-sheet--portrait' : 'print-sheet--landscape',
+        { 'print-sheet--mono': data.monochrome },
+      ]"
     >
       <!-- Page header -->
       <header
@@ -98,6 +101,17 @@
             class="cal-print__allday-cell"
           >
             <div
+              v-for="birthday in data.birthdays?.[day] ?? []"
+              :key="birthday.name"
+              class="cal-print__birthday"
+            >
+              <q-icon
+                name="cake"
+                size="1.1em"
+              />
+              {{ birthday.name }} ({{ birthday.age }})
+            </div>
+            <div
               v-for="event in getFullDayEvents(day)"
               :key="event.id"
               class="cal-print__chip"
@@ -162,6 +176,12 @@
                   >
                     {{ item.meta }}
                   </div>
+                  <div
+                    v-if="!item.compact && item.details"
+                    class="cal-print__event__details"
+                  >
+                    {{ item.details }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -203,6 +223,13 @@ interface PrintEvent {
 
 interface PrintData {
   locale?: string;
+  // The one language to print; null or missing prints all of them
+  printLocale?: string | null;
+  // Missing on older payloads; locations then show, as they always did
+  showLocation?: boolean;
+  showDetails?: boolean;
+  monochrome?: boolean;
+  birthdays?: Record<string, { name: string; age: number }[]>;
   event: PrintEvent;
   events: ProgramItem[];
   date: string;
@@ -226,6 +253,7 @@ interface PlacedEvent {
   title: string;
   time: string;
   meta: string;
+  details: string;
   compact: boolean;
   style: Record<string, string>;
 }
@@ -256,9 +284,13 @@ usePageStyle(
   ),
 );
 
-const eventLocales = computed<string[]>(
-  () => data.value?.event.locales ?? [locale.value],
-);
+// The languages printed: the chosen one, or every event locale
+const eventLocales = computed<string[]>(() => {
+  const all = data.value?.event.locales ?? [locale.value];
+  const chosen = data.value?.printLocale;
+
+  return chosen && all.includes(chosen) ? [chosen] : all;
+});
 const primaryLocale = computed<string>(
   () => eventLocales.value[0] ?? locale.value,
 );
@@ -494,7 +526,11 @@ function getTimedEvents(date: string): ProgramItem[] {
 }
 
 const hasAllDayEvents = computed<boolean>(() =>
-  visibleDays.value.some((day) => getFullDayEvents(day).length > 0),
+  visibleDays.value.some(
+    (day) =>
+      getFullDayEvents(day).length > 0 ||
+      (data.value?.birthdays?.[day]?.length ?? 0) > 0,
+  ),
 );
 
 /** Places the timed events of one day and turns them into rendered boxes. */
@@ -514,8 +550,8 @@ function layoutFor(date: string): PlacedEvent[] {
 function toPlacedEvent(box: EventBox): PlacedEvent {
   const { event, x0, x1 } = box;
   const time = formatMinutesAsTime(box.startMinutes);
-  const location = toAll(event.location);
-  const color = event.color ?? DEFAULT_EVENT_COLOR;
+  const location =
+    data.value?.showLocation === false ? '' : toAll(event.location);
 
   return {
     id: event.id,
@@ -524,56 +560,59 @@ function toPlacedEvent(box: EventBox): PlacedEvent {
     meta: [`${time}–${formatMinutesAsTime(box.endMinutes)}`, location]
       .filter(Boolean)
       .join(' · '),
+    details: data.value?.showDetails ? toAll(event.details) : '',
     compact: box.compact,
     style: {
       top: `${box.top}px`,
       height: `${box.height}px`,
       left: `calc(${x0 * 100}% + 1px)`,
       width: `calc(${(x1 - x0) * 100}% - 2px)`,
-      backgroundColor: fillColor(color),
-      borderLeftColor: color,
+      ...colorStyle(event),
       '--evt-fs': `${box.fontSize}px`,
     },
   };
 }
 
-function chipStyle(event: ProgramItem): Record<string, string> {
+// Black and white drops the fill and keeps the left bar, in ink
+function colorStyle(event: ProgramItem): Record<string, string> {
+  if (data.value?.monochrome) {
+    return { backgroundColor: '#ffffff', borderLeftColor: '#1a1a1a' };
+  }
   const color = event.color ?? DEFAULT_EVENT_COLOR;
 
-  return {
-    backgroundColor: fillColor(color),
-    borderLeftColor: color,
-  };
+  return { backgroundColor: fillColor(color), borderLeftColor: color };
 }
 
-// Returns all unique translation values across all locales
-function toAll(value: Translatable | null | undefined): string {
+function chipStyle(event: ProgramItem): Record<string, string> {
+  return colorStyle(event);
+}
+
+// The printed languages' translations, deduplicated, in locale order. Text
+// missing in all of them falls back to whatever translations exist.
+function translations(value: Translatable | null | undefined): string[] {
   if (!value) {
-    return '';
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  return [...new Set(Object.values(value).filter(Boolean))].join(' / ');
-}
-
-// Event name per language, deduplicated, the event's primary locale first.
-const titleLines = computed<string[]>(() => {
-  const name = data.value?.event.name;
-  if (!name) {
     return [];
   }
-  if (typeof name === 'string') {
-    return [name];
+  if (typeof value === 'string') {
+    return [value];
   }
-  const ordered = [
-    ...eventLocales.value.map((l) => name[l]),
-    ...Object.values(name),
-  ].filter((line): line is string => !!line);
+  const printed = eventLocales.value
+    .map((l) => value[l])
+    .filter((text): text is string => !!text);
 
-  return [...new Set(ordered)];
-});
+  return [
+    ...new Set(printed.length ? printed : Object.values(value).filter(Boolean)),
+  ];
+}
+
+function toAll(value: Translatable | null | undefined): string {
+  return translations(value).join(' / ');
+}
+
+// Event name per printed language, one line each
+const titleLines = computed<string[]>(() =>
+  translations(data.value?.event.name),
+);
 
 const planLabel = computed<string>(() => {
   if (!data.value) {
@@ -804,6 +843,16 @@ $rule-hair: #f0f0f0;
     }
   }
 
+  &__birthday {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 2px;
+    font-size: 8px;
+    color: $ink-soft;
+    line-height: 1.25;
+  }
+
   &__chip {
     border-radius: 2px;
     border-left: 3px solid;
@@ -902,20 +951,38 @@ $rule-hair: #f0f0f0;
     overflow: hidden;
     box-sizing: border-box;
 
+    // Details take whatever height is left and are cut at the box edge, so
+    // long notes never shrink the title along with them
     &__body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
       font-size: var(--evt-fs, 9px);
       line-height: 1.2;
     }
 
     &__title {
+      flex: none;
       font-weight: 700;
       color: $ink;
       overflow-wrap: anywhere;
     }
 
     &__meta {
+      flex: none;
       font-size: 0.85em;
       color: $ink-soft;
+      overflow-wrap: anywhere;
+    }
+
+    &__details {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      margin-top: 1px;
+      font-size: 0.85em;
+      color: $ink;
+      white-space: pre-line;
       overflow-wrap: anywhere;
     }
 
@@ -940,6 +1007,16 @@ $rule-hair: #f0f0f0;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+}
+
+// Without fills, a hairline keeps neighbouring boxes apart
+.print-sheet--mono {
+  .cal-print__event,
+  .cal-print__chip {
+    border-top: 1px solid $rule;
+    border-right: 1px solid $rule;
+    border-bottom: 1px solid $rule;
   }
 }
 </style>

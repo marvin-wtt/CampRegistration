@@ -38,6 +38,7 @@ import { computed, ref, type StyleValue } from 'vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import CalendarItemPopup from '@/components/event/programPlanner/CalendarItemPopup.vue';
 import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
+import { DEFAULT_PROGRAM_ITEM_COLOR } from '@/utils/programItem';
 
 const {
   event,
@@ -79,7 +80,7 @@ function onClick(e: MouseEvent) {
   if (e.ctrlKey || e.metaKey) {
     return;
   }
-  popupRef.value?.show(e);
+  void popupRef.value?.show(e);
 }
 
 function onDragStart(e: DragEvent) {
@@ -107,8 +108,7 @@ function onDragStart(e: DragEvent) {
 }
 
 const badgeStyles = computed<StyleValue>(() => ({
-  backgroundColor: event.color ?? '#2196F3',
-  borderLeft: `3px solid rgba(0,0,0,0.2)`,
+  backgroundColor: event.color ?? DEFAULT_PROGRAM_ITEM_COLOR,
   opacity: (isDragging.value && !isCopyDrag.value) || dimmed ? 0 : undefined,
   pointerEvents: isDragging.value || dimmed ? 'none' : undefined,
 }));
@@ -118,11 +118,13 @@ const badgeStyles = computed<StyleValue>(() => ({
 .cal-day-event {
   display: flex;
   align-items: center;
-  border-radius: 6px;
-  padding: 2px 6px;
-  margin: 2px 2px;
+  border-radius: 8px;
+  padding: 3px 8px;
+  margin: 2px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.15);
   transition: box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
 
   &:hover {

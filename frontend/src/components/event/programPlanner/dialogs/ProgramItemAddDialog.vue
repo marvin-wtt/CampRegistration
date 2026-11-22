@@ -70,6 +70,22 @@
           :label="t('field.fullDay.label')"
         />
 
+        <!-- Without a time, the duration is kept for when it gets one -->
+        <time-of-day-input
+          v-if="!data.date || fullDay"
+          v-model="durationText"
+          :label="t('field.duration.label')"
+          :rules="[
+            (val?: string | null) =>
+              !val ||
+              (parseTimeToMinutes(val) ?? 0) > 0 ||
+              t('field.duration.rule.valid'),
+          ]"
+          hide-bottom-space
+          outlined
+          rounded
+        />
+
         <!-- time & duration -->
         <div
           v-if="data.date && !fullDay"
@@ -152,7 +168,13 @@ import type {
   ProgramItemCreateData,
   Translatable,
 } from '@camp-registration/common/entities';
-import { isoToLocalDate, isValidTimeRange, timeDifference } from '@/utils/date';
+import {
+  formatMinutesAsTime,
+  isoToLocalDate,
+  isValidTimeRange,
+  parseTimeToMinutes,
+  timeDifference,
+} from '@/utils/date';
 import EventDateInput from '@/components/event/EventDateInput.vue';
 
 const { t } = useI18n();
@@ -187,7 +209,7 @@ const data = reactive<Partial<ProgramItemCreateData>>({
   plan: props.plan ?? 'both',
 });
 
-const fullDay = ref<boolean>(!data.time || !data.duration);
+const fullDay = ref<boolean>(!data.time);
 
 function computeEndTime(
   time: string | null | undefined,
@@ -213,9 +235,9 @@ const timeEnd = ref<string>(computeEndTime(data.time, data.duration));
 
 watch(fullDay, (value) => {
   data.time = value ? null : (props.time ?? '12:00');
-  data.duration = value ? null : (props.duration ?? 30);
 
   if (!value) {
+    data.duration ??= 30;
     timeEnd.value = computeEndTime(data.time, data.duration);
   }
 });
@@ -229,6 +251,30 @@ watch([() => data.time, timeEnd], ([time, end]) => {
 
   data.duration = timeDifference(time, end);
 });
+
+const durationText = ref<string | null>(
+  data.duration ? formatMinutesAsTime(data.duration) : null,
+);
+
+watch(durationText, (text) => {
+  if (!text) {
+    data.duration = null;
+    return;
+  }
+  const minutes = parseTimeToMinutes(text);
+  if (minutes) {
+    data.duration = minutes;
+  }
+});
+
+watch(
+  () => data.duration,
+  (duration) => {
+    if (duration && duration !== parseTimeToMinutes(durationText.value ?? '')) {
+      durationText.value = formatMinutesAsTime(duration);
+    }
+  },
+);
 
 // Plan A/B are single letters on mobile rather than an icon — that keeps
 // them meaningful for any use of the a/b split, not just a fair/bad-weather
@@ -266,7 +312,6 @@ function onOKClick(): void {
   onDialogOK({
     ...data,
     time: timed ? data.time : null,
-    duration: timed ? data.duration : null,
   });
 }
 </script>
@@ -283,6 +328,10 @@ field:
     label: 'Date'
   details:
     label: 'Details'
+  duration:
+    label: 'Duration (hh:mm)'
+    rule:
+      valid: 'Enter a duration longer than 0:00'
   end:
     label: 'End time'
     rule:
@@ -319,6 +368,10 @@ field:
     label: 'Datum'
   details:
     label: 'Details'
+  duration:
+    label: 'Dauer (hh:mm)'
+    rule:
+      valid: 'Gib eine Dauer über 0:00 ein'
   end:
     label: 'Endzeit'
     rule:
@@ -355,6 +408,10 @@ field:
     label: 'Date'
   details:
     label: 'Détails'
+  duration:
+    label: 'Durée (hh:mm)'
+    rule:
+      valid: 'Saisissez une durée supérieure à 0:00'
   end:
     label: 'Heure de fin'
     rule:
@@ -391,6 +448,10 @@ field:
     label: 'Data'
   details:
     label: 'Szczegóły'
+  duration:
+    label: 'Czas trwania (gg:mm)'
+    rule:
+      valid: 'Podaj czas trwania dłuższy niż 0:00'
   end:
     label: 'Czas zakończenia'
     rule:
@@ -427,6 +488,10 @@ field:
     label: 'Datum'
   details:
     label: 'Podrobnosti'
+  duration:
+    label: 'Doba trvání (hh:mm)'
+    rule:
+      valid: 'Zadejte dobu trvání delší než 0:00'
   end:
     label: 'Čas ukončení'
     rule:

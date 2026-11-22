@@ -2,6 +2,7 @@
   <!-- Mobile: fixed FAB + bottom sheet -->
   <template v-if="quasar.screen.xs">
     <q-btn
+      v-if="!placing"
       class="backlog-fab"
       round
       size="md"
@@ -51,18 +52,55 @@
         <div
           v-for="event in filteredEvents"
           :key="event.id"
-          class="backlog-card"
-          :style="{ borderLeftColor: event.color ?? '#9E9E9E' }"
+          class="backlog-card row no-wrap items-center"
+          :style="{
+            borderLeftColor: event.color ?? DEFAULT_PROGRAM_ITEM_COLOR,
+          }"
+          data-test="backlog-card"
         >
-          <div class="backlog-card__title text-body2">
-            {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
+          <div class="col">
+            <div class="backlog-card__title text-body1">
+              {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
+            </div>
+            <div
+              v-if="event.plan !== 'both' || event.duration"
+              class="backlog-card__meta row items-center no-wrap q-gutter-x-sm text-body2"
+            >
+              <plan-letter-icon
+                v-if="event.plan !== 'both'"
+                :plan="event.plan === 'a' ? 'a' : 'b'"
+                size="14px"
+              />
+              <span
+                v-if="event.duration"
+                class="row items-center no-wrap"
+                data-test="backlog-card-duration"
+              >
+                <q-icon
+                  name="schedule"
+                  size="14px"
+                  class="q-mr-xs"
+                />
+                {{ formatProgramItemDuration(event.duration, locale) }}
+              </span>
+            </div>
           </div>
-          <plan-letter-icon
-            v-if="event.plan !== 'both'"
-            :plan="event.plan === 'a' ? 'a' : 'b'"
-            size="14px"
-            class="backlog-card__plan-icon q-mt-xs"
-          />
+          <!-- Places the item straight away, without the details first -->
+          <!-- Small arrow, but a full 48px touch target -->
+          <q-btn
+            v-if="editable"
+            :aria-label="t('place')"
+            class="backlog-card__place"
+            flat
+            round
+            data-test="backlog-card-place"
+            @click.stop="onMobileSchedule(event)"
+          >
+            <q-icon
+              name="arrow_forward"
+              size="18px"
+            />
+          </q-btn>
           <calendar-item-popup
             :item="event"
             :editable="editable"
@@ -154,21 +192,39 @@
       <div
         v-for="event in filteredEvents"
         :key="event.id"
-        class="backlog-card"
-        :class="{ 'backlog-card--static': !editable }"
-        :style="{ borderLeftColor: event.color ?? '#9E9E9E' }"
+        class="backlog-card row no-wrap items-start"
+        :class="{ 'backlog-card--draggable': editable }"
+        :style="{ borderLeftColor: event.color ?? DEFAULT_PROGRAM_ITEM_COLOR }"
         :draggable="editable"
         @dragstart="(e) => onCardDragStart(e, event)"
       >
-        <div class="backlog-card__title text-caption">
-          {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
+        <div class="col">
+          <div class="backlog-card__title text-body2">
+            {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
+          </div>
+          <div
+            v-if="event.plan !== 'both' || event.duration"
+            class="backlog-card__meta row items-center no-wrap q-gutter-x-sm text-caption"
+          >
+            <plan-letter-icon
+              v-if="event.plan !== 'both'"
+              :plan="event.plan === 'a' ? 'a' : 'b'"
+              size="12px"
+            />
+            <span
+              v-if="event.duration"
+              class="row items-center no-wrap"
+              data-test="backlog-card-duration"
+            >
+              <q-icon
+                name="schedule"
+                size="12px"
+                class="q-mr-xs"
+              />
+              {{ formatProgramItemDuration(event.duration, locale) }}
+            </span>
+          </div>
         </div>
-        <plan-letter-icon
-          v-if="event.plan !== 'both'"
-          :plan="event.plan === 'a' ? 'a' : 'b'"
-          size="10px"
-          class="backlog-card__plan-icon q-mt-xs"
-        />
         <calendar-item-popup
           :item="event"
           :editable="editable"
@@ -193,8 +249,12 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import CalendarItemPopup from '@/components/event/programPlanner/CalendarItemPopup.vue';
 import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
+import {
+  DEFAULT_PROGRAM_ITEM_COLOR,
+  formatProgramItemDuration,
+} from '@/utils/programItem';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const quasar = useQuasar();
 const { to, toAll } = useObjectTranslation();
 
@@ -205,6 +265,7 @@ const {
   editable = false,
   deletable = false,
   creatable = false,
+  placing = false,
 } = defineProps<{
   events: ProgramItem[];
   activePlan: 'a' | 'b' | 'both';
@@ -212,6 +273,7 @@ const {
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
+  placing?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -372,14 +434,14 @@ function onDrop(e: DragEvent) {
 }
 
 .backlog-card {
-  position: relative;
+  gap: 8px;
   padding: 8px 10px;
   border: 1px solid var(--md3-outline-variant);
-  border-left: 4px solid #9e9e9e;
+  border-left: 4px solid;
   border-radius: 10px;
   background: var(--md3-surface);
   color: var(--md3-on-surface);
-  cursor: grab;
+  cursor: pointer;
   min-width: 0;
   transition:
     background 0.15s,
@@ -390,25 +452,32 @@ function onDrop(e: DragEvent) {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
-  &:active {
-    cursor: grabbing;
-  }
-
-  &--static {
-    cursor: default;
+  &--draggable {
+    cursor: grab;
 
     &:active {
-      cursor: default;
+      cursor: grabbing;
     }
   }
 }
 
+.backlog-card__place {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  margin: -12px -10px -12px 0;
+  color: var(--md3-primary);
+}
+
 .backlog-card__title {
+  font-weight: 500;
   word-break: break-word;
   line-height: 1.3;
 }
 
-.backlog-card__plan-icon {
+.backlog-card__meta {
+  margin-top: 2px;
   color: var(--md3-on-surface-variant);
 }
 </style>
@@ -417,28 +486,33 @@ function onDrop(e: DragEvent) {
 title: 'Unscheduled'
 add: 'Add unscheduled event'
 empty: 'No unscheduled events'
+place: 'Schedule'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Ungeplant'
 add: 'Ungeplantes Ereignis hinzufügen'
 empty: 'Keine ungeplanten Ereignisse'
+place: 'Einplanen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Non planifié'
 add: 'Ajouter un événement non planifié'
 empty: 'Aucun événement non planifié'
+place: 'Planifier'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Niezaplanowane'
 add: 'Dodaj niezaplanowane wydarzenie'
 empty: 'Brak niezaplanowanych wydarzeń'
+place: 'Zaplanuj'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Neplánované'
 add: 'Přidat neplánovanou událost'
 empty: 'Žádné neplánované události'
+place: 'Naplánovat'
 </i18n>
