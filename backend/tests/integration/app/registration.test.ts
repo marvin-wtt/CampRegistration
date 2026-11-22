@@ -1643,6 +1643,33 @@ describe('/api/v1/events/:eventId/registrations', () => {
         expect(files[0].id).toBe(file.id);
       });
 
+      it('should keep an upload whose question is no longer in the form', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
+        // Answered under a question removed from the form since.
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const registration = await createRegistration(event, {
+          data: { some_field: 'Test', removed_file: file.id },
+          files: { connect: { id: file.id } },
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
+          .send({ data: { some_field: 'Changed', removed_file: file.id } })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.data).toHaveProperty('removed_file', file.id);
+        const files = await prisma.file.findMany({
+          where: { registrationId: registration.id },
+        });
+        expect(files.map((f) => f.id)).toEqual([file.id]);
+      });
+
       it('should respond with `400` status code when file does not exist', async () => {
         const sessionId = crypto.randomUUID();
         const { event, accessToken } = await createEventWithManagerAndToken(

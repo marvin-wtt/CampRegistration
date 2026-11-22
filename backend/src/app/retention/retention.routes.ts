@@ -58,7 +58,8 @@ export class OrganizationRetentionRouter extends ModuleRouter {
 
     this.router.get(
       '/',
-      guard(organizationMember('organization.view')),
+      // It lists every event, as the organization's event list does.
+      guard(organizationMember('organization.events.view')),
       controller(retentionController, 'organization'),
     );
   }

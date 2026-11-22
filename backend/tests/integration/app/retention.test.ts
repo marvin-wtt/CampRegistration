@@ -352,9 +352,18 @@ describe('retention workflow', () => {
       const owned = { registration: { connect: { id: registration.id } } };
       const passport = await FileFactory.create(owned);
       const vaccination = await FileFactory.create(owned);
+      // Answered under a question removed from the form since: not sensitive
+      // by any tag the form still has, so it stays like the other answers.
+      const removed = await FileFactory.create(owned);
       await prisma.registration.update({
         where: { id: registration.id },
-        data: { data: { passport: passport.id, vaccination: vaccination.id } },
+        data: {
+          data: {
+            passport: passport.id,
+            vaccination: vaccination.id,
+            removed_upload: removed.id,
+          },
+        },
       });
 
       await request()
@@ -364,7 +373,7 @@ describe('retention workflow', () => {
         .expect(204);
 
       const files = await prisma.file.findMany({
-        where: { id: { in: [passport.id, vaccination.id] } },
+        where: { id: { in: [passport.id, vaccination.id, removed.id] } },
         select: { id: true, registrationId: true },
       });
       // Detached files are removed by the nightly unassigned-file cleanup.
@@ -374,10 +383,16 @@ describe('retention workflow', () => {
       expect(files.find((f) => f.id === passport.id)?.registrationId).toBe(
         registration.id,
       );
+      expect(files.find((f) => f.id === removed.id)?.registrationId).toBe(
+        registration.id,
+      );
       const stored = await prisma.registration.findUniqueOrThrow({
         where: { id: registration.id },
       });
-      expect(stored.data).toEqual({ passport: passport.id });
+      expect(stored.data).toEqual({
+        passport: passport.id,
+        removed_upload: removed.id,
+      });
     });
 
     it('should clear the column copy of a sensitive answer', async () => {
@@ -683,6 +698,23 @@ describe('retention workflow', () => {
       expect(body.data).toHaveLength(2);
       expect(body.data[0]).toMatchObject({ eventId: event.id });
       expect(JSON.stringify(body.data)).not.toContain('reason');
+    });
+
+    it('should refuse members who cannot see the organization’s events', async () => {
+      const { organization } = await eventDue(10);
+      const member = await UserFactory.create();
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: organization.id,
+          userId: member.id,
+          role: 'MEMBER',
+        },
+      });
+
+      await request()
+        .get(`/api/v1/organizations/${organization.id}/retention`)
+        .auth(generateAccessToken(member), { type: 'bearer' })
+        .expect(403);
     });
   });
 });

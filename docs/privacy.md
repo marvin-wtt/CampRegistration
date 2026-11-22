@@ -939,6 +939,10 @@ keep data.
 - "Delete sensitive data" clears the answers of special-category questions in all
   registrations, model-based (`clearSpecialCategoryAnswers`, as for the email
   filter), and detaches files uploaded to them; the file cleanup removes those.
+  Only those: like a manager's edit, it detaches just the uploads its change
+  removed. Answers and uploads to a question removed from the form since stay
+  with the registration until it is deleted — a form edit, often a rename or a
+  slip, never deletes submitted data.
   Consent answers stay as proof of what was agreed. It reads the current form's
   tags: answers to a question removed or untagged since are no longer treated as
   sensitive and fall under the general deadline, which "Delete all

@@ -209,6 +209,48 @@ export class FileService extends BaseService {
     });
   }
 
+  /**
+   * Detaches exactly these files from the owner; the unassigned-file cleanup
+   * removes them. For owners whose file list is not complete in one place.
+   */
+  async detachFiles(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    fileIds: string[],
+  ): Promise<void> {
+    if (fileIds.length === 0) {
+      return;
+    }
+
+    await tx.file.updateMany({
+      where: { [ownerKey]: ownerId, id: { in: fileIds } },
+      data: { [ownerKey]: null, field: null },
+    });
+  }
+
+  /**
+   * Connects the files to the owner: those it already holds, and unreferenced
+   * temporary uploads of this session.
+   */
+  fileConnections(
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    fileIds: string[],
+    sessionId: string,
+  ) {
+    const connect = fileIds.map((id) => ({
+      id,
+      OR: [
+        { [ownerKey]: ownerId },
+        { ...this.getUnreferencedModelArgs(), field: sessionId },
+      ],
+    }));
+
+    return { connect };
+  }
+
+  /** Makes `fileIds` the owner's complete file list: all others are detached. */
   async syncFilesForOwner(
     tx: PrismaTransaction,
     ownerKey: FileOwnerKey,
@@ -219,17 +261,7 @@ export class FileService extends BaseService {
   ) {
     await this.detachFilesExcept(tx, ownerKey, ownerId, fileIds, options);
 
-    // Build connect filter
-    // Allow connecting if already connected to this owner OR unreferenced temp with matching field
-    const connect = fileIds.map((id) => ({
-      id,
-      OR: [
-        { [ownerKey]: ownerId },
-        { ...this.getUnreferencedModelArgs(), field: sessionId },
-      ],
-    }));
-
-    return { connect };
+    return this.fileConnections(ownerKey, ownerId, fileIds, sessionId);
   }
 
   /**

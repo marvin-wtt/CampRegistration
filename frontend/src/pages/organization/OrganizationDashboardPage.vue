@@ -154,6 +154,7 @@
       </div>
 
       <retention-overview-card
+        v-if="canOrg('organization.events.view')"
         :entries="retentionEntries"
         :loading="retentionLoading"
         :event-link="
@@ -248,7 +249,9 @@ const retentionEntries = ref<RetentionOverviewEntry[]>([]);
 const retentionLoading = ref(false);
 
 watch(
-  () => organization.value?.id,
+  // It lists every event, which members without the event list can't see.
+  () =>
+    canOrg('organization.events.view') ? organization.value?.id : undefined,
   async (id) => {
     retentionEntries.value = [];
     if (!id) {

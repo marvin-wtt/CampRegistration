@@ -284,7 +284,7 @@ export class RegistrationService extends BaseService {
         });
 
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
-      let formFileIds: string[] | undefined;
+      let formFiles: FileChange | undefined;
       let formData: Record<string, unknown> | undefined;
       let sensitive = false;
 
@@ -295,12 +295,15 @@ export class RegistrationService extends BaseService {
           event,
           data.group ?? before.group,
           before.locale,
-        ).load(data.data);
+        );
+        // Read before the new response replaces it, to tell what it removed.
+        const previousFileIds = form.load(before.data).getFileIds();
+        form.load(data.data);
         sensitive = form.sensitiveAnswers().length > 0;
         // Stored as the form leaves it, like a new registration.
         formData = form.data;
         computedData = registrationColumns(form);
-        formFileIds = form.getFileIds();
+        formFiles = { previous: previousFileIds, next: form.getFileIds() };
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
@@ -324,16 +327,8 @@ export class RegistrationService extends BaseService {
         }
       }
 
-      const files = formFileIds
-        ? await this.fileService.syncFilesForOwner(
-            tx,
-            'registrationId',
-            registrationId,
-            formFileIds,
-            sessionId,
-            // Custom file slots are managed above and must survive form syncs
-            { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
-          )
+      const files = formFiles
+        ? await this.syncFormFiles(tx, registrationId, formFiles, sessionId)
         : undefined;
 
       const after = await tx.registration
@@ -497,21 +492,43 @@ export class RegistrationService extends BaseService {
 
       // From here on the form holds the cleared response: the computed columns
       // and files are read from it, so no copy of an answer stays.
+      const previousFileIds = form.getFileIds();
       const data = form.withoutSensitiveAnswers();
       await tx.registration.update({
         where: { id: registrationId },
         data: { ...registrationColumns(form), data },
       });
-      await this.fileService.detachFilesExcept(
+      await this.fileService.detachFiles(
         tx,
         'registrationId',
         registrationId,
-        form.getFileIds(),
-        { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
+        removedFiles({ previous: previousFileIds, next: form.getFileIds() }),
       );
 
       return true;
     });
+  }
+
+  /** Detaches the uploads a changed response removed and connects its new ones. */
+  private async syncFormFiles(
+    tx: PrismaTransaction,
+    registrationId: string,
+    files: FileChange,
+    sessionId: string,
+  ) {
+    await this.fileService.detachFiles(
+      tx,
+      'registrationId',
+      registrationId,
+      removedFiles(files),
+    );
+
+    return this.fileService.fileConnections(
+      'registrationId',
+      registrationId,
+      files.next,
+      sessionId,
+    );
   }
 
   /** The event's registrations, read in batches by id. */
@@ -556,4 +573,20 @@ async function assertNotPurged(
       'Registration data of this event was deleted; it takes no registrations.',
     );
   }
+}
+
+/** The uploads a response's file questions read, before and after a change. */
+interface FileChange {
+  previous: string[];
+  next: string[];
+}
+
+/**
+ * The uploads a change removed. Only these are detached: one the form doesn't
+ * read any more (its question removed since) stays with the response, like its
+ * other answers, until the registration is deleted (docs/privacy.md, 8).
+ */
+function removedFiles({ previous, next }: FileChange): string[] {
+  const kept = new Set(next);
+  return previous.filter((id) => !kept.has(id));
 }
