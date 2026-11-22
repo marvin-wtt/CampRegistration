@@ -47,9 +47,15 @@ const index = z.object({
     .partial(),
 });
 
+// An empty name or field arrives as null; treat it as not given.
+const OPTIONAL_STRING = z
+  .string()
+  .nullish()
+  .transform((value) => value ?? undefined);
+
 const metadata = z.object({
-  name: z.string().optional(),
-  field: z.string().optional(),
+  name: OPTIONAL_STRING,
+  field: OPTIONAL_STRING,
   locale: z.string().nullable().optional(),
   group: GROUP.nullable().optional(),
   accessLevel: z.enum(['private', 'public']).optional(),

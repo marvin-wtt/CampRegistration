@@ -112,6 +112,20 @@ describe('/api/v1/files/', () => {
       expect(body).toHaveProperty('data.field', sessionId);
     });
 
+    it('should set the field to session id when the field is empty', async () => {
+      const sessionId = crypto.randomUUID();
+      const { body } = await request()
+        .post('/api/v1/files/')
+        .set('Cookie', ['session=' + sessionId, '__Host-session=' + sessionId])
+        .field('field', '')
+        .field('name', '')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      expect(body).toHaveProperty('data.field', sessionId);
+      expect(body).toHaveProperty('data.name', 'blank.pdf');
+    });
+
     it('should respond with `400` status code when the file is missing', async () => {
       await request().post('/api/v1/files/').expect(400);
     });
@@ -491,6 +505,24 @@ describe('/api/v1/files/', () => {
         .expect(201);
 
       expect(body).toHaveProperty('data.group', 'fr');
+    });
+
+    it('should store no group when the group is empty', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'terms')
+        .field('group', '')
+        .field('locale', '')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      expect(body).toHaveProperty('data.group', null);
+      expect(body).toHaveProperty('data.locale', null);
     });
 
     it("should reject a group the event doesn't run in", async () => {
