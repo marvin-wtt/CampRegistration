@@ -87,5 +87,3 @@ export const TranslationEnvSchema = z
       });
     }
   });
-
-export type TranslationEnv = z.output<typeof TranslationEnvSchema>;

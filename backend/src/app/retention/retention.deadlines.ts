@@ -8,16 +8,16 @@ import {
 } from '@camp-registration/common/privacy';
 
 /** Days before the deadline a reminder goes out; 0 is the deadline itself. */
-export const RETENTION_REMINDER_STAGES = [30, 0] as const;
+const RETENTION_REMINDER_STAGES = [30, 0] as const;
 
 /**
  * Days past the deadline a missed reminder still goes out. Older ones only
  * show as overdue, so deploying the workflow mails nothing about old events.
  */
-export const RETENTION_REMINDER_GRACE_DAYS = 7;
+const RETENTION_REMINDER_GRACE_DAYS = 7;
 
 /** Days before the deadline from which it counts as due soon. */
-export const RETENTION_DUE_SOON_DAYS = 30;
+const RETENTION_DUE_SOON_DAYS = 30;
 
 export type DeadlineDates = Record<EventRetentionDeadlineKind, string | null>;
 

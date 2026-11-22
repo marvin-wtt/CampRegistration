@@ -15,7 +15,7 @@ export interface ReceiptFile {
   uploading: boolean;
 }
 
-export function storedReceiptFile(file: ServiceFile): ReceiptFile {
+function storedReceiptFile(file: ServiceFile): ReceiptFile {
   return {
     key: file.id,
     id: file.id,

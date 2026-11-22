@@ -31,5 +31,3 @@ export const AuthEnvSchema = z.object({
     .describe('Time in minutes until email verification token expires')
     .default(10),
 });
-
-export type AuthEnv = z.output<typeof AuthEnvSchema>;

@@ -79,5 +79,3 @@ export const EmailEnvSchema = z.object({
         'bounces go undetected when EMAIL_DRIVER is "mailjet".',
     ),
 });
-
-export type EmailEnv = z.output<typeof EmailEnvSchema>;

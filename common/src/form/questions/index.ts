@@ -5,6 +5,4 @@ import role from './role.question.js';
 
 const questions = [address, country, dateOfBirth, role];
 
-export { address, country, dateOfBirth, role, questions };
-
 export default questions;

@@ -36,7 +36,7 @@ type EventSettingCreateData = OptionalByKeys<
 >[];
 
 // The child records a new event starts with, cloned or from a preset.
-export interface EventSeed {
+interface EventSeed {
   tableTemplates?: TableTemplateCreateData;
   messageTemplates?: MessageTemplateCreateData;
   files?: FileCreateData;
@@ -49,7 +49,7 @@ export interface EventSeed {
 // The purge timestamps sit with the timestamps rather than the payload: only
 // the retention workflow writes them, never an author. A new event is never
 // archived.
-export type EventCreateData = Omit<
+type EventCreateData = Omit<
   Event,
   | 'id'
   | 'createdAt'

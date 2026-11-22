@@ -7,7 +7,7 @@ import type {
   User,
 } from '#generated/prisma/client.js';
 
-export interface ProfileOrganizationMembership extends OrganizationMember {
+interface ProfileOrganizationMembership extends OrganizationMember {
   organization: {
     id: string;
     verificationStatus: OrganizationVerificationStatus;

@@ -2,7 +2,6 @@ import type {
   Chore,
   ChoreAssignment,
   ChoreAssignmentMember,
-  ChoreEffort,
   ChoreMemberRole,
   ChoreSlot,
 } from '@camp-registration/common/entities';
@@ -26,7 +25,7 @@ export function requiredCount(
 }
 
 // The duty's own count wins over its slot's and chore's.
-export function assignmentCount(
+function assignmentCount(
   assignment: ChoreAssignment,
   chore: Chore | undefined,
   role: ChoreMemberRole,
@@ -34,13 +33,6 @@ export function assignmentCount(
   const own =
     role === 'SUPERVISOR' ? assignment.supervisorCount : assignment.headcount;
   return own ?? requiredCount(chore, findSlot(chore, assignment.slotId), role);
-}
-
-export function effortOf(
-  chore: Chore | undefined,
-  slot: ChoreSlot | undefined,
-): ChoreEffort {
-  return slot?.effort ?? chore?.effort ?? 'NORMAL';
 }
 
 export function membersWithRole(

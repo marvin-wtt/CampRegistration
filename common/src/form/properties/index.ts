@@ -21,6 +21,4 @@ const properties: PropertyDefinition[] = [
   privacyConsentFor,
 ];
 
-export { eventDataType, properties };
-
 export default properties;

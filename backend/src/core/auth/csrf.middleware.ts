@@ -21,7 +21,7 @@ const CSRF_SESSION_COOKIE_NAME = 'csrf-session';
 // and emit a competing `Set-Cookie`, leaving an issued token bound to an id the
 // surviving cookie no longer matches. The session is established only when a
 // token is issued — see `ensureCsrfSession`.
-export function csrfSession(req: Request, _res: Response, next: NextFunction) {
+function csrfSession(req: Request, _res: Response, next: NextFunction) {
   req.csrfSessionId =
     getStringCookie(req, secureCookieName(CSRF_SESSION_COOKIE_NAME)) ??
     undefined;
@@ -66,7 +66,7 @@ const CSRF_EXEMPT_PATH_PREFIXES = ['/webhooks/'];
 //
 // The web client always sends `X-Client-Type: web` (and uses CSRF tokens),
 // which keeps it protected.
-export function isCsrfExempt(req: Request): boolean {
+function isCsrfExempt(req: Request): boolean {
   const clientType = req.headers['x-client-type'];
   if (typeof clientType === 'string' && clientType !== WEB_CLIENT_TYPE) {
     return true;

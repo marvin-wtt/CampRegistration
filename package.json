@@ -7,8 +7,9 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
     "migrate": "npm run migrate --workspaces --if-present",
-    "build-and-migrate": "run-s build migrate",
-    "production": "npm run production --workspace backend"
+    "build-and-migrate": "npm run build && npm run migrate",
+    "production": "npm run production --workspace backend",
+    "knip": "knip"
   },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
@@ -29,6 +30,7 @@
   ],
   "devDependencies": {
     "husky": "^9.1.7",
+    "knip": "^6.47.0",
     "lint-staged": "^17.6.0",
     "patch-package": "^8.0.1",
     "prettier": "^3.9.10",

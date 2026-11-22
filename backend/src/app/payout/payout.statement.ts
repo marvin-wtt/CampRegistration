@@ -41,7 +41,7 @@ export interface StatementPayout {
  * What the outdated check compares: the figures only. A receipt's date or
  * description may still change without invalidating the slip.
  */
-export interface PayoutStatementBasis {
+interface PayoutStatementBasis {
   /** The event's last receipt number at creation: later ones aren't listed. */
   receiptsUpTo: number;
   expenses: {
@@ -162,7 +162,7 @@ export function buildPayoutStatement(
   };
 }
 
-export function statementBasis(statement: Statement): PayoutStatementBasis {
+function statementBasis(statement: Statement): PayoutStatementBasis {
   return {
     receiptsUpTo: statement.receiptsUpTo,
     expenses: statement.expenses.map((e) => ({
@@ -180,10 +180,7 @@ export function statementBasis(statement: Statement): PayoutStatementBasis {
 }
 
 /** Field by field: the database doesn't keep a JSON object's key order. */
-export function sameBasis(
-  a: PayoutStatementBasis,
-  b: PayoutStatementBasis,
-): boolean {
+function sameBasis(a: PayoutStatementBasis, b: PayoutStatementBasis): boolean {
   return (
     a.receiptsUpTo === b.receiptsUpTo &&
     a.expenses.length === b.expenses.length &&
@@ -219,7 +216,7 @@ export interface StatementContext {
 }
 
 /** The slip's text, formatted once; it is printed as is from then on. */
-export function renderStatementContent(
+function renderStatementContent(
   payout: StatementPayout,
   statement: Statement,
   context: StatementContext,

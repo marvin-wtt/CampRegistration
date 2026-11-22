@@ -135,5 +135,3 @@ export const StorageEnvSchema = z.preprocess((input) => {
     STORAGE_LOCATION: data.STORAGE_LOCATION ?? 'disk',
   };
 }, StorageEnvUnionSchema);
-
-export type StorageEnv = z.output<typeof StorageEnvSchema>;

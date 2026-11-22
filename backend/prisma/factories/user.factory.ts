@@ -4,7 +4,7 @@ import prisma from '../client.js';
 import bcrypt from 'bcryptjs';
 
 /** The TOTP secret of administrators the factory creates. */
-export const ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+const ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 
 export const UserFactory = {
   build: (

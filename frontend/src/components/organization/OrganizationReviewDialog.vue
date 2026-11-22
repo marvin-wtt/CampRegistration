@@ -117,7 +117,7 @@ import { useI18n } from 'vue-i18n';
 import type { Organization } from '@camp-registration/common/entities';
 import OrganizationDetailsPanel from '@/components/organization/OrganizationDetailsPanel.vue';
 
-export type OrganizationReviewDecision = 'VERIFIED' | 'REJECTED';
+type OrganizationReviewDecision = 'VERIFIED' | 'REJECTED';
 
 export interface OrganizationReviewResult {
   status: OrganizationReviewDecision;

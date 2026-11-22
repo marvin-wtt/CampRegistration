@@ -9,7 +9,7 @@ export interface VariableDefinition {
 
 export type VariableList = VariableDefinition[];
 
-export interface VariableOptions {
+interface VariableOptions {
   HTMLAttributes: Record<string, unknown>;
   // A list of allowed variables provided as an array of objects.
   variables: VariableList;

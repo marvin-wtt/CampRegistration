@@ -7,5 +7,3 @@ export const QueueEnvSchema = z.object({
     .describe('The queue driver to use')
     .default('database'),
 });
-
-export type QueueEnv = z.output<typeof QueueEnvSchema>;

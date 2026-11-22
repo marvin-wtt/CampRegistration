@@ -10,5 +10,3 @@ export const RealtimeEnvSchema = z.object({
     )
     .optional(),
 });
-
-export type RealtimeEnv = z.output<typeof RealtimeEnvSchema>;
