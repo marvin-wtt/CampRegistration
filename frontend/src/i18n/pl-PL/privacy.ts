@@ -55,24 +55,21 @@ export default {
   },
 
   legalBasis: {
-    contract: 'Wykonanie umowy (art. 6 ust. 1 lit. b RODO)',
-    legal_obligation:
-      'Wypełnienie obowiązku prawnego (art. 6 ust. 1 lit. c RODO)',
-    vital_interests: 'Ochrona żywotnych interesów (art. 6 ust. 1 lit. d RODO)',
-    legitimate_interests:
-      'Prawnie uzasadnione interesy (art. 6 ust. 1 lit. f RODO)',
-    consent: 'Zgoda (art. 6 ust. 1 lit. a RODO)',
-    public_task:
-      'Wykonanie zadania w interesie publicznym (art. 6 ust. 1 lit. e RODO)',
+    contract: 'Wykonanie umowy',
+    legal_obligation: 'Wypełnienie obowiązku prawnego',
+    vital_interests: 'Ochrona żywotnych interesów',
+    legitimate_interests: 'Prawnie uzasadnione interesy',
+    consent: 'Zgoda',
+    public_task: 'Wykonanie zadania w interesie publicznym',
   },
 
   specialCategoryBasis: {
-    explicit_consent: 'Wyraźna zgoda (art. 9 ust. 2 lit. a RODO)',
-    vital_interests: 'Ochrona żywotnych interesów (art. 9 ust. 2 lit. c RODO)',
-    health_care: 'Opieka zdrowotna lub społeczna (art. 9 ust. 2 lit. h RODO)',
-    nonprofit_body:
-      'Uprawniona działalność podmiotu niezarobkowego (art. 9 ust. 2 lit. d RODO)',
-    legal_claims: 'Ustalenie lub obrona roszczeń (art. 9 ust. 2 lit. f RODO)',
+    explicit_consent: 'Wyraźna zgoda',
+    vital_interests: 'Ochrona żywotnych interesów',
+    health_care: 'Opieka zdrowotna lub społeczna',
+    nonprofit_body: 'Uprawniona działalność podmiotu niezarobkowego',
+    legal_claims: 'Ustalenie lub obrona roszczeń',
+    public_interest: 'Ważny interes publiczny na podstawie przepisów prawa',
   },
 
   specialCategoryCondition: {
@@ -86,6 +83,8 @@ export default {
       'Tylko jeśli dane przetwarza osoba zobowiązana do tajemnicy zawodowej lub odbywa się to na jej odpowiedzialność, na przykład lekarz lub pielęgniarka.',
     legal_claims:
       'Tylko w celu ustalenia, dochodzenia lub obrony roszczeń, na przykład protokół wypadku zachowany na potrzeby sporu z ubezpieczycielem.',
+    public_interest:
+      'Tylko jeśli przepis prawa UE lub Twojego kraju nakazuje lub dopuszcza przetwarzanie; wskaż ten przepis poniżej. Zasięgnij porady prawnej, zanim się na nim oprzesz.',
   },
 
   retentionUntil: {
@@ -101,17 +100,20 @@ export default {
       'decyzję Komisji Europejskiej stwierdzającą odpowiedni stopień ochrony',
     scc: 'standardowe klauzule umowne',
     bcr: 'wiążące reguły korporacyjne',
-    derogation: 'wyjątek na podstawie art. 49 RODO',
+    derogation: 'wyjątek',
   },
 
   /** Zobacz `en-US/privacy.ts`. */
   editor: {
     field: {
       art9Basis: 'Podstawa prawna',
+      legalReference: 'Podstawa prawna (przepis)',
+      legalReferenceHint:
+        'Przepis, na który się powołujesz, np. ustawa i artykuł',
       art9Advisory:
         'Same w sobie nie są wrażliwe. Jeśli formularz oferuje opcje halal lub koszerne, zaznacz też „Przynależność religijna”; jeśli zbiera alergie, zaznacz „Alergie”.',
       consentQuestion:
-        'Wskazanie tego tutaj nie jest zgodą. Formularz zgłoszeniowy musi o nią zapytać w osobnym pytaniu, które można pozostawić bez odpowiedzi – zgłoszenie musi być możliwe także bez niej (art. 7 ust. 4 RODO).',
+        'Wskazanie tego tutaj nie jest zgodą. Formularz zgłoszeniowy musi o nią zapytać w osobnym pytaniu, które można pozostawić bez odpowiedzi – zgłoszenie musi być możliwe także bez niej ({citation}).',
       recipientName: 'Nazwa (opcjonalnie)',
       recipientNameHint:
         'Wskazanie konkretnego odbiorcy jest jaśniejsze niż sama kategoria.',
@@ -141,13 +143,17 @@ export default {
   },
 
   gap: {
+    purpose_basis: 'Jeden z celów nie ma jeszcze podstawy prawnej',
+    supervisory_authority: 'Nie wskazano organu nadzorczego',
     purposes: 'Nie wskazano żadnego celu przetwarzania',
     legitimate_interest_explanation:
       'Powołano się na prawnie uzasadniony interes, ale go nie opisano',
     custom_purpose_label: 'Dodany przez Ciebie cel nie ma nazwy',
     data_categories: 'Nie wskazano żadnych kategorii danych',
     special_category_basis:
-      'Szczególne kategorie danych nie mają podstawy prawnej z art. 9',
+      'Szczególne kategorie danych nie mają podstawy prawnej',
+    special_category_legal_reference:
+      'Podstawa prawna oparta na przepisie prawa nie wskazuje tego przepisu',
     custom_category_label: 'Dodana przez Ciebie kategoria nie ma nazwy',
     custom_recipient_label: 'Dodany przez Ciebie odbiorca nie ma nazwy',
     automated_details:

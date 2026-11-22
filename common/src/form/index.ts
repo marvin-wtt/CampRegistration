@@ -28,6 +28,7 @@ export { extractEventData } from './eventData.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
   answeredSpecialCategoryQuestions,
+  answerPath,
   clearSpecialCategoryAnswers,
   consentAnswers,
   consentTexts,

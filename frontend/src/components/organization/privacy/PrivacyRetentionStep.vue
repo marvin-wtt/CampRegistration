@@ -187,8 +187,10 @@
           v-if="content.thirdCountryTransfers.enabled"
           class="column q-gutter-y-sm toggle-fields"
         >
+          <!-- Codes are stored lowercase, like every country code; shown in
+               upper case, as written. -->
           <q-select
-            v-model="content.thirdCountryTransfers.countries"
+            :model-value="content.thirdCountryTransfers.countries"
             :label="t('field.transferCountries')"
             :hint="t('field.transferCountriesHint')"
             use-input
@@ -206,7 +208,26 @@
             ]"
             lazy-rules
             hide-bottom-space
-          />
+            @update:model-value="
+              (countries: string[]) =>
+                (content.thirdCountryTransfers.countries = [
+                  ...new Set(
+                    countries.map((code) => code.trim().toLowerCase()),
+                  ),
+                ])
+            "
+          >
+            <template #selected-item="scope">
+              <q-chip
+                :tabindex="scope.tabindex"
+                :removable="canEdit"
+                dense
+                @remove="scope.removeAtIndex(scope.index)"
+              >
+                {{ String(scope.opt).toUpperCase() }}
+              </q-chip>
+            </template>
+          </q-select>
           <q-select
             v-model="content.thirdCountryTransfers.safeguard"
             :options="safeguardOptions"
@@ -242,7 +263,11 @@
           <translated-input
             :model-value="content.automatedDecisionMakingDetails"
             :label="t('field.automatedDetails')"
-            :hint="t('field.automatedDetailsHint')"
+            :hint="
+              t('field.automatedDetailsHint', {
+                citation: cite('automatedInformation'),
+              })
+            "
             :locales
             always
             type="textarea"
@@ -286,6 +311,7 @@ import {
 import type { Translatable } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePrivacyLabels } from '@/composables/privacyLabels';
 import { APP_LOCALES as locales } from '@/i18n/locales';
 
 const content = defineModel<PrivacyNoticeContent>({ required: true });
@@ -296,6 +322,7 @@ const { t } = useI18n();
 // The catalogue vocabulary is global: the same words appear in the notice a
 // registrant reads.
 const { t: gt } = useI18n({ useScope: 'global' });
+const { cite, safeguardLabel } = usePrivacyLabels();
 const { to } = useObjectTranslation();
 
 function asTranslatable(value: unknown): Translatable | null {
@@ -305,7 +332,7 @@ function asTranslatable(value: unknown): Translatable | null {
 const safeguardOptions = computed(() =>
   TRANSFER_SAFEGUARDS.map((key) => ({
     value: key,
-    label: gt(`privacy.transferSafeguard.${key}`),
+    label: safeguardLabel(key),
   })),
 );
 
@@ -462,7 +489,7 @@ field:
   transferSafeguard: 'Safeguard'
   automated: 'We use automated decision-making or profiling'
   automatedDetails: 'Explain the logic and its consequences'
-  automatedDetailsHint: 'Art. 13(2)(f) requires meaningful information about the logic involved and what it means for the person.'
+  automatedDetailsHint: 'Meaningful information about the logic involved and what it means for the person is required ({citation}).'
 retention:
   special:
     title: 'Health and other sensitive details'
@@ -499,7 +526,7 @@ field:
   transferSafeguard: 'Garantie'
   automated: 'Automatisierte Entscheidungsfindung oder Profiling findet statt'
   automatedDetails: 'Logik und Folgen erläutern'
-  automatedDetailsHint: 'Art. 13 Abs. 2 lit. f DSGVO verlangt aussagekräftige Informationen über die Logik und darüber, was sie für die betroffene Person bedeutet.'
+  automatedDetailsHint: 'Erforderlich sind aussagekräftige Informationen über die Logik und darüber, was sie für die betroffene Person bedeutet ({citation}).'
 retention:
   special:
     title: 'Gesundheitsangaben und andere sensible Daten'
@@ -536,7 +563,7 @@ field:
   transferSafeguard: 'Garantie'
   automated: 'Nous utilisons la décision automatisée ou le profilage'
   automatedDetails: 'Expliquer la logique et ses conséquences'
-  automatedDetailsHint: "L'art. 13, § 2, f, RGPD exige des informations utiles sur la logique sous-jacente et sur ce qu'elle implique pour la personne."
+  automatedDetailsHint: "Des informations utiles sur la logique sous-jacente et sur ce qu'elle implique pour la personne sont exigées ({citation})."
 retention:
   special:
     title: 'Données de santé et autres données sensibles'
@@ -573,7 +600,7 @@ field:
   transferSafeguard: 'Záruka'
   automated: 'Používáme automatizované rozhodování nebo profilování'
   automatedDetails: 'Vysvětli logiku a její důsledky'
-  automatedDetailsHint: 'Čl. 13 odst. 2 písm. f) GDPR vyžaduje smysluplné informace o použitém postupu a o tom, co znamená pro danou osobu.'
+  automatedDetailsHint: 'Vyžadují se smysluplné informace o použitém postupu a o tom, co znamená pro danou osobu ({citation}).'
 retention:
   special:
     title: 'Zdravotní a další citlivé údaje'
@@ -610,7 +637,7 @@ field:
   transferSafeguard: 'Zabezpieczenie'
   automated: 'Stosujemy zautomatyzowane podejmowanie decyzji lub profilowanie'
   automatedDetails: 'Wyjaśnij logikę i jej konsekwencje'
-  automatedDetailsHint: 'Art. 13 ust. 2 lit. f RODO wymaga istotnych informacji o zasadach podejmowania decyzji i o tym, co oznaczają dla danej osoby.'
+  automatedDetailsHint: 'Wymagane są istotne informacje o zasadach podejmowania decyzji i o tym, co oznaczają dla danej osoby ({citation}).'
 retention:
   special:
     title: 'Dane o zdrowiu i inne dane wrażliwe'

@@ -138,9 +138,11 @@ export type LegalBasisKey = (typeof LEGAL_BASIS_KEYS)[number];
  *
  * Only the points an event can genuinely rely on are offered. Deliberately absent:
  * (b) employment and social security law, which governs staff rather than
- * registrants; (e) data the subject manifestly made public; (g) substantial
- * public interest, which needs a Member State law to rest on; (i) public
+ * registrants; (e) data the subject manifestly made public; (i) public
  * health, which is for public-health bodies; and (j) archiving and research.
+ * (g) substantial public interest rests on a Member State or Union law, so it
+ * needs the organizer to name that law (`legalReference`); the platform
+ * asserts nothing about whether it applies (docs/privacy.md, 4).
  * Offering a basis nobody may lawfully pick is worse than omitting it — the
  * whole point of a preset is that picking it is safe.
  */
@@ -150,13 +152,14 @@ export const SPECIAL_CATEGORY_BASIS_KEYS = [
   'vital_interests',
   'health_care',
   'legal_claims',
+  'public_interest',
 ] as const;
 
 export type SpecialCategoryBasisKey =
   (typeof SPECIAL_CATEGORY_BASIS_KEYS)[number];
 
 /**
- * The four alternatives to explicit consent, each of which only applies under a
+ * The alternatives to explicit consent, each of which only applies under a
  * condition most events do not meet. Kept out of the way in the authoring UI: a
  * flat list of five invites picking whichever sounds nicest, when in practice
  * one is right and four are traps.
@@ -166,7 +169,15 @@ export const ADVANCED_SPECIAL_CATEGORY_BASIS_KEYS = [
   'vital_interests',
   'health_care',
   'legal_claims',
+  'public_interest',
 ] as const satisfies readonly SpecialCategoryBasisKey[];
+
+/** The Art. 9 bases a notice must name the law for. */
+export function needsLegalReference(
+  basis: SpecialCategoryBasisKey | null | undefined,
+): boolean {
+  return basis === 'public_interest';
+}
 
 /**
  * An event is not a health-care provider, so Art. 9(2)(h) rarely fits, and

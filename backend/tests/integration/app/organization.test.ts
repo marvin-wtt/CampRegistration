@@ -135,10 +135,24 @@ describe(BASE, () => {
       expect(response.data.registrationNumber).toBeNull();
     });
 
+    it('should store an uppercase country code in lowercase', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      const { body } = await request()
+        .post(BASE)
+        .send({ ...validBody(), country: 'DE' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data.country).toBe('de');
+    });
+
     it.each([
       ['name', { name: '' }],
       ['contactEmail', { contactEmail: 'not-an-email' }],
       ['country', { country: 'deu' }],
+      ['country outside the EEA', { country: 'us' }],
     ])('should respond with `400` for an invalid %s', async (_field, patch) => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);

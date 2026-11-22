@@ -7,6 +7,7 @@
       v-if="showEditor && eventData"
       :event="eventData"
       :restricted-access="restrictedAccess"
+      :has-registrations="hasRegistrations"
       :save-form-func="saveForm"
       :save-theme-func="saveTheme"
       :save-file-func="saveFile"
@@ -36,6 +37,10 @@ const { data: eventData } = storeToRefs(eventDetailsStore);
 
 const showEditor = ref<boolean>(false);
 const restrictedAccess = ref<boolean>(false);
+
+const hasRegistrations = computed<boolean>(
+  () => (registrationStore.data?.length ?? 0) > 0,
+);
 
 const loading = computed<boolean>(() => {
   return eventDetailsStore.isLoading || registrationStore.isLoading;

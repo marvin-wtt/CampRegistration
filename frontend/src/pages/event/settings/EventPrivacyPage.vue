@@ -189,10 +189,21 @@
                 @update:model-value="(v) => setEventLegalBasis(key, v)"
               />
               <div
+                v-if="legalBasisCaution(eventPurpose(key)?.legalBasis)"
+                class="text-caption text-warning q-mt-xs"
+                data-test="privacy-basis-caution"
+              >
+                {{ legalBasisCaution(eventPurpose(key)?.legalBasis) }}
+              </div>
+              <div
                 v-if="eventPurpose(key)?.legalBasis === 'consent'"
                 class="text-caption text-on-surface-variant q-mt-xs"
               >
-                {{ gt('privacy.editor.field.consentQuestion') }}
+                {{
+                  gt('privacy.editor.field.consentQuestion', {
+                    citation: cite('freelyGiven'),
+                  })
+                }}
               </div>
             </privacy-entry-row>
           </privacy-entry-list>
@@ -330,17 +341,18 @@
                     class="text-caption text-on-surface-variant"
                   >
                     {{ gt('privacy.editor.field.art9Basis') }}:
-                    {{
-                      gt(
-                        `privacy.specialCategoryBasis.${inheritedCategoryBasis(key)}`,
-                      )
-                    }}
+                    {{ specialBasisLabel(inheritedCategoryBasis(key)) }}
                   </div>
                   <special-category-basis-field
                     v-else-if="hasDataCategory(key) && isSpecialCategory(key)"
                     :model-value="dataCategory(key)?.specialCategoryBasis"
+                    :legal-reference="dataCategory(key)?.legalReference"
                     :can-edit="canEdit"
+                    :locales="additionalLocales"
                     @update:model-value="(value) => setSpecialBasis(key, value)"
+                    @update:legal-reference="
+                      (value) => setLegalReference(key, value)
+                    "
                   />
                   <!-- Both notes ask about this event's own form, so they show
                        for inherited entries too. -->
@@ -366,8 +378,13 @@
                   <special-category-basis-field
                     v-if="isSpecialCategory(key)"
                     :model-value="dataCategory(key)?.specialCategoryBasis"
+                    :legal-reference="dataCategory(key)?.legalReference"
                     :can-edit="canEdit"
+                    :locales="additionalLocales"
                     @update:model-value="(value) => setSpecialBasis(key, value)"
+                    @update:legal-reference="
+                      (value) => setLegalReference(key, value)
+                    "
                   />
                   <privacy-category-notes
                     :category-key="key"
@@ -676,6 +693,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
+  noticeFramework,
+  presetLegalBasis,
   EVENT_DATA_TYPE_DATA_CATEGORIES,
   DEFAULT_SPECIAL_CATEGORY_BASIS,
   PRIVACY_DATA_CATEGORY_KEYS,
@@ -723,7 +742,10 @@ import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { usePermissions } from '@/composables/permissions';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
-import { usePrivacyLabels } from '@/composables/privacyLabels';
+import {
+  providePrivacyFramework,
+  usePrivacyLabels,
+} from '@/composables/privacyLabels';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
 import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
@@ -740,13 +762,19 @@ const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
 const { canOrgFor } = useOrganizationPermissions();
+// An addendum is written under its organization's law, and cites it.
+const eventNoticeLaw = () => organizationContent.value;
+providePrivacyFramework(eventNoticeLaw);
 const {
   legalBasisOptions,
   categoryLabel,
   purposeLabel,
   recipientLabel,
   countryLabel,
-} = usePrivacyLabels();
+  cite,
+  specialBasisLabel,
+  legalBasisCaution,
+} = usePrivacyLabels(eventNoticeLaw);
 const { extractErrorText } = useErrorExtractor();
 const notifier = useNotifier();
 const { fetchEventAddendum, publishEventAddendum, fetchEventNotice } =
@@ -780,6 +808,7 @@ const {
   hasDataCategory,
   toggleDataCategory,
   setSpecialBasis,
+  setLegalReference,
   recipient,
   hasRecipient,
   toggleRecipient,
@@ -1107,7 +1136,17 @@ function toggleEventPurpose(key: PrivacyPurposeKey, on: boolean) {
   }
 
   const preset = PRIVACY_PURPOSE_PRESETS[key];
-  content.value.purposes = [...entries, { key, legalBasis: preset.legalBasis }];
+  // A basis the law attaches conditions to is left for the author to choose.
+  content.value.purposes = [
+    ...entries,
+    {
+      key,
+      legalBasis: presetLegalBasis(
+        preset.legalBasis,
+        noticeFramework(organizationContent.value),
+      ),
+    },
+  ];
   for (const category of preset.dataCategories) {
     if (!inheritsCategory(category) && !hasDataCategory(category)) {
       toggleDataCategory(category, true);

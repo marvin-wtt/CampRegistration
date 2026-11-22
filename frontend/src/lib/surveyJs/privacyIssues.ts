@@ -1,6 +1,7 @@
 import type { SurveyCreatorModel } from 'survey-creator-core';
 import { type Question, QuestionMatrixDropdownModelBase } from 'survey-core';
 import {
+  consentBasedCategories,
   formPrivacyIssues,
   privacyIssueKind,
   type FormPrivacyIssueKind,
@@ -12,9 +13,14 @@ import {
   type ConsentQuestionTexts,
 } from './consentQuestion';
 
-/** Why a question keeps the event from taking registrations. */
+/**
+ * Why a question keeps the event from taking registrations, or `required`: a
+ * consent-based answer is mandatory, so registering depends on consent.
+ */
+export type QuestionPrivacyIssueKind = FormPrivacyIssueKind | 'required';
+
 export interface QuestionPrivacyIssue {
-  kind: FormPrivacyIssueKind;
+  kind: QuestionPrivacyIssueKind;
   category: string;
   /** The matrix column carrying the tag, when it is not the question's own. */
   column?: string;
@@ -22,7 +28,7 @@ export interface QuestionPrivacyIssue {
 
 export interface PrivacyIssueOptions {
   message: (issue: QuestionPrivacyIssue) => string;
-  action: (kind: FormPrivacyIssueKind) => string;
+  action: (kind: QuestionPrivacyIssueKind) => string;
   /** The wording of a consent question covering one category. */
   consentTexts: (category: string) => ConsentQuestionTexts;
   openPrivacySettings: () => void;
@@ -45,15 +51,33 @@ function issueOf(question: Question): QuestionPrivacyIssue | null {
   );
 }
 
+/** What the form check found, and the categories that rely on consent. */
+export interface FormPrivacyState {
+  issues: FormPrivacyIssues;
+  consentBased: ReadonlySet<string>;
+}
+
+interface TaggedElement {
+  category: unknown;
+  required: boolean;
+}
+
 function issueFor(
-  category: unknown,
-  issues: FormPrivacyIssues,
+  { category, required }: TaggedElement,
+  { issues, consentBased }: FormPrivacyState,
 ): QuestionPrivacyIssue | null {
   if (typeof category !== 'string') {
     return null;
   }
-  const kind = privacyIssueKind(category, issues);
+  // A blocking issue first: it has to be fixed either way.
+  const kind =
+    privacyIssueKind(category, issues) ??
+    (required && consentBased.has(category) ? 'required' : null);
   return kind ? { kind, category } : null;
+}
+
+function isRequired(json: { isRequired?: unknown; requiredIf?: unknown }) {
+  return json.isRequired === true || !!json.requiredIf;
 }
 
 /**
@@ -62,16 +86,30 @@ function issueFor(
  */
 export function questionPrivacyIssue(
   question: Question,
-  issues: FormPrivacyIssues,
+  state: FormPrivacyState,
 ): QuestionPrivacyIssue | null {
-  const own = issueFor(question.getPropertyValue('privacyCategory'), issues);
+  const own = issueFor(
+    {
+      category: question.getPropertyValue('privacyCategory'),
+      required: question.isRequired || !!question.requiredIf,
+    },
+    state,
+  );
   if (own || !(question instanceof QuestionMatrixDropdownModelBase)) {
     return own;
   }
 
   for (const column of question.columns) {
     // Off the JSON, where the form check reads column tags too.
-    const issue = issueFor(column.toJSON().privacyCategory, issues);
+    const json = column.toJSON() as {
+      privacyCategory?: unknown;
+      isRequired?: unknown;
+      requiredIf?: unknown;
+    };
+    const issue = issueFor(
+      { category: json.privacyCategory, required: isRequired(json) },
+      state,
+    );
     if (issue) {
       return { ...issue, column: column.title || column.name };
     }
@@ -82,7 +120,8 @@ export function questionPrivacyIssue(
 /**
  * Marks every question that keeps the event from taking registrations
  * (docs/privacy.md, 5) with a message panel on the design surface, linking to
- * the fix: the privacy settings, or a consent question for its category.
+ * the fix: the privacy settings, or a consent question for its category. A
+ * required consent-based question gets a note, never a block.
  * Marks are recomputed on `refresh()`, which the editor calls after each save.
  */
 export function attachPrivacyIssues(
@@ -96,10 +135,13 @@ export function attachPrivacyIssues(
     if (notice === undefined) {
       return;
     }
-    const issues = formPrivacyIssues(creator.JSON, notice);
+    const state: FormPrivacyState = {
+      issues: formPrivacyIssues(creator.JSON, notice),
+      consentBased: consentBasedCategories(notice),
+    };
     // Dynamic panel templates too: their questions have boxes of their own.
     for (const question of creator.survey.getAllQuestions(false, true, true)) {
-      setIssue(question, questionPrivacyIssue(question, issues));
+      setIssue(question, questionPrivacyIssue(question, state));
     }
   }
 

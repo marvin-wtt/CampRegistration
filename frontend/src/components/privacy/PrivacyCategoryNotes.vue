@@ -11,7 +11,11 @@
       v-if="showConsent"
       :class="{ 'q-mt-xs': showAdvisory }"
     >
-      {{ t('privacy.editor.field.consentQuestion') }}
+      {{
+        t('privacy.editor.field.consentQuestion', {
+          citation: cite('freelyGiven'),
+        })
+      }}
     </div>
   </div>
 </template>
@@ -19,6 +23,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { usePrivacyLabels } from '@/composables/privacyLabels';
 import {
   isAdvisorySpecialCategory,
   requiresConsentQuestion,
@@ -31,6 +36,7 @@ const props = defineProps<{
 
 // The catalogue vocabulary is global: the same words appear in both editors.
 const { t } = useI18n({ useScope: 'global' });
+const { cite } = usePrivacyLabels();
 
 // Both notes are shown regardless of who declared the category. Whether a form
 // offers halal or kosher, and whether it asks for consent, is answered by the

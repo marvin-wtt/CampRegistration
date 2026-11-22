@@ -10,7 +10,11 @@ import type { Ace } from 'ace-builds';
 import { config as aceConfig } from 'ace-builds';
 import { onBeforeUnmount, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
-import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
+import {
+  type ICreatorOptions,
+  showConfirmDialog,
+  SurveyCreatorModel,
+} from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -19,7 +23,7 @@ import {
   type PageModel,
   type PanelModel,
   type SurveyElement,
-  type SurveyModel,
+  SurveyModel,
   Serializer,
 } from 'survey-core';
 import FileSelectionDialog from '@/components/event/settings/files/FileSelectionDialog.vue';
@@ -33,6 +37,7 @@ import { formLintOptions, setVariables } from '@camp-registration/common/form';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import type { ConsentQuestionTexts } from '@/lib/surveyJs/consentQuestion';
 import { attachPrivacyIssues } from '@/lib/surveyJs/privacyIssues';
+import { lostSensitiveQuestions } from '@/lib/surveyJs/sensitiveAnswers';
 import { APP_LOCALES } from '@/i18n/locales';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
@@ -63,6 +68,8 @@ import { readAsDataURL } from '@/utils/readAsDataURL';
 const props = defineProps<{
   event: EventDetails;
   restrictedAccess: boolean;
+  /** Whether submitted registrations exist, whose answers the form reads. */
+  hasRegistrations: boolean;
   saveFormFunc: (form: SurveyJSEventData) => Promise<void>;
   saveThemeFunc: (theme: ITheme) => Promise<void>;
   // Resolves to the file's slot (its `field`).
@@ -356,20 +363,76 @@ function consentTexts(category: string): ConsentQuestionTexts {
   };
 }
 
-creator.saveSurveyFunc = (
+type SaveCallback = (saveNo: number, success: boolean) => void;
+
+// The form registrations' answers are read against: the email filter and
+// "Delete sensitive data" follow its tags (docs/privacy.md, 5).
+let savedForm: unknown = props.event.form;
+
+function saveForm(
+  form: SurveyJSEventData,
   saveNo: number,
-  callback: (saveNo: number, success: boolean) => void,
-) => {
+  callback: SaveCallback,
+) {
   props
-    .saveFormFunc(creator.JSON)
+    .saveFormFunc(form)
     .then(() => {
+      savedForm = form;
       callback(saveNo, true);
       privacyIssues.refresh();
     })
     .catch(() => {
       callback(saveNo, false);
     });
+}
+
+// An edit leaving stored sensitive answers unrecognized asks first. Undoing
+// restores the saved form, so it reverts any kind of edit, JSON tab included.
+creator.saveSurveyFunc = (saveNo: number, callback: SaveCallback) => {
+  const form: SurveyJSEventData = creator.JSON;
+  const lost =
+    props.hasRegistrations && !props.event.sensitiveDataPurgedAt
+      ? lostSensitiveQuestions(savedForm, form)
+      : [];
+  if (lost.length === 0) {
+    saveForm(form, saveNo, callback);
+    return;
+  }
+
+  // The Creator's own confirmation, as its plugins ask theirs.
+  const questions = questionTitles(savedForm, lost)
+    .map((title) => `“${title}”`)
+    .join(', ');
+  showConfirmDialog(creator, {
+    category: 'danger',
+    iconName: 'icon-warning-24x24',
+    title: t('privacy.lost.title'),
+    message: t('privacy.lost.message', { questions }),
+    applyText: t('privacy.lost.keep'),
+    cancelText: t('privacy.lost.undo'),
+    showCloseButton: false,
+    onApply: () => {
+      saveForm(form, saveNo, callback);
+      return true;
+    },
+    onCancel: () => {
+      creator.JSON = savedForm;
+      // Nothing to send: the editor shows the saved form again.
+      callback(saveNo, true);
+      privacyIssues.refresh();
+    },
+  });
 };
+
+function questionTitles(form: unknown, questions: { name: string }[]) {
+  const survey = new SurveyModel(form);
+  survey.locale = creatorLocale();
+  const all = survey.getAllQuestions(false, true, true);
+  // A matrix column has no question of its own: its name stands in.
+  return questions.map(
+    ({ name }) => all.find((q) => q.name === name)?.title ?? name,
+  );
+}
 
 creator.saveThemeFunc = (
   saveNo: number,
@@ -577,11 +640,17 @@ mode:
   expert: 'Expert'
   condition: 'Has conditions — edit them in Standard mode'
 privacy:
+  required: 'Required: registering then depends on consent to “{category}”, which needs a valid justification. If a law requires this data, set another legal basis for it in the privacy settings.'
   undeclared: 'Add “{category}” to the privacy information. Until then, nobody can register.'
   uncovered: 'Add a consent question for “{category}”. Until then, nobody can register.'
   openNotice: 'Open privacy settings'
   inColumn: 'Column “{column}”: {message}'
   addConsent: 'Add consent question'
+  lost:
+    title: 'Existing answers would no longer count as sensitive'
+    message: 'Registrations already hold answers to {questions}. After this change they are no longer treated as sensitive data: they can appear in emails, and “Delete sensitive data” no longer removes them. If a question is no longer needed, hide it instead and keep its name and privacy category. Only keep the change if the question never collected sensitive data.'
+    undo: 'Undo change'
+    keep: 'Keep change'
   consent:
     title: 'I agree that the information on {category} given in this form is used to look after the participant during the event and shared with the event team.'
     description: 'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.'
@@ -598,11 +667,17 @@ mode:
   expert: 'Experte'
   condition: 'Hat Bedingungen – im Standardmodus bearbeiten'
 privacy:
+  required: 'Pflichtfeld: Die Anmeldung hängt dann von der Einwilligung zu „{category}“ ab, und dafür braucht es eine tragfähige Begründung. Schreibt ein Gesetz diese Angaben vor, wähle in den Datenschutzeinstellungen eine andere Rechtsgrundlage.'
   undeclared: 'Ergänze „{category}“ in den Datenschutzinformationen. Bis dahin kann sich niemand anmelden.'
   uncovered: 'Füge eine Einwilligungsfrage für „{category}“ hinzu. Bis dahin kann sich niemand anmelden.'
   openNotice: 'Datenschutzeinstellungen öffnen'
   inColumn: 'Spalte „{column}“: {message}'
   addConsent: 'Einwilligungsfrage hinzufügen'
+  lost:
+    title: 'Vorhandene Antworten gälten nicht mehr als sensibel'
+    message: 'Anmeldungen enthalten bereits Antworten auf {questions}. Nach dieser Änderung werden sie nicht mehr als sensible Daten behandelt: Sie können in E-Mails erscheinen, und „Sensible Daten löschen“ entfernt sie nicht mehr. Wenn du eine Frage nicht mehr brauchst, blende sie stattdessen aus und behalte ihren Namen und ihre Datenschutzkategorie. Behalte die Änderung nur, wenn die Frage nie sensible Daten erhoben hat.'
+    undo: 'Änderung rückgängig machen'
+    keep: 'Änderung behalten'
   consent:
     title: 'Ich willige ein, dass die Angaben zu {category} aus diesem Formular zur Betreuung während der Veranstaltung genutzt und an das Veranstaltungsteam weitergegeben werden.'
     description: 'Freiwillig – sonst lass diese Felder leer. Jederzeit beim Veranstalter widerrufbar.'
@@ -619,11 +694,17 @@ mode:
   expert: 'Expert'
   condition: 'Contient des conditions – modifiables en mode standard'
 privacy:
+  required: 'Obligatoire : l’inscription dépend alors du consentement pour « {category} », ce qui exige une justification valable. Si une loi impose ces données, choisis une autre base juridique dans les paramètres de confidentialité.'
   undeclared: 'Ajoute « {category} » aux informations sur la protection des données. D’ici là, personne ne peut s’inscrire.'
   uncovered: 'Ajoute une question de consentement pour « {category} ». D’ici là, personne ne peut s’inscrire.'
   openNotice: 'Ouvrir les paramètres de confidentialité'
   inColumn: 'Colonne « {column} » : {message}'
   addConsent: 'Ajouter une question de consentement'
+  lost:
+    title: 'Les réponses existantes ne seraient plus traitées comme sensibles'
+    message: 'Des inscriptions contiennent déjà des réponses à {questions}. Après cette modification, elles ne sont plus traitées comme des données sensibles : elles peuvent apparaître dans les e-mails, et « Supprimer les données sensibles » ne les supprime plus. Si une question n’est plus nécessaire, masque-la plutôt et conserve son nom et sa catégorie de confidentialité. Ne garde la modification que si la question n’a jamais collecté de données sensibles.'
+    undo: 'Annuler la modification'
+    keep: 'Garder la modification'
   consent:
     title: 'J’accepte que les informations sur {category} données dans ce formulaire servent à la prise en charge du participant pendant l’événement et soient transmises à l’équipe.'
     description: 'Facultatif – sinon laisse ces champs vides. Révocable à tout moment auprès de l’organisateur.'
@@ -640,11 +721,17 @@ mode:
   expert: 'Ekspert'
   condition: 'Ma warunki – edytuj je w trybie standardowym'
 privacy:
+  required: 'Pole obowiązkowe: rejestracja zależy wtedy od zgody dotyczącej kategorii „{category}”, co wymaga ważnego uzasadnienia. Jeśli te dane są wymagane przez prawo, wybierz dla nich inną podstawę prawną w ustawieniach prywatności.'
   undeclared: 'Dodaj kategorię „{category}” do informacji o ochronie danych. Do tego czasu nikt nie może się zarejestrować.'
   uncovered: 'Dodaj pytanie o zgodę obejmujące kategorię „{category}”. Do tego czasu nikt nie może się zarejestrować.'
   openNotice: 'Otwórz ustawienia prywatności'
   inColumn: 'Kolumna „{column}”: {message}'
   addConsent: 'Dodaj pytanie o zgodę'
+  lost:
+    title: 'Istniejące odpowiedzi przestałyby być traktowane jako wrażliwe'
+    message: 'Zgłoszenia zawierają już odpowiedzi na pytania {questions}. Po tej zmianie nie będą już traktowane jako dane wrażliwe: mogą pojawiać się w e-mailach, a „Usuń dane wrażliwe” przestanie je usuwać. Jeśli pytanie nie jest już potrzebne, ukryj je zamiast tego i zachowaj jego nazwę oraz kategorię prywatności. Zachowaj zmianę tylko wtedy, gdy pytanie nigdy nie zbierało danych wrażliwych.'
+    undo: 'Cofnij zmianę'
+    keep: 'Zachowaj zmianę'
   consent:
     title: 'Zgadzam się na wykorzystanie podanych w tym formularzu informacji ({category}) do opieki nad uczestnikiem podczas wydarzenia oraz na ich przekazanie zespołowi wydarzenia.'
     description: 'Dobrowolne – w przeciwnym razie pozostaw te pola puste. Zgodę można w każdej chwili wycofać u organizatora.'
@@ -661,11 +748,17 @@ mode:
   expert: 'Expert'
   condition: 'Obsahuje podmínky – upravte je ve standardním režimu'
 privacy:
+  required: 'Povinné: registrace pak závisí na souhlasu pro kategorii „{category}“, což vyžaduje platné odůvodnění. Pokud tyto údaje vyžaduje zákon, nastav pro ně v nastavení ochrany údajů jiný právní základ.'
   undeclared: 'Doplň kategorii „{category}“ do informací o ochraně údajů. Do té doby se nikdo nemůže registrovat.'
   uncovered: 'Přidej otázku na souhlas pro kategorii „{category}“. Do té doby se nikdo nemůže registrovat.'
   openNotice: 'Otevřít nastavení ochrany údajů'
   inColumn: 'Sloupec „{column}“: {message}'
   addConsent: 'Přidat otázku na souhlas'
+  lost:
+    title: 'Stávající odpovědi by již nebyly považovány za citlivé'
+    message: 'Registrace již obsahují odpovědi na otázky {questions}. Po této změně se s nimi již nezachází jako s citlivými údaji: mohou se objevit v e-mailech a „Smazat citlivé údaje“ je již neodstraní. Pokud otázku již nepotřebuješ, raději ji skryj a ponech její název a kategorii ochrany údajů. Změnu ponech jen tehdy, pokud otázka nikdy nesbírala citlivé údaje.'
+    undo: 'Vrátit změnu'
+    keep: 'Ponechat změnu'
   consent:
     title: 'Souhlasím, aby údaje ({category}) z tohoto formuláře byly použity k péči o účastníka během akce a předány týmu akce.'
     description: 'Dobrovolné – jinak nech tato pole prázdná. Souhlas lze kdykoli odvolat u pořadatele.'

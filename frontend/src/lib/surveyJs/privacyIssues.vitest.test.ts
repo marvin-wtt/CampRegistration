@@ -106,6 +106,65 @@ describe('attachPrivacyIssues', () => {
     expect(options.openPrivacySettings).toHaveBeenCalled();
   });
 
+  describe('a required consent-based question', () => {
+    const consent = {
+      type: 'boolean',
+      name: 'consent_health',
+      privacyConsent: true,
+      privacyConsentFor: ['health'],
+    };
+    const required = { ...allergies, isRequired: true };
+
+    it('gets a note linking to the privacy settings', () => {
+      const { privacy, options, panelOf } = setup([required, consent]);
+
+      privacy.setNotice(null);
+      const panel = panelOf('allergies');
+      panel.onClick();
+
+      expect(panel.messageText).toBe('required:health');
+      expect(options.openPrivacySettings).toHaveBeenCalled();
+    });
+
+    it('gets none while the category rests on another basis', () => {
+      const { privacy, marked } = setup([required]);
+
+      privacy.setNotice({
+        mode: 'builder',
+        dataCategories: [
+          { key: 'health', specialCategoryBasis: 'health_care' },
+        ],
+      } as unknown as ComposedPrivacyNotice);
+
+      expect(marked('allergies')).toBe(false);
+    });
+
+    it('notes a required matrix column too', () => {
+      const { privacy, panelOf } = setup([
+        {
+          type: 'matrixdynamic',
+          name: 'kids',
+          columns: [
+            { name: 'meds', privacyCategory: 'health', isRequired: true },
+          ],
+        },
+        consent,
+      ]);
+
+      privacy.setNotice(null);
+
+      expect(panelOf('kids').messageText).toBe('required:health:meds');
+    });
+
+    it('gets none when optional', () => {
+      const { privacy, marked } = setup([allergies, consent]);
+
+      privacy.setNotice(null);
+
+      expect(marked('allergies')).toBe(false);
+    });
+  });
+
   it('marks a matrix for its tagged column', () => {
     const { privacy, panelOf, marked } = setup([
       {

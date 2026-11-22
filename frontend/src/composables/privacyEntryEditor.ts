@@ -8,6 +8,7 @@ import {
   type PrivacyRecipientRef,
   type SpecialCategoryBasisKey,
 } from '@camp-registration/common/privacy';
+import type { Translatable } from '@camp-registration/common/entities';
 
 /** The entry lists an organization notice and an event addendum share. */
 interface EditableEntries {
@@ -62,6 +63,16 @@ export function usePrivacyEntryEditor(content: Ref<EditableEntries>) {
     }
   }
 
+  function setLegalReference(
+    key: PrivacyDataCategoryRef,
+    value: Translatable | null | undefined,
+  ) {
+    const entry = dataCategory(key);
+    if (entry) {
+      entry.legalReference = value ?? null;
+    }
+  }
+
   function recipient(key: PrivacyRecipientRef) {
     return content.value.recipients?.find((entry) => entry.key === key);
   }
@@ -99,6 +110,7 @@ export function usePrivacyEntryEditor(content: Ref<EditableEntries>) {
     removeDataCategory,
     toggleDataCategory,
     setSpecialBasis,
+    setLegalReference,
     recipient,
     hasRecipient,
     addRecipient,
