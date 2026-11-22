@@ -44,7 +44,7 @@ function attachmentsChanged(
 }
 
 // Which automated email (and group variant) an entry is about.
-export function templateIdentity(
+function templateIdentity(
   template: Pick<MessageTemplate, 'trigger' | 'group'> | null | undefined,
 ): AuditDetails {
   if (!template) {

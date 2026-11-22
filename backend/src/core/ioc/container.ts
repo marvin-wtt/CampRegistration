@@ -13,7 +13,3 @@ container.bind<AppConfig>(TYPES.Config).toConstantValue(config);
 export function resolve<T>(id: ServiceIdentifier<T>) {
   return container.get<T>(id);
 }
-
-export function bindSingleton<T>(id: ServiceIdentifier<T>) {
-  container.bind(id).toSelf().inSingletonScope();
-}

@@ -11,7 +11,7 @@ interface AuthWithData {
   tokens: AuthTokensResponse;
 }
 
-export const authResource = (data: AuthWithData): AuthenticationResource => {
+const authResource = (data: AuthWithData): AuthenticationResource => {
   return {
     profile: new ProfileResource(data.user).transform(),
     tokens: {

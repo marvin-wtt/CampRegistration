@@ -189,7 +189,7 @@ function toEventBox(placement: Placement, options: DayLayoutOptions): EventBox {
 }
 
 /** Larger boxes get larger type, within a range that still prints legibly. */
-export function baseFontSize(height: number): number {
+function baseFontSize(height: number): number {
   const size = 6.6 + height * 0.045;
 
   return Math.min(MAX_FONT_PX, Math.max(MIN_FONT_PX, Math.round(size * 2) / 2));

@@ -59,7 +59,7 @@ export type PurgeState = Pick<
 export type RetentionEvent = PurgeState &
   Pick<Event, 'id' | 'endAt' | 'timezone' | 'form'>;
 
-export type RetentionState = EventRetentionState & {
+type RetentionState = EventRetentionState & {
   postponedBy: { name: string } | null;
 };
 

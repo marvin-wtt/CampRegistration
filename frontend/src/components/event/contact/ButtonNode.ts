@@ -12,7 +12,7 @@ export function isButtonLink(href: string): boolean {
   return LINK_RE.test(href.trim());
 }
 
-export interface EmailButtonOptions {
+interface EmailButtonOptions {
   // Resolves with the new attributes, `null` to remove the button, or
   // `undefined` to leave it as it is.
   edit: (

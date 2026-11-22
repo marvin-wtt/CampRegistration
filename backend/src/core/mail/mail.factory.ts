@@ -4,7 +4,7 @@ import type { IMailer } from '#core/mail/mailer.types';
 import { NoOpMailer } from '#core/mail/drivers/noop.mailer';
 import { MailjetMailer } from '#core/mail/drivers/mailjet/mailjet.mailer';
 
-export type MailDriver = AppConfig['email']['driver'];
+type MailDriver = AppConfig['email']['driver'];
 
 // Record<MailDriver, ...>, not Record<string, ...>: adding a driver to
 // EMAIL_DRIVER's zod enum without registering it here is then a compile

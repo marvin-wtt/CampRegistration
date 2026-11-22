@@ -24,7 +24,7 @@ export interface PrintChoreRosterPayload {
 }
 
 // Landscape A4 fits ten day columns next to the chore names.
-export const MAX_DAYS_PER_PAGE = 10;
+const MAX_DAYS_PER_PAGE = 10;
 
 /**
  * Splits the range into as few pages as fit, as evenly as possible — a

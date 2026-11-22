@@ -1,4 +1,4 @@
-export interface ApiErrorOptions {
+interface ApiErrorOptions {
   // Stable machine-readable error code (e.g. `EBADCSRFTOKEN`), surfaced to the
   // client so the frontend can react to specific errors without parsing the
   // human-readable message.

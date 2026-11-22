@@ -10,7 +10,7 @@ import type { CursorPaginated } from '@camp-registration/common/entities';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useAction } from '@/composables/action';
 
-export interface ServerListQueryContext {
+interface ServerListQueryContext {
   /** Cursor for the next chunk; `undefined` on the first (reset) load. */
   cursor: string | undefined;
   limit: number;

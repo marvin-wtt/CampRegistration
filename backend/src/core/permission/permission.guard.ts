@@ -71,9 +71,9 @@ export function clearScopeResolvers(): void {
 }
 
 /** How far a permission reaches: every record, the user's own, or none. */
-export type ScopeAccess = 'all' | 'own' | null;
+type ScopeAccess = 'all' | 'own' | null;
 
-export async function scopeAccess<S extends PermissionScope>(
+async function scopeAccess<S extends PermissionScope>(
   req: Request,
   scope: S,
   permission: ScopePermission<S>,

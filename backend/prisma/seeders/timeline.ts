@@ -18,11 +18,6 @@ export function seedDate(days: number, time = '12:00'): Date {
     .toDate();
 }
 
-/** The `YYYY-MM-DD` string form, for the date-only columns (tasks, program). */
-export function seedDay(days: number): string {
-  return anchor.clone().add(days, 'days').format('YYYY-MM-DD');
-}
-
 /** Day offsets that put each event into a distinct lifecycle phase. */
 export const PHASE = {
   /** Flagship: three months out, registration open. */

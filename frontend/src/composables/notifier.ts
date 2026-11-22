@@ -2,7 +2,7 @@ import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from '@/composables/errorText';
 
-export interface ProgressToast {
+interface ProgressToast {
   update: (caption: string) => void;
   succeed: () => void;
   fail: (err: unknown, message?: string) => void;

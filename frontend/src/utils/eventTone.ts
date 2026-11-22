@@ -1,4 +1,4 @@
-export const EVENT_TONES = ['primary', 'secondary', 'tertiary'] as const;
+const EVENT_TONES = ['primary', 'secondary', 'tertiary'] as const;
 
 export type EventTone = (typeof EVENT_TONES)[number];
 

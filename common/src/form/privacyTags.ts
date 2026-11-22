@@ -40,7 +40,7 @@ export interface PrivacyTaggedQuestion {
 }
 
 /** A tagged question's answer key, prefixed by where it lives: `kids.meds`. */
-export function answerPath(question: PrivacyTaggedQuestion): string {
+function answerPath(question: PrivacyTaggedQuestion): string {
   const key = question.valueName ?? question.name;
   return question.within ? `${question.within}.${key}` : key;
 }

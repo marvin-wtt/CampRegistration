@@ -11,7 +11,7 @@ import { useFinanceStore } from '@/stores/finance-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
 /** A category grouped under its parent, for pickers and the summary. */
-export interface CategoryGroup {
+interface CategoryGroup {
   /** `null` for the top-level categories that belong to no group. */
   group: FinanceCategory | null;
   categories: FinanceCategory[];

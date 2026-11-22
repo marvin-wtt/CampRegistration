@@ -12,7 +12,7 @@ import type {
 import { shuffleTiedRuns, spreadWithinTies } from '#utils/ordering';
 
 // Kept out of the UI: people only ever see Light / Normal / Heavy.
-export const EFFORT_POINTS: Record<ChoreEffort, number> = {
+const EFFORT_POINTS: Record<ChoreEffort, number> = {
   LIGHT: 1,
   NORMAL: 2,
   HEAVY: 3,
@@ -39,7 +39,7 @@ export interface PersonStats {
   days: Map<string, DayStats>;
 }
 
-export interface DayStats {
+interface DayStats {
   dutyCount: number;
   load: number;
 }

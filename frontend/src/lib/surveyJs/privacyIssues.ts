@@ -60,7 +60,7 @@ function issueFor(
  * The issue a question raises: by its own tag, or for a matrix by its first
  * column raising one, as a column has no box of its own to show it in.
  */
-export function questionPrivacyIssue(
+function questionPrivacyIssue(
   question: Question,
   issues: FormPrivacyIssues,
 ): QuestionPrivacyIssue | null {

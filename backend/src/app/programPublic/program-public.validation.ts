@@ -7,7 +7,7 @@ export const ProgramPublicSettingsValidation = z.object({
   allowPastDates: z.boolean(),
 }) satisfies z.ZodType<ProgramPublicSettings>;
 
-export const show = z.object({
+const show = z.object({
   params: z.object({
     eventId: z.ulid(),
   }),

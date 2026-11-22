@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { DateSchema } from '#core/validation/helper';
 
-export const index = z.object({
+const index = z.object({
   params: z.object({
     eventId: z.ulid(),
   }),
 });
 
-export const update = z.object({
+const update = z.object({
   params: z.object({
     eventId: z.ulid(),
     date: DateSchema,
@@ -17,14 +17,14 @@ export const update = z.object({
   }),
 });
 
-export const destroy = z.object({
+const destroy = z.object({
   params: z.object({
     eventId: z.ulid(),
     date: DateSchema,
   }),
 });
 
-export const bulkPublish = z.object({
+const bulkPublish = z.object({
   params: z.object({
     eventId: z.ulid(),
   }),

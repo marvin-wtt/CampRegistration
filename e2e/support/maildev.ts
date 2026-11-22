@@ -1,6 +1,6 @@
-import { expect } from "@playwright/test";
+import { expect } from '@playwright/test';
 
-export interface MaildevAddress {
+interface MaildevAddress {
   address: string;
   name: string;
 }
@@ -13,9 +13,9 @@ export interface MaildevMessage {
   to: MaildevAddress[];
 }
 
-const protocol = process.env.MAILDEV_PROTOCOL ?? "http";
-const host = process.env.MAILDEV_HOST ?? "localhost";
-const apiPort = process.env.MAILDEV_API_PORT ?? "1081";
+const protocol = process.env.MAILDEV_PROTOCOL ?? 'http';
+const host = process.env.MAILDEV_HOST ?? 'localhost';
+const apiPort = process.env.MAILDEV_API_PORT ?? '1081';
 const baseUrl = `${protocol}://${host}:${apiPort}`;
 
 async function request<T>(method: string, path: string): Promise<T> {
@@ -29,7 +29,7 @@ async function request<T>(method: string, path: string): Promise<T> {
       const res = await fetch(`${baseUrl}${path}`, {
         method,
         // Avoid socket reuse, which is the source of the ECONNRESET races.
-        headers: { connection: "close" },
+        headers: { connection: 'close' },
       });
 
       if (!res.ok) {
@@ -41,7 +41,7 @@ async function request<T>(method: string, path: string): Promise<T> {
       return res.json() as Promise<T>;
     } catch (err) {
       const isConnReset =
-        err instanceof TypeError && err.message === "fetch failed";
+        err instanceof TypeError && err.message === 'fetch failed';
       if (!isConnReset || attempt >= maxAttempts) {
         throw err;
       }
@@ -51,10 +51,10 @@ async function request<T>(method: string, path: string): Promise<T> {
 }
 
 export function getAllMessages(): Promise<MaildevMessage[]> {
-  return request<MaildevMessage[]>("GET", "/email");
+  return request<MaildevMessage[]>('GET', '/email');
 }
 
-export async function getMessageBySentTo(
+async function getMessageBySentTo(
   address: string,
 ): Promise<MaildevMessage | null> {
   const messages = await getAllMessages();
@@ -94,5 +94,5 @@ export async function waitForMessageBySentTo(
 }
 
 export async function deleteAllMessages(): Promise<void> {
-  await request<void>("DELETE", "/email/all");
+  await request<void>('DELETE', '/email/all');
 }

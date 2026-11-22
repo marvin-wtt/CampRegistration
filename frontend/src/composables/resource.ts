@@ -45,7 +45,7 @@ export interface ResourceOptions<T> {
   fetch: (key: string) => Promise<T>;
 }
 
-export interface MutateOptions<T, R> extends ActionOptions {
+interface MutateOptions<T, R> extends ActionOptions {
   /** Folds a successful result into the data. */
   apply?: (current: T, result: R) => T;
   /** Shown right away; undone if the write fails. */
@@ -362,7 +362,7 @@ function createResource<T>(options: ResourceOptions<T>) {
   return { resource, internal: { data, loadedKey, currentKey } };
 }
 
-export type CollectionRealtimeOptions<Item extends { id: string }> = Omit<
+type CollectionRealtimeOptions<Item extends { id: string }> = Omit<
   RealtimeCollectionOptions<Item>,
   'data' | 'invalidate' | 'reload' | 'key'
 > & { resource: RealtimeResource };

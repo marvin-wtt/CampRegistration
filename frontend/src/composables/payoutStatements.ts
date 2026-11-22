@@ -28,7 +28,7 @@ export function statementLabels(
  * The current statements an edit would make outdated: those listing the
  * receipt, and on a new payer, theirs it now falls under.
  */
-export function affectedStatementLabels(
+function affectedStatementLabels(
   before: Expense,
   after: Pick<Expense, 'type' | 'amount' | 'paidByUserId' | 'paidByName'>,
   payouts: readonly Payout[] | undefined,

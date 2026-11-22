@@ -88,7 +88,7 @@ export abstract class JsonResource<TInput, TOutput> {
   }
 }
 
-export class ResourceCollection<
+class ResourceCollection<
   TInput,
   TOutput,
   TResource extends JsonResource<TInput, TOutput>,
