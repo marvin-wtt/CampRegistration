@@ -27,6 +27,30 @@ export { formLintOptions } from './lint.js';
 export { extractEventData } from './eventData.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
+  answeredSpecialCategoryQuestions,
+  clearSpecialCategoryAnswers,
+  consentAnswers,
+  consentTexts,
+  isSpecialCategory,
+  extractPrivacyTags,
+  specialCategoryAnswerKeys,
+  taggedSpecialCategories,
+  uncoveredConsentCategories,
+  unconsentedQuestions,
+  type UnconsentedOptions,
+  type ConsentQuestion,
+  type FormPrivacyTags,
+  type PrivacyTaggedQuestion,
+} from './privacyTags.js';
+export {
+  consentBasedCategories,
+  formPrivacyIssues,
+  hasPrivacyIssues,
+  privacyIssueKind,
+  type FormPrivacyIssueKind,
+  type FormPrivacyIssues,
+} from './privacyCompliance.js';
+export {
   extractFormFields,
   extractEventDataTypes,
   getSelectOptions,
@@ -41,8 +65,18 @@ export {
   EVENT_BANNER_SLOT,
   FILE_VARIABLE,
 } from './files.js';
+export {
+  addEventFileSlotResolver,
+  addFileSlotResolver,
+  fileSlotPath,
+  type FileSlotOptions,
+} from './fileSlots.js';
 export type { GroupCountryMatch } from './questions/groupCountryMatch.js';
 export {
   PAYMENT_TOTAL_MODES,
   type PaymentTotalMode,
 } from './properties/showPaymentTotal.js';
+export {
+  REGISTRATION_PROPERTY_CATEGORY,
+  REGISTRATION_PROPERTY_CATEGORY_INDEX,
+} from './properties/category.js';

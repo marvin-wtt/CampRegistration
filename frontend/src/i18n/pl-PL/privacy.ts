@@ -46,6 +46,10 @@ export default {
     funding_body: 'Podmiot finansujący',
     medical_provider: 'Lekarze i służby ratunkowe',
     public_authority: 'Organy publiczne',
+    partner_organization: 'Organizacja partnerska lub współorganizująca',
+    participants: 'Inni uczestnicy',
+    it_service_provider:
+      'Dostawcy usług IT (np. poczta e-mail, chmura, księgowość)',
     payment_provider: 'Dostawca usług płatniczych',
     platform_operator: 'Operator tej platformy zgłoszeniowej',
   },
@@ -84,11 +88,6 @@ export default {
       'Tylko w celu ustalenia, dochodzenia lub obrony roszczeń, na przykład protokół wypadku zachowany na potrzeby sporu z ubezpieczycielem.',
   },
 
-  retentionAnchor: {
-    event_end: 'po zakończeniu wydarzenia',
-    submission: 'po przesłaniu zgłoszenia',
-  },
-
   retentionUntil: {
     period: 'przez określony czas',
     consent_withdrawn: 'do wycofania zgody, na której się opierają',
@@ -109,7 +108,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Podstawa prawna',
-      art9Other: 'Wybierz inną podstawę prawną',
       art9Advisory:
         'Same w sobie nie są wrażliwe. Jeśli formularz oferuje opcje halal lub koszerne, zaznacz też „Przynależność religijna”; jeśli zbiera alergie, zaznacz „Alergie”.',
       consentQuestion:
@@ -117,10 +115,6 @@ export default {
       recipientName: 'Nazwa (opcjonalnie)',
       recipientNameHint:
         'Wskazanie konkretnego odbiorcy jest jaśniejsze niż sama kategoria.',
-    },
-    origin: {
-      organization: 'Od organizacji',
-      event: 'Dodano tutaj',
     },
     action: {
       publish: 'Opublikuj',
@@ -155,12 +149,15 @@ export default {
     special_category_basis:
       'Szczególne kategorie danych nie mają podstawy prawnej z art. 9',
     custom_category_label: 'Dodana przez Ciebie kategoria nie ma nazwy',
+    custom_recipient_label: 'Dodany przez Ciebie odbiorca nie ma nazwy',
     automated_details:
       'Zadeklarowano zautomatyzowane podejmowanie decyzji, ale nie wyjaśniono jego zasad',
     recipients: 'Nie wskazano żadnych odbiorców',
     retention: 'Nie określono okresu przechowywania',
     retention_exception:
       'Wyjątek nie ma okresu albo nie wskazano, czego dotyczy',
+    special_category_retention:
+      'Brak okresu dla danych o zdrowiu i innych danych wrażliwych albo jest dłuższy niż okres ogólny',
     retention_exception_consent_basis:
       'Dane przechowywane do wycofania zgody są powiązane z celem, który nie opiera się na zgodzie',
     transfer_countries:

@@ -11,7 +11,11 @@ import {
   renderChangesText,
 } from '#app/registration/messages/changes.markup';
 
-const labels = { cleared: 'removed', file: 'file updated' };
+const labels = {
+  cleared: 'removed',
+  file: 'file updated',
+  sensitive: 'changed',
+};
 
 // `setVariables` reads these off the event to expose them as survey variables,
 // so a stub without them is not a event any form can be rendered against.
@@ -74,7 +78,13 @@ describe('diffRegistrationData', () => {
     );
 
     expect(changes).toEqual([
-      { path: 'first_name', label: 'First name', value: 'John', isFile: false },
+      {
+        path: 'first_name',
+        label: 'First name',
+        value: 'John',
+        isFile: false,
+        isSensitive: false,
+      },
     ]);
   });
 
@@ -87,7 +97,13 @@ describe('diffRegistrationData', () => {
     );
 
     expect(changes).toEqual([
-      { path: 'phone', label: 'Phone', value: '+49 170 1234', isFile: false },
+      {
+        path: 'phone',
+        label: 'Phone',
+        value: '+49 170 1234',
+        isFile: false,
+        isSensitive: false,
+      },
     ]);
   });
 
@@ -100,7 +116,13 @@ describe('diffRegistrationData', () => {
     );
 
     expect(changes).toEqual([
-      { path: 'phone', label: 'Phone', value: null, isFile: false },
+      {
+        path: 'phone',
+        label: 'Phone',
+        value: null,
+        isFile: false,
+        isSensitive: false,
+      },
     ]);
   });
 
@@ -143,6 +165,7 @@ describe('diffRegistrationData', () => {
         label: 'Allergies',
         value: 'Nuts, Milk',
         isFile: false,
+        isSensitive: false,
       },
     ]);
   });
@@ -185,7 +208,13 @@ describe('diffRegistrationData', () => {
 
     // The stored id never reaches the struct at all; the renderers word it.
     expect(changes).toEqual([
-      { path: 'passport', label: 'Passport', value: null, isFile: true },
+      {
+        path: 'passport',
+        label: 'Passport',
+        value: null,
+        isFile: true,
+        isSensitive: false,
+      },
     ]);
   });
 
@@ -278,10 +307,93 @@ describe('changesForRegistration', () => {
   });
 });
 
+describe('sensitive answers', () => {
+  const event = eventWith({
+    elements: [
+      { type: 'text', name: 'phone', title: 'Phone' },
+      {
+        type: 'comment',
+        name: 'allergies',
+        title: 'Allergies',
+        privacyCategory: 'allergies',
+      },
+      {
+        type: 'paneldynamic',
+        name: 'kids',
+        title: 'Kids',
+        templateElements: [
+          {
+            type: 'comment',
+            name: 'medication',
+            title: 'Medication',
+            privacyCategory: 'medication',
+          },
+        ],
+      },
+    ],
+  });
+
+  it('lists a changed special-category answer without its value', () => {
+    const changes = diffRegistrationData(
+      event,
+      { phone: '1', allergies: 'none', kids: [{ medication: 'a' }] },
+      { phone: '2', allergies: 'nuts', kids: [{ medication: 'b' }] },
+      'en',
+    );
+
+    expect(changes).toEqual([
+      {
+        path: 'phone',
+        label: 'Phone',
+        value: '2',
+        isFile: false,
+        isSensitive: false,
+      },
+      {
+        path: 'allergies',
+        label: 'Allergies',
+        value: null,
+        isFile: false,
+        isSensitive: true,
+      },
+      {
+        path: 'kids.0.medication',
+        label: 'Kids > #1 > Medication',
+        value: null,
+        isFile: false,
+        isSensitive: true,
+      },
+    ]);
+  });
+
+  it('words it as changed, never as removed', () => {
+    const changes = diffRegistrationData(
+      event,
+      { allergies: 'none' },
+      { allergies: 'nuts' },
+      'en',
+    );
+
+    expect(renderChangesText(changes, labels)).toBe('Allergies: changed');
+  });
+});
+
 describe('renderChangesHtml', () => {
   const changes = [
-    { path: 'diet', label: 'Food > Diet', value: 'Vegan', isFile: false },
-    { path: 'phone', label: 'Phone', value: null, isFile: false },
+    {
+      path: 'diet',
+      label: 'Food > Diet',
+      value: 'Vegan',
+      isFile: false,
+      isSensitive: false,
+    },
+    {
+      path: 'phone',
+      label: 'Phone',
+      value: null,
+      isFile: false,
+      isSensitive: false,
+    },
   ];
 
   it('renders one list item per change', () => {
@@ -305,6 +417,7 @@ describe('renderChangesHtml', () => {
           label: 'Notes',
           value: '<script>alert(1)</script>',
           isFile: false,
+          isSensitive: false,
         },
       ],
       labels,
@@ -327,8 +440,20 @@ describe('renderChangesText', () => {
   it('joins the changes into a single line', () => {
     const text = renderChangesText(
       [
-        { path: 'diet', label: 'Diet', value: 'Vegan', isFile: false },
-        { path: 'passport', label: 'Passport', value: null, isFile: true },
+        {
+          path: 'diet',
+          label: 'Diet',
+          value: 'Vegan',
+          isFile: false,
+          isSensitive: false,
+        },
+        {
+          path: 'passport',
+          label: 'Passport',
+          value: null,
+          isFile: true,
+          isSensitive: false,
+        },
       ],
       labels,
     );

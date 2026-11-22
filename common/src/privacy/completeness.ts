@@ -3,6 +3,7 @@ import { isCustomKey, isSpecialCategory } from './catalogue.js';
 import { composePrivacyNotice, retentionExceptions } from './compose.js';
 import {
   isConsentBoundException,
+  maxSpecialCategoryWeeks,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
 } from './content.js';
@@ -21,10 +22,12 @@ export type PrivacyNoticeGap =
   | 'data_categories'
   | 'special_category_basis'
   | 'custom_category_label'
+  | 'custom_recipient_label'
   | 'recipients'
   | 'retention'
   | 'retention_exception'
   | 'retention_exception_consent_basis'
+  | 'special_category_retention'
   | 'transfer_countries'
   | 'transfer_safeguard'
   | 'dpo_details'
@@ -38,7 +41,7 @@ export type PrivacyNoticeGap =
  * would otherwise fail silently in the UI.
  */
 export type PrivacyNoticeSection =
-  'data' | 'purposes' | 'recipients' | 'retention' | 'free_text';
+  'controller' | 'data' | 'purposes' | 'recipients' | 'retention' | 'free_text';
 
 export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   PrivacyNoticeGap,
@@ -50,13 +53,15 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   data_categories: 'data',
   special_category_basis: 'data',
   custom_category_label: 'data',
+  custom_recipient_label: 'recipients',
   recipients: 'recipients',
   retention: 'retention',
   retention_exception: 'retention',
   retention_exception_consent_basis: 'retention',
+  special_category_retention: 'retention',
   transfer_countries: 'retention',
   transfer_safeguard: 'retention',
-  dpo_details: 'retention',
+  dpo_details: 'controller',
   automated_details: 'retention',
   free_text: 'free_text',
 };
@@ -73,21 +78,22 @@ export function gapsInSection(
   return gaps.filter((gap) => PRIVACY_NOTICE_GAP_SECTIONS[gap] === section);
 }
 
-function isBlank(value: Translatable | null | undefined): boolean {
-  if (value === null || value === undefined) {
-    return true;
-  }
-  if (typeof value === 'string') {
-    return value.trim().length === 0;
-  }
-  const values = Object.values(value);
-  return values.length === 0 || values.every((v) => v.trim().length === 0);
+export interface PrivacyNoticeCompletenessOptions {
+  /**
+   * Locales the notice is read in. A translated text then needs every one of
+   * them (Art. 12: in the reader's language); an untranslated text serves all.
+   * Without it, text in any locale counts.
+   */
+  locales?: readonly string[] | undefined;
 }
 
 export function privacyNoticeCompleteness(
   content: PrivacyNoticeContent | null | undefined,
+  { locales }: PrivacyNoticeCompletenessOptions = {},
 ): PrivacyNoticeCompleteness {
   const gaps: PrivacyNoticeGap[] = [];
+  const isBlank = (value: Translatable | null | undefined): boolean =>
+    isBlankIn(value, locales);
 
   if (!content) {
     return {
@@ -158,6 +164,14 @@ export function privacyNoticeCompleteness(
     gaps.push('recipients');
   }
 
+  if (
+    content.recipients.some(
+      (recipient) => isCustomKey(recipient.key) && isBlank(recipient.label),
+    )
+  ) {
+    gaps.push('custom_recipient_label');
+  }
+
   if (!content.retention || content.retention.months <= 0) {
     gaps.push('retention');
   }
@@ -166,11 +180,12 @@ export function privacyNoticeCompleteness(
 
   // An exception with no period says nothing, and one the author named himself
   // needs that name — the catalogue cannot supply it. A consent-bound exception
-  // is exempt from the first: what ends it is the withdrawal, not a number.
+  // ends with the withdrawal, but still needs an upper limit for consent that
+  // is never withdrawn.
   if (
     exceptions.some(
       (exception) =>
-        (!isConsentBoundException(exception) && exception.months <= 0) ||
+        !((exception.months ?? 0) > 0) ||
         (isCustomKey(exception.scope) && isBlank(exception.label)),
     )
   ) {
@@ -195,6 +210,17 @@ export function privacyNoticeCompleteness(
     )
   ) {
     gaps.push('retention_exception_consent_basis');
+  }
+
+  // Required on every notice, not only one declaring a special category: an
+  // event may add one, and events inherit this period rather than set it.
+  const special = content.retention?.specialCategories;
+  if (
+    !special ||
+    special.weeks <= 0 ||
+    special.weeks > maxSpecialCategoryWeeks(content.retention?.months ?? 0)
+  ) {
+    gaps.push('special_category_retention');
   }
 
   if (content.thirdCountryTransfers.enabled) {
@@ -227,6 +253,24 @@ export function privacyNoticeCompleteness(
   return { complete: gaps.length === 0, gaps };
 }
 
+function isBlankIn(
+  value: Translatable | null | undefined,
+  locales: readonly string[] | undefined,
+): boolean {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return value.trim().length === 0;
+  }
+  const filled = (text: string | undefined) =>
+    typeof text === 'string' && text.trim().length > 0;
+  if (locales?.length) {
+    return !locales.every((locale) => filled(value[locale]));
+  }
+  return !Object.values(value).some(filled);
+}
+
 /**
  * The Art. 13 gaps an event's addendum introduces into the notice its registrants
  * actually read.
@@ -245,10 +289,14 @@ export function privacyNoticeCompleteness(
 export function addendumGaps(
   organization: PrivacyNoticeContent | null,
   addendum: PrivacyNoticeAddendum,
+  options: PrivacyNoticeCompletenessOptions = {},
 ): PrivacyNoticeGap[] {
-  const inherited = new Set(privacyNoticeCompleteness(organization).gaps);
+  const inherited = new Set(
+    privacyNoticeCompleteness(organization, options).gaps,
+  );
 
   return privacyNoticeCompleteness(
     composePrivacyNotice(organization, addendum),
+    options,
   ).gaps.filter((gap) => !inherited.has(gap));
 }

@@ -60,17 +60,18 @@
         round
         flat
         dense
-        :disable="actionLoading"
         :aria-label="t('action.more')"
         @click.stop
         @keyup.enter.stop
       >
+        <!-- Delete opens the data settings page, where everything
+             irreversible is explained and confirmed. -->
         <event-card-menu
           :event
           :share-warning="shareWarning"
-          @edit="editAction"
+          @edit="go('management.event.settings')"
           @archive="archiveAction"
-          @delete="deleteAction"
+          @delete="go('management.event.settings.data')"
           @share="shareAction"
         />
       </q-btn>
@@ -102,16 +103,16 @@
 
       <!-- Registration status -->
       <component
-        :is="canEdit ? 'button' : 'div'"
+        :is="canEditWindow ? 'button' : 'div'"
         class="mgmt-card__status"
         :class="[
           `mgmt-card__status--${status.kind}`,
-          { 'mgmt-card__status--editable': canEdit },
+          { 'mgmt-card__status--editable': canEditWindow },
         ]"
-        :type="canEdit ? 'button' : undefined"
-        :disabled="canEdit ? registrationLoading : undefined"
-        :aria-label="canEdit ? t('registration.manage') : undefined"
-        @click="canEdit && manageRegistration()"
+        :type="canEditWindow ? 'button' : undefined"
+        :disabled="canEditWindow ? registrationLoading : undefined"
+        :aria-label="canEditWindow ? t('registration.manage') : undefined"
+        @click="canEditWindow && manageRegistration()"
       >
         <q-spinner
           v-if="registrationLoading"
@@ -124,7 +125,7 @@
         />
         {{ status.label }}
         <q-icon
-          v-if="canEdit && !registrationLoading"
+          v-if="canEditWindow && !registrationLoading"
           name="edit"
           size="13px"
           class="mgmt-card__status-edit"
@@ -166,19 +167,19 @@
 </template>
 
 <script lang="ts" setup>
-import EventCardMenu from '@/components/event/index/EventCardMenu.vue';
 import EventAvatar from '@/components/event/EventAvatar.vue';
 import { useEventsStore } from '@/stores/events-store';
 import { useRouter } from 'vue-router';
+import EventCardMenu from '@/components/event/index/EventCardMenu.vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { sumGroupValues, zonedInstant } from '@camp-registration/common/utils';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
-import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import RegistrationScheduleDialog from '@/components/event/index/RegistrationScheduleDialog.vue';
 import type { RegistrationScheduleResult } from '@/components/event/index/RegistrationScheduleDialog.vue';
 import { usePermissions } from '@/composables/permissions';
@@ -270,7 +271,8 @@ interface Capacity {
 
 const capacity = computed<Capacity | null>(() => {
   const max = sumGroupValues(event.maxParticipants);
-  if (max <= 0) {
+  // Deleted registrations would read as free places.
+  if (max <= 0 || event.registrationDataPurgedAt) {
     return null;
   }
 
@@ -313,12 +315,28 @@ function shortDate(value: string): string {
 const CLOSING_SOON_WINDOW = 3 * 24 * 60 * 60 * 1000;
 
 interface Status {
-  kind: 'open' | 'closes' | 'opens' | 'unscheduled' | 'closed' | 'blocked';
+  kind:
+    | 'open'
+    | 'closes'
+    | 'opens'
+    | 'unscheduled'
+    | 'closed'
+    | 'blocked'
+    | 'purged';
   icon: string;
   label: string;
 }
 
 const status = computed<Status>(() => {
+  // Closed for good, whatever else holds (docs/privacy.md, 8).
+  if (event.registrationDataPurgedAt) {
+    return {
+      kind: 'purged',
+      icon: 'auto_delete',
+      label: t('purgedStatus'),
+    };
+  }
+
   // Takes precedence over the registration window: while the organization is
   // unverified the event is unlisted and refuses registrations, so showing
   // "registration open" here would be a plain untruth.
@@ -412,19 +430,13 @@ const quickLinks = computed<QuickLink[]>(() => {
 
 const canEdit = computed<boolean>(() => canFor(event.id, 'event.edit'));
 
-const registrationLoading = ref<boolean>(false);
-const editLoading = ref<boolean>(false);
-const archiveLoading = ref<boolean>(false);
-const deleteLoading = ref<boolean>(false);
+// After a deletion the window is frozen (docs/privacy.md, 8).
+const canEditWindow = computed<boolean>(
+  () => canEdit.value && !isRetentionPurged(event),
+);
 
-const actionLoading = computed<boolean>(() => {
-  return (
-    registrationLoading.value ||
-    deleteLoading.value ||
-    editLoading.value ||
-    archiveLoading.value
-  );
-});
+const registrationLoading = ref<boolean>(false);
+const archiveLoading = ref<boolean>(false);
 
 function manageRegistration() {
   quasar
@@ -488,17 +500,6 @@ function shareAction() {
     });
 }
 
-function editAction() {
-  void withLoading(editLoading, async () => {
-    await router.push({
-      name: 'management.event.settings',
-      params: {
-        eventId: event.id,
-      },
-    });
-  });
-}
-
 function archiveAction(archived: boolean) {
   void withLoading(archiveLoading, async () => {
     await capsStore.setArchived(event.id, archived);
@@ -519,25 +520,6 @@ function archiveAction(archived: boolean) {
       ],
     });
   });
-}
-
-function deleteAction() {
-  quasar
-    .dialog({
-      component: SafeDeleteDialog,
-      componentProps: {
-        title: t('dialog.delete.title'),
-        message: t('dialog.delete.message'),
-        label: t('dialog.delete.label'),
-        value: to(event.name),
-      },
-      persistent: true,
-    })
-    .onOk(() => {
-      void withLoading(deleteLoading, async () => {
-        await capsStore.deleteEntry(event.id);
-      });
-    });
 }
 
 async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
@@ -780,6 +762,14 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   color: var(--md3-on-surface-variant);
 }
 
+/* Marked like a deleted table cell. */
+.mgmt-card__status--purged {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+  border: 1px dashed var(--md3-outline);
+  font-style: italic;
+}
+
 /* Distinct from `closed`: nothing the manager configures will change it until
    the organization is verified. */
 .mgmt-card__status--blocked {
@@ -842,17 +832,13 @@ share:
   closed: 'Registration is closed — visitors can view the event but cannot sign up.'
   upcoming: 'Registration has not opened yet — visitors can view the event but cannot sign up yet.'
   unverified: 'Only this event’s managers can open the link while {organization} is unverified.'
-dialog:
-  delete:
-    title: 'Delete event'
-    message: 'Are you sure you want to delete this event? All registrations will be lost. This event cannot be used as a template for future events.'
-    label: 'Event name'
 notification:
   archived: 'Event archived'
   unarchived: 'Event restored from the archive'
   undo: 'Undo'
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
+purgedStatus: 'Data deleted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -883,17 +869,13 @@ share:
   closed: 'Die Anmeldung ist geschlossen — Besucher sehen die Veranstaltung, können sich aber nicht anmelden.'
   upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen die Veranstaltung, können sich aber noch nicht anmelden.'
   unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieser Veranstaltung den Link öffnen.'
-dialog:
-  delete:
-    title: 'Veranstaltung löschen'
-    message: 'Bist du sicher, dass du diese Veranstaltung löschen möchtest? Alle Anmeldungen gehen verloren. Diese Veranstaltung kann nicht als Vorlage für zukünftige Veranstaltungen verwendet werden.'
-    label: 'Veranstaltungsname'
 notification:
   archived: 'Veranstaltung archiviert'
   unarchived: 'Veranstaltung aus dem Archiv wiederhergestellt'
   undo: 'Rückgängig'
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
+purgedStatus: 'Daten gelöscht'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -926,19 +908,13 @@ share:
   upcoming: "Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir l'événement mais pas encore s’inscrire."
 
   unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de cet événement peuvent ouvrir le lien.'
-dialog:
-  delete:
-    title: "Supprimer l'événement"
-
-    message: 'Êtes-vous sûr de vouloir supprimer cet événement ? Toutes les inscriptions seront perdues. Cet événement ne peut pas être utilisé comme modèle pour les événements futurs.'
-    label: "Nom de l'événement"
-
 notification:
   archived: 'Événement archivé'
   unarchived: 'Événement restauré depuis les archives'
   undo: 'Annuler'
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
+purgedStatus: 'Données supprimées'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -969,17 +945,13 @@ share:
   closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą wydarzenie, ale nie mogą się zapisać.'
   upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą wydarzenie, ale nie mogą się jeszcze zapisać.'
   unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym wydarzeniem.'
-dialog:
-  delete:
-    title: 'Usuń wydarzenie'
-    message: 'Czy na pewno chcesz usunąć to wydarzenie? Wszystkie zgłoszenia zostaną utracone. To wydarzenie nie będzie mogło być użyte jako szablon dla przyszłych wydarzeń.'
-    label: 'Nazwa wydarzenia'
 notification:
   archived: 'Wydarzenie zarchiwizowane'
   unarchived: 'Wydarzenie przywrócone z archiwum'
   undo: 'Cofnij'
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
+purgedStatus: 'Dane usunięte'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1010,15 +982,11 @@ share:
   closed: 'Registrace je uzavřena — návštěvníci akci uvidí, ale nemohou se přihlásit.'
   upcoming: 'Registrace ještě nezačala — návštěvníci akci uvidí, ale zatím se nemohou přihlásit.'
   unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa této akce.'
-dialog:
-  delete:
-    title: 'Smazat akci'
-    message: 'Opravdu chcete tuto akci smazat? Všechny registrace budou ztraceny. Tuto akci nebude možné použít jako šablonu pro budoucí akce.'
-    label: 'Název akce'
 notification:
   archived: 'Akce archivována'
   unarchived: 'Akce obnovena z archivu'
   undo: 'Zpět'
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
+purgedStatus: 'Údaje smazány'
 </i18n>

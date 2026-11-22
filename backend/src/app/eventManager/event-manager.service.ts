@@ -65,15 +65,8 @@ export class EventManagerService extends BaseService {
 
     // An expired record grants nothing, but must not mask organization-derived
     // access, which has no expiry of its own.
-    const expired =
-      manager !== null &&
-      manager.expiresAt !== null &&
-      manager.expiresAt <= new Date();
-    const active = expired ? null : manager;
-
-    const managerPermissions = active
-      ? permissionRegistry.for('event').getPermissions(active.role)
-      : [];
+    const active = manager && isActive(manager) ? manager : null;
+    const managerPermissions = active ? recordPermissions(active) : [];
 
     if (
       managerPermissions.length === 0 &&
@@ -88,6 +81,29 @@ export class EventManagerService extends BaseService {
       expiresAt: active?.expiresAt ?? null,
       revalidate: organizationPermissions.length > 0,
     };
+  }
+
+  /**
+   * The users whose own live manager record grants `permission` on the event,
+   * for bulk mails: each record resolved as `getManagerAuthorization` does.
+   * Organization-derived access is not included: it has no record to address.
+   */
+  async usersWithManagerPermission(
+    eventId: string,
+    permission: EventScopedPermission,
+  ) {
+    const managers = await this.prisma.eventManager.findMany({
+      where: { eventId },
+      select: {
+        role: true,
+        expiresAt: true,
+        user: { select: { name: true, email: true, locale: true } },
+      },
+    });
+
+    return managers.flatMap(({ user, ...manager }) =>
+      user && recordPermissions(manager).includes(permission) ? [user] : [],
+    );
   }
 
   /**
@@ -352,4 +368,20 @@ export class EventManagerService extends BaseService {
       return deleted;
     });
   }
+}
+
+interface ManagerRecord {
+  role: string;
+  expiresAt: Date | null;
+}
+
+function isActive(manager: ManagerRecord): boolean {
+  return manager.expiresAt === null || manager.expiresAt > new Date();
+}
+
+/** What a manager record grants: the one place a record is resolved. */
+function recordPermissions(manager: ManagerRecord) {
+  return isActive(manager)
+    ? permissionRegistry.for('event').getPermissions(manager.role)
+    : [];
 }

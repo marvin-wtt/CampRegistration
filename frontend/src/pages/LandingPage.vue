@@ -115,6 +115,9 @@
     <!-- ================================================== FEATURES -->
     <landing-features class="landing__section" />
 
+    <!-- =================================================== PRIVACY -->
+    <landing-privacy class="landing__section" />
+
     <!-- ===================================================== STEPS -->
     <section
       class="landing__section steps"
@@ -273,6 +276,7 @@ import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import LandingFeatures from '@/components/landing/LandingFeatures.vue';
+import LandingPrivacy from '@/components/landing/LandingPrivacy.vue';
 
 const { t } = useI18n();
 const profileStore = useProfileStore();

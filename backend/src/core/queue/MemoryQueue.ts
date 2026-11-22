@@ -5,6 +5,7 @@ import {
   type QueuedJob,
   type JobStatus,
   type JobOptions,
+  type PrunedJobs,
   type QueueJobCounts,
 } from '#core/queue/Queue.js';
 
@@ -89,6 +90,27 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
       }
     }
     return Promise.resolve();
+  }
+
+  public prune(): Promise<PrunedJobs> {
+    const pruned: PrunedJobs = { completed: 0, failed: 0 };
+    const now = Date.now();
+
+    for (const [id, job] of this.jobs.entries()) {
+      if (job.status !== 'COMPLETED' && job.status !== 'FAILED') {
+        continue;
+      }
+      const retention =
+        job.status === 'COMPLETED'
+          ? this.options.retention.completed
+          : this.options.retention.failed;
+      if ((job.finishedAt?.getTime() ?? 0) < now - retention) {
+        this.jobs.delete(id);
+        pruned[job.status === 'COMPLETED' ? 'completed' : 'failed']++;
+      }
+    }
+
+    return Promise.resolve(pruned);
   }
 
   public jobCounts(): Promise<QueueJobCounts> {
@@ -276,6 +298,11 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
         payload: next.payload,
         attempt: next.attempts,
       });
+
+      if (this.options.retention.completed === 0) {
+        this.jobs.delete(next.id);
+        return;
+      }
 
       next.status = 'COMPLETED';
       next.finishedAt = new Date();

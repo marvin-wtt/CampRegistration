@@ -338,3 +338,96 @@ describe('useResultTableModel phases', () => {
     expect(model.template.value.id).toBe('overview');
   });
 });
+
+describe('useResultTableModel purged columns', () => {
+  const columns = [
+    { name: 'name', field: 'data.name', label: 'Name', sortable: true },
+    {
+      name: 'allergies',
+      field: 'data.allergies',
+      label: 'Allergies',
+      sortable: true,
+      renderAs: 'text',
+      hideIf: '{data.allergies} empty',
+    },
+  ] as TableColumnTemplate[];
+  const form = {
+    elements: [
+      { type: 'text', name: 'name' },
+      { type: 'comment', name: 'allergies', privacyCategory: 'allergies' },
+    ],
+  };
+  const registrations = [
+    // A stale value, as from a deletion still running.
+    { data: { name: 'Bob', allergies: 'nuts' } },
+    { data: { name: 'Ann' } },
+  ] as unknown as Registration[];
+
+  const DELETED = '2026-11-01T00:00:00.000Z';
+
+  function build(
+    sensitiveDataPurgedAt: string | null,
+    sensitiveDataClearedAt = sensitiveDataPurgedAt,
+  ) {
+    const model = useResultTableModel({
+      questions: ref<TableColumnTemplate[]>([]),
+      registrations: ref(registrations),
+      templates: ref([
+        {
+          id: 'a',
+          title: 'A',
+          columns,
+          order: 1,
+          actions: false,
+          sortBy: 'allergies',
+        },
+      ] as unknown as TableTemplate[]),
+      event: ref({
+        countries: ['de'],
+        form,
+        sensitiveDataPurgedAt,
+        sensitiveDataClearedAt,
+        registrationDataPurgedAt: null,
+      } as unknown as EventDetails),
+    });
+    return model;
+  }
+
+  it('leaves the columns alone while nothing was deleted', () => {
+    const model = build(null);
+
+    expect(model.columns.value.map((column) => column.purged)).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('shows the answers an interrupted deletion left stored', () => {
+    const model = build(DELETED, null);
+
+    expect(model.columns.value.map((column) => column.purged)).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('marks deleted answers, unsortable and always shown', () => {
+    const model = build(DELETED);
+    const [name, allergies] = model.columns.value;
+
+    expect(name?.purged).toBeUndefined();
+    expect(allergies).toMatchObject({ purged: true, sortable: false });
+    expect(model.renderers.value.get('allergies')?.isVisible({})).toBe(true);
+    // The template's sort on the deleted column is ignored.
+    expect(model.rows.value).toEqual(registrations);
+  });
+
+  it('keeps deleted columns out of the search', () => {
+    const model = build(DELETED);
+    model.searchFilter.value = 'Ann';
+    expect(model.rows.value).toHaveLength(1);
+
+    model.searchFilter.value = 'nuts';
+    expect(model.rows.value).toEqual([]);
+  });
+});

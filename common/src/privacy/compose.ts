@@ -8,6 +8,7 @@ import {
   type PrivacyThirdCountryTransfers,
 } from './content.js';
 import type { SupervisoryAuthority } from './supervisoryAuthorities.js';
+import { appliedExclusions } from './exclusions.js';
 
 /**
  * An organization's notice with its event's additions folded in.
@@ -87,8 +88,9 @@ function mergeRetention(
 
   return {
     months: event.months,
-    anchor: event.anchor,
     exceptions: [...exceptions.values()],
+    specialCategories:
+      event.specialCategories ?? base?.specialCategories ?? null,
   };
 }
 
@@ -113,11 +115,53 @@ function mergeTransfers(
   };
 }
 
+/**
+ * The organization notice minus what the event excludes, before the event's own
+ * entries are merged in. Retention exceptions go with the purpose they are
+ * scoped to; a transfer ends when no country remains.
+ */
+function withoutExcluded(
+  organization: PrivacyNoticeContent,
+  event: PrivacyNoticeAddendum | null | undefined,
+): PrivacyNoticeContent {
+  const excluded = appliedExclusions(organization, event);
+  const transfers = organization.thirdCountryTransfers;
+  const countries = transfers.countries.filter(
+    (country) => !excluded.transferCountries.has(country),
+  );
+  const transfersEnded =
+    excluded.transferCountries.size > 0 && countries.length === 0;
+
+  return {
+    ...organization,
+    purposes: organization.purposes.filter(
+      (entry) => !excluded.purposes.has(entry.key),
+    ),
+    dataCategories: organization.dataCategories.filter(
+      (entry) => !excluded.dataCategories.has(entry.key),
+    ),
+    recipients: organization.recipients.filter(
+      (entry) => !excluded.recipients.has(entry.key),
+    ),
+    retention: organization.retention && {
+      ...organization.retention,
+      exceptions: retentionExceptions(organization.retention).filter(
+        (exception) => !excluded.purposes.has(exception.scope),
+      ),
+    },
+    thirdCountryTransfers: transfersEnded
+      ? { enabled: false, countries: [], safeguard: null, note: null }
+      : { ...transfers, countries },
+  };
+}
+
 export function composePrivacyNotice(
   organization: PrivacyNoticeContent | null,
   event?: PrivacyNoticeAddendum | null,
 ): ComposedPrivacyNotice {
-  const base = organization ?? emptyPrivacyNoticeContent();
+  const declared = organization ?? emptyPrivacyNoticeContent();
+  const base =
+    declared.mode === 'free_text' ? declared : withoutExcluded(declared, event);
 
   // The organization wrote its own prose, so there is no structure for an event's
   // structured entries to join, and the builder fields carry defaults nobody

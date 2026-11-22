@@ -15,6 +15,7 @@ function makeContext(
       typeof value === 'string' ? value : (value?.en ?? ''),
     translateCountry: (country) => country.toUpperCase(),
     getFormSelectOptions: () => undefined,
+    purgedLabel: 'Deleted',
     ...overrides,
   };
 }

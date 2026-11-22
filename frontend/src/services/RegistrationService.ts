@@ -1,4 +1,6 @@
 import {
+  REGISTRATION_CONSENT_CHANGED,
+  REGISTRATION_CONSENT_MISSING,
   REGISTRATION_PRICE_CHANGED,
   type Registration,
   type RegistrationCreateData,
@@ -74,12 +76,27 @@ export function useRegistrationService() {
   };
 }
 
-/** Whether the server refused a total the form showed as outdated. */
-export function isPriceChangedError(error: unknown): boolean {
+/** Whether the server refused a registration with the given error code. */
+function hasRegistrationErrorCode(error: unknown, code: string): boolean {
   if (!axios.isAxiosError(error)) {
     return false;
   }
   const body = error.response?.data as { errorCode?: unknown } | undefined;
 
-  return body?.errorCode === REGISTRATION_PRICE_CHANGED;
+  return body?.errorCode === code;
 }
+
+/** Whether the server refused a total the form showed as outdated. */
+export const isPriceChangedError = (error: unknown) =>
+  hasRegistrationErrorCode(error, REGISTRATION_PRICE_CHANGED);
+
+/** Whether the server refused consent texts the form showed as outdated. */
+export const isConsentChangedError = (error: unknown) =>
+  hasRegistrationErrorCode(error, REGISTRATION_CONSENT_CHANGED);
+
+/**
+ * Whether the server refused answers that need a consent the form does not
+ * ask for — a form the organizer still has to fix (docs/privacy.md, 5).
+ */
+export const isConsentMissingError = (error: unknown) =>
+  hasRegistrationErrorCode(error, REGISTRATION_CONSENT_MISSING);

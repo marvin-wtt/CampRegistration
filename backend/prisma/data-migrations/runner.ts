@@ -142,10 +142,15 @@ async function main(): Promise<void> {
   for (const name of pending) {
     console.log(`Applying data migration: ${name}`);
     const up = await loadMigration(name);
-    await prisma.$transaction(async (tx) => {
-      await up(tx);
-      await markApplied(tx, name);
-    });
+    // Prisma's default of 5 s is too short for a migration over a production
+    // database; a failure still rolls everything back.
+    await prisma.$transaction(
+      async (tx) => {
+        await up(tx);
+        await markApplied(tx, name);
+      },
+      { maxWait: 60_000, timeout: 30 * 60_000 },
+    );
     console.log(`Applied data migration: ${name}`);
   }
 

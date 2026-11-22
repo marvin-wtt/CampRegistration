@@ -13,6 +13,12 @@ import { EventService } from '#app/event/event.service';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { resolve } from '#core/ioc/container';
 import { eventRegistrationStatus } from '#app/event/event.util';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import {
+  formPrivacyIssues,
+  hasPrivacyIssues,
+} from '@camp-registration/common/form';
 
 export const eventScopeResolver: ScopeResolver<'event'> = {
   model: 'event',
@@ -45,6 +51,43 @@ export const eventOrganizationVerified = (req: Request): boolean => {
   return (
     req.modelOrFail('event').organization.verificationStatus === 'VERIFIED'
   );
+};
+
+/**
+ * Once registration data was deleted nobody registers again, managers
+ * included (docs/privacy.md, 8). The create re-checks inside its transaction.
+ * Thrown, not returned: it holds for everyone, so it is no 401 for a guest.
+ */
+export const eventNotPurged = (req: Request): true => {
+  if (isRetentionPurged(req.modelOrFail('event'))) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'Registration data of this event was deleted; it takes no registrations.',
+    );
+  }
+  return true;
+};
+
+/**
+ * Refuses registrations while the form asks for sensitive data its privacy
+ * notice does not cover (docs/privacy.md, section 5), from managers too: who
+ * enters the data does not change what the notice covers.
+ */
+export const eventPrivacyCompliant = async (req: Request): Promise<true> => {
+  const event = req.modelOrFail('event');
+  // The notice the create then stamps and checks consents against.
+  const { notice } = await resolve(
+    PrivacyNoticeService,
+  ).getNoticeForRegistration(event.id, event.organizationId);
+
+  // Thrown like `eventNotPurged`: no 401 for a guest.
+  if (hasPrivacyIssues(formPrivacyIssues(event.form, notice))) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'Registration is unavailable: the form asks for data its privacy information does not cover.',
+    );
+  }
+  return true;
 };
 
 /**

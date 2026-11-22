@@ -2,12 +2,32 @@ import { runWithJobContext } from '#core/context/jobContext';
 import logger from '#core/logger';
 import { describeError } from '#utils/errors';
 
+/** How long finished jobs are kept, in milliseconds; 0 deletes them at once. */
+export interface QueueRetention {
+  completed: number;
+  failed: number;
+}
+
+const DAY = 24 * 60 * 60 * 1000;
+
+export const DEFAULT_RETENTION: QueueRetention = {
+  completed: 30 * DAY,
+  failed: 90 * DAY,
+};
+
+export interface PrunedJobs {
+  completed: number;
+  failed: number;
+}
+
 export interface QueueOptions {
   maxAttempts: number;
   retryDelay: number; // milliseconds
   retryDelayType: 'fixed' | 'exponential';
   stalledInterval: number; // milliseconds
   maxStalledCount: number;
+  // Payloads may hold personal data; keep them no longer than needed.
+  retention: QueueRetention;
   limit?: {
     max: number;
     duration: number; // in milliseconds
@@ -67,6 +87,7 @@ export abstract class Queue<P, R = void, N extends string = string> {
     maxStalledCount: 1,
     retryDelay: 5000,
     retryDelayType: 'exponential',
+    retention: DEFAULT_RETENTION,
   };
 
   constructor(
@@ -135,6 +156,9 @@ export abstract class Queue<P, R = void, N extends string = string> {
   public abstract retryFailed(): Promise<void>;
 
   public abstract deleteFailed(): Promise<void>;
+
+  /** Deletes finished jobs older than the queue's retention. */
+  public abstract prune(): Promise<PrunedJobs>;
 
   public abstract add(name: N, payload: P, options?: JobOptions): Promise<void>;
 

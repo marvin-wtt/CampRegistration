@@ -48,11 +48,24 @@
         :verification-status="event.organizationVerificationStatus"
       />
 
+      <!-- The cards built on registrations are left out below. -->
+      <purged-banner
+        v-if="registrationsPurged"
+        kind="registrations"
+        manage-link
+      />
+
+      <!-- Configured, but refused by the privacy rules (docs/privacy.md, 5). -->
+      <privacy-compliance-notice
+        v-if="event"
+        :event
+      />
+
       <!-- Wide screens: the phase's main cards on the left, things to do on the
            right. Narrow screens: one column in the layout's order. -->
       <div
         class="dashboard-columns"
-        :class="{ 'dashboard-columns--single': sideCards.length === 0 }"
+        :class="{ 'dashboard-columns--single': columns.length === 1 }"
       >
         <div
           v-for="column in columns"
@@ -107,6 +120,10 @@
               :program="features.program"
               :style="card.style"
             />
+            <retention-card
+              v-else-if="card.key === 'retention'"
+              :style="card.style"
+            />
             <demographics-card
               v-else-if="card.key === 'demographics'"
               :people="stats.acceptedParticipants.value"
@@ -136,7 +153,10 @@ import TodayDutiesCard from '@/components/event/dashboard/TodayDutiesCard.vue';
 import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
 import ReadinessCard from '@/components/event/dashboard/ReadinessCard.vue';
 import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue';
+import RetentionCard from '@/components/event/dashboard/RetentionCard.vue';
 import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
+import PrivacyComplianceNotice from '@/components/privacy/PrivacyComplianceNotice.vue';
+import PurgedBanner from '@/components/privacy/PurgedBanner.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -160,7 +180,8 @@ type CardKey =
   | 'duties'
   | 'registrations'
   | 'readiness'
-  | 'demographics';
+  | 'demographics'
+  | 'retention';
 
 type Column = 'main' | 'side';
 
@@ -196,6 +217,7 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
   ],
   wrapUp: [
     ['attention', 'side'],
+    ['retention', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
     ['demographics', 'main'],
@@ -231,6 +253,8 @@ const {
   data: event,
   isLoading: eventLoading,
   error: eventError,
+  // Once all registration data is deleted, nothing built on it is shown.
+  registrationsPurged,
 } = storeToRefs(eventDetailsStore);
 const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
@@ -253,7 +277,7 @@ const error = computed<string | null>(
 );
 
 const features = computed(() => ({
-  registrations: can('event.registrations.view'),
+  registrations: can('event.registrations.view') && !registrationsPurged.value,
   files: can('event.files.view'),
   tasks: can('event.tasks.view') && isShown('tasks'),
   duties:
@@ -348,17 +372,16 @@ const cards = computed(() =>
     })),
 );
 
-const sideCards = computed(() =>
-  cards.value.filter((card) => card.column === 'side'),
+// An empty column is left out, so the other one takes the width — e.g. no
+// main cards once all registrations are deleted.
+const columns = computed<{ name: Column; cards: typeof cards.value }[]>(() =>
+  (['main', 'side'] as const)
+    .map((name) => ({
+      name,
+      cards: cards.value.filter((card) => card.column === name),
+    }))
+    .filter((column) => column.cards.length > 0),
 );
-
-const columns = computed<{ name: Column; cards: typeof cards.value }[]>(() => [
-  {
-    name: 'main',
-    cards: cards.value.filter((card) => card.column === 'main'),
-  },
-  { name: 'side', cards: sideCards.value },
-]);
 
 // Shortcuts depend on permissions (profile and event) and the hidden nav items;
 // most managers have some, so they are skeletonized rather than left out.
@@ -396,6 +419,8 @@ const quickActions = computed<QuickAction[]>(() =>
     ] satisfies QuickAction[]
   ).filter(
     (action) =>
+      // Both only lead to the notice that the registrations are gone.
+      !registrationsPurged.value &&
       canAccessRoute(action.route) &&
       (!action.navItem || isShown(action.navItem)),
   ),
@@ -459,13 +484,9 @@ const quickActions = computed<QuickAction[]>(() =>
     gap: 20px;
   }
 
-  /* Nothing on the side: the main column takes the width. */
+  /* One column left: it takes the width. */
   .dashboard-columns--single {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dashboard-columns--single .dashboard-column--side {
-    display: none;
   }
 }
 

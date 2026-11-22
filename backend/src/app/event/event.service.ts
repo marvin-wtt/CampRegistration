@@ -1,3 +1,5 @@
+import ApiError from '#core/router/ApiError';
+import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import type { FinanceCategoryCreateManyData } from '#app/financeCategory/finance-category.service';
 import { ulid } from '#utils/ulid';
@@ -8,7 +10,12 @@ import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
-import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
+import {
+  calculateFreePlaces,
+  eventRegistrationStatus,
+  type FreePlaces,
+} from '#app/event/event.util';
+import { isRetentionPurged } from '@camp-registration/common/privacy';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
@@ -39,12 +46,18 @@ interface EventSeed {
 
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
-// `retentionReminderSentAt` sits with the timestamps rather than the payload:
-// it is written once by the retention job and never by an author. A new event
-// is never archived.
+// The purge timestamps sit with the timestamps rather than the payload: only
+// the retention workflow writes them, never an author. A new event is never
+// archived.
 type EventCreateData = Omit<
   Event,
-  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt' | 'archivedAt'
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'sensitiveDataPurgedAt'
+  | 'sensitiveDataClearedAt'
+  | 'registrationDataPurgedAt'
+  | 'archivedAt'
 >;
 export interface EventCreateInput {
   event: EventCreateData;
@@ -92,6 +105,17 @@ export class EventService extends BaseService {
     super();
   }
 
+  /**
+   * Locks the event row until the caller's transaction ends and reads it
+   * afresh. Edits and data deletion take it first, so each sees the other's
+   * write before deciding on the registration status.
+   */
+  async lockForUpdate(id: string): Promise<Event> {
+    await this.db.$queryRaw`SELECT id FROM events WHERE id = ${id} FOR UPDATE`;
+
+    return this.db.event.findUniqueOrThrow({ where: { id } });
+  }
+
   async getEventById(id: string) {
     const event = await this.prisma.event.findFirst({
       where: { id },
@@ -117,12 +141,18 @@ export class EventService extends BaseService {
     return event?.organization.verificationStatus === 'VERIFIED';
   }
 
-  /** The public directory's events that have not ended yet. */
+  /** The public directory's events that still accept, or will accept, registrations. */
   async getSitemapEvents() {
+    const now = new Date();
+
     return this.prisma.event.findMany({
       where: {
         ...this.publicDirectoryWhere(),
-        endAt: { gte: new Date() },
+        endAt: { gte: now },
+        OR: [
+          this.eventStatusWhere('open', now),
+          this.eventStatusWhere('upcoming', now),
+        ],
       },
       select: { id: true, updatedAt: true },
       orderBy: { startAt: 'asc' },
@@ -506,9 +536,9 @@ export class EventService extends BaseService {
 
   async updateEvent(event: Event, data: EventUpdateData) {
     return this.transaction(async (tx) => {
-      const before = await tx.event.findUniqueOrThrow({
-        where: { id: event.id },
-      });
+      const before = await this.lockForUpdate(event.id);
+
+      assertRegistrationStaysClosed(before, data);
 
       const { archived, ...fields } = data;
       // Re-archiving keeps the original timestamp.
@@ -579,3 +609,32 @@ const withMediaFlags = <
     hasBanner: files.some((file) => file.field === EVENT_BANNER_SLOT),
   };
 };
+
+/**
+ * After registration data was deleted the event never takes registrations
+ * again (docs/privacy.md, 8), so no edit — of the window or, without one, of
+ * the start — may reopen it. Closing it further stays allowed.
+ */
+function assertRegistrationStaysClosed(
+  before: Event,
+  data: EventUpdateData,
+): void {
+  if (!isRetentionPurged(before)) {
+    return;
+  }
+
+  // The controller passes every field, so an absent one arrives as undefined
+  // at runtime, whatever the type says; spread as is, it would erase the
+  // stored value and misjudge the status.
+  const changes = Object.fromEntries(
+    Object.entries(data as Record<string, unknown>).filter(
+      ([, value]) => value !== undefined,
+    ),
+  );
+  if (eventRegistrationStatus({ ...before, ...changes }) !== 'closed') {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'Registration data of this event was deleted; its registration stays closed.',
+    );
+  }
+}

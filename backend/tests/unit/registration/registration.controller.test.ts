@@ -365,6 +365,7 @@ describe('RegistrationController.update', () => {
           label: 'First name',
           value: 'John',
           isFile: false,
+          isSensitive: false,
         },
       ],
     );

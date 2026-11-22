@@ -1,4 +1,7 @@
-import { COUNTRY_CODES } from '@camp-registration/common/utils';
+import {
+  COUNTRY_CODES,
+  EEA_COUNTRY_CODES,
+} from '@camp-registration/common/utils';
 
 // Distinct from `CountrySelect`, which offers only the handful of countries
 // an event can be run in; an organization may be registered anywhere.
@@ -9,12 +12,19 @@ export interface CountryOption {
   value: string;
 }
 
-export function countryOptions(locale: string): CountryOption[] {
+export function countryOptions(
+  locale: string,
+  region?: 'EEA' | 'ALL',
+): CountryOption[] {
   const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
 
-  return COUNTRY_CODES.map((code) => ({
-    value: code,
-    // Falls back to the upper-case code for regions the runtime doesn't know.
-    label: displayNames.of(code.toUpperCase()) ?? code.toUpperCase(),
-  })).sort((a, b) => a.label.localeCompare(b.label, locale));
+  const codes = region === 'EEA' ? EEA_COUNTRY_CODES : COUNTRY_CODES;
+
+  return codes
+    .map((code) => ({
+      value: code,
+      // Falls back to the upper-case code for regions the runtime doesn't know.
+      label: displayNames.of(code.toUpperCase()) ?? code.toUpperCase(),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, locale));
 }

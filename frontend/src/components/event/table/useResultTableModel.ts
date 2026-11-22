@@ -4,6 +4,8 @@ import { ExpressionEvaluator } from '@/lib/surveyJs/ExpressionEvaluator';
 import { objectValueByPath } from '@/utils/objectValueByPath';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
+import { PURGED_CELL } from '@/components/event/table/tableCells/purgedCell';
+import { usePurgedFields } from '@/composables/purgedData';
 
 import type { QTable } from 'quasar';
 import type {
@@ -115,7 +117,7 @@ export function sortRows(
     ? columns.find((c) => c.name === pagination.sortBy)
     : undefined;
 
-  if (!column) {
+  if (!column || column.purged) {
     return rows;
   }
 
@@ -132,6 +134,13 @@ export function useResultTableModel(
   options: ResultTableModelOptions = {},
 ) {
   const registrationAccessor = useRegistrationHelper();
+  const { isPurged } = usePurgedFields(input.event);
+
+  function markPurged(column: CTableColumnTemplate): CTableColumnTemplate {
+    return isPurged(column.fieldName)
+      ? { ...column, purged: true, sortable: false }
+      : column;
+  }
 
   const pagination = ref<Pagination>({
     rowsPerPage: 0,
@@ -158,11 +167,13 @@ export function useResultTableModel(
     return {
       ...template,
       forOtherPhases: isForOtherPhases(template),
-      columns: template.columns.map((column) => ({
-        ...column,
-        field: (row: unknown) => objectValueByPath(column.field, row),
-        fieldName: column.field,
-      })),
+      columns: template.columns.map((column) =>
+        markPurged({
+          ...column,
+          field: (row: unknown) => objectValueByPath(column.field, row),
+          fieldName: column.field,
+        }),
+      ),
     };
   }
 
@@ -183,11 +194,14 @@ export function useResultTableModel(
     mapped.push({
       id: PLAIN_TEMPLATE_ID,
       title: 'Original (Plain)',
-      columns: input.questions.value.map((column) => ({
-        ...column,
-        field: (row: unknown) => objectValueByPath('data.' + column.field, row),
-        fieldName: 'data.' + column.field,
-      })),
+      columns: input.questions.value.map((column) =>
+        markPurged({
+          ...column,
+          field: (row: unknown) =>
+            objectValueByPath('data.' + column.field, row),
+          fieldName: 'data.' + column.field,
+        }),
+      ),
       order: 99,
       generated: true,
     });
@@ -321,7 +335,9 @@ export function useResultTableModel(
     // Free-text search across the values of the visible template columns
     const search = searchFilter.value?.trim().toLowerCase() ?? '';
     if (search.length > 0) {
-      const fields = template.value.columns.map((column) => column.field);
+      const fields = template.value.columns
+        .filter((column) => !column.purged)
+        .map((column) => column.field);
       r = r.filter((row) =>
         fields.some((field) => {
           const value =
@@ -383,6 +399,21 @@ export function useResultTableModel(
       // renderAs (e.g. via direct API use) — fall back to the editor rather
       // than the generic read-only default cell.
       column.renderAs ??= column.source === 'custom' ? 'editor' : 'default';
+
+      // Shown in every row: no condition may hide that the data is gone.
+      if (column.purged) {
+        rendererMap.set(
+          column.name,
+          new TableCellRenderer(TableComponentRegistry.load(PURGED_CELL), {
+            ...column,
+            showIf: null,
+            hideIf: null,
+            isArray: false,
+          }),
+        );
+        return;
+      }
+
       const componentEntry = TableComponentRegistry.load(column.renderAs);
 
       if (componentEntry.component) {

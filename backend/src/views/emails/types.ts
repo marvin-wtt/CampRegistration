@@ -71,15 +71,6 @@ export interface OrganizationRejectedProps extends ActionCardProps {
   reviewNote?: string;
 }
 
-export interface EventRetentionDueProps extends ActionCardProps {
-  action: string;
-  hasExceptions: boolean;
-  exceptions: string;
-  hasConsentBoundData: boolean;
-  consentBound: string;
-  noAutomaticDeletion: string;
-}
-
 export interface RegistrationManagerNotificationProps extends ActionCardProps {
   eventName: string;
 }

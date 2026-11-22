@@ -11,8 +11,15 @@ import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
 import {
+  answeredSpecialCategoryQuestions,
+  clearSpecialCategoryAnswers,
+  consentAnswers,
+  consentTexts,
+  isSpecialCategory,
+  unconsentedQuestions,
   extractEventData,
   extractPaymentAmounts,
+  addEventFileSlotResolver,
   setVariables,
 } from '@camp-registration/common/form';
 import type { EventWithFreePlaces } from '#app/event/event.types';
@@ -30,6 +37,8 @@ export interface FormAnswer {
   displayValue: unknown;
   /** The answer is a stored file reference, never something to print. */
   isFile: boolean;
+  /** Tagged with a special category: never printed in a mail. */
+  isSensitive: boolean;
 }
 
 /** A reason the submitted data does not fit the form. */
@@ -49,6 +58,7 @@ interface PlainDataEntry {
   value: unknown;
   displayValue: unknown;
   questionType?: string;
+  privacyCategory?: unknown;
   data?: PlainDataEntry[];
 }
 
@@ -126,10 +136,43 @@ const questionPath = (question: Question): string => {
   return `${parentPath}.${name}`;
 };
 
-function flattenAnswers(
+/** A plain-data entry with whether its answer must never be printed. */
+interface SensitivityEntry extends PlainDataEntry {
+  isSensitive: boolean;
+  data?: SensitivityEntry[];
+}
+
+/**
+ * Marks what a special-category tag covers: the tagged question and, for a
+ * container, everything inside it — as the purge clears it. Its children
+ * carry no tag of their own.
+ */
+function markSensitive(
   entries: PlainDataEntry[],
-  trail: { path: string; label: string }[],
-): FormAnswer[] {
+  inherited = false,
+): SensitivityEntry[] {
+  return entries.map((entry) => {
+    const isSensitive = inherited || isSpecialCategory(entry.privacyCategory);
+
+    return {
+      ...entry,
+      isSensitive,
+      data: entry.data && markSensitive(entry.data, isSensitive),
+    };
+  });
+}
+
+interface FlatEntry<T> {
+  entry: T;
+  path: string;
+  label: string;
+}
+
+/** The answers of a plain-data tree, each with where it sits in the form. */
+function flattenEntries<T extends PlainDataEntry & { data?: T[] }>(
+  entries: T[],
+  trail: { path: string; label: string }[] = [],
+): FlatEntry<T>[] {
   return entries.flatMap((entry) => {
     const name = String(entry.name);
     // The rows and panels a container expands into are titled generically
@@ -153,19 +196,43 @@ function flattenAnswers(
       children?.length &&
       (questionType === undefined || CONTAINER_TYPES.has(questionType))
     ) {
-      return flattenAnswers(children, nested);
+      return flattenEntries(children, nested);
     }
 
     return [
       {
+        entry,
         path: nested.map((part) => part.path).join(PATH_SEPARATOR),
         label: nested.map((part) => part.label).join(LABEL_SEPARATOR),
-        value: entry.value,
-        displayValue: entry.displayValue,
-        isFile: questionType === FILE_TYPE,
       },
     ];
   });
+}
+
+/**
+ * One form per group and locale of an event, for code that walks many of its
+ * registrations: building the survey is the costly part, loading a response
+ * into it is not.
+ */
+export function registrationForms(event: EventWithFreePlaces) {
+  const forms = new Map<string, RegistrationForm>();
+
+  return ({
+    group,
+    locale,
+  }: {
+    group: string | null;
+    locale: string;
+  }): RegistrationForm => {
+    const key = `${group ?? ''}|${locale}`;
+    let form = forms.get(key);
+    if (!form) {
+      form = new RegistrationForm(event, group, locale);
+      forms.set(key, form);
+    }
+
+    return form;
+  };
 }
 
 /**
@@ -177,17 +244,20 @@ export class RegistrationForm {
   private readonly survey: SurveyModel;
   private issues: IDataIssue[] = [];
 
-  // `group` is the group the form is answered for. Without one, only a
-  // single-group event knows it — enough to read the answers back.
+  // `group` is the group the form is answered for: it can change what the
+  // form shows and computes. Null only a single-group event can resolve.
   constructor(
     event: EventWithFreePlaces,
-    options?: { locale?: string; group?: string | null | undefined },
+    group: string | null,
+    locale = 'en-US',
   ) {
     this.survey = new SurveyModel(event.form);
 
     // SurveyJS resolves `de-DE` to its `de` strings, but not `de_DE`.
-    this.survey.locale = (options?.locale ?? 'en-US').replace('_', '-');
-    setVariables(this.survey, event, { group: options?.group });
+    this.survey.locale = locale.replace('_', '-');
+    setVariables(this.survey, event, { group });
+    // The links the browser writes too: consent texts holding one are compared.
+    addEventFileSlotResolver(this.survey, event.id);
   }
 
   /** Replaces the response the form holds, running the form's logic on it. */
@@ -247,6 +317,53 @@ export class RegistrationForm {
     return extractEventData(this.survey);
   }
 
+  /**
+   * The wording of the consents this response gives, as the survey shows it in
+   * the response's locale — what is stored as proof (Art. 7(1)).
+   */
+  givenConsentTexts(): Record<string, string> {
+    return consentTexts(this.survey, { givenOnly: true });
+  }
+
+  /**
+   * The columns the consents imply (docs/privacy.md, 5): `newsletterConsent`
+   * from the consent asked for the newsletter, null when the form never asks.
+   * Any yes counts — the newsletter goes to the registration's address.
+   */
+  consentColumns(): { newsletterConsent: boolean | null } {
+    const answers = consentAnswers(this.survey, 'newsletter');
+
+    return {
+      newsletterConsent:
+        answers.length > 0 ? answers.some((value) => value === true) : null,
+    };
+  }
+
+  /** Questions answered without the consent their category rests on. */
+  unconsentedQuestions(consentCategories: ReadonlySet<string>): string[] {
+    return unconsentedQuestions(this.survey, consentCategories).map(
+      (question) => question.getValueName(),
+    );
+  }
+
+  /** Special-category questions this response answers. */
+  sensitiveAnswers(): string[] {
+    return answeredSpecialCategoryQuestions(this.survey).map((question) =>
+      question.getValueName(),
+    );
+  }
+
+  /**
+   * The response without answers to special-category questions (docs/privacy.md,
+   * 6 and 8). Clears them in this form: what is read afterwards is the cleared
+   * response, until the next `load`.
+   */
+  withoutSensitiveAnswers(): Record<string, unknown> {
+    clearSpecialCategoryAnswers(this.survey);
+
+    return this.data;
+  }
+
   /** What the answers add to the event price, for `computeAmountDue`. */
   paymentAmounts(): number[] {
     return extractPaymentAmounts(this.survey);
@@ -261,9 +378,19 @@ export class RegistrationForm {
     const plain = this.survey.getPlainData({
       includeEmpty: true,
       includeQuestionTypes: true,
+      calculations: [{ propertyName: 'privacyCategory' }],
     });
 
-    return flattenAnswers(plain, []);
+    return flattenEntries(markSensitive(plain)).map(
+      ({ entry, path, label }) => ({
+        path,
+        label,
+        value: entry.value,
+        displayValue: entry.displayValue,
+        isFile: entry.questionType === FILE_TYPE,
+        isSensitive: entry.isSensitive,
+      }),
+    );
   }
 
   // Runs the form's own rules (required, validators, ...) and returns whether

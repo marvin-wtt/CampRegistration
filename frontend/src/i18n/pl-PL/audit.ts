@@ -124,6 +124,22 @@ export default {
         archivedAt: 'Zarchiwizowana',
       },
     },
+    retention: {
+      label: 'Przechowywanie danych',
+      actions: {
+        postponed: 'Termin przesunięty',
+        sensitive_purged: 'Dane wrażliwe usunięte',
+        registrations_purged: 'Wszystkie zgłoszenia usunięte',
+      },
+      fields: {
+        count: 'Zgłoszenia objęte',
+        postponedUntil: 'Przesunięto na',
+      },
+      kinds: {
+        sensitive: 'Dane wrażliwe',
+        registrations: 'Wszystkie dane zgłoszeń',
+      },
+    },
     payout: {
       label: 'Wypłata',
       actions: {

@@ -56,6 +56,10 @@ export default {
     funding_body: 'The funding body',
     medical_provider: 'Doctors and emergency services',
     public_authority: 'Public authorities',
+    partner_organization: 'A partner or co-organizing organization',
+    participants: 'Other participants',
+    it_service_provider:
+      'IT service providers (e.g. email, cloud storage, accounting)',
     payment_provider: 'The payment provider',
     platform_operator: 'The operator of this registration platform',
   },
@@ -92,11 +96,6 @@ export default {
       'Only for establishing, exercising or defending a legal claim, such as an accident report kept for an insurance dispute.',
   },
 
-  retentionAnchor: {
-    event_end: 'after the event ends',
-    submission: 'after you submit the registration',
-  },
-
   retentionUntil: {
     period: 'for a fixed period',
     consent_withdrawn: 'until the consent behind it is withdrawn',
@@ -120,7 +119,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Legal basis',
-      art9Other: 'Use a different legal basis',
       art9Advisory:
         'Not sensitive in itself. If your form offers halal or kosher options, also tick “Religious affiliation”; if it collects allergies, tick “Allergies”.',
       consentQuestion:
@@ -130,10 +128,6 @@ export default {
         'Naming the actual recipient is clearer than the category alone.',
     },
     /** Which of the two authors an entry came from. */
-    origin: {
-      organization: 'From your organisation',
-      event: 'Added here',
-    },
     action: {
       publish: 'Publish',
       preview: 'Preview',
@@ -167,12 +161,15 @@ export default {
     special_category_basis:
       'Special category data has no legal basis under Art. 9',
     custom_category_label: 'A category you added has no name',
+    custom_recipient_label: 'A recipient you added has no name',
     automated_details:
       'Automated decision-making is declared but its logic is not explained',
     recipients: 'No recipients have been listed',
     retention: 'No retention period has been set',
     retention_exception:
       'An exception has no period, or no name for what it covers',
+    special_category_retention:
+      'No period for health and other sensitive details, or one longer than the main period',
     retention_exception_consent_basis:
       'Data kept until consent is withdrawn is tied to a purpose that does not rest on consent',
     transfer_countries: 'Transfers outside the EEA name no destination country',

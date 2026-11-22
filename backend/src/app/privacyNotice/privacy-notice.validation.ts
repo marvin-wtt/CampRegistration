@@ -5,13 +5,13 @@ import {
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_PURPOSE_KEYS,
   PRIVACY_RECIPIENT_KEYS,
-  RETENTION_ANCHORS,
   SPECIAL_CATEGORY_BASIS_KEYS,
   TRANSFER_SAFEGUARDS,
   type EventPrivacyNoticeUpdateData,
   type CustomKey,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
+  type PrivacyNoticeExclusions,
   type PrivacyNoticeUpdateData,
 } from '@camp-registration/common/privacy';
 
@@ -36,6 +36,7 @@ const PurposeSchema = z.object({
   legalBasis: z.enum(LEGAL_BASIS_KEYS),
   legitimateInterest: TranslatableSchema.nullish(),
   label: TranslatableSchema.nullish(),
+  allEvents: z.boolean().nullish(),
 });
 
 const DataCategorySchema = z.object({
@@ -43,12 +44,15 @@ const DataCategorySchema = z.object({
   specialCategoryBasis: z.enum(SPECIAL_CATEGORY_BASIS_KEYS).nullish(),
   label: TranslatableSchema.nullish(),
   special: z.boolean().optional(),
+  allEvents: z.boolean().nullish(),
 });
 
 const RecipientSchema = z.object({
-  key: z.enum(PRIVACY_RECIPIENT_KEYS),
+  key: refSchema(PRIVACY_RECIPIENT_KEYS),
+  label: TranslatableSchema.nullish(),
   name: z.string().max(255).nullish(),
   country: z.string().length(2).nullish(),
+  allEvents: z.boolean().nullish(),
 });
 
 const RetentionExceptionBase = {
@@ -65,16 +69,13 @@ const RetentionPeriodExceptionSchema = z.object({
   // Statutory retention is what exceptions exist for, and tax law reaches ten
   // years — so the ceiling here is higher than the baseline's.
   months: z.int().min(1).max(600),
-  anchor: z.enum(RETENTION_ANCHORS),
 });
 
-/**
- * No period, by design. `months`/`anchor` are refused rather than ignored: a
- * stored number nothing reads is a number the next author will believe.
- */
-const RetentionConsentExceptionSchema = z.strictObject({
+/** Ends with the withdrawal, and at the latest after `months`. */
+const RetentionConsentExceptionSchema = z.object({
   ...RetentionExceptionBase,
   until: z.literal('consent_withdrawn'),
+  months: z.int().min(1).max(600).optional(),
 });
 
 // Consent first: the period branch accepts a missing `until`, so it would
@@ -84,12 +85,19 @@ const RetentionExceptionSchema = z.union([
   RetentionPeriodExceptionSchema,
 ]);
 
+// Every period counts from the event end. Content from versions that still
+// carry an `anchor` is stripped of it, as of any key nothing reads, so it is
+// never stored again.
 const RetentionSchema = z.object({
   // A event that keeps every registration for a decade has a storage-limitation
   // problem, not a configuration need; anything longer belongs in an exception.
   months: z.int().min(1).max(240),
-  anchor: z.enum(RETENTION_ANCHORS),
   exceptions: z.array(RetentionExceptionSchema).max(25),
+  specialCategories: z
+    .object({
+      weeks: z.int().min(1).max(960),
+    })
+    .nullish(),
 });
 
 const ThirdCountryTransfersSchema = z.object({
@@ -116,7 +124,9 @@ const ContentSchema = z.object({
   dataCategories: z
     .array(DataCategorySchema)
     .max(PRIVACY_DATA_CATEGORY_KEYS.length + MAX_CUSTOM_ENTRIES),
-  recipients: z.array(RecipientSchema).max(PRIVACY_RECIPIENT_KEYS.length),
+  recipients: z
+    .array(RecipientSchema)
+    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES),
   retention: RetentionSchema.nullable(),
   thirdCountryTransfers: ThirdCountryTransfersSchema,
   dpo: DpoSchema.nullable(),
@@ -125,6 +135,22 @@ const ContentSchema = z.object({
   additional: TranslatableSchema.nullable(),
   freeText: TranslatableSchema.nullable(),
 }) satisfies ZodType<PrivacyNoticeContent>;
+
+const ExclusionsSchema = z.object({
+  purposes: z
+    .array(refSchema(PRIVACY_PURPOSE_KEYS))
+    .max(PRIVACY_PURPOSE_KEYS.length + MAX_CUSTOM_ENTRIES)
+    .optional(),
+  dataCategories: z
+    .array(refSchema(PRIVACY_DATA_CATEGORY_KEYS))
+    .max(PRIVACY_DATA_CATEGORY_KEYS.length + MAX_CUSTOM_ENTRIES)
+    .optional(),
+  recipients: z
+    .array(refSchema(PRIVACY_RECIPIENT_KEYS))
+    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES)
+    .optional(),
+  transferCountries: z.array(z.string().length(2)).max(50).optional(),
+}) satisfies ZodType<PrivacyNoticeExclusions>;
 
 /** The event addendum states only what differs, so every field is optional. */
 const AddendumSchema = z.object({
@@ -138,11 +164,12 @@ const AddendumSchema = z.object({
     .optional(),
   recipients: z
     .array(RecipientSchema)
-    .max(PRIVACY_RECIPIENT_KEYS.length)
+    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES)
     .optional(),
   retention: RetentionSchema.nullish(),
   thirdCountryTransfers: ThirdCountryTransfersSchema.nullish(),
   additional: TranslatableSchema.nullish(),
+  excluded: ExclusionsSchema.nullish(),
 }) satisfies ZodType<PrivacyNoticeAddendum>;
 
 const updateOrganization = z.object({

@@ -1,38 +1,38 @@
 <template>
-  <q-dialog
+  <!-- Irreversible deletions: typing the name is the confirmation. A bottom
+       sheet on phones, like the other dialogs. Explanations belong on the page
+       that opens it; this only confirms. -->
+  <responsive-dialog
     ref="dialogRef"
     persistent
     @hide="onDialogHide"
   >
-    <q-card style="min-width: 350px">
-      <q-card-section>
-        <div
-          class="text-h6"
-          data-testid="title"
+    <dialog-card
+      :title
+      icon="delete_forever"
+      :width="480"
+      no-form
+      @cancel="onDialogCancel"
+    >
+      <div class="column confirm-body">
+        <p
+          v-if="message"
+          class="text-body2 q-my-none"
+          data-testid="message"
         >
-          {{ title }}
+          {{ message }}
+        </p>
+
+        <div>
+          <div class="text-body2">{{ t('text.confirm', { label }) }}</div>
+          <div
+            class="text-body1 text-weight-bold data-value q-mt-xs"
+            data-testid="value"
+          >
+            {{ value }}
+          </div>
         </div>
-      </q-card-section>
 
-      <q-card-section
-        class="q-pt-none"
-        data-testid="message"
-      >
-        {{ message }}
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
-        {{ t('text.confirm', { label }) }}
-      </q-card-section>
-
-      <q-card-section
-        class="q-pt-none text-center text-bold data-value"
-        data-testid="value"
-      >
-        {{ value }}
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
         <q-input
           v-model="modelValue"
           :label="formattedLabel"
@@ -40,38 +40,39 @@
           rounded
           outlined
           data-testid="input"
+          @keyup.enter="submit"
         />
-      </q-card-section>
+      </div>
 
-      <q-card-actions
-        align="right"
-        class="text-primary"
-      >
+      <template #actions>
         <q-btn
           :label="t('action.cancel')"
-          flat
           outline
           rounded
+          color="primary"
           data-testid="cancel"
           @click="onDialogCancel"
         />
         <q-btn
           :label="t('action.delete')"
           :disable="confirmDeleteDisabled"
-          color="negative"
+          unelevated
           rounded
+          color="negative"
           data-testid="submit"
-          @click="onDialogOK"
+          @click="submit"
         />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -79,7 +80,8 @@ const { t } = useI18n();
 
 const { title, message, value, label } = defineProps<{
   title: string;
-  message: string;
+  /** Short: what happens belongs on the page that opens the dialog. */
+  message?: string | undefined;
   value: string;
   label: string;
 }>();
@@ -94,6 +96,12 @@ const confirmDeleteDisabled = computed<boolean>(() => {
   );
 });
 
+function submit() {
+  if (!confirmDeleteDisabled.value) {
+    onDialogOK();
+  }
+}
+
 const formattedLabel = computed<string>(() => {
   if (label.length > 0) {
     return label.charAt(0).toUpperCase() + label.slice(1);
@@ -103,6 +111,11 @@ const formattedLabel = computed<string>(() => {
 </script>
 
 <style scoped>
+.confirm-body {
+  /* A gap, not q-gutter: its negative margin is clipped by the scroll body. */
+  gap: 16px;
+}
+
 .data-value {
   /* Ensure that multiple spaces are shown correctly */
   white-space: pre-wrap;

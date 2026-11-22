@@ -50,6 +50,8 @@ export const EVENT_IDS = {
   printemps: seedId('PRT'),
   harbourSailing: seedId('HRB'),
   seaside: seedId('SEA'),
+  /** Asks for allergies without a consent: registrations are refused. */
+  forest: seedId('FRS'),
 } as const;
 
 export const NEWSLETTER_IDS = {

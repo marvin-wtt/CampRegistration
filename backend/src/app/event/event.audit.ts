@@ -11,7 +11,8 @@ const DENY_KEYS: (keyof Event)[] = [
   'createdAt',
   'updatedAt',
   'themes',
-  'retentionReminderSentAt',
+  'sensitiveDataPurgedAt',
+  'registrationDataPurgedAt',
   'form',
 ];
 

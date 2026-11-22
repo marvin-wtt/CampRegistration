@@ -182,6 +182,8 @@ export default {
         {
           type: 'comment',
           name: 'dietary_requirements',
+          // Intolerances are health data, a religious diet a special category.
+          privacyCategory: 'allergies',
           title: {
             en: 'Dietary requirements',
             de: 'Ernährungshinweise',
@@ -191,12 +193,25 @@ export default {
             default: 'Dietary requirements',
           },
           description: {
-            en: 'e.g. vegetarian, vegan, allergies or intolerances.',
-            de: 'z.B. vegetarisch, vegan, Allergien oder Unverträglichkeiten.',
-            fr: 'p.ex. végétarien, végétalien, allergies ou intolérances.',
-            pl: 'np. wegetariańska, wegańska, alergie lub nietolerancje.',
-            cs: 'např. vegetariánská, veganská, alergie nebo intolerance.',
-            default: 'e.g. vegetarian, vegan, allergies or intolerances.',
+            en: 'e.g. vegetarian or vegan.',
+            de: 'z.B. vegetarisch oder vegan.',
+            fr: 'p.ex. végétarien ou végétalien.',
+            pl: 'np. wegetariańska lub wegańska.',
+            cs: 'např. vegetariánská nebo veganská.',
+            default: 'e.g. vegetarian or vegan.',
+          },
+        },
+        {
+          type: 'comment',
+          name: 'allergies',
+          privacyCategory: 'allergies',
+          title: {
+            en: 'Allergies and intolerances',
+            de: 'Allergien und Unverträglichkeiten',
+            fr: 'Allergies et intolérances',
+            pl: 'Alergie i nietolerancje',
+            cs: 'Alergie a intolerance',
+            default: 'Allergies and intolerances',
           },
         },
       ],
@@ -212,6 +227,45 @@ export default {
         default: 'Consents',
       },
       elements: [
+        {
+          type: 'boolean',
+          name: 'consent_allergies',
+          privacyConsent: true,
+          privacyConsentPurpose: ['catering'],
+          privacyConsentFor: ['allergies'],
+          // Asked last and only once health data was entered — "no known
+          // allergies" counts. Then agreed to, never preselected, or the
+          // data left out (docs/privacy.md, 5).
+          visibleIf: '{dietary_requirements} notempty or {allergies} notempty',
+          requireTrue: true,
+          requireTrueErrorText: {
+            en: 'Please agree, or leave the allergy and diet fields empty.',
+            de: 'Bitte willige ein oder lass die Felder zu Allergien und Ernährung leer.',
+            fr: 'Donne ton accord ou laisse vides les champs allergies et alimentation.',
+            pl: 'Wyraź zgodę lub pozostaw pola dotyczące alergii i diety puste.',
+            cs: 'Dej souhlas, nebo nech pole o alergiích a stravě prázdná.',
+            default:
+              'Please agree, or leave the allergy and diet fields empty.',
+          },
+          title: {
+            en: 'I agree that my allergy and diet details are used for catering during the event and shared with the team and the caterer.',
+            de: 'Ich willige ein, dass meine Allergie- und Ernährungsangaben für die Verpflegung während der Veranstaltung genutzt und an das Team und den Caterer weitergegeben werden.',
+            fr: "J'accepte que mes données d'allergies et d'alimentation servent à la restauration pendant l'événement et soient transmises à l'équipe et au traiteur.",
+            pl: 'Zgadzam się na wykorzystanie moich danych o alergiach i diecie do wyżywienia podczas wydarzenia oraz na ich przekazanie zespołowi i firmie cateringowej.',
+            cs: 'Souhlasím s využitím mých údajů o alergiích a stravě pro stravování během akce a s jejich předáním týmu a dodavateli stravování.',
+            default:
+              'I agree that my allergy and diet details are used for catering during the event and shared with the team and the caterer.',
+          },
+          description: {
+            en: 'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.',
+            de: 'Freiwillig – sonst lass diese Felder leer. Jederzeit beim Veranstalter widerrufbar.',
+            fr: "Facultatif – sinon laisse ces champs vides. Révocable à tout moment auprès de l'organisateur.",
+            pl: 'Dobrowolne – w przeciwnym razie pozostaw te pola puste. Zgodę można w każdej chwili wycofać u organizatora.',
+            cs: 'Dobrovolné – jinak nech tato pole prázdná. Souhlas lze kdykoli odvolat u pořadatele.',
+            default:
+              'Voluntary – otherwise leave these fields empty. You can withdraw it at any time via the organizer.',
+          },
+        },
         {
           type: 'boolean',
           name: 'consent_general_terms_and_conditions',
@@ -238,6 +292,8 @@ export default {
         {
           type: 'boolean',
           name: 'consent_privacy',
+          privacyConsent: true,
+          privacyConsentPurpose: ['photo_publication'],
           title: {
             en: 'I agree that photographs of {first_name} {last_name} may be taken and made available to the organizer for media coverage and advertising.',
             de: 'Ich stimme zu, dass von {first_name} {last_name} Aufnahmen erstellt werden dürfen und dem Veranstalter für Berichterstattung und Werbezwecke zur Verfügung gestellt werden.',

@@ -4,14 +4,11 @@ import type {
   LegalBasisKey,
   PrivacyDataCategoryRef,
   PrivacyPurposeRef,
-  PrivacyRecipientKey,
+  PrivacyRecipientRef,
   SpecialCategoryBasisKey,
 } from './catalogue.js';
-import {
-  ALWAYS_RECIPIENT_KEYS,
-  RETENTION_ANCHORS,
-  TRANSFER_SAFEGUARDS,
-} from './catalogue.js';
+import type { PrivacyNoticeExclusions } from './exclusions.js';
+import { ALWAYS_RECIPIENT_KEYS, TRANSFER_SAFEGUARDS } from './catalogue.js';
 
 /**
  * How the notice was written.
@@ -31,6 +28,8 @@ export interface PrivacyPurposeEntry {
   legitimateInterest?: Translatable | null;
   /** What to call it. Set only on `custom:` entries. */
   label?: Translatable | null;
+  /** Applies to every event: events cannot exclude it. */
+  allEvents?: boolean | null;
 }
 
 export interface PrivacyDataCategoryEntry {
@@ -44,6 +43,8 @@ export interface PrivacyDataCategoryEntry {
    * this is decided by `SPECIAL_CATEGORY_DATA_KEYS`, not by the author.
    */
   special?: boolean;
+  /** Applies to every event: events cannot exclude it. */
+  allEvents?: boolean | null;
 }
 
 /**
@@ -52,13 +53,15 @@ export interface PrivacyDataCategoryEntry {
  * expresses; naming the actual caterer is better practice and stays available.
  */
 export interface PrivacyRecipientEntry {
-  key: PrivacyRecipientKey;
+  key: PrivacyRecipientRef;
+  /** What to call it. Set only on `custom:` entries. */
+  label?: Translatable | null;
   name?: string | null;
   /** ISO 3166-1 alpha-2. Drives the third-country transfer disclosure. */
   country?: string | null;
+  /** Applies to every event: events cannot exclude it. */
+  allEvents?: boolean | null;
 }
-
-export type RetentionAnchor = (typeof RETENTION_ANCHORS)[number];
 
 /**
  * Something the baseline period does not cover, e.g. invoices a tax law says to
@@ -78,8 +81,7 @@ interface PrivacyRetentionExceptionBase {
 }
 
 /**
- * An exception that still ends on a date — a longer period, possibly counted
- * from somewhere else.
+ * An exception that still ends on a date — a longer period.
  *
  * `until` is optional rather than required because exceptions existed before
  * there was anything to distinguish: a version published back then has no
@@ -89,7 +91,6 @@ interface PrivacyRetentionExceptionBase {
 export interface PrivacyRetentionPeriodException extends PrivacyRetentionExceptionBase {
   until?: 'period';
   months: number;
-  anchor: RetentionAnchor;
 }
 
 /**
@@ -109,6 +110,12 @@ export interface PrivacyRetentionPeriodException extends PrivacyRetentionExcepti
  */
 export interface PrivacyRetentionConsentException extends PrivacyRetentionExceptionBase {
   until: 'consent_withdrawn';
+  /**
+   * The upper limit for consent nobody withdraws: without one, the data would be
+   * kept indefinitely. Optional only because versions published before it
+   * existed have none; the completeness check requires it.
+   */
+  months?: number;
 }
 
 export type PrivacyRetentionException =
@@ -120,14 +127,35 @@ export function isConsentBoundException(
   return exception.until === 'consent_withdrawn';
 }
 
+/**
+ * Every period counts from the end of the event: the data is needed until the
+ * event is over, and a date counted from each registration could fall due
+ * before the event even takes place. Versions published while a period could
+ * also count from submission store an `anchor`; none in use chose another
+ * value, so it is ignored.
+ */
 export interface PrivacyRetention {
   months: number;
-  anchor: RetentionAnchor;
   /**
    * Empty for the great majority of events: one baseline period is the whole
    * answer, and the author never has to categorise anything.
    */
   exceptions: PrivacyRetentionException[];
+  /**
+   * How long answers in special categories (Art. 9) are kept — usually only
+   * until shortly after the event, well before the rest. Optional only because
+   * older versions have none; the completeness check requires it.
+   */
+  specialCategories?: PrivacySpecialCategoryRetention | null;
+}
+
+export interface PrivacySpecialCategoryRetention {
+  weeks: number;
+}
+
+/** Weeks a sensitive-data period may not exceed, given the main period. */
+export function maxSpecialCategoryWeeks(months: number): number {
+  return months * 4;
 }
 
 export type TransferSafeguard = (typeof TRANSFER_SAFEGUARDS)[number];
@@ -192,6 +220,8 @@ export interface PrivacyNoticeAddendum {
   retention?: PrivacyRetention | null;
   thirdCountryTransfers?: PrivacyThirdCountryTransfers | null;
   additional?: Translatable | null;
+  /** Organization entries this event drops; see `appliedExclusions`. */
+  excluded?: PrivacyNoticeExclusions | null;
 }
 
 /** Whether the event says anything of its own yet. */
@@ -202,8 +232,34 @@ export function isEmptyAddendum(addendum: PrivacyNoticeAddendum): boolean {
     !addendum.recipients?.length &&
     !addendum.retention &&
     !addendum.thirdCountryTransfers &&
-    !addendum.additional
+    !addendum.additional &&
+    !hasExclusions(addendum.excluded)
   );
+}
+
+function hasExclusions(excluded: PrivacyNoticeExclusions | null | undefined) {
+  return Object.values(excluded ?? {}).some(
+    (keys) => Array.isArray(keys) && keys.length > 0,
+  );
+}
+
+/** Whether the event adds anything besides its own free text. */
+export function hasStructuredEntries(addendum: PrivacyNoticeAddendum): boolean {
+  return !isEmptyAddendum({ ...addendum, additional: null });
+}
+
+/**
+ * What of an addendum registrants can actually be shown. A free-text
+ * organization notice has no structure for entries to join, so only the
+ * event's own text survives composition.
+ */
+export function publishableAddendum(
+  organization: PrivacyNoticeContent | null,
+  addendum: PrivacyNoticeAddendum,
+): PrivacyNoticeAddendum {
+  return organization?.mode === 'free_text'
+    ? { additional: addendum.additional ?? null }
+    : addendum;
 }
 
 export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
@@ -215,7 +271,11 @@ export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
     // A real value, not just a placeholder in the editor's getter: the field
     // showed 24 while the notice stored nothing, so the author had to retype
     // the number they could already see to clear the completeness gap.
-    retention: { months: 24, anchor: 'event_end', exceptions: [] },
+    retention: {
+      months: 24,
+      exceptions: [],
+      specialCategories: { weeks: 4 },
+    },
     thirdCountryTransfers: { enabled: false, countries: [] },
     dpo: null,
     automatedDecisionMaking: false,
@@ -234,6 +294,8 @@ export interface OrganizationPrivacyNotice {
   content: PrivacyNoticeContent;
   publishedVersion: number | null;
   publishedAt: string | null;
+  /** Every locale the organization's events are offered in. */
+  requiredLocales: string[];
 }
 
 /**
@@ -261,6 +323,8 @@ export type PrivacyNoticeUpdateData = Pick<
  * to it.
  */
 export interface EventPrivacyNotice {
+  /** The locales the event is offered in. */
+  requiredLocales: string[];
   content: PrivacyNoticeAddendum;
   /** Null while the organization has published nothing at all. */
   organizationContent: PrivacyNoticeContent | null;

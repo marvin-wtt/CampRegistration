@@ -124,6 +124,22 @@ export default {
         archivedAt: 'Archiviert',
       },
     },
+    retention: {
+      label: 'Speicherfristen',
+      actions: {
+        postponed: 'Frist verschoben',
+        sensitive_purged: 'Sensible Daten gelöscht',
+        registrations_purged: 'Alle Anmeldungen gelöscht',
+      },
+      fields: {
+        count: 'Betroffene Anmeldungen',
+        postponedUntil: 'Verschoben auf',
+      },
+      kinds: {
+        sensitive: 'Sensible Daten',
+        registrations: 'Alle Anmeldedaten',
+      },
+    },
     payout: {
       label: 'Auszahlung',
       actions: {

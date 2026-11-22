@@ -12,7 +12,7 @@ import {
   zonedInstant,
 } from '@camp-registration/common/utils';
 import { localeForCountry } from '@camp-registration/common/locales';
-import type { Event, Registration } from '#generated/prisma/client';
+import type { Event, Prisma, Registration } from '#generated/prisma/client';
 
 /**
  * The event's fields resolved for templates: text in the reader's `locale`,
@@ -65,7 +65,16 @@ export function eventContactFor(
   };
 }
 
-export function eventRegistrationStatus(event: Event): EventRegistrationStatus {
+/**
+ * Data can only be deleted once this is `closed`, and an edit afterwards may not
+ * change that, so a purged event reads `closed` without checking for it.
+ */
+export function eventRegistrationStatus(
+  event: Pick<
+    Event,
+    'registrationOpensAt' | 'registrationClosesAt' | 'startAt' | 'timezone'
+  >,
+): EventRegistrationStatus {
   const now = new Date();
 
   // Without a window, registration simply hasn't been scheduled yet — unless
@@ -128,3 +137,9 @@ export function calculateFreePlaces(
     freePlacesTotal: Object.values(freePlaces).reduce((sum, v) => sum + v, 0),
   };
 }
+
+/** `isRetentionPurged` (common/privacy) as a query filter, for events not purged. */
+export const notRetentionPurged = {
+  sensitiveDataPurgedAt: null,
+  registrationDataPurgedAt: null,
+} as const satisfies Prisma.EventWhereInput;

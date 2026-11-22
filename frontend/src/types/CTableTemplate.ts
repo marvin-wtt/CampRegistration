@@ -12,6 +12,8 @@ export interface CTableColumnTemplate extends Omit<
 > {
   field: string | FieldResolver;
   fieldName: string;
+  /** Its answers were deleted (docs/privacy.md, 8): not sortable or searchable. */
+  purged?: boolean;
 }
 export interface CTableTemplate extends Omit<TableTemplate, 'columns'> {
   columns: CTableColumnTemplate[];

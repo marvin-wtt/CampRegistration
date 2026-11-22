@@ -13,6 +13,7 @@ import {
   QuestionSelectBase,
   SurveyModel,
 } from 'survey-core';
+import { isSpecialCategory } from './privacyTags.js';
 
 interface SelectData {
   label: string;
@@ -146,10 +147,19 @@ function getNestedQuestions(question: Question): Question[] {
   return question.getNestedQuestions();
 }
 
-export function extractFormFields(form: object, prefix?: string): SelectData[] {
+export function extractFormFields(
+  form: object,
+  prefix?: string,
+  options: { withoutSpecialCategories?: boolean } = {},
+): SelectData[] {
   return new SurveyModel(form)
     .getAllQuestions()
     .flatMap((q) => collectFields(q, IGNORED_TYPES, prefix))
+    .filter(
+      ({ question }) =>
+        !options.withoutSpecialCategories ||
+        !isSpecialCategory(question.getPropertyValue('privacyCategory')),
+    )
     .map(({ label, value }) => ({ label, value }));
 }
 

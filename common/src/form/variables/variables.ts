@@ -6,7 +6,9 @@ import {
   formatMoney,
   fromMinorUnits,
   groupPrice,
+  naiveDateTimeToUtcCarrier,
   translate,
+  uniformSpaces,
   utcCarrierToNaiveDateTime,
 } from '../../utils/index.js';
 
@@ -129,54 +131,50 @@ export const setVariables = (
   }
 };
 
+// An ISO string with an offset: a UTC carrier after a JSON round trip, as in
+// a queued mail's payload.
+const CARRIER_JSON = /(Z|[+-]\d{2}:?\d{2})$/;
+
 // Naive digits as written; a `Date` is the backend's UTC carrier of them.
-const naiveDateTime = (value: Date | string): string =>
-  typeof value === 'string' ? value : utcCarrierToNaiveDateTime(value);
+const naiveDateTime = (value: Date | string): string => {
+  if (typeof value !== 'string') {
+    return utcCarrierToNaiveDateTime(value);
+  }
 
+  return CARRIER_JSON.test(value)
+    ? utcCarrierToNaiveDateTime(new Date(value))
+    : value;
+};
+
+const FALLBACK_LOCALE = 'en-US';
+
+/**
+ * Dates and times of naive digits, alike on every side: read as a UTC carrier
+ * and formatted in UTC, so the runtime's own zone never moves them (a time in
+ * its DST gap would), and with uniform spaces.
+ */
 const converter = (locale: string) => {
-  const fallbackLocale = 'en-US';
-
-  function toDate(timestamp: Date | string): string | undefined {
-    const date =
-      typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+  const format = (naive: string, options: Intl.DateTimeFormatOptions) => {
+    let date: Date;
+    try {
+      date = naiveDateTimeToUtcCarrier(naive);
+    } catch {
+      // No date set (yet): the variable stays empty.
+      return undefined;
+    }
+    const utc = { ...options, timeZone: 'UTC' };
 
     try {
-      return toDateString(date, locale);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (ignored) {
-      return toDateString(date, fallbackLocale);
+      return uniformSpaces(date.toLocaleString(locale, utc));
+    } catch {
+      return uniformSpaces(date.toLocaleString(FALLBACK_LOCALE, utc));
     }
-  }
-
-  function toDateString(date: Date, locale: string): string {
-    return date.toLocaleDateString(locale, {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  }
-
-  function toTime(timestamp: Date | string): string | undefined {
-    const date =
-      typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
-    try {
-      return toTimeString(date, locale);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (ignored) {
-      return toTimeString(date, fallbackLocale);
-    }
-  }
-
-  function toTimeString(date: Date, locale: string): string {
-    return date.toLocaleTimeString(locale, {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
+  };
 
   return {
-    toDate,
-    toTime,
+    toDate: (naive: string) =>
+      format(naive, { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    toTime: (naive: string) =>
+      format(naive, { hourCycle: 'h23', hour: '2-digit', minute: '2-digit' }),
   };
 };

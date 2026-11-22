@@ -4,7 +4,11 @@ import {
   SurveyCreatorModel,
   SurveyLogic,
 } from 'survey-creator-core';
-import { QuestionMatrixDynamicModel, type SurveyModel } from 'survey-core';
+import {
+  QuestionMatrixDynamicModel,
+  type Question,
+  type SurveyModel,
+} from 'survey-core';
 import '@camp-registration/common/form';
 import { hideIrrelevantProperties } from './hiddenProperties';
 import { showPricesOnlyWhenTagged } from './pricedQuestions';
@@ -101,6 +105,43 @@ describe('editor modes', () => {
       creator.selectElement(creator.survey.getQuestionByName(name));
       expect(properties()).toContain('groupCountryMatch');
     }
+  });
+
+  it('offers the privacy tags in simple mode', () => {
+    const creator = createCreator();
+    creator.JSON = {
+      elements: [
+        { type: 'comment', name: 'allergies' },
+        { type: 'boolean', name: 'consent_health' },
+      ],
+    };
+    const properties = trackPropertyGrid(creator);
+    applyEditorMode(creator, 'simple', context);
+    const reselect = (question: Question) => {
+      creator.selectElement(null);
+      creator.selectElement(question);
+    };
+
+    const allergies = creator.survey.getQuestionByName('allergies');
+    creator.selectElement(allergies);
+    expect(properties()).toContain('privacyCategory');
+
+    // Purpose and coverage only matter once the question is a consent.
+    const consent = creator.survey.getQuestionByName('consent_health');
+    creator.selectElement(consent);
+    expect(properties()).toContain('privacyConsent');
+    expect(properties()).not.toContain('privacyConsentPurpose');
+    expect(properties()).not.toContain('privacyConsentFor');
+
+    // What a consent unlocks only once the form tags sensitive data.
+    consent.setPropertyValue('privacyConsent', true);
+    reselect(consent);
+    expect(properties()).toContain('privacyConsentPurpose');
+    expect(properties()).not.toContain('privacyConsentFor');
+
+    allergies.setPropertyValue('privacyCategory', 'allergies');
+    reselect(consent);
+    expect(properties()).toContain('privacyConsentFor');
   });
 
   describe.each(['simple', 'standard', 'expert'] as const)(

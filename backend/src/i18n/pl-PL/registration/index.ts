@@ -5,6 +5,7 @@ export default {
     changes: {
       cleared: 'usunięto',
       file: 'plik zaktualizowany',
+      sensitive: 'zmieniono',
     },
     managerNotification: {
       subject: 'Nowe zgłoszenie | {{ event.name }}',

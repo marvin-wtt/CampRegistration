@@ -2,7 +2,6 @@ import type { EventDataType } from '@/lib/surveyJs/properties/eventDataMapping/E
 import { type IPropertyGridEditor } from 'survey-creator-core';
 import {
   waitingList,
-  newsletterConsent,
   country,
   dateOfBirth,
   email,
@@ -26,7 +25,6 @@ dataTypes.push(firstName);
 dataTypes.push(gender);
 dataTypes.push(lastName);
 dataTypes.push(name);
-dataTypes.push(newsletterConsent);
 dataTypes.push(phone);
 dataTypes.push(paymentAmount);
 dataTypes.push(role);

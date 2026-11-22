@@ -45,6 +45,10 @@ export default {
     funding_body: "L'organisme financeur",
     medical_provider: 'Les médecins et les services de secours',
     public_authority: 'Les autorités publiques',
+    partner_organization: 'Une organisation partenaire ou co-organisatrice',
+    participants: 'Les autres participants',
+    it_service_provider:
+      'Les prestataires informatiques (p. ex. e-mail, stockage en ligne, comptabilité)',
     payment_provider: 'Le prestataire de paiement',
     platform_operator: "L'exploitant de cette plateforme d'inscription",
   },
@@ -81,11 +85,6 @@ export default {
       "Uniquement pour constater, exercer ou défendre un droit en justice, par exemple un constat d'accident conservé pour un litige d'assurance.",
   },
 
-  retentionAnchor: {
-    event_end: "après la fin de l'événement",
-    submission: "après l'envoi de l'inscription",
-  },
-
   retentionUntil: {
     period: 'pour une durée déterminée',
     consent_withdrawn:
@@ -106,7 +105,6 @@ export default {
   editor: {
     field: {
       art9Basis: 'Base légale',
-      art9Other: 'Utiliser une autre base légale',
       art9Advisory:
         "Pas sensible en soi. Si votre formulaire propose halal ou casher, cochez aussi « Appartenance religieuse » ; s'il recueille des allergies, cochez « Allergies ».",
       consentQuestion:
@@ -114,10 +112,6 @@ export default {
       recipientName: 'Nom (facultatif)',
       recipientNameHint:
         'Nommer le destinataire réel est plus clair que la seule catégorie.',
-    },
-    origin: {
-      organization: "De l'organisation",
-      event: 'Ajouté ici',
     },
     action: {
       publish: 'Publier',
@@ -152,12 +146,16 @@ export default {
     special_category_basis:
       "Les données sensibles n'ont pas de base légale au titre de l'art. 9",
     custom_category_label: "Une catégorie que vous avez ajoutée n'a pas de nom",
+    custom_recipient_label:
+      "Un destinataire que vous avez ajouté n'a pas de nom",
     automated_details:
       "Une décision automatisée est déclarée mais sa logique n'est pas expliquée",
     recipients: "Aucun destinataire n'a été indiqué",
     retention: "Aucune durée de conservation n'a été définie",
     retention_exception:
       "Une exception n'a pas de durée, ou pas d'objet indiqué",
+    special_category_retention:
+      'Aucune durée pour les données de santé et autres données sensibles, ou une durée plus longue que la durée générale',
     retention_exception_consent_basis:
       "Des données conservées jusqu'au retrait du consentement sont rattachées à une finalité qui ne repose pas sur le consentement",
     transfer_countries:

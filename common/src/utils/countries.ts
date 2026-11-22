@@ -255,6 +255,39 @@ export const COUNTRY_CODES = [
   'zw',
 ] as const;
 
+export const EEA_COUNTRY_CODES = [
+  'at',
+  'be',
+  'bg',
+  'hr',
+  'cy',
+  'cz',
+  'dk',
+  'ee',
+  'fi',
+  'fr',
+  'de',
+  'gr',
+  'hu',
+  'ie',
+  'it',
+  'lv',
+  'lt',
+  'lu',
+  'mt',
+  'nl',
+  'pl',
+  'pt',
+  'ro',
+  'sk',
+  'si',
+  'es',
+  'se',
+  'is',
+  'li',
+  'no',
+] as const;
+
 /** The country's name in `locale`, the upper-case code when unknown. */
 export function countryName(code: string, locale: string): string {
   if (!code) {

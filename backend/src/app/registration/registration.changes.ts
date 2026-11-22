@@ -16,6 +16,8 @@ export interface RegistrationChange {
   value: string | null;
   /** File answers are ULIDs — the caller words these instead of printing them. */
   isFile: boolean;
+  /** Special-category answers travel without their value, worded by the caller. */
+  isSensitive: boolean;
 }
 
 /**
@@ -81,10 +83,7 @@ function answersFor(
 ): Map<string, FormAnswer> {
   // `freePlaces` only feeds `visibleIf` expressions, which do not affect how an
   // answer is labelled or displayed — a mail payload carries no place count.
-  const form = new RegistrationForm(
-    { ...event, freePlaces: 0 },
-    { locale, group },
-  );
+  const form = new RegistrationForm({ ...event, freePlaces: 0 }, group, locale);
 
   form.load(data);
 
@@ -123,8 +122,10 @@ export function diffRegistrationData(
     changes.push({
       path: answer.path,
       label: answer.label,
-      value,
+      // Never carried into the mail job, let alone the mail.
+      value: answer.isSensitive ? null : value,
       isFile: answer.isFile,
+      isSensitive: answer.isSensitive,
     });
   };
 
