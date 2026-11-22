@@ -12,8 +12,15 @@
     @dragend="isDragging = false"
   >
     <div class="cal-event__inner">
-      <div class="cal-event__title q-calendar__ellipsis">
+      <div class="cal-event__title">
         {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
+      </div>
+      <div class="cal-event__meta">{{ timeRange }}</div>
+      <div
+        v-if="event.location"
+        class="cal-event__meta cal-event__location"
+      >
+        {{ to(event.location) }}
       </div>
     </div>
 
@@ -57,6 +64,8 @@ import type { ProgramItem } from '@camp-registration/common/entities';
 import { computed, ref, type StyleValue, useTemplateRef } from 'vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import CalendarItemPopup from '@/components/event/programPlanner/CalendarItemPopup.vue';
+import { formatMinutesAsTime, parseTimeToMinutes } from '@/utils/date';
+import { DEFAULT_PROGRAM_ITEM_COLOR } from '@/utils/programItem';
 
 const {
   event,
@@ -128,7 +137,7 @@ function onClick(e: MouseEvent) {
   if (e.ctrlKey || e.metaKey) {
     return;
   }
-  popupRef.value?.show(e);
+  void popupRef.value?.show(e);
 }
 
 function onDragStart(e: DragEvent) {
@@ -151,9 +160,8 @@ function onDragStart(e: DragEvent) {
       left: '-9999px',
       width: `${rect.width}px`,
       height: `${rect.height}px`,
-      backgroundColor: event.color ?? '#2196F3',
-      borderLeft: '3px solid rgba(0,0,0,0.2)',
-      borderRadius: '6px',
+      backgroundColor: color.value,
+      borderRadius: '8px',
       color: 'white',
       fontSize: '13px',
       fontWeight: '600',
@@ -203,6 +211,18 @@ function onDragStart(e: DragEvent) {
 // side by side — in a single-plan view there is no other half to drag into.
 const planResizable = computed<boolean>(() => editable && viewBoth);
 
+const color = computed<string>(() => event.color ?? DEFAULT_PROGRAM_ITEM_COLOR);
+
+// Follows a live resize, so the end time updates while dragging the handle
+const timeRange = computed<string>(() => {
+  const start = event.time ? parseTimeToMinutes(event.time) : null;
+  if (start === null) {
+    return '';
+  }
+  const end = start + (durationOverride ?? event.duration ?? 60);
+  return `${formatMinutesAsTime(start)} – ${formatMinutesAsTime(end)}`;
+});
+
 const INSET_PER_LEVEL = 12;
 const MAX_INSET_FRACTION = 0.4;
 
@@ -234,7 +254,7 @@ const badgeStyles = computed<StyleValue>(() => {
     : `calc(${spanPercent}% - 4px)`;
 
   return {
-    backgroundColor: event.color ?? '#2196F3',
+    backgroundColor: color.value,
     top,
     height,
     left,
@@ -319,11 +339,15 @@ function startPlanResize(e: MouseEvent, side: 'left' | 'right') {
 .cal-event {
   position: absolute;
   margin: 1px 2px;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  border-left: 3px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  // A hairline keeps same-colored neighbours apart without a heavy border
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+  // Lets the content adapt to the block's height (see @container below)
+  container-type: size;
   transition: box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
   // Each further event of an overlapping stack draws above the previous one
   z-index: var(--cal-depth, 0);
@@ -361,21 +385,37 @@ function startPlanResize(e: MouseEvent, side: 'left' | 'right') {
     }
   }
 
+  // Column-wrapping pushes a line that doesn't fit entirely into a second,
+  // clipped column — so time and location show in full or not at all.
   &__inner {
-    padding: 2px 4px;
-    height: calc(100% - 2px);
+    padding: 3px 8px;
+    height: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-flow: column wrap;
+    align-content: flex-start;
+    column-gap: 16px;
     overflow: hidden;
+    color: white;
+  }
+
+  &__title,
+  &__meta {
+    width: 100%;
+    line-height: 1.3;
   }
 
   &__title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: white;
-    line-height: 1.3;
-    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  &__meta {
+    font-size: 11px;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__resize-handle {
@@ -455,6 +495,19 @@ function startPlanResize(e: MouseEvent, side: 'left' | 'right') {
   &:hover &__resize-handle,
   &:hover &__plan-handle {
     opacity: 1;
+  }
+}
+
+// A block too short for two lines keeps the title to one
+@container (max-height: 34px) {
+  .cal-event__inner {
+    padding-block: 1px;
+  }
+
+  .cal-event__title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>
