@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": [".claude/hooks/*.mjs"]
+      "entry": [".claude/hooks/*.mjs", "commitlint.config.mjs"]
     },
     "common": {
       "entry": ["src/*/index.ts"],
