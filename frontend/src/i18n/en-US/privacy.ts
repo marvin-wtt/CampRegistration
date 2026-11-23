@@ -65,22 +65,21 @@ export default {
   },
 
   legalBasis: {
-    contract: 'Performance of a contract (Art. 6(1)(b) GDPR)',
-    legal_obligation: 'Compliance with a legal obligation (Art. 6(1)(c) GDPR)',
-    vital_interests: 'Protection of vital interests (Art. 6(1)(d) GDPR)',
-    legitimate_interests: 'Legitimate interests (Art. 6(1)(f) GDPR)',
-    consent: 'Consent (Art. 6(1)(a) GDPR)',
-    public_task: 'Task carried out in the public interest (Art. 6(1)(e) GDPR)',
+    contract: 'Performance of a contract',
+    legal_obligation: 'Compliance with a legal obligation',
+    vital_interests: 'Protection of vital interests',
+    legitimate_interests: 'Legitimate interests',
+    consent: 'Consent',
+    public_task: 'Task carried out in the public interest',
   },
 
   specialCategoryBasis: {
-    explicit_consent: 'Explicit consent (Art. 9(2)(a) GDPR)',
-    vital_interests: 'Protection of vital interests (Art. 9(2)(c) GDPR)',
-    health_care: 'Health or social care (Art. 9(2)(h) GDPR)',
-    nonprofit_body:
-      'Legitimate activities of a not-for-profit body (Art. 9(2)(d) GDPR)',
-    legal_claims:
-      'Establishment or defence of legal claims (Art. 9(2)(f) GDPR)',
+    explicit_consent: 'Explicit consent',
+    vital_interests: 'Protection of vital interests',
+    health_care: 'Health or social care',
+    nonprofit_body: 'Legitimate activities of a not-for-profit body',
+    legal_claims: 'Establishment or defence of legal claims',
+    public_interest: 'Substantial public interest under a law',
   },
 
   specialCategoryCondition: {
@@ -94,6 +93,8 @@ export default {
       'Only if the data is handled by, or under the responsibility of, someone bound by professional secrecy, such as a doctor or nurse.',
     legal_claims:
       'Only for establishing, exercising or defending a legal claim, such as an accident report kept for an insurance dispute.',
+    public_interest:
+      'Only where a law of the EU or your country requires or permits the processing; name that law below. Get legal advice before relying on it.',
   },
 
   retentionUntil: {
@@ -108,7 +109,7 @@ export default {
     adequacy: 'an adequacy decision of the European Commission',
     scc: 'standard contractual clauses',
     bcr: 'binding corporate rules',
-    derogation: 'a derogation under Art. 49 GDPR',
+    derogation: 'a derogation',
   },
 
   /**
@@ -119,10 +120,13 @@ export default {
   editor: {
     field: {
       art9Basis: 'Legal basis',
+      legalReference: 'Law this rests on',
+      legalReferenceHint:
+        'The provision you rely on, e.g. the statute and section',
       art9Advisory:
         'Not sensitive in itself. If your form offers halal or kosher options, also tick “Religious affiliation”; if it collects allergies, tick “Allergies”.',
       consentQuestion:
-        'Saying so here is not consent. The registration form has to ask for it in a question of its own that may be left unanswered — registering must stay possible without it (Art. 7(4) GDPR).',
+        'Saying so here is not consent. The registration form has to ask for it in a question of its own that may be left unanswered — registering must stay possible without it ({citation}).',
       recipientName: 'Name (optional)',
       recipientNameHint:
         'Naming the actual recipient is clearer than the category alone.',
@@ -153,13 +157,16 @@ export default {
   },
 
   gap: {
+    purpose_basis: 'A purpose has no legal basis yet',
+    supervisory_authority: 'No supervisory authority has been named',
     purposes: 'No purpose of processing has been given',
     legitimate_interest_explanation:
       'A legitimate interest is relied on but not described',
     custom_purpose_label: 'A purpose you added has no name',
     data_categories: 'No categories of data have been listed',
-    special_category_basis:
-      'Special category data has no legal basis under Art. 9',
+    special_category_basis: 'Special category data has no legal basis',
+    special_category_legal_reference:
+      'A legal basis that rests on a law does not name it',
     custom_category_label: 'A category you added has no name',
     custom_recipient_label: 'A recipient you added has no name',
     automated_details:

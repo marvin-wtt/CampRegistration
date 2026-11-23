@@ -15,6 +15,7 @@
     hide-bottom-space
     rounded
     outlined
+    options-selected-class=""
     @filter="onFilter"
   >
     <template #no-option>

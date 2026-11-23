@@ -47,7 +47,8 @@ const organizationBody = {
     .max(255)
     .nullable()
     .optional(),
-  country: z.enum(EEA_COUNTRY_CODES),
+  // Country codes are lowercase throughout; any case is accepted.
+  country: z.string().toLowerCase().pipe(z.enum(EEA_COUNTRY_CODES)),
   addressStreet: z.string().min(1).max(255),
   addressZipCode: z.string().min(1).max(20),
   addressCity: z.string().min(1).max(255),

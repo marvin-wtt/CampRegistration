@@ -10,6 +10,8 @@ Every behavior is tagged:
 - **[planned]** — designed, not built
 - **[gap]** — a known shortcoming without a design yet
 - **[review]** — a legal assumption the design rests on, to be confirmed by counsel
+- **[accepted]** — a known limitation kept on purpose; **[dropped]** — considered
+  and rejected
 
 **Design principle.** Build only what the law requires or what has clear practical
 value. Reuse existing structures — form data, the versioned privacy notice, the
@@ -34,8 +36,13 @@ only appear here where they touch registrant data.
 - **[review]** Each event belongs to exactly one organization (`Event.organizationId`),
   so the model has one controller per event. Joint controllership (Art. 26), e.g. a
   camp run jointly by a French and a German organization, cannot be expressed.
-- **[gap]** The data processing agreement between platform and organization lives
-  outside the app; nothing records that one was concluded.
+- **[implemented]** Above the publish button on both privacy pages, for whoever
+  may publish, a note that the page only helps write the information, that the
+  author must check it, and that the organization is responsible for it
+  (`PrivacyResponsibilityNotice.vue`, in `PrivacyPublishCard.vue`), in either
+  mode.
+- **[accepted]** The data processing agreement between platform and organization is
+  concluded outside the app; nothing in it records one.
 
 ## 2. The privacy notice (Art. 12, 13)
 
@@ -55,11 +62,24 @@ only appear here where they touch registrant data.
   - `builder` — the organization ticks catalogue entries and the app renders the
     legal text in all five locales.
   - `free_text` — the organization writes the whole notice itself. No structural
-    check, no automatic translation.
+    check, no automatic translation, and no law to choose.
+  - **[implemented]** A guided notice appends the fixed sections — data
+    provision, rights and complaint with the supervisory authority, cited from
+    its law's record (`PrivacyNotice.vue`, `generatesLegalText`). A free-text
+    notice appends nothing: the text is the whole notice, and the editor says it
+    must include the rights and the authority.
+  - **[accepted]** A free-text version published before the framework setting
+    existed (no `framework` key) keeps the appended GDPR sections: its author was
+    told they are added. Publishing it again drops them; the server stores
+    `framework: null` on every free-text notice for that reason.
 - **[implemented]** Controller identity comes from the `Organization` record, the
   supervisory authority from `Organization.country` (`supervisoryAuthorities.ts`).
   Data-subject rights, the complaint right and the data-provision statement are fixed
   text, not authored.
+- **[implemented]** Country codes are lowercase everywhere, as on `Organization` and
+  events: the server lowercases the organization's country and every country in a
+  notice (recipients, transfers, excluded transfers) on write, so lookups and
+  comparisons need no case handling. Only display uppercases them.
 - **[implemented]** Recipients, like purposes and categories, take `custom:<id>`
   entries with an organizer-written label per locale (`PrivacyRecipientRef`):
   Art. 13(1)(e) asks for every recipient or category of recipients, and a closed
@@ -227,7 +247,7 @@ clone rules in `PrivacyNoticeService`.
   belongs to (`PRIVACY_NOTICE_GAP_SECTIONS`).
 - **[implemented]** Ticking a purpose adds its preset basis, categories and
   recipients (`PRIVACY_PURPOSE_PRESETS`); unticking never removes them again.
-- **[implemented]** Special categories pre-select explicit consent; the four other
+- **[implemented]** Special categories pre-select explicit consent; the five other
   Art. 9 bases sit behind "use a different legal basis", each with the condition
   under which it applies (`SpecialCategoryBasisField.vue`,
   `privacy.specialCategoryCondition`).
@@ -281,8 +301,10 @@ Findings, most important first:
 2. **Art. 13(2)(e).** **[implemented]** The fixed text says required fields are
    needed to process the registration and makes no promise about acceptance. When
    a purpose rests on a legal obligation (Art. 6(1)(c)), it adds that the data for
-   those purposes is required by law (`PrivacyNotice.vue`). **[planned]** The same
-   for categories on Art. 9(2)(g), once that basis exists.
+   those purposes is required by law (`PrivacyNotice.vue`). Categories on
+   Art. 9(2)(g) add nothing here: (g) says a law justifies the processing, not
+   that the person must provide the data — a duty to provide it shows as a purpose
+   on (1)(c).
 3. **Supervisory authority for Germany.** The BfDI was named, who is not competent
    for associations or companies. **[implemented]** For countries flagged
    `regional` the notice names no body: it says the authority of the region where
@@ -304,11 +326,12 @@ Findings, most important first:
    informed under Art. 14, not 13. Whether Art. 14(5) applies is open.
 8. **[review] Art. 21(4).** The right to object must be presented clearly and
    separately; it is a list item plus a note.
-9. **[planned] The `photos` consent hint** says registering must always stay
-   possible without consent; reword it once the "necessary for participation"
-   option of section 5 exists.
-10. **[review]** Church organizations under KDG / DSG-EKD have their own law and
-    authorities; the notice cites GDPR only.
+9. **The `photos` consent hint** says registering must always stay possible
+   without consent. Reword it only if open question 2 allows mandatory consent.
+10. **Church organizations** under KDG / DSG-EKD have their own law and
+    authorities. **[implemented]** They can declare another law and publish free
+    text without GDPR sections. **[implemented]** Builder support with verified
+    citations; see "Data protection framework" (section 4).
 11. **Events over-declare.** Every event inherited all organization entries.
     **[implemented]** Event exclusions (section 2).
 
@@ -336,15 +359,25 @@ Findings, most important first:
   nothing under Art. 9; halal, kosher or an allergy do.
 - **[implemented]** Selectable bases (`SPECIAL_CATEGORY_BASIS_KEYS`):
   `explicit_consent` (default), and behind "advanced" `nonprofit_body` (d),
-  `vital_interests` (c), `health_care` (h), `legal_claims` (f).
+  `vital_interests` (c), `health_care` (h), `legal_claims` (f),
+  `public_interest` (g).
 - **[review]** Deliberately excluded: (b) employment law, (e) manifestly public,
   (i) public health, (j) archiving/research — none fits an event organizer.
-- **[planned]** Re-add (g) substantial public interest, with a mandatory **legal
-  reference** field (new completeness gap when empty).
+- **[implemented]** (g) substantial public interest (`public_interest`, behind
+  "use a different legal basis"), with a mandatory **legal reference**
+  (`legalReference` on the category entry; gap `special_category_legal_reference`
+  when empty, `needsLegalReference`). Generic, not tied to one country: the
+  organizer names the provision, usually untranslated, and the platform asserts
+  nothing about its validity. The notice prints it after the basis. Categories on
+  (g) need no consent question (`consentBasedCategories`). The server keeps the
+  reference only while the basis is (g), so switching away leaves none behind.
 - **[review]** French youth stays (accueils collectifs de mineurs): regulation is
   understood to require the organizer to hold certain health information such as
-  vaccinations, which would rest on (g). Not assumed valid until confirmed: which
-  fields, which provision, and whether it extends beyond what the regulation names.
+  vaccinations. Which Art. 6 basis (likely (1)(c)) and which Art. 9 basis — (g) or
+  another — apply is not assumed until confirmed: which fields, which provision,
+  and whether it extends beyond what the regulation names (open question 3).
+- **[dropped]** ACM-specific fields, presets or rules. No demonstrated requirement;
+  an ACM organizer declares (1)(c) and (g) like anyone else.
 - **[review]** (c) vital interests covers an emergency in which the person cannot
   consent; it is not a basis for collecting health data at registration.
 - **[review]** (d) not-for-profit bodies covers members and regular contacts of a
@@ -362,7 +395,7 @@ Findings, most important first:
 - **[review]** Where it is unclear whether a national rule applies, explicit consent
   for everyone is the fallback.
 
-### Church data protection law (Art. 91)
+### Data protection framework (Art. 91 and others)
 
 Churches that had comprehensive data protection rules when the GDPR took effect may
 keep applying them (Art. 91). In Germany that is the Catholic Church's **KDG**
@@ -370,34 +403,190 @@ keep applying them (Art. 91). In Germany that is the Catholic Church's **KDG**
 Church bodies — parishes, dioceses, Landeskirchen, and often their charities —
 are governed by them instead of the GDPR and the BDSG, and answer to a church
 supervisory authority. Parish youth camps and confirmation retreats are a core use
-of the platform, so today's notice is wrong for them in two places: it cites GDPR
+of the platform, so a GDPR notice is wrong for them in two places: it cites GDPR
 articles, and it names the state authority.
 
-- **[planned]** An organization setting, the data protection framework: `gdpr`
-  (default), `kdg` or `dsg_ekd`, offered only where the organization's country has
-  church frameworks (Germany). Declared by the organization, never inferred: only
-  church bodies themselves fall under KDG or DSG-EKD, while independent associations
-  with a Christian background (a CVJM e.V., most scout groups) stay under the GDPR,
-  and neither the country nor the name tells them apart.
-- **[planned]** Each framework is a data record, not a branch in the renderer:
-  - a citation table from every GDPR provision the notice cites (Art. 6(1)(a)–(f),
-    7(3), 9(2), 13–21, 77) to the framework's own paragraph;
-  - how the supervisory authority is found: for KDG one of the regional Catholic
-    data protection authorities, chosen by diocese; for DSG-EKD the EKD data
-    protection commissioner and its regional office.
-    The notice keeps its structure and reads only citations and authority from the
-    record. The same mechanism covers other countries' church frameworks later (e.g.
-    the Polish Catholic Church's general decree).
-- **[planned]** The DPO step (step 1, `PrivacyDpoFields.vue`) explains the
-  framework's own rule on when a DPO is required, instead of the BDSG one.
-- **[planned]** The notice version records the framework it was published under, so
-  the proof of information (section 2) stays exact if an organization changes it.
-- **[gap]** Until then a church body can only use a free-text notice, and the
-  structured parts outside it — the supervisory authority from
-  `Organization.country` — still name the state authority. A per-organization
-  override of the authority is the minimal stop-gap.
-- **[review]** The citation tables and the authority list must come from legal
-  review; no paragraph number is shipped unverified.
+#### The choice
+
+- **[implemented]** The organization's privacy page asks for the mode first.
+  Free text needs nothing else. A guided notice asks for its law — `gdpr`
+  (default), `kdg` or `dsg_ekd` (`DATA_PROTECTION_FRAMEWORKS`,
+  `common/src/privacy/content.ts`) — from a select when the organization's
+  country offers more than one (`frameworksFor`); otherwise the GDPR applies
+  and the page says so. Either way it points to free text if none of the laws
+  applies. Declared by the organization, never inferred:
+  only church bodies themselves fall under KDG or DSG-EKD, while independent
+  associations with a Christian background (a CVJM e.V., most scout groups) stay
+  under the GDPR, and neither the country nor the name tells them apart. Choosing
+  it is the organizer's responsibility, as controller.
+- **[implemented]** It is a field of the organization notice content
+  (`framework`), not of `Organization`: every published version records the
+  framework it was published under, so the proof of information (section 2) stays
+  exact, with no column and no migration. Versions without it are GDPR notices
+  (`noticeFramework`).
+- **[implemented]** A law without a record cannot be chosen (400,
+  `privacy-notice.validation.ts`); an organization under one writes free text.
+  A free-text notice cites no law: the server stores `framework: null`, stamps
+  no record version and keeps no entered authority.
+
+#### KDG and DSG-EKD in the builder
+
+One baseline per law, not one per diocese or Landeskirche:
+
+- **KDG** — the model law of the Verband der Diözesen Deutschlands. Each diocese
+  enacts it in its own official gazette, and a diocesan version may differ.
+- **DSG-EKD** — the EKD's law, binding on the Landeskirchen, which may add
+  implementing and supplementary rules as long as they do not contradict it
+  (§ 54 Abs. 2 DSG-EKD).
+
+Design:
+
+- **[implemented]** Options `kdg` and `dsg_ekd` beside `gdpr` for a guided
+  notice, offered to organizations in Germany (`frameworksFor`; a value already
+  chosen stays listed). Free text remains for any organization whose law the
+  platform does not cover, or whose diocesan or regional rules deviate from the
+  baseline in a way the builder cannot express.
+- **[implemented]** Each law is a **framework record**
+  (`common/src/privacy/frameworks.ts`: `GDPR_RECORD`, `KDG_RECORD`,
+  `DSG_EKD_RECORD`), not a branch in the renderer and not a set of translations:
+  a version, a citation per provision the notice and its editors cite
+  (`CitationKey`), and for the church laws their name (the option label), the
+  baseline text with its date, an authority hint, wording of their own and
+  cautions. The translations carry the wording only; labels get the citation
+  appended in code (`usePrivacyLabels`: `cite`, `withCitation`,
+  `legalBasisLabel`, `specialBasisLabel`, `safeguardLabel`), and sentence hints
+  take it as a `{citation}` parameter. The privacy pages provide their notice to
+  the controls inside them (`providePrivacyFramework`); the notice passes its
+  own. `GDPR_RECORD` builds the GDPR citations in each locale's style — the
+  composed labels were checked against the previous strings, 90 of them, with no
+  difference. Church citations are German in every locale, as the laws exist
+  only in German. `generatesLegalText` means "the law has a record".
+- **[implemented]** Framework-specific wording, where a law names its own ground
+  rather than renumbering the GDPR's (`labels`): the task basis (KDG "im
+  kirchlichen Interesse", DSG-EKD "Aufgaben der verantwortlichen Stelle"), (d)
+  as the activity of a church body, and (g) with the law it rests on — church law
+  under the KDG, church or state law under the DSG-EKD — and its condition text.
+- **[implemented]** Choosing a church framework shows a warning in law-neutral
+  wording, with the baseline and its date from the record: check that the law
+  applies to your organization, that the version in force for you matches the
+  one cited, and whether your diocese or regional church deviates; if it does,
+  use free text. A warning, not a confirmation step: the choice is the
+  controller's. The responsibility note above the publish button applies too.
+- **[implemented]** Under a church framework the organizer **enters** the
+  supervisory authority (`supervisoryAuthority` in the notice content, name and
+  optional website, `PrivacyAuthorityFields.vue` in the controller step, with the
+  record's hint on which authority is competent). Completeness gap
+  `supervisory_authority` while empty, for a guided notice only — free text
+  names the authority itself. Never derived: the KDG makes the authority of the
+  diocese where the legal entity has its seat competent (§ 42 Abs. 1, § 45 Abs. 1
+  KDG), and diocese borders do not follow the federal states; under the DSG-EKD a
+  Landeskirche sets up its own authority, alone or jointly, unless it hands the
+  task to the EKD's (§ 39 Abs. 3 DSG-EKD). No authority list is kept. One helper
+  decides what a notice names (`noticeSupervisoryAuthority`): derived under the
+  GDPR, entered under a church law, none otherwise; the server drops an entered
+  authority from a GDPR notice.
+- **[implemented]** Records are versioned: the server stamps the record version
+  on every published notice (`frameworkVersion`, whatever the client sends), and
+  `frameworkRecord(framework, version)` resolves it, so a renumbering by a later
+  amendment never changes what an earlier registrant was shown (section 2). A
+  superseded record stays in `RECORD_VERSIONS` when one is replaced. Every
+  organization notice gets the stamp on its next publish, which appends one
+  version once.
+- **[implemented]** Restricted bases. A record may attach a caution to a legal
+  basis (`cautions`), shown under the basis select on both privacy pages. One
+  case today: KDG legitimate interests, which § 6 Abs. 1 lit. g Satz 2 KDG
+  denies to public-law church bodies — parishes, dioceses — performing their
+  tasks. A basis with a caution is never pre-selected: ticking a purpose whose
+  preset uses it (`photo_documentation`) leaves its basis empty
+  (`presetLegalBasis`), and publishing needs one (`purpose_basis` gap; a purpose's
+  `legalBasis` is nullable for that). An existing choice is kept; the caution
+  shows next to it.
+- Nothing else changes: same catalogue, completeness checks and consent
+  enforcement. The Art. 9 bases map one to one, so `consentBasedCategories` needs
+  no framework awareness. Both laws require the same information items (§ 15
+  KDG, § 17 DSG-EKD), Art. 13(2)(e) included, so the notice keeps its sections.
+  The DPO step explains no statutory threshold today and needs no change.
+
+#### Verified citations
+
+Read in full from the sources below on 22.11.2026; headings as printed. These are
+the records' citations (`common/tests/privacy/frameworks.test.ts` pins each one).
+Rows marked † are a mapping judgment, not just a renumbering — see "Limitations".
+
+| Platform key / GDPR              | KDG (VDD reading version, 24.11.2025)                                                                                | DSG-EKD (ABl. EKD 2025 Nr. 1)                                                                |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `consent` 6(1)(a)                | § 6 Abs. 1 lit. b                                                                                                    | § 6 Nr. 2                                                                                    |
+| `contract` 6(1)(b)               | § 6 Abs. 1 lit. c                                                                                                    | § 6 Nr. 5                                                                                    |
+| `legal_obligation` 6(1)(c)       | § 6 Abs. 1 lit. d                                                                                                    | § 6 Nr. 6                                                                                    |
+| `vital_interests` 6(1)(d)        | § 6 Abs. 1 lit. e                                                                                                    | § 6 Nr. 7                                                                                    |
+| `public_task` 6(1)(e) †          | § 6 Abs. 1 lit. f — a task in the church's interest or in exercise of official authority                             | § 6 Nr. 3 — the controller's tasks, including church supervision                             |
+| `legitimate_interests` 6(1)(f) † | § 6 Abs. 1 lit. g — not for public-law church bodies performing their tasks                                          | § 6 Nr. 4 — no such exception                                                                |
+| — (no GDPR point)                | § 6 Abs. 1 lit. a — a church or state provision permits or orders it                                                 | § 6 Nr. 1 — same                                                                             |
+| withdrawal 7(3)                  | § 8 Abs. 4                                                                                                           | § 11 Abs. 3                                                                                  |
+| freely given 7(4)                | § 8 Abs. 5                                                                                                           | § 11 Abs. 4                                                                                  |
+| minors 8 †                       | § 8 Abs. 6 — electronic offers, 16 years                                                                             | § 12 — "religionsmündig", no age given                                                       |
+| special categories 9(1)          | § 11 Abs. 1                                                                                                          | § 13 Abs. 1                                                                                  |
+| `explicit_consent` 9(2)(a)       | § 11 Abs. 2 lit. a                                                                                                   | § 13 Abs. 2 Nr. 1                                                                            |
+| `vital_interests` 9(2)(c)        | § 11 Abs. 2 lit. c                                                                                                   | § 13 Abs. 2 Nr. 3                                                                            |
+| `nonprofit_body` 9(2)(d) †       | § 11 Abs. 2 lit. d — a church body, its members and regular contacts                                                 | § 13 Abs. 2 Nr. 4 — same                                                                     |
+| `legal_claims` 9(2)(f)           | § 11 Abs. 2 lit. f                                                                                                   | § 13 Abs. 2 Nr. 6                                                                            |
+| `public_interest` 9(2)(g) †      | § 11 Abs. 2 lit. g — church law, substantial church interest; lit. l — church or public interest, strictly necessary | § 13 Abs. 2 Nr. 7 — church or state law, public or church interest; Nr. 12 — public interest |
+| `health_care` 9(2)(h)            | § 11 Abs. 2 lit. h, conditions in Abs. 3                                                                             | § 13 Abs. 2 Nr. 8, conditions in Abs. 3                                                      |
+| information 13 / 14              | § 15 / § 16                                                                                                          | § 17 / § 18                                                                                  |
+| access 15                        | § 17                                                                                                                 | § 19                                                                                         |
+| rectification 16                 | § 18                                                                                                                 | § 20                                                                                         |
+| erasure 17                       | § 19                                                                                                                 | § 21                                                                                         |
+| restriction 18                   | § 20                                                                                                                 | § 22                                                                                         |
+| portability 20                   | § 22                                                                                                                 | § 24                                                                                         |
+| objection 21                     | § 23 Abs. 1 — against § 6 Abs. 1 lit. f or g                                                                         | § 25 Abs. 1 — against § 6 Nr. 3 or 4                                                         |
+| automated decisions 22           | § 24                                                                                                                 | § 25a                                                                                        |
+| transfers 44–49, derogations 49  | §§ 39–41, derogations § 41                                                                                           | § 10, derogations Abs. 2                                                                     |
+| complaint 77                     | § 48 Abs. 1                                                                                                          | § 46 Abs. 1                                                                                  |
+| supervisory authority            | § 42 (per diocese), § 45 (seat of the legal entity)                                                                  | § 39 (the EKD's, or a Landeskirche's, alone or jointly)                                      |
+| data protection officer          | § 36 — always for dioceses, parishes, church foundations, parish associations (Abs. 1); thresholds otherwise         | § 36 Abs. 1 — 20 persons or core activity; otherwise management ensures the task (Abs. 6)    |
+
+Sources:
+
+- KDG: Verband der Diözesen Deutschlands, "Gesetz über den Kirchlichen Datenschutz
+  (KDG) in der Fassung des Beschlusses der Vollversammlung … vom 20. November 2017,
+  geändert durch Beschluss … vom 24. November 2025", reading version,
+  <https://www.dbk.de/fileadmin/redaktion/diverse_downloads/VDD/2025_KDG-neu-Lesefassung_Fassung24.11.2025.pdf>.
+  Not the promulgation: each diocese's gazette is binding. It names no date for
+  the 2025 amendment (§ 58 still reads "tritt am 24.05.2018 in Kraft"); diocesan
+  publications point to 01.03.2026 — not verified.
+- DSG-EKD: "Bekanntmachung des Kirchengesetzes über den Datenschutz in der
+  Evangelischen Kirche in Deutschland (EKD-Datenschutzgesetz – DSG-EKD). Vom 15.
+  Januar 2025", ABl. EKD 2025 Nr. 1, "in der ab dem 1. Mai 2025 geltenden
+  Fassung", <https://www.kirchenrecht-ekd.de/document/57226>. Its § 56 still
+  states the original entry into force (24 May 2018).
+
+#### Limitations
+
+The records ship on verification against the official texts above, not on legal
+sign-off. What that leaves open:
+
+- **[accepted]** Baselines only. The KDG record follows the model law; a diocese's
+  enacted version may differ, and the reading version is not the promulgation.
+  The DSG-EKD record follows the EKD law; a Landeskirche's supplementary rules may
+  add to it. The warning makes the organizer check, and free text covers a
+  deviation.
+- **[accepted]** Dates. The KDG reading version names no date for the 2025
+  amendment (its § 58 still reads 24.05.2018; diocesan publications point to
+  01.03.2026, not verified), and the DSG-EKD's § 56 still states the original
+  entry into force. The records cite the decision and promulgation dates.
+- **[accepted]** The † rows map a GDPR option to the closest ground of the church
+  law: the task basis, (d), and (g) — each with the law's own wording — and
+  legitimate interests under the KDG, with its caution. Where a law has two
+  candidates for (g) (KDG lit. g / lit. l, DSG-EKD Nr. 7 / Nr. 12), the record
+  cites the one resting on a legal provision, matching the legal reference the
+  organizer enters.
+- **[accepted]** Applicability — whether an organization, a Caritas or Diakonie
+  body, or a church youth association falls under a church law — is declared by
+  the organizer and never checked.
+- **[review]** Open question 9 stays for anyone who wants the mappings
+  confirmed; a correction is a new record version.
+- **[dropped]** A framework per diocese or Landeskirche, an authority list, and
+  any other framework system (per-event frameworks, frameworks per country group).
 
 ## 5. Consent (Art. 7, 9(2)(a))
 
@@ -483,6 +672,41 @@ be tagged, and only boolean questions can be consents.
 - **[review]** Tagging rests on the organizer, as controller. The platform enforces
   consequences of what is tagged; it does not try to discover what is not. An
   untagged consent question gets no wording copy.
+- **[dropped]** Automated content classification of any kind; the organizer
+  configures the form and its legal bases (open question 5).
+
+**Form changes after registrations exist**
+
+The email filter, "Delete sensitive data" and the purged-field locks read the
+_current_ form's tags (`clearSpecialCategoryAnswers`). Answers the current form no
+longer tags as sensitive stay in `data`: printable by name in emails, and kept
+until all registrations are deleted.
+
+- Edits that cause this: deleting the question; removing its
+  `privacyCategory` or changing it to a non-special category; changing `name` or
+  `valueName`; moving it into, out of or between dynamic panels. A type change keeps
+  the key and is harmless — SurveyJS clears a value whatever its shape — as is
+  switching between special categories.
+- **[implemented]** A confirmation in the form editor, before the autosave sends
+  the change, while the event has registrations and its sensitive data is not
+  deleted (`sensitiveDataPurgedAt`). One check, not a hook per kind of edit:
+  compare where the last saved and the edited form store special-category answers
+  (`lostSensitiveQuestions`, `frontend/src/lib/surveyJs/sensitiveAnswers.ts`); a
+  location that disappears asks first, in the Creator's own confirmation
+  (`showConfirmDialog`). It covers the
+  designer, logic and JSON tabs alike. The dialog says what happens to existing
+  answers and recommends hiding the question instead, which keeps its key and tag.
+  Undoing restores the last saved form, so it reverts any kind of edit — and any
+  other made since that save.
+  - A hidden question still counts for the registration gate, so its category
+    stays declared and its consent stays in the form — correct, as the event still
+    holds that data. The consent stays hidden, as it follows the answers.
+  - Correcting a wrong classification is the same dialog: the organizer confirms
+    the question never collected sensitive data.
+- Warned, not blocked: the editor never refuses a save (see "Enforcement"), a
+  genuine misclassification must stay correctable, and the form is the organizer's
+  responsibility. Reverting the edit restores recognition.
+- **[dropped]** Form versioning, and tracking every key ever tagged (section 8).
 
 **Consent wording — in the form**
 
@@ -671,6 +895,11 @@ notempty'`). "No known allergies" is
   needed for the person's safety (e.g. allergies at a catered camp) is open
   question 2. The mechanism exists — a required health question — but the presets
   do not use it; it is the organizer's judgment until confirmed.
+- **[implemented]** A message in the form editor, in the question's box like the
+  other privacy issues (`privacyIssues.ts`), when a question or matrix column
+  tagged with a consent-based category is required (`isRequired` or `requiredIf`): registering then depends on consent, which needs a valid
+  justification; a statutory duty belongs on another Art. 9 basis in the notice,
+  which removes the message. Informational, never blocking.
 
 **Enforcement**
 
@@ -734,8 +963,10 @@ verification:
 - Handled without undue delay; the event's managers are responsible.
 - **[review]** Art. 7(3) requires withdrawing to be as easy as giving consent.
   Consent is a click; withdrawal is an email followed by a manager's action. Whether
-  that is sufficient is uncertain. A self-service withdrawal is not planned until
-  this is answered.
+  that is sufficient is uncertain (open question 1).
+- **[accepted]** No self-service withdrawal: which data may lawfully remain is the
+  organizer's decision, made while editing. Revisited only if review finds the
+  current way insufficient.
 
 **Scope and legacy events**
 
@@ -773,13 +1004,21 @@ verification:
   | `DIRECTOR`    | full          | Runs the event, answers for it                                    |
   | `COORDINATOR` | full          | Organizes participants, rooms and program                         |
   | `COUNSELOR`   | full          | Supervises participants; needs allergies and medical restrictions |
-  | `VIEWER`      | full          | Helpers such as kitchen staff; organizers grant it knowing this   |
+  | `VIEWER`      | full          | Read-only team member, like `COUNSELOR` without creating          |
   | `TREASURER`   | none          | Finances only (`docs/finances.md`); see "Treasurer" below         |
 
-  Filtering health answers inside a role (an `event.registrations.health.view`
-  permission) was considered and dropped: almost every holder would need it, and
-  filtering every place that shows registration data costs far more than it
-  protects. Organizers who want a helper to see less give them no role.
+  **[dropped]** Field-level permissions (an `event.registrations.health.view`
+  permission) and further roles: almost every holder would need the health data,
+  and filtering every place that shows registration data costs far more than it
+  protects. An external helper who needs less, such as kitchen staff, gets no
+  platform access but an existing export limited to the columns they need (a table
+  template, printed or exported); that copy is the organizer's responsibility.
+
+- **[implemented]** The role pickers (`EventManagerCreateDialog.vue`,
+  `EventManagerUpdateDialog.vue`) caption each role with what it sees of
+  registrations — `VIEWER` all registration data, health included, read-only;
+  `TREASURER` none (`roleCaption` in `AccessPage.vue`). The role permissions
+  dialog keeps the full matrix.
 
 - **[implemented]** Emails leave the platform's access control — they are
   forwarded and kept in inboxes — so they never include answers of questions
@@ -808,9 +1047,10 @@ verification:
   - **Limits.** A sensitive answer copied into an untagged question
     (`setValueExpression`, `copyvalue`/`setvalue` triggers) is not caught — the
     organizer's tagging responsibility (open question 5). Answers to questions
-    since deleted from the form stay in `data` and are printable by name; SurveyJS
+    since deleted or untagged stay in `data` and are printable by name; SurveyJS
     knows no question for them, and dropping unknown keys would need storage rules
-    of the platform's own.
+    of the platform's own. The editor's confirmation covers this (section 5, "Form
+    changes after registrations exist").
 - **[implemented]** Queued mail jobs carry the full registration snapshot, so they
   must not outlive the mail. Each queue has a `retention: { completed, failed }`
   (`QueueOptions`, default 30 and 90 days) and prunes its own jobs
@@ -821,12 +1061,14 @@ verification:
   enough for retentions measured in days, and one measured in hours would need it
   to run more often. With the database driver it also prunes finished jobs under
   queue names nothing registers any more (renamed or removed queues), by the
-  default retention.
+  default retention; with Redis, renaming a queue must clean its old jobs.
 - **[implemented]** The mail queue deletes a job as soon as it completes —
-  `MessageDelivery` already records the send — and keeps failed jobs 14 days for
-  retries. Failed jobs are not searched out when a registration is deleted (JSON
-  payloads in two drivers); the 14 days are the accepted remainder. Rows of a
-  queue that no longer exists are not pruned; renaming a queue must clean them.
+  `MessageDelivery` already records the send — and removes terminally failed jobs
+  after 14 days (`mail.service.ts`). They are not retried automatically; only an
+  instance administrator's "retry failed" (`queue.routes.ts`) would send them.
+- **[accepted]** Until then their payloads remain, registration snapshot included,
+  and are not searched out when a registration is deleted (JSON payloads in two
+  drivers). No further deletion or retry safeguards.
 
 ### Treasurer and payments
 
@@ -949,9 +1191,10 @@ keep data.
   Consent answers stay as proof of what was agreed. It reads the current form's
   tags: answers to a question removed or untagged since are no longer treated as
   sensitive and fall under the general deadline, which "Delete all
-  registrations" covers. Tracking every key ever tagged was rejected: a second
-  source of truth beside the form, and storage rules of our own for comments
-  and nested panels.
+  registrations" covers; the form editor asks before such an edit (section 5,
+  "Form changes after registrations exist"). Tracking every key ever tagged was
+  rejected: a second source of truth beside the form, and storage rules of our
+  own for comments and nested panels.
 - "Delete all registrations" deletes every registration. Bed assignments, files and
   audit entries are only detached (`SetNull`); a registration's mail delivery log
   and chore assignments go with it. Nothing financial references a registration;
@@ -1091,20 +1334,22 @@ keep data.
 | Intelligible, in the reader's language | 12                | Five locales; authored texts per locale                  | implemented / planned |
 | Copy of transfer safeguards            | 13(1)(f)          | Fixed sentence pointing to the controller                | implemented           |
 | Name the supervisory authority         | 13(2)(d)          | Derived from country; generic text where regional        | implemented           |
-| Whether provision is required          | 13(2)(e)          | Contractual vs. statutory, per purpose; (g) to follow    | implemented / planned |
+| Whether provision is required          | 13(2)(e)          | Contractual vs. statutory, per purpose                   | implemented           |
 | Lawful basis per purpose               | 6                 | Catalogue, per-purpose basis, legitimate-interest text   | implemented           |
-| Basis for special categories           | 9(2)              | Declared in notice, registration gate; (g) to be added   | implemented / planned |
+| Basis for special categories           | 9(2)              | Declared in notice, registration gate; (g) with its law  | implemented           |
 | Explicit consent obtained              | 9(2)(a), 7        | Tagged consent questions, gate, submission check         | implemented           |
 | Proof of consent                       | 7(1)              | Form answer, `createdAt`, `consentTexts`, audit log      | implemented           |
-| Freely given                           | 7(4)              | Optional by default; mandatory option under review       | planned / review      |
-| Withdrawal                             | 7(3)              | Registration edit, consent check, audit log              | implemented / review  |
+| Freely given                           | 7(4)              | Optional by default; editor note on required questions   | implemented / review  |
+| Withdrawal                             | 7(3)              | Via the organizer: registration edit, audit log          | implemented / review  |
 | Need-to-know access                    | 5(1)(f), 32       | Role permissions; no health in emails; treasurer subset  | implemented / planned |
+| Sensitive data survives form edits     | 5(1)(e), 32       | Confirmation before edits that orphan tagged answers     | implemented           |
+| Correct legal framework cited          | 91, 13            | Framework choice; GDPR, KDG and DSG-EKD records          | implemented / review  |
 | Storage limitation                     | 5(1)(e)           | Deadlines, reminders, two manual deletion actions        | implemented           |
 | Erasure                                | 17                | Manager deletion, orphan file cleanup                    | implemented           |
 | Objection shown separately             | 21(4)             | List item plus note                                      | review                |
 | Children                               | 8                 | Guardian confirmation in preset                          | implemented / review  |
 | Newsletter consent                     | 6(1)(a), ePrivacy | Consent purpose; import only with recorded consent       | implemented           |
-| Processor agreement                    | 28                | Outside the app                                          | gap                   |
+| Processor agreement                    | 28                | Outside the app                                          | accepted              |
 | DPIA                                   | 35                | Outside the app (organizer)                              | review                |
 
 ## 13. Open questions for legal review
@@ -1112,10 +1357,12 @@ keep data.
 1. Is consent withdrawal by email to the organizer, carried out by a manager
    editing the registration, sufficient under Art. 7(3)?
 2. May consent to health data be a condition of participation when the data is
-   needed for the participant's safety (Art. 7(4))?
-3. Which health fields of a French accueil collectif de mineurs rest on Art. 9(2)(g),
-   under which provision — and does that hold for German participants and for a
-   German organizer running a stay in France?
+   needed for the participant's safety (Art. 7(4))? What justification must an
+   organizer have before making a sensitive question required?
+3. Which health fields of a French accueil collectif de mineurs does the law
+   require, on which Art. 6 basis, and on which Art. 9 basis — (g) or another —
+   under which provision? Does that hold for German participants and for a German
+   organizer running a stay in France?
 4. How far may one consent cover related categories (health, allergies, medication)
    under one purpose?
 5. Is organizer-controlled tagging, with the platform enforcing only what is tagged,
@@ -1124,10 +1371,11 @@ keep data.
    organization notice?
 7. Do emergency contacts need Art. 14 information, or does Art. 14(5) apply?
 8. Is the right to object presented separately enough for Art. 21(4)?
-9. Church frameworks (section 4, "Church data protection law"): the KDG and DSG-EKD
-   paragraph for each GDPR provision the notice cites, the competent church
-   authority per diocese / Landeskirche, and whether a church body's own
-   charities (Caritas, Diakonie) always fall under the church framework.
+9. Church frameworks (section 4, "Limitations"): are the mappings marked †
+   right — in particular 6(1)(e), 6(1)(f) for public-law church bodies, 9(2)(d)
+   and 9(2)(g)? Does a church body's own charity (Caritas, Diakonie) always fall
+   under the church framework? Shipped without an answer; the records are
+   verified against the texts only.
 10. Does the platform need its own DPIA as processor, or is it the organizers' duty
     alone?
 
@@ -1239,6 +1487,44 @@ reads tags after the tagging itself.
     wording; `eventDataType: 'newsletter_consent'` removed; presets updated; a data
     migration of saved forms.
 
-**Waiting for legal review:** Art. 9(2)(g) and its legal reference, the "necessary
-for participation" option, self-service withdrawal, platform policy versioning,
-Art. 14 for emergency contacts, church data protection law.
+**Phase 8 — safeguards in the form editor** (section 5, done)
+
+23. Confirmation before an edit removes where tagged answers are stored, while the
+    event holds undeleted sensitive data; recommends hiding instead.
+24. Message on required questions of a consent-based category.
+
+**Phase 9 — data protection framework, first step** (section 4, done)
+
+25. `gdpr` / `kdg` / `dsg_ekd` / `other` in the organization notice; other than
+    `gdpr` means free text only and no generated legal sections or authority; each
+    version records the framework. Later replaced by asking for the mode first: free
+    text cites no law, and `other` was dropped (section 4).
+
+**Phase 10 — small, independent** (done)
+
+26. A caption per role in the role picker (section 6).
+27. Art. 9(2)(g) with its legal reference (section 4). The mechanism asserts
+    nothing, so it did not wait for open question 3.
+
+**Phase 11 — church frameworks in the builder** (section 4, "KDG and DSG-EKD in
+the builder", done)
+
+28. Framework records and law-neutral translations: every citation moves out of
+    the five locale files into a versioned GDPR record ("Access to your data
+    ({citation})"). No visible change; independent of review, so it goes first.
+    (done)
+29. The supervisory authority as organizer input under a church record, with
+    its completeness gap. (done)
+30. KDG and DSG-EKD records from the verified table, with name, baseline and
+    version; framework-specific labels; the options `kdg` and `dsg_ekd`; the
+    applicability warning; the caution on KDG legitimate interests, never
+    pre-selected; the record version stored with each published notice. Shipped
+    on verification against the official texts, limitations documented.
+    (done)
+
+Not planned: diocesan or regional variants (free text covers them), authority
+lists, DPO rules per law.
+
+**Waiting for legal review:** whether required sensitive questions are permissible,
+platform policy versioning, Art. 14 for emergency contacts. Self-service
+withdrawal only if open question 1 is answered against the current way.

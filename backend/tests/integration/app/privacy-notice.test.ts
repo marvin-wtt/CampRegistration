@@ -121,6 +121,233 @@ describe('privacy notices', () => {
       expect(versions).toBe(0);
     });
 
+    it('should refuse a law the platform has no record of', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: { ...completePrivacyNoticeContent(), framework: 'other' },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should publish a free-text notice citing no law', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: {
+            ...emptyPrivacyNoticeContent(),
+            framework: 'kdg',
+            mode: 'free_text',
+            freeText: { en: '<p>Our notice</p>' },
+            supervisoryAuthority: { name: 'Left over', website: null },
+          },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const version = await prisma.privacyNoticeVersion.findFirstOrThrow({
+        where: { scope: 'ORGANIZATION', scopeId: organization.id },
+      });
+      expect(version.content).toMatchObject({ framework: null });
+      expect(version.content).not.toHaveProperty('frameworkVersion');
+      expect(version.content).not.toHaveProperty('supervisoryAuthority');
+    });
+
+    it('should refuse Art. 9(2)(g) without the law it rests on', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+      const content = completePrivacyNoticeContent();
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: {
+            ...content,
+            dataCategories: [
+              ...content.dataCategories,
+              { key: 'health', specialCategoryBasis: 'public_interest' },
+            ],
+          },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+
+    it('should keep a legal reference only with Art. 9(2)(g)', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+      const content = completePrivacyNoticeContent();
+
+      const { body } = await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: {
+            ...content,
+            dataCategories: [
+              ...content.dataCategories,
+              {
+                key: 'health',
+                specialCategoryBasis: 'public_interest',
+                legalReference: '§ 1 Example Act',
+              },
+              {
+                key: 'allergies',
+                specialCategoryBasis: 'explicit_consent',
+                legalReference: 'left over from (g)',
+              },
+            ],
+          },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const categories = body.data.content.dataCategories as {
+        key: string;
+        legalReference?: string;
+      }[];
+      expect(categories.find((c) => c.key === 'health')?.legalReference).toBe(
+        '§ 1 Example Act',
+      );
+      expect(categories.find((c) => c.key === 'allergies')).not.toHaveProperty(
+        'legalReference',
+      );
+    });
+
+    describe('under a church framework', () => {
+      const churchNotice = (
+        framework: 'kdg' | 'dsg_ekd',
+        overrides: Partial<PrivacyNoticeContent> = {},
+      ): PrivacyNoticeContent => ({
+        ...completePrivacyNoticeContent(),
+        framework,
+        supervisoryAuthority: {
+          name: 'Katholisches Datenschutzzentrum',
+          website: 'https://www.example.org',
+        },
+        ...overrides,
+      });
+
+      it('should publish a guided notice and stamp the cited record', async () => {
+        const organization = await organizationWithoutNotice();
+        const accessToken = await organizationAdmin(organization.id);
+
+        await request()
+          .put(publishUrl(organization.id))
+          .send({
+            content: {
+              ...churchNotice('kdg'),
+              // The client cannot pick the citations it is shown with.
+              frameworkVersion: 'made-up',
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const version = await prisma.privacyNoticeVersion.findFirstOrThrow({
+          where: { scope: 'ORGANIZATION', scopeId: organization.id },
+        });
+        expect(version.content).toMatchObject({
+          framework: 'kdg',
+          frameworkVersion: 'kdg-2025-11-24',
+          supervisoryAuthority: { name: 'Katholisches Datenschutzzentrum' },
+        });
+      });
+
+      it('should refuse a church law outside its country', async () => {
+        const organization = await OrganizationFactory.create(
+          { country: 'fr', verificationStatus: 'PENDING' },
+          { privacyNotice: null },
+        );
+        const accessToken = await organizationAdmin(organization.id);
+
+        await request()
+          .put(publishUrl(organization.id))
+          .send({ content: churchNotice('kdg') })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(422);
+      });
+
+      it('should refuse an authority website that is not http(s)', async () => {
+        const organization = await organizationWithoutNotice();
+        const accessToken = await organizationAdmin(organization.id);
+
+        await request()
+          .put(publishUrl(organization.id))
+          .send({
+            content: churchNotice('kdg', {
+              supervisoryAuthority: {
+                name: 'Datenschutzaufsicht',
+                website: 'javascript:alert(document.cookie)',
+              },
+            }),
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should refuse a notice that names no supervisory authority', async () => {
+        const organization = await organizationWithoutNotice();
+        const accessToken = await organizationAdmin(organization.id);
+
+        const { body } = await request()
+          .put(publishUrl(organization.id))
+          .send({
+            content: churchNotice('dsg_ekd', { supervisoryAuthority: null }),
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(422);
+
+        expect(JSON.stringify(body)).toContain('supervisory_authority');
+      });
+
+      it('should keep no authority on a GDPR notice', async () => {
+        const organization = await organizationWithoutNotice();
+        const accessToken = await organizationAdmin(organization.id);
+
+        await request()
+          .put(publishUrl(organization.id))
+          .send({
+            content: {
+              ...completePrivacyNoticeContent(),
+              supervisoryAuthority: { name: 'Left over', website: null },
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const version = await prisma.privacyNoticeVersion.findFirstOrThrow({
+          where: { scope: 'ORGANIZATION', scopeId: organization.id },
+        });
+        expect(version.content).not.toHaveProperty('supervisoryAuthority');
+        expect(version.content).toMatchObject({
+          frameworkVersion: 'gdpr-2016-679',
+        });
+      });
+    });
+
+    it('should refuse a purpose without a legal basis', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: {
+            ...completePrivacyNoticeContent(),
+            purposes: [{ key: 'photo_documentation', legalBasis: null }],
+          },
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+
     it('should sanitize free-text HTML', async () => {
       const organization = await organizationWithoutNotice();
       const accessToken = await organizationAdmin(organization.id);
@@ -738,6 +965,59 @@ describe('privacy notices', () => {
       expect(
         body.data.notice.recipients.map((r: { key: string }) => r.key),
       ).toContain('transport_provider');
+    });
+
+    it('should name the authority the organization entered under a church law', async () => {
+      const organization = await OrganizationFactory.create(
+        { country: 'de' },
+        {
+          privacyNotice: {
+            ...completePrivacyNoticeContent(),
+            framework: 'dsg_ekd',
+            frameworkVersion: 'dsg-ekd-2025-01-15',
+            supervisoryAuthority: {
+              name: 'Der Beauftragte für den Datenschutz der EKD',
+              website: 'https://datenschutz.ekd.de',
+            },
+          },
+        },
+      );
+      const event = await EventFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
+        .expect(200);
+
+      expect(body.data.supervisoryAuthority).toEqual({
+        name: 'Der Beauftragte für den Datenschutz der EKD',
+        website: 'https://datenschutz.ekd.de',
+      });
+      expect(body.data.notice.frameworkVersion).toBe('dsg-ekd-2025-01-15');
+    });
+
+    it('should name no supervisory authority for a free-text notice', async () => {
+      const organization = await OrganizationFactory.create(
+        {},
+        {
+          privacyNotice: {
+            ...emptyPrivacyNoticeContent(),
+            framework: null,
+            mode: 'free_text',
+            freeText: { en: '<p>Our notice</p>' },
+          },
+        },
+      );
+      const event = await EventFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
+        .expect(200);
+
+      expect(body.data.supervisoryAuthority).toBeNull();
     });
 
     it('should keep the organization retention exceptions a event adds to', async () => {

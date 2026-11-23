@@ -121,7 +121,7 @@ import { countryName } from '@/utils/countries';
 import type { Organization } from '@camp-registration/common/entities';
 import {
   composePrivacyNotice,
-  supervisoryAuthorityFor,
+  noticeSupervisoryAuthority,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
 import PrivacyNotice from '@/components/privacy/PrivacyNotice.vue';
@@ -181,7 +181,10 @@ async function loadNotice() {
         country: props.organization.country,
         registrationNumber: props.organization.registrationNumber,
       },
-      supervisoryAuthority: supervisoryAuthorityFor(props.organization.country),
+      supervisoryAuthority: noticeSupervisoryAuthority(
+        stored.content,
+        props.organization.country,
+      ),
       notice: composePrivacyNotice(stored.content),
       organizationVersion: stored.publishedVersion,
       eventVersion: null,

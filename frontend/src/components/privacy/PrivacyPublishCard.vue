@@ -39,6 +39,13 @@
       <slot name="note" />
     </q-card-section>
 
+    <q-card-section
+      v-if="canEdit"
+      class="q-pb-none"
+    >
+      <privacy-responsibility-notice />
+    </q-card-section>
+
     <q-card-actions v-if="canEdit">
       <m-btn
         :label="t('privacy.editor.action.publish')"
@@ -62,6 +69,7 @@
 import { Comment, Fragment, Text, computed, useSlots, type VNode } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import PrivacyResponsibilityNotice from '@/components/privacy/PrivacyResponsibilityNotice.vue';
 
 const props = defineProps<{
   publishedVersion: number | null;

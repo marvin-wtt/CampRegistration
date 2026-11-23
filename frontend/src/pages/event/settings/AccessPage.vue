@@ -423,9 +423,12 @@ function canLeave(manager: EventManager): boolean {
   return userEmail.value === manager.email && !isSoleDirector(manager);
 }
 
+// The caption says what each role sees of registrations, health data included
+// (docs/privacy.md, 6); the permissions dialog has the full matrix.
 function getRoleOptions(): QSelectOption<EventManagerRole>[] {
   return EVENT_MANAGER_ROLES.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
+    caption: t('roleCaption.' + role.toLocaleLowerCase()),
     value: role,
   }));
 }
@@ -719,6 +722,12 @@ role:
   counselor: 'Counselor'
   director: 'Director'
   viewer: 'Viewer'
+roleCaption:
+  director: 'Full access, including all registration data and health details'
+  coordinator: 'Manages participants, rooms and program; can edit all registration data, health details included'
+  counselor: 'Sees all registration data, health details included, and can add registrations'
+  viewer: 'Read-only, but sees all registration data, health details included'
+  treasurer: 'Finances only; no access to registrations'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -767,6 +776,12 @@ role:
   counselor: 'Betreuung'
   director: 'Leitung'
   viewer: 'Lesezugriff'
+roleCaption:
+  director: 'Voller Zugriff, auch auf alle Anmeldedaten und Gesundheitsangaben'
+  coordinator: 'Verwaltet Teilnehmende, Zimmer und Programm; kann alle Anmeldedaten bearbeiten, auch Gesundheitsangaben'
+  counselor: 'Sieht alle Anmeldedaten, auch Gesundheitsangaben, und kann Anmeldungen hinzufügen'
+  viewer: 'Nur lesen, sieht aber alle Anmeldedaten, auch Gesundheitsangaben'
+  treasurer: 'Nur Finanzen; kein Zugriff auf Anmeldungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -816,6 +831,12 @@ role:
   counselor: 'Encadrement'
   director: 'Direction'
   viewer: 'Lecture seule'
+roleCaption:
+  director: 'Accès complet, y compris à toutes les données d’inscription et aux informations de santé'
+  coordinator: 'Gère les participants, les chambres et le programme ; peut modifier toutes les données d’inscription, y compris de santé'
+  counselor: 'Voit toutes les données d’inscription, y compris de santé, et peut ajouter des inscriptions'
+  viewer: 'Lecture seule, mais voit toutes les données d’inscription, y compris de santé'
+  treasurer: 'Finances uniquement ; aucun accès aux inscriptions'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -864,6 +885,12 @@ role:
   counselor: 'Opieka'
   director: 'Kierownictwo'
   viewer: 'Podgląd'
+roleCaption:
+  director: 'Pełny dostęp, także do wszystkich danych zgłoszeń i informacji o zdrowiu'
+  coordinator: 'Zarządza uczestnikami, pokojami i programem; może edytować wszystkie dane zgłoszeń, także o zdrowiu'
+  counselor: 'Widzi wszystkie dane zgłoszeń, także o zdrowiu, i może dodawać zgłoszenia'
+  viewer: 'Tylko odczyt, ale widzi wszystkie dane zgłoszeń, także o zdrowiu'
+  treasurer: 'Tylko finanse; brak dostępu do zgłoszeń'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -912,4 +939,10 @@ role:
   counselor: 'Dozor'
   director: 'Vedení'
   viewer: 'Jen čtení'
+roleCaption:
+  director: 'Plný přístup, včetně všech registračních údajů a zdravotních informací'
+  coordinator: 'Spravuje účastníky, pokoje a program; může upravovat všechny registrační údaje, i zdravotní'
+  counselor: 'Vidí všechny registrační údaje, i zdravotní, a může přidávat registrace'
+  viewer: 'Jen čtení, ale vidí všechny registrační údaje, i zdravotní'
+  treasurer: 'Jen finance; bez přístupu k registracím'
 </i18n>

@@ -15,8 +15,13 @@ import {
   privacyNoticeCompleteness,
   publishableAddendum,
   refusedExclusions,
+  frameworkRecord,
+  frameworksFor,
+  needsEnteredAuthority,
+  needsLegalReference,
+  noticeFramework,
+  noticeSupervisoryAuthority,
   retentionExceptions,
-  supervisoryAuthorityFor,
   withoutRefused,
   type ComposedPrivacyNotice,
   type EventPrivacyNotice,
@@ -86,6 +91,7 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeContent,
   ): Promise<OrganizationPrivacyNotice> {
     const sanitized = this.sanitizeContent(content);
+    await this.assertFrameworkAvailable(organizationId, sanitized);
     const locales = await this.organizationLocales(organizationId);
     const completeness = privacyNoticeCompleteness(sanitized, { locales });
 
@@ -103,6 +109,40 @@ export class PrivacyNoticeService extends BaseService {
     );
 
     return this.toOrganizationNotice(published, locales);
+  }
+
+  /**
+   * A guided notice cites a law offered in the organization's country
+   * (`frameworksFor`). The one already published stays allowed, so an
+   * organization that moves country can still republish until it switches.
+   */
+  private async assertFrameworkAvailable(
+    organizationId: string,
+    content: PrivacyNoticeContent,
+  ): Promise<void> {
+    if (content.mode === 'free_text') {
+      return;
+    }
+    const framework = noticeFramework(content);
+    const organization = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { country: true },
+    });
+    if (frameworksFor(organization.country).includes(framework)) {
+      return;
+    }
+    const published = await this.latestVersion('ORGANIZATION', organizationId);
+    const current = published?.content as PrivacyNoticeContent | undefined;
+    if (
+      current?.mode !== 'free_text' &&
+      noticeFramework(current) === framework
+    ) {
+      return;
+    }
+    throw new ApiError(
+      httpStatus.UNPROCESSABLE_ENTITY,
+      `The framework ${framework} is not available in this country`,
+    );
   }
 
   /**
@@ -250,7 +290,10 @@ export class PrivacyNoticeService extends BaseService {
         country: organization.country,
         registrationNumber: organization.registrationNumber,
       },
-      supervisoryAuthority: supervisoryAuthorityFor(organization.country),
+      supervisoryAuthority: noticeSupervisoryAuthority(
+        organizationVersion?.content as PrivacyNoticeContent | undefined,
+        organization.country,
+      ),
       notice: composeVersions(organizationVersion, eventVersion),
       organizationVersion: organizationVersion?.version ?? null,
       eventVersion: eventVersion?.version ?? null,
@@ -477,8 +520,28 @@ export class PrivacyNoticeService extends BaseService {
    * the way out.
    */
   private sanitizeContent(content: PrivacyNoticeContent): PrivacyNoticeContent {
+    const authority = content.supervisoryAuthority;
+
+    const guided = content.mode !== 'free_text';
+
     return {
       ...content,
+      // A free-text notice cites no law; null marks it as published after the
+      // setting existed, so nothing is appended to it (`generatesLegalText`).
+      framework: guided ? noticeFramework(content) : null,
+      // The citations this version is shown with (docs/privacy.md, 4).
+      frameworkVersion: guided
+        ? (frameworkRecord(noticeFramework(content))?.version ?? undefined)
+        : undefined,
+      // Only where the law leaves naming it to the author; undefined leaves no
+      // key, so a GDPR notice keeps no stale authority.
+      supervisoryAuthority:
+        needsEnteredAuthority(content) && authority
+          ? {
+              name: sanitizePlainText(authority.name),
+              website: authority.website ?? null,
+            }
+          : undefined,
       purposes: this.sanitizePurposes(content.purposes),
       dataCategories: this.sanitizeDataCategories(content.dataCategories),
       recipients: this.sanitizeRecipients(content.recipients),
@@ -537,6 +600,11 @@ export class PrivacyNoticeService extends BaseService {
     return categories.map((category) => ({
       ...category,
       label: this.sanitizePlainTranslatable(category.label),
+      // Kept only with the basis that names a law; undefined leaves no key,
+      // so versions without one stay byte-identical.
+      legalReference: needsLegalReference(category.specialCategoryBasis)
+        ? this.sanitizePlainTranslatable(category.legalReference)
+        : undefined,
     }));
   }
 

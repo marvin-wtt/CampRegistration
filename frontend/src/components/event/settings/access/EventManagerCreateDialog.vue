@@ -29,13 +29,23 @@
             v-model="role"
             :label="t('input.role.label')"
             :options="roles"
+            :hint="roleCaption"
             map-options
             emit-value
             :rules="[(val?: string) => !!val || t('input.role.rule.required')]"
-            hide-bottom-space
             rounded
             outlined
-          />
+          >
+            <!-- What the role sees of registrations, health data included. -->
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.caption }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
           <manager-expiration-input
             v-model="expiresAt"
@@ -69,7 +79,7 @@
 <script lang="ts" setup>
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import ManagerExpirationInput from '@/components/event/settings/access/ManagerExpirationInput.vue';
 import type {
   EventManagerCreateData,
@@ -80,15 +90,19 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-defineProps<{
+const { roles } = defineProps<{
   eventEndAt: string | undefined;
-  roles: QSelectOption<EventManagerRole>[];
+  roles: (QSelectOption<EventManagerRole> & { caption?: string })[];
 }>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref<string>('');
 const expiresAt = ref<string | null | undefined>(undefined);
 const role = ref<EventManagerRole>('COUNSELOR');
+
+const roleCaption = computed<string | undefined>(
+  () => roles.find((option) => option.value === role.value)?.caption,
+);
 
 function onInvite() {
   const data: EventManagerCreateData = {

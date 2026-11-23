@@ -54,27 +54,23 @@ export default {
   },
 
   legalBasis: {
-    contract: 'Erfüllung eines Vertrags (Art. 6 Abs. 1 lit. b DSGVO)',
-    legal_obligation:
-      'Erfüllung einer rechtlichen Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO)',
-    vital_interests:
-      'Schutz lebenswichtiger Interessen (Art. 6 Abs. 1 lit. d DSGVO)',
-    legitimate_interests: 'Berechtigte Interessen (Art. 6 Abs. 1 lit. f DSGVO)',
-    consent: 'Einwilligung (Art. 6 Abs. 1 lit. a DSGVO)',
-    public_task:
-      'Wahrnehmung einer Aufgabe im öffentlichen Interesse (Art. 6 Abs. 1 lit. e DSGVO)',
+    contract: 'Erfüllung eines Vertrags',
+    legal_obligation: 'Erfüllung einer rechtlichen Verpflichtung',
+    vital_interests: 'Schutz lebenswichtiger Interessen',
+    legitimate_interests: 'Berechtigte Interessen',
+    consent: 'Einwilligung',
+    public_task: 'Wahrnehmung einer Aufgabe im öffentlichen Interesse',
   },
 
   specialCategoryBasis: {
-    explicit_consent: 'Ausdrückliche Einwilligung (Art. 9 Abs. 2 lit. a DSGVO)',
-    vital_interests:
-      'Schutz lebenswichtiger Interessen (Art. 9 Abs. 2 lit. c DSGVO)',
-    health_care:
-      'Gesundheitsversorgung oder Sozialbereich (Art. 9 Abs. 2 lit. h DSGVO)',
+    explicit_consent: 'Ausdrückliche Einwilligung',
+    vital_interests: 'Schutz lebenswichtiger Interessen',
+    health_care: 'Gesundheitsversorgung oder Sozialbereich',
     nonprofit_body:
-      'Rechtmäßige Tätigkeit einer nicht gewinnorientierten Einrichtung (Art. 9 Abs. 2 lit. d DSGVO)',
-    legal_claims:
-      'Geltendmachung oder Verteidigung von Rechtsansprüchen (Art. 9 Abs. 2 lit. f DSGVO)',
+      'Rechtmäßige Tätigkeit einer nicht gewinnorientierten Einrichtung',
+    legal_claims: 'Geltendmachung oder Verteidigung von Rechtsansprüchen',
+    public_interest:
+      'Erhebliches öffentliches Interesse auf Grundlage eines Gesetzes',
   },
 
   specialCategoryCondition: {
@@ -88,6 +84,8 @@ export default {
       'Nur wenn die Daten von einer der Schweigepflicht unterliegenden Person oder unter deren Verantwortung verarbeitet werden, etwa von einer Ärztin oder einer Pflegekraft.',
     legal_claims:
       'Nur zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen, etwa ein Unfallbericht für einen Versicherungsstreit.',
+    public_interest:
+      'Nur wenn ein Gesetz der EU oder deines Landes die Verarbeitung vorschreibt oder erlaubt; nenne dieses Gesetz unten. Lass dich beraten, bevor du dich darauf stützt.',
   },
 
   retentionUntil: {
@@ -102,17 +100,20 @@ export default {
     adequacy: 'einen Angemessenheitsbeschluss der Europäischen Kommission',
     scc: 'Standardvertragsklauseln',
     bcr: 'verbindliche interne Datenschutzvorschriften',
-    derogation: 'eine Ausnahme nach Art. 49 DSGVO',
+    derogation: 'eine Ausnahme',
   },
 
   /** Siehe `en-US/privacy.ts`. */
   editor: {
     field: {
       art9Basis: 'Rechtsgrundlage',
+      legalReference: 'Gesetzliche Grundlage',
+      legalReferenceHint:
+        'Die Vorschrift, auf die du dich stützt, z. B. Gesetz und Paragraf',
       art9Advisory:
         'Für sich genommen nicht sensibel. Wenn das Formular halal oder koscher zur Auswahl stellt, wähle zusätzlich „Religionszugehörigkeit“; werden Allergien erfasst, wähle „Allergien“.',
       consentQuestion:
-        'Die Angabe hier ist keine Einwilligung. Das Anmeldeformular muss sie in einer eigenen Frage einholen, die unbeantwortet bleiben darf – die Anmeldung muss auch ohne sie möglich sein (Art. 7 Abs. 4 DSGVO).',
+        'Die Angabe hier ist keine Einwilligung. Das Anmeldeformular muss sie in einer eigenen Frage einholen, die unbeantwortet bleiben darf – die Anmeldung muss auch ohne sie möglich sein ({citation}).',
       recipientName: 'Name (optional)',
       recipientNameHint:
         'Den konkreten Empfänger zu nennen ist klarer als nur die Kategorie.',
@@ -142,13 +143,17 @@ export default {
   },
 
   gap: {
+    purpose_basis: 'Für einen Zweck fehlt noch die Rechtsgrundlage',
+    supervisory_authority: 'Es ist keine Aufsichtsbehörde angegeben',
     purposes: 'Es wurde kein Verarbeitungszweck angegeben',
     legitimate_interest_explanation:
       'Ein berechtigtes Interesse wird herangezogen, aber nicht beschrieben',
     custom_purpose_label: 'Ein selbst hinzugefügter Zweck hat keinen Namen',
     data_categories: 'Es wurden keine Datenkategorien angegeben',
     special_category_basis:
-      'Für besondere Kategorien personenbezogener Daten fehlt eine Rechtsgrundlage nach Art. 9',
+      'Für besondere Kategorien personenbezogener Daten fehlt eine Rechtsgrundlage',
+    special_category_legal_reference:
+      'Eine Rechtsgrundlage, die auf einem Gesetz beruht, nennt dieses nicht',
     custom_category_label:
       'Eine selbst hinzugefügte Kategorie hat keinen Namen',
     custom_recipient_label:

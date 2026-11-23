@@ -60,6 +60,59 @@
             {{ t('mode.freeTextWarning') }}
           </div>
         </q-card-section>
+
+        <!-- Only a guided notice cites a law (docs/privacy.md, 4): declared,
+             never inferred, and offered only where there is a choice. A law
+             the platform has no record of means free text. -->
+        <template v-if="content.mode === 'builder'">
+          <q-separator />
+          <q-card-section data-test="privacy-framework">
+            <template v-if="frameworkOptions.length > 1">
+              <q-select
+                :model-value="framework"
+                :options="frameworkOptions"
+                :label="t('framework.title')"
+                :disable="!canEdit"
+                emit-value
+                map-options
+                dense
+                outlined
+                rounded
+                data-test="privacy-framework-select"
+                @update:model-value="setFramework"
+              />
+              <div class="text-caption text-on-surface-variant q-mt-xs">
+                {{ t('framework.hint') }}
+              </div>
+            </template>
+            <div class="row items-center q-gutter-sm q-mt-xs">
+              <div class="col text-caption text-on-surface-variant">
+                {{
+                  frameworkOptions.length > 1
+                    ? t('framework.none')
+                    : t('framework.single')
+                }}
+              </div>
+              <m-btn
+                v-if="canEdit"
+                :label="t('framework.useFreeText')"
+                color="primary"
+                flat
+                rounded
+                dense
+                data-test="privacy-framework-free-text"
+                @click="content.mode = 'free_text'"
+              />
+            </div>
+            <div
+              v-if="record?.baseline"
+              class="text-caption text-warning q-mt-sm"
+              data-test="privacy-framework-warning"
+            >
+              {{ t('framework.warning', { baseline: to(record.baseline) }) }}
+            </div>
+          </q-card-section>
+        </template>
       </q-card>
 
       <!-- Free text -->
@@ -167,6 +220,13 @@
             :can-edit
             class="q-mt-md"
           />
+          <privacy-authority-fields
+            v-if="needsEnteredAuthority(content)"
+            v-model="content.supervisoryAuthority"
+            :can-edit
+            :hint="record?.authorityHint ? to(record.authorityHint) : ''"
+            class="q-mt-md"
+          />
           <q-stepper-navigation>
             <m-btn
               :label="t('action.next')"
@@ -224,6 +284,13 @@
                   :disable="!canEdit"
                   @update:model-value="(v) => setLegalBasis(key, v)"
                 />
+                <div
+                  v-if="legalBasisCaution(purpose(key)?.legalBasis)"
+                  class="text-caption text-warning q-mt-xs"
+                  data-test="privacy-basis-caution"
+                >
+                  {{ legalBasisCaution(purpose(key)?.legalBasis) }}
+                </div>
                 <translated-input
                   v-if="purpose(key)?.legalBasis === 'legitimate_interests'"
                   :model-value="purpose(key)?.legitimateInterest"
@@ -241,7 +308,11 @@
                   v-if="purpose(key)?.legalBasis === 'consent'"
                   class="text-caption text-on-surface-variant q-mt-xs"
                 >
-                  {{ gt('privacy.editor.field.consentQuestion') }}
+                  {{
+                    gt('privacy.editor.field.consentQuestion', {
+                      citation: cite('freelyGiven'),
+                    })
+                  }}
                 </div>
               </template>
             </privacy-entry-row>
@@ -303,6 +374,12 @@
                   rounded
                   :disable="!canEdit"
                 />
+                <div
+                  v-if="legalBasisCaution(entry.legalBasis)"
+                  class="text-caption text-warning q-mt-xs"
+                >
+                  {{ legalBasisCaution(entry.legalBasis) }}
+                </div>
                 <translated-input
                   v-if="entry.legalBasis === 'legitimate_interests'"
                   :model-value="entry.legitimateInterest"
@@ -321,7 +398,11 @@
                   v-if="entry.legalBasis === 'consent'"
                   class="text-caption text-on-surface-variant"
                 >
-                  {{ gt('privacy.editor.field.consentQuestion') }}
+                  {{
+                    gt('privacy.editor.field.consentQuestion', {
+                      citation: cite('freelyGiven'),
+                    })
+                  }}
                 </div>
               </q-card-section>
             </q-card>
@@ -368,7 +449,11 @@
             class="q-mb-md"
           >
             <div class="text-body2 text-weight-medium">
-              {{ t(`group.${group.key}.title`) }}
+              {{
+                group.key === 'special'
+                  ? withCitation(t('group.special.title'), 'specialCategories')
+                  : t(`group.${group.key}.title`)
+              }}
             </div>
             <div class="text-caption text-on-surface-variant q-mb-sm">
               {{ t(`group.${group.key}.hint`) }}
@@ -401,8 +486,13 @@
                   <special-category-basis-field
                     v-if="isSpecialCategory(key)"
                     :model-value="dataCategory(key)?.specialCategoryBasis"
+                    :legal-reference="dataCategory(key)?.legalReference"
                     :can-edit="canEdit"
+                    :locales
                     @update:model-value="(value) => setSpecialBasis(key, value)"
+                    @update:legal-reference="
+                      (value) => setLegalReference(key, value)
+                    "
                   />
                   <privacy-category-notes
                     :category-key="key"
@@ -464,7 +554,12 @@
 
                 <q-checkbox
                   :model-value="entry.special === true"
-                  :label="t('field.customCategorySpecial')"
+                  :label="
+                    withCitation(
+                      t('field.customCategorySpecial'),
+                      'specialCategories',
+                    )
+                  "
                   dense
                   :disable="!canEdit"
                   class="q-mt-sm"
@@ -479,7 +574,9 @@
                 <special-category-basis-field
                   v-if="entry.special"
                   v-model="entry.specialCategoryBasis"
+                  v-model:legal-reference="entry.legalReference"
                   :can-edit="canEdit"
+                  :locales
                   class="inset-card__basis q-mt-xs"
                 />
               </q-card-section>
@@ -726,21 +823,6 @@
             {{ gt(`privacy.gap.${gap}`) }}
           </li>
         </ul>
-
-        <template
-          v-if="content.mode === 'builder'"
-          #note
-        >
-          <q-banner
-            dense
-            class="privacy-page__disclaimer"
-          >
-            <template #avatar>
-              <q-icon name="gavel" />
-            </template>
-            {{ t('disclaimer') }}
-          </q-banner>
-        </template>
       </privacy-publish-card>
     </div>
 
@@ -767,6 +849,12 @@ import {
   DEFAULT_SPECIAL_CATEGORY_BASIS,
   ALWAYS_RECIPIENT_KEYS,
   composePrivacyNotice,
+  frameworkRecord,
+  frameworksFor,
+  needsEnteredAuthority,
+  noticeSupervisoryAuthority,
+  presetLegalBasis,
+  noticeFramework,
   nextCustomKey,
   emptyPrivacyNoticeContent,
   gapsInSection,
@@ -776,7 +864,7 @@ import {
   isSpecialCategory,
   requiresConsentQuestion,
   privacyNoticeCompleteness,
-  supervisoryAuthorityFor,
+  type DataProtectionFramework,
   type LegalBasisKey,
   type PrivacyDataCategoryEntry,
   type PrivacyDataCategoryKey,
@@ -802,13 +890,18 @@ import PrivacyPublishCard from '@/components/privacy/PrivacyPublishCard.vue';
 import SpecialCategoryBasisField from '@/components/privacy/SpecialCategoryBasisField.vue';
 import PrivacyRetentionStep from '@/components/organization/privacy/PrivacyRetentionStep.vue';
 import PrivacyDpoFields from '@/components/organization/privacy/PrivacyDpoFields.vue';
+import PrivacyAuthorityFields from '@/components/organization/privacy/PrivacyAuthorityFields.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
 import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
-import { usePrivacyLabels } from '@/composables/privacyLabels';
+import {
+  providePrivacyFramework,
+  usePrivacyLabels,
+} from '@/composables/privacyLabels';
 import { localeText, useLocaleTextModel } from '@/composables/localeText';
 import { countryName } from '@/utils/countries';
 import { APP_LOCALES as locales } from '@/i18n/locales';
@@ -852,6 +945,7 @@ const {
   removeDataCategory,
   toggleDataCategory,
   setSpecialBasis,
+  setLegalReference,
   recipient,
   hasRecipient,
   addRecipient,
@@ -859,7 +953,12 @@ const {
   toggleRecipient,
   setRecipientName,
 } = usePrivacyEntryEditor(content);
-const { legalBasisOptions } = usePrivacyLabels();
+// The controls on this page cite the law the notice is written under.
+const noticeLaw = () => content.value;
+providePrivacyFramework(noticeLaw);
+const { legalBasisOptions, cite, withCitation, legalBasisCaution, record } =
+  usePrivacyLabels(noticeLaw);
+const { to } = useObjectTranslation();
 
 const additionalForLocale = useLocaleTextModel(
   {
@@ -978,6 +1077,27 @@ function sectionCaption(section: PrivacyNoticeSection, fallback: string) {
     : fallback;
 }
 
+const framework = computed<DataProtectionFramework>(() =>
+  noticeFramework(content.value),
+);
+
+// A church law is offered only where it applies; the current value stays
+// listed should the organization's country change.
+const frameworkOptions = computed(() => {
+  const available = frameworksFor(organization.value?.country ?? '');
+  const values = available.includes(framework.value)
+    ? available
+    : [...available, framework.value];
+  return values.map((value) => {
+    const name = frameworkRecord(value)?.name;
+    return { value, label: name ? to(name) : t(`framework.${value}`) };
+  });
+});
+
+function setFramework(value: DataProtectionFramework) {
+  content.value.framework = value;
+}
+
 const modeOptions = computed(() => [
   { value: 'builder', label: t('mode.builder') },
   { value: 'free_text', label: t('mode.freeText') },
@@ -1040,7 +1160,10 @@ const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
       country: org.country,
       registrationNumber: org.registrationNumber,
     },
-    supervisoryAuthority: supervisoryAuthorityFor(org.country),
+    supervisoryAuthority: noticeSupervisoryAuthority(
+      content.value,
+      org.country,
+    ),
     notice: composePrivacyNotice({ ...content.value }),
     organizationVersion: publishedVersion.value,
     eventVersion: null,
@@ -1100,7 +1223,11 @@ function togglePurpose(key: PrivacyPurposeKey, on: boolean) {
   }
 
   const preset = PRIVACY_PURPOSE_PRESETS[key];
-  content.value.purposes.push({ key, legalBasis: preset.legalBasis });
+  // A basis the law attaches conditions to is left for the author to choose.
+  content.value.purposes.push({
+    key,
+    legalBasis: presetLegalBasis(preset.legalBasis, framework.value),
+  });
   preset.dataCategories.forEach(addDataCategory);
   preset.recipients.forEach(addRecipient);
 }
@@ -1109,7 +1236,7 @@ function removePurpose(key: PrivacyPurposeRef) {
     (entry) => entry.key !== key,
   );
 }
-function setLegalBasis(key: PrivacyPurposeRef, value: LegalBasisKey) {
+function setLegalBasis(key: PrivacyPurposeRef, value: LegalBasisKey | null) {
   const entry = purpose(key);
   if (entry) {
     entry.legalBasis = value;
@@ -1231,12 +1358,6 @@ $field-max-narrow: 28rem;
   max-width: 70rem;
 }
 
-.privacy-page__disclaimer {
-  background-color: var(--md3-surface-container-high);
-  color: var(--md3-on-surface-variant);
-  border-radius: 12px;
-}
-
 // A card set into the page rather than sitting on it: used wherever a block is
 // part of the surrounding step instead of a section of its own.
 .inset-card {
@@ -1284,10 +1405,17 @@ $field-max-narrow: 28rem;
 </style>
 
 <i18n lang="yaml" locale="en">
-disclaimer: 'These templates help you describe your processing, but they are not legal advice. Your organisation remains the controller and is responsible for the notice being correct.'
 title: 'Privacy information'
 subtitle: 'What happens to the data collected when someone registers.'
 baselineNote: 'This is the baseline for every event your organisation runs. Individual events can add to it and adjust it where they differ, but not replace it.'
+framework:
+  title: 'Data protection law'
+  hint: 'The law your organisation is subject to. You decide this as the controller.'
+  none: 'None of these applies to your organisation? Write the notice as free text instead.'
+  single: 'The guided notice is written under the GDPR. If another data protection law applies to your organisation, write the notice as free text instead.'
+  useFreeText: 'Use free text'
+  gdpr: 'The GDPR'
+  warning: 'Check that this law applies to your organisation, that the version in force for you matches the one cited here ({baseline}), and whether your diocese or regional church deviates from it. If it does, write the notice as free text instead.'
 mode:
   title: 'How do you want to write this?'
   builder: 'Guided — pick from prepared wording (translated into all languages for you)'
@@ -1295,7 +1423,7 @@ mode:
   freeTextWarning: 'You write the whole notice yourself, in every language your events run in. Nothing is translated or filled in for you, and your text is published exactly as you write it.'
 freeText:
   title: 'Your privacy notice'
-  hint: 'This replaces the guided sections entirely. The rights, complaint and supervisory authority sections are still added for you.'
+  hint: 'Your text is the whole notice: nothing is added for you. Include the data subjects’ rights, the right to lodge a complaint and the competent supervisory authority yourself.'
   placeholder: 'Write your privacy notice…'
   missingLocales: 'Not written yet in: {locales}'
 step:
@@ -1345,7 +1473,7 @@ custom:
 field:
   customRecipientName: 'Recipient'
   customCategoryName: 'Name of the category'
-  customCategorySpecial: 'Sensitive (Art. 9 GDPR)'
+  customCategorySpecial: 'Sensitive'
   customCategorySpecialHint: 'Health, disability, religion, ethnicity, politics, trade-union membership, sex life or biometric data.'
   customPurposeName: 'Name of the purpose'
   legalBasis: 'Legal basis'
@@ -1373,16 +1501,23 @@ group:
     title: 'General data'
     hint: 'Everyday details a registration needs.'
   special:
-    title: 'Special categories (Art. 9 GDPR)'
+    title: 'Special categories'
     hint: 'Health, religion and the like need an extra legal basis — usually a consent question in the form.'
 readOnly: 'You can view this privacy information but not change it. Administrators of the organization can.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-disclaimer: 'Diese Textbausteine helfen dir, die Verarbeitung zu beschreiben, sind aber keine Rechtsberatung. Die Organisation bleibt verantwortliche Stelle und haftet für die Richtigkeit der Angaben.'
 title: 'Datenschutzinformationen'
 subtitle: 'Was mit den Daten geschieht, die bei einer Anmeldung erhoben werden.'
 baselineNote: 'Diese Angaben gelten für alle Veranstaltungen der Organisation. Einzelne Veranstaltungen können sie ergänzen und dort anpassen, wo sie abweichen – ersetzen können sie sie nicht.'
+framework:
+  title: 'Datenschutzrecht'
+  hint: 'Das Recht, dem deine Organisation unterliegt. Das entscheidet deine Organisation als Verantwortliche.'
+  none: 'Keines davon gilt für deine Organisation? Schreib die Informationen stattdessen als Freitext.'
+  single: 'Die geführten Informationen beruhen auf der DSGVO. Gilt für deine Organisation ein anderes Datenschutzrecht, schreib sie stattdessen als Freitext.'
+  useFreeText: 'Freitext verwenden'
+  gdpr: 'Die DSGVO'
+  warning: 'Prüfe, ob dieses Recht für deine Organisation gilt, ob die für dich geltende Fassung der hier zitierten entspricht ({baseline}) und ob dein Bistum oder deine Landeskirche davon abweicht. Falls ja, schreib die Informationen stattdessen als Freitext.'
 mode:
   title: 'Wie sollen die Informationen entstehen?'
   builder: 'Geführt – vorformulierte Textbausteine auswählen, automatisch in alle Sprachen übersetzt'
@@ -1390,7 +1525,7 @@ mode:
   freeTextWarning: 'Du verfasst die gesamten Informationen selbst – in jeder Sprache, in der die Veranstaltungen stattfinden. Nichts wird übersetzt oder ergänzt, und der Text wird genau so veröffentlicht, wie du ihn schreibst.'
 freeText:
   title: 'Datenschutzinformationen'
-  hint: 'Ersetzt die geführten Abschnitte vollständig. Betroffenenrechte, Beschwerderecht und Aufsichtsbehörde werden weiterhin automatisch ergänzt.'
+  hint: 'Dein Text ist die gesamte Information: Es wird nichts ergänzt. Nenne die Betroffenenrechte, das Beschwerderecht und die zuständige Aufsichtsbehörde selbst.'
   placeholder: 'Datenschutzinformationen verfassen…'
   missingLocales: 'Noch nicht verfasst in: {locales}'
 step:
@@ -1440,7 +1575,7 @@ custom:
 field:
   customRecipientName: 'Empfänger'
   customCategoryName: 'Bezeichnung der Kategorie'
-  customCategorySpecial: 'Besondere Kategorie (Art. 9 DSGVO)'
+  customCategorySpecial: 'Besondere Kategorie'
   customCategorySpecialHint: 'Gesundheit, Behinderung, Religion, ethnische Herkunft, politische Meinung, Gewerkschaftszugehörigkeit, Sexualleben oder biometrische Daten.'
   customPurposeName: 'Bezeichnung des Zwecks'
   legalBasis: 'Rechtsgrundlage'
@@ -1468,16 +1603,23 @@ group:
     title: 'Allgemeine Daten'
     hint: 'Alltägliche Angaben, die eine Anmeldung braucht.'
   special:
-    title: 'Besondere Kategorien (Art. 9 DSGVO)'
+    title: 'Besondere Kategorien'
     hint: 'Gesundheit, Religion und Ähnliches brauchen eine zusätzliche Rechtsgrundlage – meist eine Einwilligungsfrage im Formular.'
 readOnly: 'Du kannst diese Datenschutzinformationen ansehen, aber nicht ändern. Das können Administrator:innen der Organisation.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-disclaimer: "Ces modèles vous aident à décrire vos traitements, mais ne constituent pas un conseil juridique. Votre organisation reste responsable de traitement et de l'exactitude de ces informations."
 title: 'Informations sur la protection des données'
 subtitle: "Ce qu'il advient des données recueillies lors d'une inscription."
 baselineNote: "Ces informations valent pour tous les événements de l'organisation. Chaque événement peut les compléter et les ajuster là où il diffère, mais pas les remplacer."
+framework:
+  title: 'Droit de la protection des données'
+  hint: 'Le droit auquel votre organisation est soumise. C’est à vous d’en décider en tant que responsable de traitement.'
+  none: 'Aucun ne s’applique à votre organisation ? Rédigez plutôt les informations en texte libre.'
+  single: 'Les informations guidées reposent sur le RGPD. Si un autre droit de la protection des données s’applique à votre organisation, rédigez-les plutôt en texte libre.'
+  useFreeText: 'Utiliser le texte libre'
+  gdpr: 'Le RGPD'
+  warning: 'Vérifiez que ce droit s’applique à votre organisation, que la version en vigueur pour vous correspond à celle citée ici ({baseline}) et si votre diocèse ou votre Église régionale s’en écarte. Si c’est le cas, rédigez plutôt les informations en texte libre.'
 mode:
   title: 'Comment souhaitez-vous rédiger ces informations ?'
   builder: 'Guidé – choisir des formulations préétablies, traduites automatiquement dans toutes les langues'
@@ -1485,7 +1627,7 @@ mode:
   freeTextWarning: "Vous rédigez l'intégralité des informations vous-même, dans chaque langue de vos événements. Rien n'est traduit ni complété pour vous, et votre texte est publié tel que vous l'écrivez."
 freeText:
   title: 'Vos informations sur la protection des données'
-  hint: 'Cela remplace entièrement les sections guidées. Les droits, le droit de réclamation et l’autorité de contrôle restent ajoutés automatiquement.'
+  hint: 'Votre texte constitue l’intégralité des informations : rien n’est ajouté. Indiquez vous-même les droits des personnes concernées, le droit de réclamation et l’autorité de contrôle compétente.'
   placeholder: 'Rédigez vos informations…'
   missingLocales: 'Pas encore rédigé en : {locales}'
 step:
@@ -1535,7 +1677,7 @@ custom:
 field:
   customRecipientName: 'Destinataire'
   customCategoryName: 'Nom de la catégorie'
-  customCategorySpecial: 'Donnée sensible (art. 9 RGPD)'
+  customCategorySpecial: 'Donnée sensible'
   customCategorySpecialHint: 'Santé, handicap, religion, origine ethnique, opinions politiques, appartenance syndicale, vie sexuelle ou données biométriques.'
   customPurposeName: 'Nom de la finalité'
   legalBasis: 'Base légale'
@@ -1563,16 +1705,23 @@ group:
     title: 'Données générales'
     hint: 'Les informations courantes dont une inscription a besoin.'
   special:
-    title: 'Catégories particulières (art. 9 RGPD)'
+    title: 'Catégories particulières'
     hint: 'La santé, la religion et similaires exigent une base juridique supplémentaire – le plus souvent une question de consentement dans le formulaire.'
 readOnly: "Tu peux consulter ces informations sur la protection des données, mais pas les modifier. Les administrateurs de l'organisation le peuvent."
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-disclaimer: 'Tyto šablony ti pomohou popsat zpracování, nejsou však právní radou. Vaše organizace zůstává správcem a odpovídá za správnost informací.'
 title: 'Informace o ochraně osobních údajů'
 subtitle: 'Co se děje s údaji, které se získávají při přihlášení.'
 baselineNote: 'Tyto údaje platí pro všechny akce organizace. Jednotlivé akce je mohou doplnit a upravit tam, kde se liší, ale nemohou je nahradit.'
+framework:
+  title: 'Právo na ochranu osobních údajů'
+  hint: 'Právo, kterému tvá organizace podléhá. O tom rozhoduje organizace jako správce.'
+  none: 'Žádné z nich se na tvou organizaci nevztahuje? Sepiš informace raději jako volný text.'
+  single: 'Informace s průvodcem vycházejí z GDPR. Pokud se na tvou organizaci vztahuje jiné právo na ochranu osobních údajů, sepiš je raději jako volný text.'
+  useFreeText: 'Použít volný text'
+  gdpr: 'GDPR'
+  warning: 'Ověř, že se toto právo na tvou organizaci vztahuje, že pro tebe platné znění odpovídá zde citovanému ({baseline}) a zda se od něj tvá diecéze nebo zemská církev neodchyluje. Pokud ano, sepiš informace raději jako volný text.'
 mode:
   title: 'Jak to chcete sepsat?'
   builder: 'S průvodcem – vybrat z připravených formulací, automaticky přeložených do všech jazyků'
@@ -1580,7 +1729,7 @@ mode:
   freeTextWarning: 'Veškeré informace sepisuješ ty – v každém jazyce, ve kterém pořádáte akce. Nic se nepřekládá ani nedoplňuje a text se zveřejní přesně tak, jak ho napíšeš.'
 freeText:
   title: 'Vaše informace o ochraně osobních údajů'
-  hint: 'Zcela nahrazuje sekce průvodce. Práva, právo podat stížnost a dozorový úřad se i nadále doplňují automaticky.'
+  hint: 'Tvůj text je celou informací: nic se nedoplňuje. Uveď sám práva subjektů údajů, právo podat stížnost a příslušný dozorový úřad.'
   placeholder: 'Sepiš informace o ochraně osobních údajů…'
   missingLocales: 'Zatím nesepsáno v: {locales}'
 step:
@@ -1630,7 +1779,7 @@ custom:
 field:
   customRecipientName: 'Příjemce'
   customCategoryName: 'Název kategorie'
-  customCategorySpecial: 'Citlivý údaj (čl. 9 GDPR)'
+  customCategorySpecial: 'Citlivý údaj'
   customCategorySpecialHint: 'Zdraví, postižení, náboženství, etnický původ, politické názory, členství v odborech, sexuální život nebo biometrické údaje.'
   customPurposeName: 'Název účelu'
   legalBasis: 'Právní základ'
@@ -1658,16 +1807,23 @@ group:
     title: 'Obecné údaje'
     hint: 'Běžné údaje, které registrace potřebuje.'
   special:
-    title: 'Zvláštní kategorie (čl. 9 GDPR)'
+    title: 'Zvláštní kategorie'
     hint: 'Zdraví, náboženství a podobné vyžadují další právní základ – obvykle otázku na souhlas ve formuláři.'
 readOnly: 'Tyto informace o ochraně údajů můžeš zobrazit, ale ne měnit. To mohou administrátoři organizace.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-disclaimer: 'Te szablony pomagają opisać przetwarzanie, ale nie stanowią porady prawnej. Twoja organizacja pozostaje administratorem i odpowiada za poprawność informacji.'
 title: 'Informacje o ochronie danych'
 subtitle: 'Co dzieje się z danymi zbieranymi podczas zgłoszenia.'
 baselineNote: 'Te informacje dotyczą wszystkich wydarzeń organizacji. Poszczególne wydarzenia mogą je uzupełnić i dostosować tam, gdzie się różnią, ale nie mogą ich zastąpić.'
+framework:
+  title: 'Prawo ochrony danych'
+  hint: 'Prawo, któremu podlega Twoja organizacja. Decyduje o tym organizacja jako administrator.'
+  none: 'Żadne z nich nie dotyczy Twojej organizacji? Napisz informacje jako tekst własny.'
+  single: 'Informacje z kreatora opierają się na RODO. Jeśli Twoją organizację obowiązuje inne prawo ochrony danych, napisz je jako tekst własny.'
+  useFreeText: 'Użyj tekstu własnego'
+  gdpr: 'RODO'
+  warning: 'Sprawdź, czy to prawo dotyczy Twojej organizacji, czy obowiązujące Cię brzmienie odpowiada cytowanemu tutaj ({baseline}) i czy Twoja diecezja lub Kościół krajowy nie wprowadza odstępstw. Jeśli tak, napisz informacje jako tekst własny.'
 mode:
   title: 'Jak chcecie to napisać?'
   builder: 'Kreator – wybór z przygotowanych sformułowań, tłumaczonych automatycznie na wszystkie języki'
@@ -1675,7 +1831,7 @@ mode:
   freeTextWarning: 'Całość informacji piszesz samodzielnie – w każdym języku Waszych wydarzeń. Nic nie jest tłumaczone ani uzupełniane, a tekst zostaje opublikowany dokładnie tak, jak go napiszesz.'
 freeText:
   title: 'Wasze informacje o ochronie danych'
-  hint: 'Zastępuje to w całości sekcje kreatora. Prawa, prawo do skargi i organ nadzorczy są nadal dodawane automatycznie.'
+  hint: 'Twój tekst stanowi całość informacji: nic nie jest dodawane. Samodzielnie podaj prawa osób, których dane dotyczą, prawo do skargi i właściwy organ nadzorczy.'
   placeholder: 'Napisz informacje o ochronie danych…'
   missingLocales: 'Jeszcze nie napisano w: {locales}'
 step:
@@ -1725,7 +1881,7 @@ custom:
 field:
   customRecipientName: 'Odbiorca'
   customCategoryName: 'Nazwa kategorii'
-  customCategorySpecial: 'Dane wrażliwe (art. 9 RODO)'
+  customCategorySpecial: 'Dane wrażliwe'
   customCategorySpecialHint: 'Zdrowie, niepełnosprawność, religia, pochodzenie etniczne, poglądy polityczne, przynależność związkowa, życie seksualne lub dane biometryczne.'
   customPurposeName: 'Nazwa celu'
   legalBasis: 'Podstawa prawna'
@@ -1753,7 +1909,7 @@ group:
     title: 'Dane ogólne'
     hint: 'Codzienne informacje potrzebne do rejestracji.'
   special:
-    title: 'Szczególne kategorie (art. 9 RODO)'
+    title: 'Szczególne kategorie'
     hint: 'Zdrowie, religia i podobne wymagają dodatkowej podstawy prawnej – zwykle pytania o zgodę w formularzu.'
 readOnly: 'Możesz przeglądać te informacje o ochronie danych, ale nie możesz ich zmieniać. Mogą to zrobić administratorzy organizacji.'
 </i18n>
