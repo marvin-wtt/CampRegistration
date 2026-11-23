@@ -15,7 +15,10 @@ import { createEventMetaRouter } from '#app/event/event-meta.routes';
 import { EventService } from '#app/event/event.service';
 import { EventController } from '#app/event/event.controller';
 import { SettingsRegistry } from '#app/setting/setting.registry';
-import { NavigationSettingsValidation } from '#app/event/event.settings.validation';
+import {
+  NavigationSettingsValidation,
+  OnboardingSettingsValidation,
+} from '#app/event/event.settings.validation';
 import { resolve } from '#core/ioc/container';
 
 export class EventModule implements AppModule {
@@ -27,6 +30,11 @@ export class EventModule implements AppModule {
   configure(_options: ModuleOptions): void {
     resolve(SettingsRegistry).register(SETTING_KEYS.NAVIGATION, {
       schema: NavigationSettingsValidation,
+      viewPermission: 'event.view',
+      editPermission: 'event.edit',
+    });
+    resolve(SettingsRegistry).register(SETTING_KEYS.ONBOARDING, {
+      schema: OnboardingSettingsValidation,
       viewPermission: 'event.view',
       editPermission: 'event.edit',
     });

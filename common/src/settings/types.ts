@@ -107,3 +107,13 @@ export interface FinanceDisplaySettings {
    */
   flagMissingCategories: boolean;
 }
+
+/**
+ * Stored under `SETTING_KEYS.ONBOARDING`, shared by the event's team. Item
+ * names are opaque strings, so renamed or removed items are tolerated.
+ */
+export interface OnboardingSettings {
+  completed: string[];
+  skipped: string[];
+  hidden: boolean;
+}

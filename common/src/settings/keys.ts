@@ -9,6 +9,7 @@ export const SETTING_KEYS = {
   PROGRAM_PUBLIC: 'program-public',
   NAVIGATION: 'navigation',
   FINANCES: 'finances',
+  ONBOARDING: 'onboarding',
 } as const;
 
 /** Union of all known setting keys, e.g. `'room-planner' | 'program-planner'`. */

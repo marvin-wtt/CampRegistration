@@ -289,4 +289,70 @@ describe('/api/v1/events/:eventId/settings', () => {
       expect(response.body.data.data).toEqual({ flagMissingCategories: false });
     });
   });
+
+  describe('onboarding', () => {
+    const url = (eventId: string) =>
+      `/api/v1/events/${eventId}/settings/${SETTING_KEYS.ONBOARDING}`;
+    const data = { completed: ['form'], skipped: ['team'], hidden: false };
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'TREASURER', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'is changed by $role with `$expectedStatus`',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+
+        await request()
+          .put(url(event.id))
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
+    it('is read by every manager', async () => {
+      const { event, accessToken } =
+        await createEventWithManagerAndToken('VIEWER');
+      await EventSettingFactory.create({
+        event: { connect: { id: event.id } },
+        key: SETTING_KEYS.ONBOARDING,
+        data,
+      });
+
+      const response = await request()
+        .get(url(event.id))
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data.data).toEqual(data);
+    });
+
+    it('keeps item names it does not know', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const stale = { completed: ['removed-item'], skipped: [], hidden: true };
+
+      const response = await request()
+        .put(url(event.id))
+        .send({ data: stale })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data.data).toEqual(stale);
+    });
+
+    it('rejects a malformed value with `400`', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+
+      await request()
+        .put(url(event.id))
+        .send({ data: { completed: 'form', skipped: [], hidden: false } })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+  });
 });

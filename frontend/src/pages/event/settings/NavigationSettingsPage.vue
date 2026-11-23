@@ -59,6 +59,40 @@
           </q-item-section>
         </q-item>
       </q-list>
+
+      <q-list
+        bordered
+        class="rounded-borders overflow-hidden"
+      >
+        <q-item
+          tag="label"
+          class="q-py-md"
+        >
+          <q-item-section avatar>
+            <q-icon
+              name="checklist"
+              color="grey-7"
+            />
+          </q-item-section>
+
+          <q-item-section>
+            <q-item-label class="text-weight-medium">
+              {{ t('onboarding.label') }}
+            </q-item-label>
+            <q-item-label caption>
+              {{ t('onboarding.description') }}
+            </q-item-label>
+          </q-item-section>
+
+          <q-item-section side>
+            <q-toggle
+              v-model="onboardingShown"
+              :disable="onboardingLoading || readOnly"
+              data-test="navigation-onboarding-toggle"
+            />
+          </q-item-section>
+        </q-item>
+      </q-list>
     </div>
   </page-state-handler>
 </template>
@@ -74,6 +108,12 @@ import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { useEventSettings } from '@/composables/eventSettings';
+import { DEFAULT_ONBOARDING_SETTINGS } from '@/composables/onboardingChecklist';
+import {
+  SETTING_KEYS,
+  type OnboardingSettings,
+} from '@camp-registration/common/settings';
 
 const { t } = useI18n();
 const { can } = usePermissions();
@@ -81,6 +121,19 @@ const profileStore = useProfileStore();
 const { data: event, error: eventError } = storeToRefs(useEventDetailsStore());
 
 const { settings, isLoading, error } = useNavigationSettings();
+
+// The dashboard's checklist, brought back here once it was hidden.
+const { settings: onboarding, isLoading: onboardingLoading } =
+  useEventSettings<OnboardingSettings>(SETTING_KEYS.ONBOARDING, {
+    ...DEFAULT_ONBOARDING_SETTINGS,
+  });
+
+const onboardingShown = computed<boolean>({
+  get: () => !onboarding.hidden,
+  set: (shown) => {
+    onboarding.hidden = !shown;
+  },
+});
 
 // Permissions resolve only once both profile and event are loaded.
 const readOnly = computed<boolean>(
@@ -139,6 +192,9 @@ chore_planner:
 finances:
   label: 'Finances'
   description: 'Show or hide expenses, payouts and balances.'
+onboarding:
+  label: 'Show onboarding checklist'
+  description: 'Show the setup steps on the dashboard until the event starts.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -163,6 +219,9 @@ chore_planner:
 finances:
   label: 'Finanzen'
   description: 'Ausgaben, Auszahlungen und Salden anzeigen oder ausblenden.'
+onboarding:
+  label: 'Einrichtungs-Checkliste anzeigen'
+  description: 'Zeige die Einrichtungsschritte im Dashboard, bis die Veranstaltung beginnt.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -187,6 +246,9 @@ chore_planner:
 finances:
   label: 'Finances'
   description: 'Afficher ou masquer les dépenses, versements et soldes.'
+onboarding:
+  label: 'Afficher la liste de démarrage'
+  description: "Afficher les étapes de configuration sur le tableau de bord jusqu'au début de l'événement."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -211,6 +273,9 @@ chore_planner:
 finances:
   label: 'Finanse'
   description: 'Pokaż lub ukryj wydatki, wypłaty i salda.'
+onboarding:
+  label: 'Pokaż listę kontrolną konfiguracji'
+  description: 'Pokazuj kroki konfiguracji na pulpicie do rozpoczęcia wydarzenia.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -235,4 +300,7 @@ chore_planner:
 finances:
   label: 'Finance'
   description: 'Zobrazit nebo skrýt výdaje, výplaty a zůstatky.'
+onboarding:
+  label: 'Zobrazit kontrolní seznam nastavení'
+  description: 'Zobrazovat kroky nastavení na přehledu až do začátku akce.'
 </i18n>
