@@ -142,6 +142,7 @@ const {
 // Clearing the select removes the filter entirely, matching the other admin
 // tables — so there is no explicit "all" option.
 const statusOptions = computed(() => [
+  { label: t('status.DRAFT'), value: 'DRAFT' },
   { label: t('status.PENDING'), value: 'PENDING' },
   { label: t('status.VERIFIED'), value: 'VERIFIED' },
   { label: t('status.REJECTED'), value: 'REJECTED' },
@@ -194,7 +195,7 @@ const columns = computed<QTableColumn<Organization>[]>(() => [
 function statusColor(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'positive';
   if (status === 'REJECTED') return 'negative';
-  if (status === 'DRAFT') return 'secondary';
+  if (status === 'DRAFT') return 'tertiary';
   return 'warning';
 }
 

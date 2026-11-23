@@ -160,7 +160,7 @@ const showUnverifiedWarning = computed(() => {
 function statusColor(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'positive';
   if (status === 'REJECTED') return 'negative';
-  if (status === 'DRAFT') return 'secondary';
+  if (status === 'DRAFT') return 'tertiary';
   return 'warning';
 }
 

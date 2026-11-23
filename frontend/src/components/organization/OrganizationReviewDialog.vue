@@ -237,6 +237,11 @@ function onSubmit() {
   color: var(--md3-on-secondary-container);
 }
 
+.status--draft {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
 .status--rejected {
   background: var(--md3-error-container);
   color: var(--md3-on-error-container);

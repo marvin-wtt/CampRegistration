@@ -37,7 +37,12 @@ test.describe('first event', () => {
     await page.getByTestId('organization-addressStreet').fill('Main Street 1');
     await page.getByTestId('organization-addressZipCode').fill('10115');
     await page.getByTestId('organization-addressCity').fill('Berlin');
-    await page.getByTestId('organization-country').click();
+    // The test id lands on the select's inner input, which stays hidden on
+    // phones (the select opens as a dialog there) — click the field instead.
+    await page
+      .getByTestId('organization-country')
+      .locator('xpath=ancestor::label[1]')
+      .click();
     await page.keyboard.type('Germany');
     await page.getByRole('option', { name: 'Germany', exact: true }).click();
     await page.getByTestId('organization-submit').click();
