@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
-import { flushPromises } from '@vue/test-utils';
+import { flushPromises, type VueWrapper } from '@vue/test-utils';
 
 const translateText = vi.fn();
 vi.mock('@/services/APIService', () => ({
@@ -18,7 +18,27 @@ installQuasarPlugin();
 beforeEach(() => {
   setActivePinia(createPinia());
   translateText.mockReset();
+  // Adding a language translates into it; no test needs a result by default.
+  translateText.mockResolvedValue({});
 });
+
+// The menu is teleported to the body, outside the wrapper.
+async function openAddMenu(wrapper: VueWrapper) {
+  await wrapper.find('[data-test="add-translation-button"]').trigger('click');
+  await flushPromises();
+}
+
+function menuItem(locale: string): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    `[data-test="add-translation-${locale}"]`,
+  );
+}
+
+async function addLanguage(wrapper: VueWrapper, locale: string) {
+  await openAddMenu(wrapper);
+  menuItem(locale)!.click();
+  await flushPromises();
+}
 
 describe('TranslatedInput', () => {
   it('should mount', () => {
@@ -73,7 +93,7 @@ describe('TranslatedInput', () => {
       },
     });
 
-    await wrapper.find('[data-test="add-translation-fr"]').trigger('click');
+    await addLanguage(wrapper, 'fr');
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
 
@@ -116,7 +136,7 @@ describe('TranslatedInput', () => {
       },
     });
 
-    await wrapper.find('[data-test="add-translation-fr"]').trigger('click');
+    await addLanguage(wrapper, 'fr');
     const inputs = wrapper.findAll('input');
     await inputs[0]!.setValue('Test Value de');
     await inputs[1]!.setValue('Test Value fr');
@@ -209,7 +229,7 @@ describe('TranslatedInput', () => {
   });
 
   describe('adding languages one at a time', () => {
-    it('should show the default language and offer the others', () => {
+    it('should show the default language and offer the others in a menu', async () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: undefined,
@@ -218,15 +238,16 @@ describe('TranslatedInput', () => {
       });
 
       expect(wrapper.findAll('input')).toHaveLength(1);
-      expect(wrapper.find('[data-test="add-translation-de"]').exists()).toBe(
-        false,
-      );
-      expect(wrapper.find('[data-test="add-translation-fr"]').exists()).toBe(
-        true,
-      );
-      expect(wrapper.find('[data-test="add-translation-pl"]').exists()).toBe(
-        true,
-      );
+      // One button, however many languages there are.
+      expect(
+        wrapper.findAll('[data-test="add-translation-button"]'),
+      ).toHaveLength(1);
+
+      await openAddMenu(wrapper);
+      expect(menuItem('de')).toBeNull();
+      expect(menuItem('fr')).not.toBeNull();
+      expect(menuItem('pl')).not.toBeNull();
+      wrapper.unmount();
     });
 
     it('should show every language that already has text', () => {
@@ -238,9 +259,65 @@ describe('TranslatedInput', () => {
       });
 
       expect(wrapper.findAll('input')).toHaveLength(2);
-      expect(wrapper.find('[data-test="add-translation-fr"]').exists()).toBe(
-        true,
+    });
+
+    it('should remove an added language with its text, but not the default', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo', pl: 'Cześć' },
+          locales: ['de', 'fr', 'pl'],
+          'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+        },
+      });
+
+      expect(wrapper.find('[data-test="remove-translation-de"]').exists()).toBe(
+        false,
       );
+      await wrapper
+        .find('[data-test="remove-translation-pl"]')
+        .trigger('click');
+
+      expect(wrapper.findAll('input')).toHaveLength(1);
+      expect(wrapper.props().modelValue).toStrictEqual({ de: 'Hallo' });
+    });
+
+    it('should remove an added language that has no text yet', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo' },
+          locales: ['de', 'fr'],
+        },
+      });
+
+      await addLanguage(wrapper, 'fr');
+      expect(wrapper.findAll('input')).toHaveLength(2);
+
+      await wrapper
+        .find('[data-test="remove-translation-fr"]')
+        .trigger('click');
+      expect(wrapper.findAll('input')).toHaveLength(1);
+      wrapper.unmount();
+    });
+
+    it('should add a language below those already shown', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo' },
+          // In this order pl would sit above de; added, it goes below.
+          locales: ['fr', 'pl', 'de'],
+        },
+      });
+
+      await addLanguage(wrapper, 'pl');
+
+      const removable = wrapper
+        .findAll('[data-test^="remove-translation-"]')
+        .map((button) => button.attributes('data-test'));
+      expect(removable).toEqual([
+        'remove-translation-de',
+        'remove-translation-pl',
+      ]);
+      wrapper.unmount();
     });
 
     it('should translate into a language as it is added', async () => {
@@ -254,8 +331,7 @@ describe('TranslatedInput', () => {
       });
       await flushPromises();
 
-      await wrapper.find('[data-test="add-translation-fr"]').trigger('click');
-      await flushPromises();
+      await addLanguage(wrapper, 'fr');
 
       expect(translateText).toHaveBeenCalledWith('Hallo', ['fr'], 'de');
       expect(wrapper.props().modelValue).toStrictEqual({

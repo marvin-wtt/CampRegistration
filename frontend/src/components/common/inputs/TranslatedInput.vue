@@ -53,7 +53,7 @@
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
                 :loading="Boolean(props.loading) || isAutoTranslating(locale)"
-                clearable
+                :clearable="!canRemove(locale)"
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
@@ -73,7 +73,11 @@
                 </template>
 
                 <template
-                  v-if="canAutoTranslate(locale) || slots.append"
+                  v-if="
+                    canAutoTranslate(locale) ||
+                    canRemove(locale) ||
+                    slots.append
+                  "
                   #append
                 >
                   <q-btn
@@ -90,6 +94,25 @@
                   >
                     <q-tooltip>
                       {{ t('autoTranslate') }}
+                    </q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    v-if="canRemove(locale)"
+                    icon="close"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="Boolean(props.disable)"
+                    :aria-label="
+                      t('removeLocale', { language: localeName(locale) })
+                    "
+                    :data-test="`remove-translation-${locale}`"
+                    @click.stop="clearTranslation(locale)"
+                  >
+                    <q-tooltip>
+                      {{ t('removeLocale', { language: localeName(locale) }) }}
                     </q-tooltip>
                   </q-btn>
                   <slot
@@ -120,7 +143,7 @@
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
                 :loading="Boolean(props.loading) || isAutoTranslating(locale)"
-                clearable
+                :clearable="!canRemove(locale)"
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
@@ -136,7 +159,11 @@
                 </template>
 
                 <template
-                  v-if="canAutoTranslate(locale) || slots.append"
+                  v-if="
+                    canAutoTranslate(locale) ||
+                    canRemove(locale) ||
+                    slots.append
+                  "
                   #append
                 >
                   <q-btn
@@ -152,6 +179,25 @@
                     @click.stop="autoTranslateInto(locale)"
                   >
                     <q-tooltip>{{ t('autoTranslate') }}</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    v-if="canRemove(locale)"
+                    icon="close"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="Boolean(props.disable)"
+                    :aria-label="
+                      t('removeLocale', { language: localeName(locale) })
+                    "
+                    :data-test="`remove-translation-${locale}`"
+                    @click.stop="clearTranslation(locale)"
+                  >
+                    <q-tooltip>
+                      {{ t('removeLocale', { language: localeName(locale) }) }}
+                    </q-tooltip>
                   </q-btn>
                   <slot
                     v-if="slots.append"
@@ -170,37 +216,42 @@
               </q-input>
             </template>
             <!-- One language at a time: with many locales a field each would be
-                 a long list, so the author adds the ones they write in. -->
+                 a long list, so the author adds the ones they write in. One
+                 button and a menu, however many locales there are. -->
             <div
               v-if="missingKeys.length"
-              class="row items-center add-locales"
+              class="row"
               data-test="add-translation"
             >
-              <span class="text-caption text-on-surface-variant">
-                {{ t('addTranslation') }}
-              </span>
               <q-btn
-                v-for="locale in missingKeys"
-                :key="locale"
+                :label="t('addTranslation')"
+                icon="add"
                 color="primary"
                 flat
                 dense
                 rounded
                 no-caps
                 size="sm"
-                class="add-locale"
                 :disable="Boolean(props.disable)"
-                :aria-label="t('addLocale', { language: localeName(locale) })"
-                :data-test="`add-translation-${locale}`"
-                @click="addLocale(locale)"
+                data-test="add-translation-button"
               >
-                <q-icon
-                  name="add"
-                  size="14px"
-                />
-                <country-icon v-bind="flagProps(locale)" />
-                <span class="locale-code">{{ locale.toUpperCase() }}</span>
-                <q-tooltip>{{ localeName(locale) }}</q-tooltip>
+                <q-menu>
+                  <q-list dense>
+                    <q-item
+                      v-for="locale in missingKeys"
+                      :key="locale"
+                      v-close-popup
+                      clickable
+                      :data-test="`add-translation-${locale}`"
+                      @click="addLocale(locale)"
+                    >
+                      <q-item-section avatar>
+                        <country-icon v-bind="flagProps(locale)" />
+                      </q-item-section>
+                      <q-item-section>{{ localeName(locale) }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
               </q-btn>
             </div>
           </div>
@@ -325,20 +376,37 @@ const defaultKey = computed<string | undefined>(
     keys.value[0],
 );
 
-const shownKeys = computed<string[]>(() =>
-  addsLocales.value
-    ? keys.value.filter(
-        (key) =>
-          key === defaultKey.value ||
-          hasContent(translations.value[key]) ||
-          addedKeys.value.includes(key),
-      )
-    : keys.value,
-);
+// The default first, then the languages that already had text, then each
+// added one below the others, in the order it was added.
+const shownKeys = computed<string[]>(() => {
+  if (!addsLocales.value) {
+    return keys.value;
+  }
+  const rank = (key: string) => {
+    if (key === defaultKey.value) {
+      return -1;
+    }
+    const added = addedKeys.value.indexOf(key);
+    return added === -1 ? keys.value.indexOf(key) : keys.value.length + added;
+  };
+  return keys.value
+    .filter(
+      (key) =>
+        key === defaultKey.value ||
+        hasContent(translations.value[key]) ||
+        addedKeys.value.includes(key),
+    )
+    .sort((a, b) => rank(a) - rank(b));
+});
 
 const missingKeys = computed<string[]>(() =>
   keys.value.filter((key) => !shownKeys.value.includes(key)),
 );
+
+// Any language but the default can be removed again, text included.
+function canRemove(locale: string): boolean {
+  return addsLocales.value && locale !== defaultKey.value;
+}
 
 function addLocale(locale: string) {
   addedKeys.value = [...addedKeys.value, locale];
@@ -640,31 +708,31 @@ watch(
 <i18n lang="yaml" locale="en">
 autoTranslate: 'Translate from another language'
 addTranslation: 'Add language'
-addLocale: 'Add {language}'
+removeLocale: 'Remove {language}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 autoTranslate: 'Aus einer anderen Sprache übersetzen'
 addTranslation: 'Sprache hinzufügen'
-addLocale: '{language} hinzufügen'
+removeLocale: '{language} entfernen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 autoTranslate: 'Traduire depuis une autre langue'
 addTranslation: 'Ajouter une langue'
-addLocale: 'Ajouter : {language}'
+removeLocale: 'Retirer : {language}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 autoTranslate: 'Przetłumacz z innego języka'
 addTranslation: 'Dodaj język'
-addLocale: 'Dodaj: {language}'
+removeLocale: 'Usuń: {language}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 autoTranslate: 'Přeložit z jiného jazyka'
 addTranslation: 'Přidat jazyk'
-addLocale: 'Přidat: {language}'
+removeLocale: 'Odebrat: {language}'
 </i18n>
 
 <style scoped>
@@ -701,15 +769,6 @@ addLocale: 'Přidat: {language}'
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--md3-on-surface-variant);
-}
-
-/* The languages still to add, in one compact row under the fields. */
-.add-locales {
-  gap: 4px;
-}
-
-.add-locale :deep(.q-btn__content) {
-  gap: 4px;
 }
 
 /* Per-locale auto-translate trigger, styled like a marginal field icon. */
