@@ -44,7 +44,7 @@
             <template v-if="modifiers.number">
               <!-- Numeric inputs -->
               <q-input
-                v-for="(locale, index) in keys"
+                v-for="(locale, index) in shownKeys"
                 :key="index"
                 v-model.number="translations[locale]"
                 v-bind="inputProps"
@@ -53,7 +53,7 @@
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
                 :loading="Boolean(props.loading) || isAutoTranslating(locale)"
-                clearable
+                :clearable="!canRemove(locale)"
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
@@ -73,7 +73,11 @@
                 </template>
 
                 <template
-                  v-if="canAutoTranslate(locale) || slots.append"
+                  v-if="
+                    canAutoTranslate(locale) ||
+                    canRemove(locale) ||
+                    slots.append
+                  "
                   #append
                 >
                   <q-btn
@@ -90,6 +94,25 @@
                   >
                     <q-tooltip>
                       {{ t('autoTranslate') }}
+                    </q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    v-if="canRemove(locale)"
+                    icon="close"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="Boolean(props.disable)"
+                    :aria-label="
+                      t('removeLocale', { language: localeName(locale) })
+                    "
+                    :data-test="`remove-translation-${locale}`"
+                    @click.stop="clearTranslation(locale)"
+                  >
+                    <q-tooltip>
+                      {{ t('removeLocale', { language: localeName(locale) }) }}
                     </q-tooltip>
                   </q-btn>
                   <slot
@@ -111,7 +134,7 @@
             <!-- Other inputs -->
             <template v-else>
               <q-input
-                v-for="(locale, index) in keys"
+                v-for="(locale, index) in shownKeys"
                 :key="index"
                 v-model="translations[locale]"
                 v-bind="inputProps"
@@ -120,7 +143,7 @@
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
                 :loading="Boolean(props.loading) || isAutoTranslating(locale)"
-                clearable
+                :clearable="!canRemove(locale)"
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
@@ -136,7 +159,11 @@
                 </template>
 
                 <template
-                  v-if="canAutoTranslate(locale) || slots.append"
+                  v-if="
+                    canAutoTranslate(locale) ||
+                    canRemove(locale) ||
+                    slots.append
+                  "
                   #append
                 >
                   <q-btn
@@ -152,6 +179,25 @@
                     @click.stop="autoTranslateInto(locale)"
                   >
                     <q-tooltip>{{ t('autoTranslate') }}</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    v-if="canRemove(locale)"
+                    icon="close"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="Boolean(props.disable)"
+                    :aria-label="
+                      t('removeLocale', { language: localeName(locale) })
+                    "
+                    :data-test="`remove-translation-${locale}`"
+                    @click.stop="clearTranslation(locale)"
+                  >
+                    <q-tooltip>
+                      {{ t('removeLocale', { language: localeName(locale) }) }}
+                    </q-tooltip>
                   </q-btn>
                   <slot
                     v-if="slots.append"
@@ -169,6 +215,45 @@
                 </template>
               </q-input>
             </template>
+            <!-- One language at a time: with many locales a field each would be
+                 a long list, so the author adds the ones they write in. One
+                 button and a menu, however many locales there are. -->
+            <div
+              v-if="missingKeys.length"
+              class="row"
+              data-test="add-translation"
+            >
+              <q-btn
+                :label="t('addTranslation')"
+                icon="add"
+                color="primary"
+                flat
+                dense
+                rounded
+                no-caps
+                size="sm"
+                :disable="Boolean(props.disable)"
+                data-test="add-translation-button"
+              >
+                <q-menu>
+                  <q-list dense>
+                    <q-item
+                      v-for="locale in missingKeys"
+                      :key="locale"
+                      v-close-popup
+                      clickable
+                      :data-test="`add-translation-${locale}`"
+                      @click="addLocale(locale)"
+                    >
+                      <q-item-section avatar>
+                        <country-icon v-bind="flagProps(locale)" />
+                      </q-item-section>
+                      <q-item-section>{{ localeName(locale) }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </div>
           </div>
         </div>
       </transition>
@@ -277,6 +362,59 @@ const enabled = computed<boolean>(() => {
   return keys.value.length > 1;
 });
 
+// Translations are added one language at a time; values per country group
+// (a capacity, a contact) list every group, as each needs its own.
+const addsLocales = computed<boolean>(() => !props.countries);
+
+// Languages the author added that hold no text yet.
+const addedKeys = ref<string[]>([]);
+
+// The language shown first: the user's own where the field offers it.
+const defaultKey = computed<string | undefined>(
+  () =>
+    keys.value.find((key) => languageOf(key) === userLocale.value) ??
+    keys.value[0],
+);
+
+// The default first, then the languages that already had text, then each
+// added one below the others, in the order it was added.
+const shownKeys = computed<string[]>(() => {
+  if (!addsLocales.value) {
+    return keys.value;
+  }
+  const rank = (key: string) => {
+    if (key === defaultKey.value) {
+      return -1;
+    }
+    const added = addedKeys.value.indexOf(key);
+    return added === -1 ? keys.value.indexOf(key) : keys.value.length + added;
+  };
+  return keys.value
+    .filter(
+      (key) =>
+        key === defaultKey.value ||
+        hasContent(translations.value[key]) ||
+        addedKeys.value.includes(key),
+    )
+    .sort((a, b) => rank(a) - rank(b));
+});
+
+const missingKeys = computed<string[]>(() =>
+  keys.value.filter((key) => !shownKeys.value.includes(key)),
+);
+
+// Any language but the default can be removed again, text included.
+function canRemove(locale: string): boolean {
+  return addsLocales.value && locale !== defaultKey.value;
+}
+
+function addLocale(locale: string) {
+  addedKeys.value = [...addedKeys.value, locale];
+  if (canAutoTranslate(locale)) {
+    void autoTranslateInto(locale);
+  }
+}
+
 // In translated mode the per-locale flag stands in for the field icon, so the
 // parent's `before` slot is dropped to avoid doubling up glyphs on every row.
 // `prepend` and `append` are dropped too — they're composed alongside the locale
@@ -364,10 +502,12 @@ watch(
   { deep: true },
 );
 
+// Clearing a language removes its field too; the default one stays.
 function clearTranslation(locale: string) {
   if (locale in translations.value) {
     delete translations.value[locale];
   }
+  addedKeys.value = addedKeys.value.filter((key) => key !== locale);
 }
 
 // Bumped on every run, so a superseded one can neither write its stale result
@@ -512,7 +652,9 @@ watch(
         translations.value[seedLocale] = value.value;
       }
 
-      if (translationAvailable.value) {
+      // Languages are added one at a time, each translated as it is added;
+      // filling all of them here would list every one again.
+      if (translationAvailable.value && !addsLocales.value) {
         // The text isn't necessarily written in the user's own locale, so the
         // freshly seeded field is translated too and the source language is
         // detected rather than assumed. Locales the user already filled are
@@ -565,22 +707,32 @@ watch(
 
 <i18n lang="yaml" locale="en">
 autoTranslate: 'Translate from another language'
+addTranslation: 'Add language'
+removeLocale: 'Remove {language}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 autoTranslate: 'Aus einer anderen Sprache übersetzen'
+addTranslation: 'Sprache hinzufügen'
+removeLocale: '{language} entfernen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 autoTranslate: 'Traduire depuis une autre langue'
+addTranslation: 'Ajouter une langue'
+removeLocale: 'Retirer : {language}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 autoTranslate: 'Przetłumacz z innego języka'
+addTranslation: 'Dodaj język'
+removeLocale: 'Usuń: {language}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 autoTranslate: 'Přeložit z jiného jazyka'
+addTranslation: 'Přidat jazyk'
+removeLocale: 'Odebrat: {language}'
 </i18n>
 
 <style scoped>

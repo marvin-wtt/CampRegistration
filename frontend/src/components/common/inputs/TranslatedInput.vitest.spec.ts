@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
-import { flushPromises } from '@vue/test-utils';
+import { flushPromises, type VueWrapper } from '@vue/test-utils';
 
 const translateText = vi.fn();
 vi.mock('@/services/APIService', () => ({
@@ -18,7 +18,27 @@ installQuasarPlugin();
 beforeEach(() => {
   setActivePinia(createPinia());
   translateText.mockReset();
+  // Adding a language translates into it; no test needs a result by default.
+  translateText.mockResolvedValue({});
 });
+
+// The menu is teleported to the body, outside the wrapper.
+async function openAddMenu(wrapper: VueWrapper) {
+  await wrapper.find('[data-test="add-translation-button"]').trigger('click');
+  await flushPromises();
+}
+
+function menuItem(locale: string): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    `[data-test="add-translation-${locale}"]`,
+  );
+}
+
+async function addLanguage(wrapper: VueWrapper, locale: string) {
+  await openAddMenu(wrapper);
+  menuItem(locale)!.click();
+  await flushPromises();
+}
 
 describe('TranslatedInput', () => {
   it('should mount', () => {
@@ -73,6 +93,7 @@ describe('TranslatedInput', () => {
       },
     });
 
+    await addLanguage(wrapper, 'fr');
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
 
@@ -91,7 +112,7 @@ describe('TranslatedInput', () => {
           number: true,
         },
         type: 'number' as const,
-        locales: ['de', 'fr'],
+        countries: ['de', 'fr'],
         'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
       },
     });
@@ -115,6 +136,7 @@ describe('TranslatedInput', () => {
       },
     });
 
+    await addLanguage(wrapper, 'fr');
     const inputs = wrapper.findAll('input');
     await inputs[0]!.setValue('Test Value de');
     await inputs[1]!.setValue('Test Value fr');
@@ -136,7 +158,7 @@ describe('TranslatedInput', () => {
           number: true,
         },
         type: 'number' as const,
-        locales: ['de', 'fr'],
+        countries: ['de', 'fr'],
         noTranslation: true,
       },
     });
@@ -154,7 +176,7 @@ describe('TranslatedInput', () => {
           number: true,
         },
         type: 'number' as const,
-        locales: ['de', 'fr'],
+        countries: ['de', 'fr'],
         noTranslation: true,
         'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
       },
@@ -203,6 +225,133 @@ describe('TranslatedInput', () => {
     expect(wrapper.props().modelValue).toStrictEqual({
       de: 'Hallo',
       cz: 'Ahoj',
+    });
+  });
+
+  describe('adding languages one at a time', () => {
+    it('should show the default language and offer the others in a menu', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: undefined,
+          locales: ['de', 'fr', 'pl'],
+        },
+      });
+
+      expect(wrapper.findAll('input')).toHaveLength(1);
+      // One button, however many languages there are.
+      expect(
+        wrapper.findAll('[data-test="add-translation-button"]'),
+      ).toHaveLength(1);
+
+      await openAddMenu(wrapper);
+      expect(menuItem('de')).toBeNull();
+      expect(menuItem('fr')).not.toBeNull();
+      expect(menuItem('pl')).not.toBeNull();
+      wrapper.unmount();
+    });
+
+    it('should show every language that already has text', () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo', pl: 'Cześć' },
+          locales: ['de', 'fr', 'pl'],
+        },
+      });
+
+      expect(wrapper.findAll('input')).toHaveLength(2);
+    });
+
+    it('should remove an added language with its text, but not the default', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo', pl: 'Cześć' },
+          locales: ['de', 'fr', 'pl'],
+          'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+        },
+      });
+
+      expect(wrapper.find('[data-test="remove-translation-de"]').exists()).toBe(
+        false,
+      );
+      await wrapper
+        .find('[data-test="remove-translation-pl"]')
+        .trigger('click');
+
+      expect(wrapper.findAll('input')).toHaveLength(1);
+      expect(wrapper.props().modelValue).toStrictEqual({ de: 'Hallo' });
+    });
+
+    it('should remove an added language that has no text yet', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo' },
+          locales: ['de', 'fr'],
+        },
+      });
+
+      await addLanguage(wrapper, 'fr');
+      expect(wrapper.findAll('input')).toHaveLength(2);
+
+      await wrapper
+        .find('[data-test="remove-translation-fr"]')
+        .trigger('click');
+      expect(wrapper.findAll('input')).toHaveLength(1);
+      wrapper.unmount();
+    });
+
+    it('should add a language below those already shown', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo' },
+          // In this order pl would sit above de; added, it goes below.
+          locales: ['fr', 'pl', 'de'],
+        },
+      });
+
+      await addLanguage(wrapper, 'pl');
+
+      const removable = wrapper
+        .findAll('[data-test^="remove-translation-"]')
+        .map((button) => button.attributes('data-test'));
+      expect(removable).toEqual([
+        'remove-translation-de',
+        'remove-translation-pl',
+      ]);
+      wrapper.unmount();
+    });
+
+    it('should translate into a language as it is added', async () => {
+      translateText.mockResolvedValue({ fr: 'Bonjour' });
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo' },
+          locales: ['de', 'fr'],
+          'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+        },
+      });
+      await flushPromises();
+
+      await addLanguage(wrapper, 'fr');
+
+      expect(translateText).toHaveBeenCalledWith('Hallo', ['fr'], 'de');
+      expect(wrapper.props().modelValue).toStrictEqual({
+        de: 'Hallo',
+        fr: 'Bonjour',
+      });
+    });
+
+    it('should list every group for values per country', () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: undefined,
+          countries: ['de', 'fr', 'pl'],
+        },
+      });
+
+      expect(wrapper.findAll('input')).toHaveLength(3);
+      expect(wrapper.find('[data-test="add-translation"]').exists()).toBe(
+        false,
+      );
     });
   });
 });

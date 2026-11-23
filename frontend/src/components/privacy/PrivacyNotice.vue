@@ -54,11 +54,16 @@
               class="privacy-notice__basis"
             >
               —
-              {{
-                gt(
-                  `privacy.specialCategoryBasis.${category.specialCategoryBasis}`,
-                )
-              }}
+              {{ specialBasisLabel(category.specialCategoryBasis) }}
+              <!-- Art. 9(2)(g): the law it rests on, as the organizer names it. -->
+              <template
+                v-if="
+                  category.legalReference &&
+                  needsLegalReference(category.specialCategoryBasis)
+                "
+              >
+                ({{ to(category.legalReference) }})
+              </template>
             </span>
           </li>
         </ul>
@@ -72,8 +77,11 @@
             :key="purpose.key"
           >
             {{ purposeLabel(purpose) }}
-            <span class="privacy-notice__basis">
-              — {{ gt(`privacy.legalBasis.${purpose.legalBasis}`) }}
+            <span
+              v-if="purpose.legalBasis"
+              class="privacy-notice__basis"
+            >
+              — {{ legalBasisLabel(purpose.legalBasis) }}
             </span>
             <template v-if="purpose.legitimateInterest">
               <br />
@@ -158,9 +166,7 @@
             t('transferSentence', {
               countries: transferCountries,
               safeguard: builderNotice.thirdCountryTransfers.safeguard
-                ? gt(
-                    `privacy.transferSafeguard.${builderNotice.thirdCountryTransfers.safeguard}`,
-                  )
+                ? safeguardLabel(builderNotice.thirdCountryTransfers.safeguard)
                 : '',
             })
           }}
@@ -216,60 +222,77 @@
       />
     </section>
 
-    <!-- Unconditional: it describes how the registration form behaves, which is
-         the same for every organization and every event, so nothing about it is
-         the controller's to configure. -->
-    <section>
-      <h2>{{ t('section.dataProvision') }}</h2>
-      <p>{{ t('dataProvision') }}</p>
-      <!-- Art. 13(2)(e): provision required by law, not only by contract. -->
-      <p v-if="statutoryPurposes">
-        {{ t('dataProvisionLegal', { purposes: statutoryPurposes }) }}
-      </p>
-    </section>
+    <!-- The platform's own legal text, cited from the law's record: for a
+         guided notice, and for a free-text one only when published before the
+         framework setting existed. Otherwise the organization's free text is
+         the whole notice (docs/privacy.md, 4). -->
+    <template v-if="legalText">
+      <!-- It describes how the registration form behaves, which is the same for
+         every organization and every event, so nothing about it is the
+         controller's to configure. -->
+      <section>
+        <h2>{{ t('section.dataProvision') }}</h2>
+        <p>{{ t('dataProvision') }}</p>
+        <!-- Art. 13(2)(e): provision required by law, not only by contract. -->
+        <p v-if="statutoryPurposes">
+          {{ t('dataProvisionLegal', { purposes: statutoryPurposes }) }}
+        </p>
+      </section>
 
-    <!-- Fixed by law and identical for every organization, so it is generated
+      <!-- Fixed by law and identical for every organization, so it is generated
          rather than authored — see common/src/privacy. -->
-    <section>
-      <h2>{{ t('section.rights') }}</h2>
-      <ul>
-        <li>{{ t('rights.access') }}</li>
-        <li>{{ t('rights.rectification') }}</li>
-        <li>{{ t('rights.erasure') }}</li>
-        <li>{{ t('rights.restriction') }}</li>
-        <li>{{ t('rights.portability') }}</li>
-        <li>{{ t('rights.object') }}</li>
-        <li>{{ t('rights.withdrawConsent') }}</li>
-      </ul>
-      <!-- Neither right is unconditional, and Art. 13(2)(b)/(c) require saying
+      <section>
+        <h2>{{ t('section.rights') }}</h2>
+        <ul>
+          <li>{{ withCitation(t('rights.access'), 'right.access') }}</li>
+          <li>
+            {{ withCitation(t('rights.rectification'), 'right.rectification') }}
+          </li>
+          <li>{{ withCitation(t('rights.erasure'), 'right.erasure') }}</li>
+          <li>
+            {{ withCitation(t('rights.restriction'), 'right.restriction') }}
+          </li>
+          <li>
+            {{ withCitation(t('rights.portability'), 'right.portability') }}
+          </li>
+          <li>{{ withCitation(t('rights.object'), 'right.object') }}</li>
+          <li>{{ withCitation(t('rights.withdrawConsent'), 'withdrawal') }}</li>
+        </ul>
+        <!-- Neither right is unconditional, and Art. 13(2)(b)/(c) require saying
            so: on which basis each one applies, and what exercising it does. -->
-      <p>{{ t('rights.objectNote') }}</p>
-      <p>{{ t('rights.withdrawConsentNote') }}</p>
-      <p>{{ t('rights.howTo', { email: notice.controller.contactEmail }) }}</p>
-    </section>
+        <p>{{ t('rights.objectNote') }}</p>
+        <p>{{ t('rights.withdrawConsentNote') }}</p>
+        <p>
+          {{ t('rights.howTo', { email: notice.controller.contactEmail }) }}
+        </p>
+      </section>
 
-    <section>
-      <h2>{{ t('section.complaint') }}</h2>
-      <p>{{ t('complaint') }}</p>
-      <!-- Regional: the country does not identify the body, so the notice
+      <section>
+        <h2>{{ t('section.complaint') }}</h2>
+        <p>{{ t('complaint') }}</p>
+        <!-- Regional: the country does not identify the body, so the notice
            links the list of authorities instead of naming one. -->
-      <p v-if="notice.supervisoryAuthority">
-        <template v-if="notice.supervisoryAuthority.regional">
-          {{ t('regionalAuthority') }}
-        </template>
-        <template v-else>
-          {{ notice.supervisoryAuthority.name }}
-        </template>
-        <br />
-        <a
-          :href="notice.supervisoryAuthority.website"
-          target="_blank"
-          rel="noopener"
-        >
-          {{ notice.supervisoryAuthority.website }}
-        </a>
-      </p>
-    </section>
+        <p v-if="notice.supervisoryAuthority">
+          <template v-if="notice.supervisoryAuthority.regional">
+            {{ t('regionalAuthority') }}
+          </template>
+          <template v-else>
+            {{ notice.supervisoryAuthority.name }}
+          </template>
+          <!-- An authority the organizer entered may come without one. -->
+          <template v-if="notice.supervisoryAuthority.website">
+            <br />
+            <a
+              :href="notice.supervisoryAuthority.website"
+              target="_blank"
+              rel="noopener"
+            >
+              {{ notice.supervisoryAuthority.website }}
+            </a>
+          </template>
+        </p>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -278,6 +301,8 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DOMPurify from 'dompurify';
 import {
+  generatesLegalText,
+  needsLegalReference,
   isConsentBoundException,
   isCustomKey,
   isSpecialCategory,
@@ -291,6 +316,10 @@ const props = defineProps<{
   notice: PublishedPrivacyNotice;
 }>();
 
+const legalText = computed<boolean>(() =>
+  generatesLegalText(props.notice.notice),
+);
+
 const { t } = useI18n();
 // The catalogue vocabulary and country names are global
 const { t: gt } = useI18n({ useScope: 'global' });
@@ -301,7 +330,11 @@ const {
   exceptionLabel,
   recipientLabel,
   countryLabel,
-} = usePrivacyLabels();
+  withCitation,
+  legalBasisLabel,
+  specialBasisLabel,
+  safeguardLabel,
+} = usePrivacyLabels(() => props.notice.notice);
 
 const countryName = computed<string>(() =>
   countryLabel(props.notice.controller.country),
@@ -525,14 +558,14 @@ noticeMissing: 'This organisation has not yet published privacy information for 
 regionalAuthority: 'The competent authority is the supervisory authority of the region where the organisation is established. A list of the authorities:'
 complaint: 'You have the right to lodge a complaint with a data protection supervisory authority.'
 rights:
-  access: 'Access to your data (Art. 15 GDPR)'
-  rectification: 'Correction of inaccurate data (Art. 16 GDPR)'
-  erasure: 'Erasure of your data (Art. 17 GDPR)'
-  restriction: 'Restriction of processing (Art. 18 GDPR)'
-  portability: 'Data portability (Art. 20 GDPR)'
-  object: 'Objection to processing (Art. 21 GDPR)'
+  access: 'Access to your data'
+  rectification: 'Correction of inaccurate data'
+  erasure: 'Erasure of your data'
+  restriction: 'Restriction of processing'
+  portability: 'Data portability'
+  object: 'Objection to processing'
   objectNote: 'The right to object applies where we process data on the basis of our legitimate interests or of a public task. If you object, we stop processing that data unless we can show compelling legitimate grounds that override your interests, or we still need it to establish or defend legal claims.'
-  withdrawConsent: 'Withdrawal of your consent, at any time and as easily as you gave it (Art. 7(3) GDPR)'
+  withdrawConsent: 'Withdrawal of your consent, at any time and as easily as you gave it'
   withdrawConsentNote: 'The right to withdraw applies where we process data on the basis of your consent. Withdrawing it does not affect the lawfulness of the processing carried out beforehand.'
   howTo: 'To exercise any of these rights, contact {email}.'
 </i18n>
@@ -572,14 +605,14 @@ noticeMissing: 'Diese Organisation hat noch keine Datenschutzinformationen für 
 regionalAuthority: 'Zuständig ist die Datenschutzaufsichtsbehörde des Bundeslandes, in dem die Organisation ihren Sitz hat. Eine Übersicht der Behörden:'
 complaint: 'Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren.'
 rights:
-  access: 'Auskunft über deine Daten (Art. 15 DSGVO)'
-  rectification: 'Berichtigung unrichtiger Daten (Art. 16 DSGVO)'
-  erasure: 'Löschung deiner Daten (Art. 17 DSGVO)'
-  restriction: 'Einschränkung der Verarbeitung (Art. 18 DSGVO)'
-  portability: 'Datenübertragbarkeit (Art. 20 DSGVO)'
-  object: 'Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)'
+  access: 'Auskunft über deine Daten'
+  rectification: 'Berichtigung unrichtiger Daten'
+  erasure: 'Löschung deiner Daten'
+  restriction: 'Einschränkung der Verarbeitung'
+  portability: 'Datenübertragbarkeit'
+  object: 'Widerspruch gegen die Verarbeitung'
   objectNote: 'Das Widerspruchsrecht besteht, soweit wir Daten auf Grundlage unseres berechtigten Interesses oder einer im öffentlichen Interesse liegenden Aufgabe verarbeiten. Widersprichst du, verarbeiten wir diese Daten nicht weiter – es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die deine Interessen überwiegen, oder wir benötigen sie zur Geltendmachung oder Verteidigung von Rechtsansprüchen.'
-  withdrawConsent: 'Widerruf deiner Einwilligung, jederzeit und so einfach wie die Erteilung (Art. 7 Abs. 3 DSGVO)'
+  withdrawConsent: 'Widerruf deiner Einwilligung, jederzeit und so einfach wie die Erteilung'
   withdrawConsentNote: 'Das Widerrufsrecht besteht, soweit wir Daten auf Grundlage deiner Einwilligung verarbeiten. Der Widerruf berührt nicht die Rechtmäßigkeit der bis dahin erfolgten Verarbeitung.'
   howTo: 'Wende dich zur Ausübung dieser Rechte an {email}.'
 </i18n>
@@ -619,14 +652,14 @@ noticeMissing: "Cette organisation n'a pas encore publié d'informations relativ
 regionalAuthority: "L'autorité compétente est l'autorité de contrôle de la région où l'organisation est établie. Liste des autorités :"
 complaint: "Vous avez le droit d'introduire une réclamation auprès d'une autorité de contrôle en matière de protection des données."
 rights:
-  access: 'Accès à vos données (art. 15 RGPD)'
-  rectification: 'Rectification des données inexactes (art. 16 RGPD)'
-  erasure: 'Effacement de vos données (art. 17 RGPD)'
-  restriction: 'Limitation du traitement (art. 18 RGPD)'
-  portability: 'Portabilité des données (art. 20 RGPD)'
-  object: 'Opposition au traitement (art. 21 RGPD)'
+  access: 'Accès à vos données'
+  rectification: 'Rectification des données inexactes'
+  erasure: 'Effacement de vos données'
+  restriction: 'Limitation du traitement'
+  portability: 'Portabilité des données'
+  object: 'Opposition au traitement'
   objectNote: "Le droit d'opposition s'applique lorsque nous traitons des données sur la base de notre intérêt légitime ou d'une mission d'intérêt public. Si vous vous y opposez, nous cessons de traiter ces données, sauf si nous pouvons démontrer des motifs légitimes impérieux qui prévalent sur vos intérêts, ou si elles nous restent nécessaires pour constater ou défendre des droits en justice."
-  withdrawConsent: "Retrait de votre consentement, à tout moment et aussi simplement que vous l'avez donné (art. 7, § 3, RGPD)"
+  withdrawConsent: "Retrait de votre consentement, à tout moment et aussi simplement que vous l'avez donné"
   withdrawConsentNote: "Le droit de retrait s'applique lorsque nous traitons des données sur la base de votre consentement. Le retrait ne remet pas en cause la licéité du traitement effectué auparavant."
   howTo: 'Pour exercer ces droits, contactez {email}.'
 </i18n>
@@ -666,14 +699,14 @@ noticeMissing: 'Tato organizace zatím nezveřejnila informace o ochraně osobn�
 regionalAuthority: 'Příslušný je dozorový úřad regionu, kde má organizace sídlo. Přehled úřadů:'
 complaint: 'Máš právo podat stížnost u dozorového úřadu pro ochranu osobních údajů.'
 rights:
-  access: 'Přístup k tvým údajům (čl. 15 GDPR)'
-  rectification: 'Oprava nepřesných údajů (čl. 16 GDPR)'
-  erasure: 'Výmaz tvých údajů (čl. 17 GDPR)'
-  restriction: 'Omezení zpracování (čl. 18 GDPR)'
-  portability: 'Přenositelnost údajů (čl. 20 GDPR)'
-  object: 'Námitka proti zpracování (čl. 21 GDPR)'
+  access: 'Přístup k tvým údajům'
+  rectification: 'Oprava nepřesných údajů'
+  erasure: 'Výmaz tvých údajů'
+  restriction: 'Omezení zpracování'
+  portability: 'Přenositelnost údajů'
+  object: 'Námitka proti zpracování'
   objectNote: 'Právo vznést námitku máš tam, kde údaje zpracováváme na základě našeho oprávněného zájmu nebo úkolu ve veřejném zájmu. Pokud námitku vzneseš, tyto údaje dál nezpracováváme – ledaže prokážeme závažné oprávněné důvody, které převažují nad tvými zájmy, nebo je potřebujeme pro určení či obhajobu právních nároků.'
-  withdrawConsent: 'Odvolání tvého souhlasu, kdykoli a stejně snadno, jako byl udělen (čl. 7 odst. 3 GDPR)'
+  withdrawConsent: 'Odvolání tvého souhlasu, kdykoli a stejně snadno, jako byl udělen'
   withdrawConsentNote: 'Právo souhlas odvolat máš tam, kde údaje zpracováváme na základě tvého souhlasu. Odvoláním není dotčena zákonnost zpracování provedeného do té doby.'
   howTo: 'Pro uplatnění těchto práv kontaktuj {email}.'
 </i18n>
@@ -713,14 +746,14 @@ noticeMissing: 'Ta organizacja nie opublikowała jeszcze informacji o ochronie d
 regionalAuthority: 'Właściwy jest organ nadzorczy regionu, w którym organizacja ma siedzibę. Lista organów:'
 complaint: 'Masz prawo wnieść skargę do organu nadzorczego ds. ochrony danych.'
 rights:
-  access: 'Dostęp do Twoich danych (art. 15 RODO)'
-  rectification: 'Sprostowanie nieprawidłowych danych (art. 16 RODO)'
-  erasure: 'Usunięcie Twoich danych (art. 17 RODO)'
-  restriction: 'Ograniczenie przetwarzania (art. 18 RODO)'
-  portability: 'Przenoszenie danych (art. 20 RODO)'
-  object: 'Sprzeciw wobec przetwarzania (art. 21 RODO)'
+  access: 'Dostęp do Twoich danych'
+  rectification: 'Sprostowanie nieprawidłowych danych'
+  erasure: 'Usunięcie Twoich danych'
+  restriction: 'Ograniczenie przetwarzania'
+  portability: 'Przenoszenie danych'
+  object: 'Sprzeciw wobec przetwarzania'
   objectNote: 'Prawo do sprzeciwu przysługuje tam, gdzie przetwarzamy dane na podstawie naszego prawnie uzasadnionego interesu lub zadania realizowanego w interesie publicznym. Jeżeli wniesiesz sprzeciw, przestajemy przetwarzać te dane — chyba że wykażemy ważne prawnie uzasadnione podstawy nadrzędne wobec Twoich interesów lub dane są nam potrzebne do ustalenia lub obrony roszczeń.'
-  withdrawConsent: 'Wycofanie Twojej zgody w dowolnym momencie, równie łatwo jak jej udzielenie (art. 7 ust. 3 RODO)'
+  withdrawConsent: 'Wycofanie Twojej zgody w dowolnym momencie, równie łatwo jak jej udzielenie'
   withdrawConsentNote: 'Prawo do wycofania zgody przysługuje tam, gdzie przetwarzamy dane na podstawie Twojej zgody. Wycofanie nie wpływa na zgodność z prawem przetwarzania dokonanego wcześniej.'
   howTo: 'Aby skorzystać z tych praw, skontaktuj się: {email}.'
 </i18n>

@@ -1,6 +1,7 @@
 import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import {
+  DATA_PROTECTION_FRAMEWORKS,
   LEGAL_BASIS_KEYS,
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_PURPOSE_KEYS,
@@ -33,7 +34,8 @@ const refSchema = <T extends readonly [string, ...string[]]>(keys: T) =>
 
 const PurposeSchema = z.object({
   key: refSchema(PRIVACY_PURPOSE_KEYS),
-  legalBasis: z.enum(LEGAL_BASIS_KEYS),
+  // Null until chosen; the completeness check refuses publishing without it.
+  legalBasis: z.enum(LEGAL_BASIS_KEYS).nullable(),
   legitimateInterest: TranslatableSchema.nullish(),
   label: TranslatableSchema.nullish(),
   allEvents: z.boolean().nullish(),
@@ -42,6 +44,7 @@ const PurposeSchema = z.object({
 const DataCategorySchema = z.object({
   key: refSchema(PRIVACY_DATA_CATEGORY_KEYS),
   specialCategoryBasis: z.enum(SPECIAL_CATEGORY_BASIS_KEYS).nullish(),
+  legalReference: TranslatableSchema.nullish(),
   label: TranslatableSchema.nullish(),
   special: z.boolean().optional(),
   allEvents: z.boolean().nullish(),
@@ -51,7 +54,7 @@ const RecipientSchema = z.object({
   key: refSchema(PRIVACY_RECIPIENT_KEYS),
   label: TranslatableSchema.nullish(),
   name: z.string().max(255).nullish(),
-  country: z.string().length(2).nullish(),
+  country: z.string().length(2).toLowerCase().nullish(),
   allEvents: z.boolean().nullish(),
 });
 
@@ -102,7 +105,7 @@ const RetentionSchema = z.object({
 
 const ThirdCountryTransfersSchema = z.object({
   enabled: z.boolean(),
-  countries: z.array(z.string().length(2)).max(50),
+  countries: z.array(z.string().length(2).toLowerCase()).max(50),
   safeguard: z.enum(TRANSFER_SAFEGUARDS).nullish(),
   note: TranslatableSchema.nullish(),
 });
@@ -117,6 +120,20 @@ const DpoSchema = z.object({
 const MAX_CUSTOM_ENTRIES = 25;
 
 const ContentSchema = z.object({
+  framework: z.enum(DATA_PROTECTION_FRAMEWORKS).nullish(),
+  // Stamped by the server on publish; whatever the client sends is replaced.
+  frameworkVersion: z.string().max(64).nullish(),
+  supervisoryAuthority: z
+    .object({
+      name: z.string().max(255),
+      // Rendered as a link on the public notice: http(s) only, like
+      // `Organization.website`.
+      website: z
+        .url({ protocol: /^https?$/, hostname: z.regexes.domain })
+        .max(255)
+        .nullish(),
+    })
+    .nullish(),
   mode: z.enum(['builder', 'free_text']),
   purposes: z
     .array(PurposeSchema)
@@ -149,7 +166,10 @@ const ExclusionsSchema = z.object({
     .array(refSchema(PRIVACY_RECIPIENT_KEYS))
     .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES)
     .optional(),
-  transferCountries: z.array(z.string().length(2)).max(50).optional(),
+  transferCountries: z
+    .array(z.string().length(2).toLowerCase())
+    .max(50)
+    .optional(),
 }) satisfies ZodType<PrivacyNoticeExclusions>;
 
 /** The event addendum states only what differs, so every field is optional. */

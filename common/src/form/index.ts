@@ -55,6 +55,7 @@ export {
   valuesAtPath,
 } from './answerPaths.js';
 export {
+  buildFieldIndex,
   extractFormFields,
   extractEventDataTypes,
   getSelectOptions,

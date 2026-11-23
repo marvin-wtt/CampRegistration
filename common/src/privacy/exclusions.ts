@@ -77,7 +77,7 @@ function countriesInUse(
 
   return new Set(
     recipients
-      .map((entry) => entry.country?.toUpperCase())
+      .map((entry) => entry.country)
       .filter((country): country is string => !!country),
   );
 }
@@ -141,12 +141,10 @@ function classifyExclusions(
     }
   }
 
-  // Countries are typed freely, so compared case-insensitively; the applied
-  // set holds the organization's own spelling, which composition filters by.
+  // Codes are lowercase: the server normalizes them on write.
   const inUse = countriesInUse(organization, addendum, applied.recipients);
   for (const country of new Set(excluded.transferCountries ?? [])) {
-    const code = country.toUpperCase();
-    if (inUse.has(code)) {
+    if (inUse.has(country)) {
       refused.push({
         part: 'transferCountries',
         key: country,
@@ -154,10 +152,8 @@ function classifyExclusions(
       });
       continue;
     }
-    for (const declared of organization.thirdCountryTransfers.countries) {
-      if (declared.toUpperCase() === code) {
-        applied.transferCountries.add(declared);
-      }
+    if (organization.thirdCountryTransfers.countries.includes(country)) {
+      applied.transferCountries.add(country);
     }
   }
 
@@ -226,13 +222,10 @@ export function normalizeExclusions(
       keysOf(organization.recipients),
       keysOf(addendum.recipients),
     ) as PrivacyRecipientRef[],
-    // In the organization's spelling: countries are typed freely.
     transferCountries: [
       ...new Set(
-        (excluded.transferCountries ?? []).flatMap((country) =>
-          organization.thirdCountryTransfers.countries.filter(
-            (declared) => declared.toUpperCase() === country.toUpperCase(),
-          ),
+        (excluded.transferCountries ?? []).filter((country) =>
+          organization.thirdCountryTransfers.countries.includes(country),
         ),
       ),
     ],

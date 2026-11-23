@@ -1,8 +1,14 @@
 import type { Translatable } from '../entities/Translatable.js';
-import { isCustomKey, isSpecialCategory } from './catalogue.js';
+import {
+  isCustomKey,
+  isSpecialCategory,
+  needsLegalReference,
+} from './catalogue.js';
 import { composePrivacyNotice, retentionExceptions } from './compose.js';
+import { frameworkRecord } from './frameworks.js';
 import {
   isConsentBoundException,
+  noticeFramework,
   maxSpecialCategoryWeeks,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
@@ -17,10 +23,12 @@ import {
  */
 export type PrivacyNoticeGap =
   | 'purposes'
+  | 'purpose_basis'
   | 'legitimate_interest_explanation'
   | 'custom_purpose_label'
   | 'data_categories'
   | 'special_category_basis'
+  | 'special_category_legal_reference'
   | 'custom_category_label'
   | 'custom_recipient_label'
   | 'recipients'
@@ -31,6 +39,7 @@ export type PrivacyNoticeGap =
   | 'transfer_countries'
   | 'transfer_safeguard'
   | 'dpo_details'
+  | 'supervisory_authority'
   | 'automated_details'
   | 'free_text';
 
@@ -48,10 +57,12 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   PrivacyNoticeSection
 > = {
   purposes: 'purposes',
+  purpose_basis: 'purposes',
   legitimate_interest_explanation: 'purposes',
   custom_purpose_label: 'purposes',
   data_categories: 'data',
   special_category_basis: 'data',
+  special_category_legal_reference: 'data',
   custom_category_label: 'data',
   custom_recipient_label: 'recipients',
   recipients: 'recipients',
@@ -62,6 +73,7 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   transfer_countries: 'retention',
   transfer_safeguard: 'retention',
   dpo_details: 'controller',
+  supervisory_authority: 'controller',
   automated_details: 'retention',
   free_text: 'free_text',
 };
@@ -102,6 +114,14 @@ export function privacyNoticeCompleteness(
     };
   }
 
+  // A guided notice under a church law names the authority the author entered.
+  if (
+    needsEnteredAuthority(content) &&
+    !content.supervisoryAuthority?.name.trim()
+  ) {
+    gaps.push('supervisory_authority');
+  }
+
   // Nothing structural to check when the organization wrote its own prose: the
   // only thing the platform can still tell is whether there is any text at all.
   if (content.mode === 'free_text') {
@@ -114,6 +134,11 @@ export function privacyNoticeCompleteness(
 
   if (content.purposes.length === 0) {
     gaps.push('purposes');
+  }
+
+  // A preset leaves the basis open where the law attaches conditions to it.
+  if (content.purposes.some((purpose) => !purpose.legalBasis)) {
+    gaps.push('purpose_basis');
   }
 
   // Art. 13(1)(d): naming the interest is part of the basis, not optional colour.
@@ -148,6 +173,17 @@ export function privacyNoticeCompleteness(
     )
   ) {
     gaps.push('special_category_basis');
+  }
+
+  // Art. 9(2)(g) is only a basis with the law it rests on.
+  if (
+    content.dataCategories.some(
+      (category) =>
+        needsLegalReference(category.specialCategoryBasis) &&
+        isBlank(category.legalReference),
+    )
+  ) {
+    gaps.push('special_category_legal_reference');
   }
 
   if (
@@ -299,4 +335,17 @@ export function addendumGaps(
     composePrivacyNotice(organization, addendum),
     options,
   ).gaps.filter((gap) => !inherited.has(gap));
+}
+
+/**
+ * Whether a guided notice's law leaves naming the supervisory authority to the
+ * author. A free-text notice names it in its own text.
+ */
+export function needsEnteredAuthority(
+  content: Pick<PrivacyNoticeContent, 'framework' | 'mode'> | null | undefined,
+): boolean {
+  return (
+    content?.mode !== 'free_text' &&
+    frameworkRecord(noticeFramework(content))?.authority === 'entered'
+  );
 }

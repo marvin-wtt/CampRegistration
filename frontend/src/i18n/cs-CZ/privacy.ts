@@ -54,24 +54,21 @@ export default {
   },
 
   legalBasis: {
-    contract: 'Plnění smlouvy (čl. 6 odst. 1 písm. b) GDPR)',
-    legal_obligation: 'Splnění právní povinnosti (čl. 6 odst. 1 písm. c) GDPR)',
-    vital_interests:
-      'Ochrana životně důležitých zájmů (čl. 6 odst. 1 písm. d) GDPR)',
-    legitimate_interests: 'Oprávněné zájmy (čl. 6 odst. 1 písm. f) GDPR)',
-    consent: 'Souhlas (čl. 6 odst. 1 písm. a) GDPR)',
-    public_task: 'Plnění úkolu ve veřejném zájmu (čl. 6 odst. 1 písm. e) GDPR)',
+    contract: 'Plnění smlouvy',
+    legal_obligation: 'Splnění právní povinnosti',
+    vital_interests: 'Ochrana životně důležitých zájmů',
+    legitimate_interests: 'Oprávněné zájmy',
+    consent: 'Souhlas',
+    public_task: 'Plnění úkolu ve veřejném zájmu',
   },
 
   specialCategoryBasis: {
-    explicit_consent: 'Výslovný souhlas (čl. 9 odst. 2 písm. a) GDPR)',
-    vital_interests:
-      'Ochrana životně důležitých zájmů (čl. 9 odst. 2 písm. c) GDPR)',
-    health_care: 'Zdravotní nebo sociální péče (čl. 9 odst. 2 písm. h) GDPR)',
-    nonprofit_body:
-      'Oprávněná činnost neziskové organizace (čl. 9 odst. 2 písm. d) GDPR)',
-    legal_claims:
-      'Určení nebo obhajoba právních nároků (čl. 9 odst. 2 písm. f) GDPR)',
+    explicit_consent: 'Výslovný souhlas',
+    vital_interests: 'Ochrana životně důležitých zájmů',
+    health_care: 'Zdravotní nebo sociální péče',
+    nonprofit_body: 'Oprávněná činnost neziskové organizace',
+    legal_claims: 'Určení nebo obhajoba právních nároků',
+    public_interest: 'Významný veřejný zájem na základě zákona',
   },
 
   specialCategoryCondition: {
@@ -85,6 +82,8 @@ export default {
       'Jen pokud údaje zpracovává osoba vázaná povinností mlčenlivosti nebo se tak děje na její odpovědnost, například lékař nebo zdravotní sestra.',
     legal_claims:
       'Jen pro určení, výkon nebo obhajobu právních nároků, například záznam o úrazu uchovaný pro spor s pojišťovnou.',
+    public_interest:
+      'Jen pokud zpracování ukládá nebo dovoluje zákon EU nebo tvé země; uveď tento zákon níže. Než se na něj spolehneš, nech si poradit.',
   },
 
   retentionUntil: {
@@ -99,17 +98,20 @@ export default {
     adequacy: 'rozhodnutí Evropské komise o odpovídající ochraně',
     scc: 'standardní smluvní doložky',
     bcr: 'závazná podniková pravidla',
-    derogation: 'výjimku podle čl. 49 GDPR',
+    derogation: 'výjimku',
   },
 
   /** Viz `en-US/privacy.ts`. */
   editor: {
     field: {
       art9Basis: 'Právní základ',
+      legalReference: 'Zákonný základ',
+      legalReferenceHint:
+        'Ustanovení, o které se opíráš, např. zákon a paragraf',
       art9Advisory:
         'Samo o sobě není citlivé. Pokud formulář nabízí halal nebo košer, zaškrtni také „Náboženské vyznání“; pokud sbírá alergie, zaškrtni „Alergie“.',
       consentQuestion:
-        'Uvedení zde není souhlas. Přihlašovací formulář si jej musí vyžádat samostatnou otázkou, která může zůstat nezodpovězená – přihlášení musí být možné i bez něj (čl. 7 odst. 4 GDPR).',
+        'Uvedení zde není souhlas. Přihlašovací formulář si jej musí vyžádat samostatnou otázkou, která může zůstat nezodpovězená – přihlášení musí být možné i bez něj ({citation}).',
       recipientName: 'Název (volitelné)',
       recipientNameHint:
         'Uvést konkrétního příjemce je srozumitelnější než jen kategorii.',
@@ -139,13 +141,16 @@ export default {
   },
 
   gap: {
+    purpose_basis: 'Jeden z účelů zatím nemá právní základ',
+    supervisory_authority: 'Není uveden žádný dozorový úřad',
     purposes: 'Nebyl uveden žádný účel zpracování',
     legitimate_interest_explanation:
       'Je uplatněn oprávněný zájem, ale není popsán',
     custom_purpose_label: 'Vlastní přidaný účel nemá název',
     data_categories: 'Nebyly uvedeny žádné kategorie údajů',
-    special_category_basis:
-      'Zvláštní kategorie údajů nemají právní základ podle čl. 9',
+    special_category_basis: 'Zvláštní kategorie údajů nemají právní základ',
+    special_category_legal_reference:
+      'Právní základ opřený o zákon tento zákon neuvádí',
     custom_category_label: 'Vlastní přidaná kategorie nemá název',
     custom_recipient_label: 'Vámi přidaný příjemce nemá název',
     automated_details:

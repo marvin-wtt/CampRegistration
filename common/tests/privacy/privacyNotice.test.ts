@@ -9,13 +9,17 @@ import {
   composePrivacyNotice,
   customKey,
   emptyPrivacyNoticeContent,
+  frameworkRecord,
+  GDPR_RECORD,
   gapsInSection,
+  generatesLegalText,
   isEmptyAddendum,
   privacyNoticeCompleteness,
   maxSpecialCategoryWeeks,
   supervisoryAuthorityFor,
   type PrivacyNoticeContent,
 } from '../../src/privacy/index.js';
+import { consentBasedCategories } from '../../src/form/privacyCompliance.js';
 
 function completeContent(): PrivacyNoticeContent {
   return {
@@ -450,18 +454,18 @@ describe('composePrivacyNotice', () => {
       ...completeContent(),
       thirdCountryTransfers: {
         enabled: true,
-        countries: ['US'],
+        countries: ['us'],
         safeguard: 'adequacy',
         note: null,
       },
     };
 
     const composed = composePrivacyNotice(organization, {
-      thirdCountryTransfers: { enabled: true, countries: ['CH'] },
+      thirdCountryTransfers: { enabled: true, countries: ['ch'] },
     });
 
     // A event cannot un-declare a transfer its organization makes.
-    expect(composed.thirdCountryTransfers.countries).toEqual(['US', 'CH']);
+    expect(composed.thirdCountryTransfers.countries).toEqual(['us', 'ch']);
     expect(composed.thirdCountryTransfers.safeguard).toBe('adequacy');
   });
 
@@ -515,18 +519,18 @@ describe('composePrivacyNotice — free text mode', () => {
 });
 
 describe('supervisoryAuthorityFor', () => {
-  it('resolves a country code case-insensitively', () => {
+  it('resolves a lowercase country code, as organizations store it', () => {
     expect(supervisoryAuthorityFor('cz')?.name).toBe(
       'Úřad pro ochranu osobních údajů',
     );
   });
 
   it('flags Germany as regional, since the Land authority is competent', () => {
-    expect(supervisoryAuthorityFor('DE')?.regional).toBe(true);
+    expect(supervisoryAuthorityFor('de')?.regional).toBe(true);
   });
 
   it('returns null outside the covered countries', () => {
-    expect(supervisoryAuthorityFor('US')).toBeNull();
+    expect(supervisoryAuthorityFor('us')).toBeNull();
   });
 });
 
@@ -746,5 +750,106 @@ describe('privacyNoticeCompleteness — translations', () => {
       privacyNoticeCompleteness(withExplanation({ de: 'Erinnerungen' }))
         .complete,
     ).toBe(true);
+  });
+});
+
+describe('data protection framework', () => {
+  it('generates legal text for a guided notice', () => {
+    expect(generatesLegalText(emptyPrivacyNoticeContent())).toBe(true);
+    expect(generatesLegalText({ mode: 'builder', framework: 'kdg' })).toBe(
+      true,
+    );
+  });
+
+  it('generates none for a free-text notice, which is the whole notice', () => {
+    expect(generatesLegalText({ mode: 'free_text', framework: null })).toBe(
+      false,
+    );
+    expect(generatesLegalText({ mode: 'free_text', framework: 'gdpr' })).toBe(
+      false,
+    );
+  });
+
+  it('keeps the sections on a free-text version from before the setting', () => {
+    // Its author was told they are added.
+    expect(generatesLegalText({ mode: 'free_text' })).toBe(true);
+  });
+
+  it('reads a version without a framework as GDPR', () => {
+    expect(generatesLegalText({ mode: 'builder' })).toBe(true);
+    expect(generatesLegalText(null)).toBe(true);
+  });
+
+  it('keeps the framework through composition', () => {
+    const notice = composePrivacyNotice({
+      ...emptyPrivacyNoticeContent(),
+      framework: 'dsg_ekd',
+    });
+
+    expect(notice.framework).toBe('dsg_ekd');
+  });
+});
+
+describe('Art. 9(2)(g)', () => {
+  const withBasis = (legalReference?: string | null) => ({
+    ...completeContent(),
+    dataCategories: [
+      {
+        key: 'health' as const,
+        specialCategoryBasis: 'public_interest' as const,
+        legalReference,
+      },
+    ],
+  });
+
+  it('needs the law it rests on', () => {
+    expect(privacyNoticeCompleteness(withBasis()).gaps).toContain(
+      'special_category_legal_reference',
+    );
+    expect(privacyNoticeCompleteness(withBasis('  ')).gaps).toContain(
+      'special_category_legal_reference',
+    );
+  });
+
+  it('is complete once the law is named', () => {
+    expect(
+      privacyNoticeCompleteness(withBasis('§ 1 Example Act')).gaps,
+    ).not.toContain('special_category_legal_reference');
+  });
+
+  it('needs no consent question', () => {
+    const notice = composePrivacyNotice(withBasis('§ 1 Example Act'));
+
+    expect(consentBasedCategories(notice).has('health')).toBe(false);
+  });
+});
+
+describe('framework records', () => {
+  it('cites the GDPR in each locale’s own style', () => {
+    expect(GDPR_RECORD.citations['legalBasis.contract']).toEqual({
+      en: 'Art. 6(1)(b) GDPR',
+      de: 'Art. 6 Abs. 1 lit. b DSGVO',
+      fr: 'art. 6, § 1, b, RGPD',
+      pl: 'art. 6 ust. 1 lit. b RODO',
+      cs: 'čl. 6 odst. 1 písm. b) GDPR',
+    });
+    expect(GDPR_RECORD.citations.withdrawal).toEqual({
+      en: 'Art. 7(3) GDPR',
+      de: 'Art. 7 Abs. 3 DSGVO',
+      fr: 'art. 7, § 3, RGPD',
+      pl: 'art. 7 ust. 3 RODO',
+      cs: 'čl. 7 odst. 3 GDPR',
+    });
+    expect(GDPR_RECORD.citations['right.access']).toEqual({
+      en: 'Art. 15 GDPR',
+      de: 'Art. 15 DSGVO',
+      fr: 'art. 15 RGPD',
+      pl: 'art. 15 RODO',
+      cs: 'čl. 15 GDPR',
+    });
+  });
+
+  it('resolves the GDPR record', () => {
+    expect(frameworkRecord('gdpr')).toBe(GDPR_RECORD);
   });
 });

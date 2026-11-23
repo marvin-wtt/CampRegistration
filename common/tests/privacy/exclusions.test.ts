@@ -25,7 +25,7 @@ function organization(): PrivacyNoticeContent {
       { key: 'event_staff' },
       { key: 'platform_operator' },
       { key: 'medical_provider' },
-      { key: 'insurer', country: 'CH' },
+      { key: 'insurer', country: 'ch' },
     ],
     retention: {
       months: 24,
@@ -33,7 +33,7 @@ function organization(): PrivacyNoticeContent {
     },
     thirdCountryTransfers: {
       enabled: true,
-      countries: ['CH', 'US'],
+      countries: ['ch', 'us'],
       safeguard: 'scc',
     },
   };
@@ -98,10 +98,10 @@ describe('composePrivacyNotice — exclusions', () => {
 
   it('keeps a transfer country a remaining recipient is located in', () => {
     const composed = composePrivacyNotice(organization(), {
-      excluded: { transferCountries: ['CH', 'US'] },
+      excluded: { transferCountries: ['ch', 'us'] },
     });
 
-    expect(composed.thirdCountryTransfers.countries).toEqual(['CH']);
+    expect(composed.thirdCountryTransfers.countries).toEqual(['ch']);
     expect(composed.thirdCountryTransfers.enabled).toBe(true);
   });
 
@@ -111,7 +111,7 @@ describe('composePrivacyNotice — exclusions', () => {
     content.recipients[3] = { key: 'insurer', country: 'ch' };
 
     const composed = composePrivacyNotice(content, {
-      excluded: { transferCountries: ['CH', 'US'] },
+      excluded: { transferCountries: ['ch', 'us'] },
     });
 
     // `ch` stays for the insurer located there; `us` goes.
@@ -122,14 +122,14 @@ describe('composePrivacyNotice — exclusions', () => {
       { part: 'transferCountries', key: 'ch', reason: 'country_in_use' },
     ]);
     expect(
-      normalizeExclusions(content, { excluded: { transferCountries: ['US'] } })
+      normalizeExclusions(content, { excluded: { transferCountries: ['us'] } })
         .excluded?.transferCountries,
     ).toEqual(['us']);
   });
 
   it('ends the transfer once no country remains', () => {
     const composed = composePrivacyNotice(organization(), {
-      excluded: { recipients: ['insurer'], transferCountries: ['CH', 'US'] },
+      excluded: { recipients: ['insurer'], transferCountries: ['ch', 'us'] },
     });
 
     expect(composed.thirdCountryTransfers).toMatchObject({
@@ -178,20 +178,20 @@ describe('refusedExclusions', () => {
         excluded: {
           purposes: ['medical_care'],
           recipients: ['event_staff'],
-          transferCountries: ['CH'],
+          transferCountries: ['ch'],
         },
       }),
     ).toEqual([
       { part: 'purposes', key: 'medical_care', reason: 'all_events' },
       { part: 'recipients', key: 'event_staff', reason: 'always_recipient' },
-      { part: 'transferCountries', key: 'CH', reason: 'country_in_use' },
+      { part: 'transferCountries', key: 'ch', reason: 'country_in_use' },
     ]);
   });
 
   it('accepts a country once its recipient is excluded too', () => {
     expect(
       refusedExclusions(organization(), {
-        excluded: { recipients: ['insurer'], transferCountries: ['CH'] },
+        excluded: { recipients: ['insurer'], transferCountries: ['ch'] },
       }),
     ).toEqual([]);
   });

@@ -9,6 +9,7 @@ import type {
 } from './catalogue.js';
 import type { PrivacyNoticeExclusions } from './exclusions.js';
 import { ALWAYS_RECIPIENT_KEYS, TRANSFER_SAFEGUARDS } from './catalogue.js';
+import { frameworkRecord } from './frameworks.js';
 
 /**
  * How the notice was written.
@@ -21,9 +22,66 @@ import { ALWAYS_RECIPIENT_KEYS, TRANSFER_SAFEGUARDS } from './catalogue.js';
  */
 export type PrivacyNoticeMode = 'builder' | 'free_text';
 
+/**
+ * The data protection law a guided notice is written under (docs/privacy.md,
+ * 4): the GDPR or a German church law the platform has a record of. Declared
+ * by the organization, never inferred — neither country nor name tells. A
+ * free-text notice has none: the organization's text is the whole notice.
+ */
+export const DATA_PROTECTION_FRAMEWORKS = ['gdpr', 'kdg', 'dsg_ekd'] as const;
+export type DataProtectionFramework =
+  (typeof DATA_PROTECTION_FRAMEWORKS)[number];
+
+/** The church laws are German; elsewhere only the GDPR. */
+const COUNTRY_FRAMEWORKS: Record<string, readonly DataProtectionFramework[]> = {
+  de: ['kdg', 'dsg_ekd'],
+};
+
+/**
+ * The frameworks an organization in `country` (lowercase, like
+ * `Organization.country`) can write a guided notice under.
+ */
+export function frameworksFor(country: string): DataProtectionFramework[] {
+  return ['gdpr', ...(COUNTRY_FRAMEWORKS[country] ?? [])];
+}
+
+/** Versions published before the setting existed were GDPR notices. */
+export function noticeFramework(
+  content: Pick<PrivacyNoticeContent, 'framework'> | null | undefined,
+): DataProtectionFramework {
+  return content?.framework ?? 'gdpr';
+}
+
+/**
+ * Whether the platform adds legal text of its own — rights, the complaint
+ * right, the supervisory authority. A guided notice gets it from its law's
+ * record (`frameworkRecord`). A free-text notice is the organization's text
+ * alone, except a version published before the framework setting existed
+ * (no `framework` key at all): its author was told those sections were added,
+ * so they still are. Publishing again drops them.
+ */
+export function generatesLegalText(
+  content: Pick<PrivacyNoticeContent, 'framework' | 'mode'> | null | undefined,
+): boolean {
+  if (content?.mode === 'free_text') {
+    return content.framework === undefined;
+  }
+  return frameworkRecord(noticeFramework(content)) !== null;
+}
+
+/** A supervisory authority the organizer names, where none is derived. */
+export interface PrivacyNoticeAuthority {
+  name: string;
+  website?: string | null;
+}
+
 export interface PrivacyPurposeEntry {
   key: PrivacyPurposeRef;
-  legalBasis: LegalBasisKey;
+  /**
+   * Null until the author picks one: a preset leaves it open where the law
+   * attaches conditions to its basis (`presetLegalBasis`). Publishing needs it.
+   */
+  legalBasis: LegalBasisKey | null;
   /** Required when `legalBasis` is `legitimate_interests`. Art. 13(1)(d). */
   legitimateInterest?: Translatable | null;
   /** What to call it. Set only on `custom:` entries. */
@@ -36,6 +94,11 @@ export interface PrivacyDataCategoryEntry {
   key: PrivacyDataCategoryRef;
   /** Only meaningful for special categories; see `isSpecialCategory`. */
   specialCategoryBasis?: SpecialCategoryBasisKey | null;
+  /**
+   * The law a `public_interest` basis rests on (Art. 9(2)(g)), as the
+   * organizer names it; see `needsLegalReference`.
+   */
+  legalReference?: Translatable | null;
   /** What to call it. Set only on `custom:` entries. */
   label?: Translatable | null;
   /**
@@ -162,7 +225,7 @@ export type TransferSafeguard = (typeof TRANSFER_SAFEGUARDS)[number];
 
 export interface PrivacyThirdCountryTransfers {
   enabled: boolean;
-  /** ISO 3166-1 alpha-2 codes outside the EEA. */
+  /** Lowercase ISO 3166-1 alpha-2 codes outside the EEA. */
   countries: string[];
   safeguard?: TransferSafeguard | null;
   note?: Translatable | null;
@@ -180,10 +243,22 @@ export interface PrivacyDataProtectionOfficer {
  * apart with no way to tell which the registrant was shown.
  *
  * Nor does it carry data-subject rights, the complaint right or the competent
- * supervisory authority — those are fixed by law, identical for every
- * organization, and are generated from `Organization.country`.
+ * supervisory authority — under the GDPR those are fixed by law, identical for
+ * every organization, and are generated from `Organization.country`.
  */
 export interface PrivacyNoticeContent {
+  /**
+   * The law of a guided notice. Absent on versions from before it existed:
+   * GDPR. Null on a free-text notice, which cites no law.
+   */
+  framework?: DataProtectionFramework | null;
+  /**
+   * The record version the notice was published with (`FrameworkRecord`).
+   * Set by the server, so a later renumbering never changes what was shown.
+   */
+  frameworkVersion?: string | null;
+  /** Named by the organizer where the law's record derives none. */
+  supervisoryAuthority?: PrivacyNoticeAuthority | null;
   mode: PrivacyNoticeMode;
   purposes: PrivacyPurposeEntry[];
   dataCategories: PrivacyDataCategoryEntry[];
@@ -264,6 +339,7 @@ export function publishableAddendum(
 
 export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
   return {
+    framework: 'gdpr',
     mode: 'builder',
     purposes: [],
     dataCategories: [],
