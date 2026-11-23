@@ -1,4 +1,4 @@
-import { ICustomQuestionTypeConfiguration } from 'survey-core';
+import type { ICustomQuestionTypeConfiguration } from 'survey-core';
 import type { Localized } from '../../locales.js';
 
 const dateOfBirth: ICustomQuestionTypeConfiguration = {

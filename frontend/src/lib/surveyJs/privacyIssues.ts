@@ -2,6 +2,7 @@ import type { SurveyCreatorModel } from 'survey-creator-core';
 import { type Question, QuestionMatrixDropdownModelBase } from 'survey-core';
 import {
   formPrivacyIssues,
+  privacyCategoryOf,
   privacyIssueKind,
   type FormPrivacyIssueKind,
   type FormPrivacyIssues,
@@ -64,7 +65,7 @@ function questionPrivacyIssue(
   question: Question,
   issues: FormPrivacyIssues,
 ): QuestionPrivacyIssue | null {
-  const own = issueFor(question.getPropertyValue('privacyCategory'), issues);
+  const own = issueFor(privacyCategoryOf(question), issues);
   if (own || !(question instanceof QuestionMatrixDropdownModelBase)) {
     return own;
   }

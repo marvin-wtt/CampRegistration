@@ -110,6 +110,18 @@ describe('computedRegistrationData', () => {
     });
   });
 
+  it('leaves the date of birth empty for an answer that is no date', () => {
+    expect(
+      computedRegistrationData({ date_of_birth: ['not a date'] }),
+    ).toMatchObject({ dateOfBirth: null });
+  });
+
+  it('stores an empty role answer as no role, a participant', () => {
+    expect(computedRegistrationData({ role: [''] })).toMatchObject({
+      role: null,
+    });
+  });
+
   it('takes the first text answer of a tag', () => {
     expect(
       computedRegistrationData({ first_name: [null, 7, 'Ann', 'Bea'] }),

@@ -3,10 +3,7 @@ import { Spacious } from 'survey-pdf/layouts';
 import { buildMd3LiteralTheme } from '@/lib/surveyJs/theme';
 import { addMarkdownRenderer } from '@/lib/surveyJs/textProcessing';
 import { safeFileName } from '@/utils/safeFileName';
-import {
-  addFileSlotResolver,
-  setVariables,
-} from '@camp-registration/common/form';
+import { prepareEventSurvey } from '@camp-registration/common/form';
 import type {
   EventDetails,
   Registration,
@@ -31,7 +28,11 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
 
   const surveyPDF = new SurveyPDF(event.form);
   surveyPDF.data = registration.data;
-  surveyPDF.locale = registration.locale;
+  prepareEventSurvey(surveyPDF, event, {
+    group: registration.group,
+    locale: registration.locale,
+    resolveFileSlot: fileUrl,
+  });
   // survey-pdf resolves CSS on a detached div that never carries the
   // `.sjs-theme-overrides` class, so the adapter stylesheet cannot reach it —
   // the same token map is handed over as an object instead. Pinned to the light
@@ -42,7 +43,6 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
   surveyPDF.readOnly = true;
 
   addMarkdownRenderer(surveyPDF);
-  addFileSlotResolver(surveyPDF, fileUrl);
 
   const label =
     registrationIdLabel[registration.locale] ?? registrationIdLabel.en;
@@ -54,8 +54,6 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
       margins: { left: 12 },
     });
   });
-
-  setVariables(surveyPDF, event, { group: registration.group });
 
   return surveyPDF;
 }

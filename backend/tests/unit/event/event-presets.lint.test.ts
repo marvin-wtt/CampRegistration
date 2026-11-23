@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 // Registers the survey locales; without them every `locale` is reported invalid.
 import 'survey-core/i18n';
 import { lintSurvey, type ISuppression } from 'survey-core/linter';
-import { formLintOptions } from '@camp-registration/common/form';
+import {
+  formLintOptions,
+  reservedNameUses,
+} from '@camp-registration/common/form';
 import { EVENT_PRESET_NAMES } from '@camp-registration/common/entities';
 import { EVENT_PRESETS } from '#app/event/presets/index';
 
@@ -30,6 +33,10 @@ function lint(form: unknown) {
 describe('event preset forms', () => {
   it.each(EVENT_PRESET_NAMES)('%s form passes the SurveyJS linter', (name) => {
     expect(lint(EVENT_PRESETS[name].form)).toEqual([]);
+  });
+
+  it.each(EVENT_PRESET_NAMES)('%s form uses no reserved name', (name) => {
+    expect(reservedNameUses(EVENT_PRESETS[name].form)).toEqual([]);
   });
 
   it('reports an unresolved reference', () => {

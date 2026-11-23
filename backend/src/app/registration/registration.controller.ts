@@ -53,10 +53,13 @@ export class RegistrationController extends BaseController {
 
     const registration = await this.registrationService.createRegistration(
       event,
-      { form, locale, group },
-      req.sessionId,
-      displayedTotal,
-      displayedConsents,
+      {
+        form,
+        locale,
+        group,
+        fileField: req.sessionId,
+        displayed: { total: displayedTotal, consents: displayedConsents },
+      },
     );
 
     // Notify participant

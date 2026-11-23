@@ -1,27 +1,8 @@
 import type { SurveyModel } from 'survey-core';
 import type { EventDetails } from '@camp-registration/common/entities';
-import { useI18n } from 'vue-i18n';
-import { nextTick, type Ref, watch, watchEffect } from 'vue';
-import { setVariables } from '@camp-registration/common/form';
+import { nextTick, type Ref, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
 import { resolveMd3Theme } from '@/lib/surveyJs/theme';
-
-export function startAutoDataUpdate(
-  model: SurveyModel,
-  data: Ref<EventDetails | undefined>,
-  group?: string | null,
-) {
-  const { locale } = useI18n();
-
-  watch(
-    [locale, data],
-    ([locale, data]) => {
-      model.locale = locale;
-      setVariables(model, data, { group });
-    },
-    { immediate: true },
-  );
-}
 
 export const startAutoThemeUpdate = (
   model: SurveyModel,

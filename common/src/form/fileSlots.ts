@@ -53,13 +53,3 @@ export function addFileSlotResolver(
     );
   });
 }
-
-/** The resolver for an event's own forms, alike in the browser and on the server. */
-export function addEventFileSlotResolver(
-  model: SurveyModel,
-  eventId: string,
-): void {
-  addFileSlotResolver(model, (slot, locale, group) =>
-    fileSlotPath(eventId, slot, { locale, group }),
-  );
-}

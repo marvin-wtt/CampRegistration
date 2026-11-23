@@ -1,3 +1,4 @@
+import { isParticipant } from '@camp-registration/common/form';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
@@ -683,8 +684,7 @@ export class ChoreAssignmentService extends BaseService {
 
     return registrations.map((registration) => ({
       id: registration.id,
-      // A registration without a role is a participant.
-      staff: registration.role !== null && registration.role !== 'participant',
+      staff: !isParticipant(registration.role),
       group: registration.group,
       roomId: registration.bed?.roomId ?? null,
     }));

@@ -40,7 +40,7 @@
           :group
           :submit-fn="onSubmit"
           :upload-file-fn="uploadFileFn"
-          moderation
+          mode="moderate"
         />
       </q-scroll-area>
 

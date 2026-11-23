@@ -1,7 +1,7 @@
 import TableComponentRegistry from '@/components/event/table/ComponentRegistry';
 import { computed, type Ref, ref, watch } from 'vue';
 import { ExpressionEvaluator } from '@/lib/surveyJs/ExpressionEvaluator';
-import { objectValueByPath } from '@/utils/objectValueByPath';
+import { valueAtPath } from '@camp-registration/common/form';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
 import { PURGED_CELL } from '@/components/event/table/tableCells/purgedCell';
@@ -103,7 +103,7 @@ function compareSortValues(a: unknown, b: unknown): number {
 function fieldValue(column: CTableColumnTemplate, row: unknown): unknown {
   return typeof column.field === 'function'
     ? column.field(row)
-    : objectValueByPath(column.field, row);
+    : valueAtPath(column.field, row);
 }
 
 // Exported (only) for direct unit testing — sortRows has no Vue/Pinia
@@ -170,7 +170,7 @@ export function useResultTableModel(
       columns: template.columns.map((column) =>
         markPurged({
           ...column,
-          field: (row: unknown) => objectValueByPath(column.field, row),
+          field: (row: unknown) => valueAtPath(column.field, row),
           fieldName: column.field,
         }),
       ),
@@ -197,8 +197,7 @@ export function useResultTableModel(
       columns: input.questions.value.map((column) =>
         markPurged({
           ...column,
-          field: (row: unknown) =>
-            objectValueByPath('data.' + column.field, row),
+          field: (row: unknown) => valueAtPath('data.' + column.field, row),
           fieldName: 'data.' + column.field,
         }),
       ),
@@ -341,9 +340,7 @@ export function useResultTableModel(
       r = r.filter((row) =>
         fields.some((field) => {
           const value =
-            typeof field === 'function'
-              ? field(row)
-              : objectValueByPath(field, row);
+            typeof field === 'function' ? field(row) : valueAtPath(field, row);
           return matchesSearch(value, search);
         }),
       );

@@ -1,7 +1,7 @@
-import eventDataType, { calculatedValueDataType } from './eventDataType.js';
+import { calculatedValueDataType, questionDataType } from './eventDataType.js';
 import { showPaymentTotal } from './showPaymentTotal.js';
 import { booleanPrice, choicePrice } from './price.js';
-import { PropertyDefinition } from './ProptertyDefinition.js';
+import type { PropertyDefinition } from './PropertyDefinition.js';
 import {
   privacyConsent,
   privacyConsentFor,
@@ -10,7 +10,7 @@ import {
 } from './privacy.js';
 
 const properties: PropertyDefinition[] = [
-  eventDataType,
+  questionDataType,
   calculatedValueDataType,
   choicePrice,
   booleanPrice,

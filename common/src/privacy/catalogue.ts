@@ -404,26 +404,3 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
     recipients: ['platform_operator'],
   },
 };
-
-/**
- * Maps the `eventDataType` a form author already tags questions with
- * (`common/src/form/properties/eventDataType.ts`) onto a data category, so the
- * wizard can propose what the event's own form appears to collect.
- *
- * A suggestion only — the mapping is partial by construction, since a free-text
- * question can hold anything.
- */
-export const EVENT_DATA_TYPE_DATA_CATEGORIES: Record<
-  string,
-  PrivacyDataCategoryKey
-> = {
-  first_name: 'identity',
-  last_name: 'identity',
-  name: 'identity',
-  email: 'contact',
-  phone: 'contact',
-  address: 'address',
-  country: 'address',
-  date_of_birth: 'date_of_birth',
-  gender: 'gender',
-};

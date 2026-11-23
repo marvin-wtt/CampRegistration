@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { SurveyModel } from 'survey-core';
 import {
-  addEventFileSlotResolver,
   consentTexts,
   fileSlotPath,
+  prepareEventSurvey,
 } from '../../../src/form/index.js';
+import { fakeEventData } from '../../util/faker.js';
 
 describe('fileSlotPath', () => {
   it('links the slot route, root-relative', () => {
@@ -20,7 +21,7 @@ describe('fileSlotPath', () => {
   });
 });
 
-describe('addEventFileSlotResolver', () => {
+describe('prepareEventSurvey file links', () => {
   const consent = {
     type: 'boolean',
     name: 'consent_rules',
@@ -30,9 +31,11 @@ describe('addEventFileSlotResolver', () => {
 
   it('writes the slot link into a consent text', () => {
     const model = new SurveyModel({ elements: [consent] });
-    model.locale = 'de-DE';
-    model.setVariable('event.group', 'fr');
-    addEventFileSlotResolver(model, 'event-1');
+    prepareEventSurvey(
+      model,
+      { ...fakeEventData({ countries: ['fr', 'de'] }), id: 'event-1' },
+      { group: 'fr', locale: 'de-DE' },
+    );
     model.data = { consent_rules: true };
 
     expect(consentTexts(model)).toEqual({

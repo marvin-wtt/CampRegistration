@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FunctionFactory, SurveyModel } from 'survey-core';
 import type { EventWithFreePlaces } from '#app/event/event.types';
-import { RegistrationForm } from '#app/registration/registration.form';
+import {
+  RegistrationForm,
+  registrationForms,
+} from '#app/registration/registration.form';
 import { registrationColumns } from '#app/registration/registration.columns';
 
 // `setVariables` reads these off the event to expose them as survey variables.
@@ -220,10 +223,10 @@ describe('RegistrationForm.dataErrors', async () => {
         documents: [{ scan: [{ name: 'a.pdf', content: 'x' }] }],
       }),
     ).resolves.toEqual([
-      { path: 'contacts[1].phone', message: 'Response required.' },
-      { path: 'siblings[0].name', message: 'Response required.' },
+      { path: 'contacts.1.phone', message: 'Response required.' },
+      { path: 'siblings.0.name', message: 'Response required.' },
       { path: 'sizes.shirt.size', message: "The 'value' should be at least 1" },
-      { path: 'documents[0].scan', message: 'Invalid file reference' },
+      { path: 'documents.0.scan', message: 'Invalid file reference' },
     ]);
   });
 
@@ -255,7 +258,7 @@ describe('RegistrationForm.dataErrors', async () => {
 
     expect(errors.map((error) => error.path)).toEqual([
       'emergency',
-      'contacts[1].address',
+      'contacts.1.address',
     ]);
   });
 
@@ -584,5 +587,40 @@ describe('RegistrationForm.consentColumns', () => {
       firstName: 'Ann',
       newsletterConsent: true,
     });
+  });
+});
+
+describe('registrationForms', () => {
+  const event = eventWith([{ type: 'text', name: 'first_name' }]);
+
+  it('lends each response its own answers in one shared form', () => {
+    const formFor = registrationForms(event);
+    const stored = (first_name: string) => ({
+      group: null,
+      locale: 'en',
+      data: { first_name },
+    });
+
+    let lent: RegistrationForm | undefined;
+    const first = formFor(stored('Ann'), (form) => {
+      lent = form;
+      return form.data;
+    });
+    const second = formFor(stored('Bea'), (form) => {
+      expect(form).toBe(lent);
+      return form.data;
+    });
+
+    expect(first).toEqual({ first_name: 'Ann' });
+    expect(second).toEqual({ first_name: 'Bea' });
+  });
+
+  it('builds a form per locale', () => {
+    const formFor = registrationForms(event);
+    const forms = ['en', 'de'].map((locale) =>
+      formFor({ group: null, locale, data: {} }, (form) => form),
+    );
+
+    expect(forms[0]).not.toBe(forms[1]);
   });
 });

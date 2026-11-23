@@ -86,17 +86,26 @@ function hasRegistrationErrorCode(error: unknown, code: string): boolean {
   return body?.errorCode === code;
 }
 
-/** Whether the server refused a total the form showed as outdated. */
-export const isPriceChangedError = (error: unknown) =>
-  hasRegistrationErrorCode(error, REGISTRATION_PRICE_CHANGED);
+// Refusals the form explains itself. A changed price or consent text means
+// the page is outdated; a missing consent, a form the organizer still has to
+// fix (docs/privacy.md, 5).
+const REFUSALS = {
+  [REGISTRATION_PRICE_CHANGED]: 'priceChanged',
+  [REGISTRATION_CONSENT_CHANGED]: 'consentChanged',
+  [REGISTRATION_CONSENT_MISSING]: 'consentMissing',
+} as const;
 
-/** Whether the server refused consent texts the form showed as outdated. */
-export const isConsentChangedError = (error: unknown) =>
-  hasRegistrationErrorCode(error, REGISTRATION_CONSENT_CHANGED);
+export type RegistrationRefusal = (typeof REFUSALS)[keyof typeof REFUSALS];
 
-/**
- * Whether the server refused answers that need a consent the form does not
- * ask for — a form the organizer still has to fix (docs/privacy.md, 5).
- */
-export const isConsentMissingError = (error: unknown) =>
-  hasRegistrationErrorCode(error, REGISTRATION_CONSENT_MISSING);
+/** Why the server refused a submission, when the form can explain it. */
+export function registrationRefusal(
+  error: unknown,
+): RegistrationRefusal | null {
+  for (const [code, refusal] of Object.entries(REFUSALS)) {
+    if (hasRegistrationErrorCode(error, code)) {
+      return refusal;
+    }
+  }
+
+  return null;
+}

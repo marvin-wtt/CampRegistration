@@ -5,9 +5,16 @@ import {
   EVENT_PRESET_NAMES,
   type EventQuery,
   type EventOrganizationUpdateData,
+  type FormJson,
 } from '@camp-registration/common/entities';
 import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
 import { localesForCountries } from '@camp-registration/common/locales';
+
+// A form is read through SurveyJS, which copes with any JSON object.
+const FormJsonSchema = z.record(
+  z.string(),
+  z.unknown(),
+) satisfies ZodType<FormJson>;
 
 // `z.iso.datetime()` accepts a `Z` suffix regardless of `local`/`offset`, so a
 // real instant must be rejected explicitly — startAt/endAt are the organizer's
@@ -185,7 +192,7 @@ const store = z.object({
       // Minor units.
       price: translatedValue(z.number().int().nonnegative()),
       currency: CurrencySchema.optional(),
-      form: z.record(z.string(), z.unknown()).optional(),
+      form: FormJsonSchema.optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
       preset: z.enum(EVENT_PRESET_NAMES).nullable().optional(),
       referenceEventId: z.ulid().optional(),
@@ -261,7 +268,7 @@ const update = (event: Event) =>
         location: translatedValue(z.string()),
         price: translatedValue(z.number().int().nonnegative()),
         currency: CurrencySchema,
-        form: z.record(z.string(), z.unknown()),
+        form: FormJsonSchema,
         themes: z.record(z.string(), z.unknown()),
         archived: z.boolean(),
       })

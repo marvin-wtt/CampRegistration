@@ -3,10 +3,7 @@ import { mount } from '@vue/test-utils';
 import TimeAgoTableCell from '@/components/event/table/tableCells/TimeAgoTableCell.vue';
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
-import type {
-  EventDetails,
-  Registration,
-} from '@camp-registration/common/entities';
+import type { Registration } from '@camp-registration/common/entities';
 
 installQuasarPlugin();
 
@@ -84,7 +81,7 @@ const createEvent = (
   logo: null,
   banner: null,
   archivedAt: null,
-  form: {} as EventDetails['form'],
+  form: {},
   themes: {},
   ...overrides,
 });

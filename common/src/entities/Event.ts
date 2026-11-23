@@ -1,4 +1,4 @@
-import { SurveyJSEventData } from './SurveyJSEventData.js';
+import type { FormJson } from './FormJson.js';
 import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
 import type { PerGroup, Translatable } from './Translatable.js';
@@ -60,7 +60,7 @@ export interface Event extends Identifiable {
 }
 
 export interface EventDetails extends Event {
-  form: SurveyJSEventData;
+  form: FormJson;
   themes: Record<string, ITheme>;
 }
 
@@ -92,7 +92,7 @@ export type EventCreateData = Omit<
   EventDetails,
   EventServerFields | EventOverriddenFields
 > & {
-  form?: SurveyJSEventData | undefined;
+  form?: FormJson | undefined;
   themes?: Record<string, ITheme> | undefined;
   registrationOpensAt?: string | null | undefined;
   registrationClosesAt?: string | null | undefined;

@@ -23,7 +23,7 @@ import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import FormEditor from '@/components/event/settings/form/FormEditor.vue';
-import type { SurveyJSEventData } from '@camp-registration/common/entities';
+import type { FormJson } from '@camp-registration/common/entities';
 import type { ITheme } from 'survey-core';
 import EditorRestrictedAccessDialog from '@/components/event/settings/form/EditorRestrictedAccessDialog.vue';
 import { createUuid } from '@/utils/uuid';
@@ -77,7 +77,7 @@ async function loadPage() {
   }
 }
 
-async function saveForm(form: SurveyJSEventData): Promise<void> {
+async function saveForm(form: FormJson): Promise<void> {
   const data = {
     form,
   };

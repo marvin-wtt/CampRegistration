@@ -7,7 +7,7 @@ import type {
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { FormSelectCache } from '@/components/event/table/tableCells/FormSelectCache';
 import type { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
-import { objectValueByPath } from '@/utils/objectValueByPath';
+import { valueAtPath } from '@camp-registration/common/form';
 import { isoToLocalDate } from '@/utils/date';
 import { csvSeparatorForLocale, toCsv } from '@/utils/csv';
 import {
@@ -102,7 +102,7 @@ export function useCsvExport() {
         const value =
           typeof column.field === 'function'
             ? column.field(row)
-            : objectValueByPath(column.field, row);
+            : valueAtPath(column.field, row);
 
         return formatColumnValue(renderer, value, ctx);
       }),

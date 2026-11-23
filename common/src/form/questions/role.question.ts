@@ -6,6 +6,17 @@ import type {
 import { Serializer } from 'survey-core';
 import type { Localized } from '../../locales.js';
 
+/** The participant role; any other is staff. */
+export const PARTICIPANT_ROLE = 'participant';
+
+/**
+ * Whether a registration is a participant's, counted against the event's
+ * places: the participant role, or none at all.
+ */
+export function isParticipant(role: string | null | undefined): boolean {
+  return !role || role === PARTICIPANT_ROLE;
+}
+
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];
   updateChoices: (question: Question, value: ItemValue[] | undefined) => void;
@@ -25,7 +36,7 @@ const roleQuestion: RoleQuestionConfiguration = {
     } satisfies Localized,
     choices: [
       {
-        value: 'participant',
+        value: PARTICIPANT_ROLE,
         text: {
           de: 'Teilnehmer',
           en: 'Participant',
