@@ -30,8 +30,9 @@ export class OrganizationRouter extends ModuleRouter {
       controller(organizationController, 'index'),
     );
 
-    // Any authenticated user may found an organization. It starts PENDING and
-    // cannot publish anything until a system administrator verifies it.
+    // Any authenticated user may found an organization. It starts as a draft,
+    // is submitted once its privacy notice is published, and cannot publish
+    // anything until a system administrator verifies it.
     this.router.post('/', controller(organizationController, 'store'));
 
     this.router.get(

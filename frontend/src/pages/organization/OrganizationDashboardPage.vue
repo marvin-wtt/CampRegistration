@@ -21,12 +21,27 @@
             {{ t('subtitle') }}
           </p>
         </div>
-        <q-chip
-          square
-          :icon="statusIcon"
-          :label="t(`status.${organization.verificationStatus}`)"
-          :class="`status-chip status--${organization.verificationStatus.toLowerCase()}`"
-        />
+        <div class="header-actions">
+          <q-chip
+            square
+            :icon="statusIcon"
+            :label="t(`status.${organization.verificationStatus}`)"
+            :class="`status-chip status--${organization.verificationStatus.toLowerCase()}`"
+          />
+          <q-btn
+            v-if="canCreateEvent"
+            :label="quasar.screen.gt.xs ? t('action.create_event') : ''"
+            :aria-label="t('action.create_event')"
+            color="primary"
+            icon="add"
+            unelevated
+            no-caps
+            :round="quasar.screen.lt.sm"
+            :rounded="quasar.screen.gt.xs"
+            data-test="organization-create-event"
+            @click="createEvent(organization.id)"
+          />
+        </div>
       </header>
 
       <!-- The one thing worth interrupting for: nothing this org makes reaches
@@ -62,6 +77,17 @@
             class="status-note-actions"
           >
             <q-btn
+              v-if="draft"
+              flat
+              no-caps
+              dense
+              color="primary"
+              :label="t('privacy.action')"
+              :to="{ name: 'management.organization.privacy' }"
+              data-test="organization-draft-privacy"
+            />
+            <q-btn
+              v-else
               flat
               no-caps
               dense
@@ -70,7 +96,7 @@
               :to="{ name: 'management.organization.settings' }"
             />
             <q-btn
-              v-if="rejected"
+              v-if="rejected && !privacyNoticeMissing"
               flat
               no-caps
               dense
@@ -85,7 +111,7 @@
       <!-- Verification is refused while no privacy notice is published, so the
            overview names the missing step instead of leaving it to a rejection. -->
       <q-card
-        v-if="privacyNoticeMissing"
+        v-if="privacyNoticeMissing && !draft"
         flat
         bordered
         class="privacy-note rounded-lg"
@@ -142,6 +168,20 @@
               <div class="text-body2 text-on-surface-variant">
                 {{ stat.label }}
               </div>
+              <q-btn
+                v-if="
+                  stat.key === 'events' && stat.value === 0 && canCreateEvent
+                "
+                :label="t('action.create_first_event')"
+                color="primary"
+                class="q-mt-xs"
+                flat
+                dense
+                no-caps
+                rounded
+                data-test="organization-create-first-event"
+                @click.stop="createEvent(organization.id)"
+              />
             </div>
             <q-icon
               v-if="stat.to"
@@ -200,6 +240,7 @@ import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import { useCreateEventFlow } from '@/composables/createEventFlow';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { useRetentionService } from '@/services/RetentionService';
 import RetentionOverviewCard from '@/components/retention/RetentionOverviewCard.vue';
@@ -211,7 +252,13 @@ const quasar = useQuasar();
 const router = useRouter();
 const store = useOrganizationDetailsStore();
 const { data: organization, isLoading, error } = storeToRefs(store);
-const { canOrg } = useOrganizationPermissions();
+const { canOrg, eventCreationOrganizationIds } = useOrganizationPermissions();
+const { createEvent } = useCreateEventFlow();
+
+// Matches the create flow's gate, which reads memberships only.
+const canCreateEvent = computed(() =>
+  eventCreationOrganizationIds.value.includes(organization.value?.id ?? ''),
+);
 const { fetchOrganizationNotice } = usePrivacyNoticeService();
 
 // Null until the lookup answers, so the hint never flashes for an organization
@@ -274,6 +321,11 @@ const rejected = computed(
   () => organization.value?.verificationStatus === 'REJECTED',
 );
 
+// The status note already names the missing notice as the next step.
+const draft = computed(
+  () => organization.value?.verificationStatus === 'DRAFT',
+);
+
 function requestReview() {
   quasar
     .dialog({
@@ -296,6 +348,7 @@ const statusIcon = computed(() => {
   const status = organization.value?.verificationStatus;
   if (status === 'VERIFIED') return 'verified';
   if (status === 'REJECTED') return 'gpp_bad';
+  if (status === 'DRAFT') return 'edit_note';
   return 'schedule';
 });
 
@@ -391,6 +444,13 @@ const links = computed<QuickLink[]>(() =>
   gap: 16px;
 }
 
+.header-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .header-text {
   min-width: 0;
   display: flex;
@@ -417,7 +477,8 @@ const links = computed<QuickLink[]>(() =>
   color: var(--md3-on-primary-container);
 }
 
-.status--pending {
+.status--pending,
+.status--draft {
   background: var(--md3-surface-container-highest);
   color: var(--md3-on-surface-variant);
 }
@@ -544,10 +605,12 @@ const links = computed<QuickLink[]>(() =>
 <i18n lang="yaml" locale="en">
 subtitle: 'Overview of this organization'
 status:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting verification'
   VERIFIED: 'Verified'
   REJECTED: 'Not verified'
 note:
+  DRAFT: "This organization hasn't been submitted for verification yet. Publishing its privacy notice submits it. Until it is verified, events stay hidden and newsletters cannot send."
   PENDING: 'Events stay hidden and newsletters cannot send until this organization is verified.'
   REJECTED: 'This organization was not verified. Events stay hidden and newsletters cannot send. Correct the details, then request a new review.'
   reviewNote: 'Reviewer note'
@@ -561,6 +624,9 @@ privacy:
   title: 'Privacy notice missing'
   message: 'This organization cannot be verified until its privacy notice is published. It is the baseline every event of this organization uses.'
   action: 'Set up'
+action:
+  create_event: 'Create event'
+  create_first_event: 'Create your first event'
 stat:
   events: 'Events'
   newsletters: 'Newsletters'
@@ -573,10 +639,12 @@ link:
 <i18n lang="yaml" locale="de">
 subtitle: 'Überblick über diese Organisation'
 status:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Verifizierung ausstehend'
   VERIFIED: 'Verifiziert'
   REJECTED: 'Nicht verifiziert'
 note:
+  DRAFT: 'Diese Organisation wurde noch nicht zur Verifizierung eingereicht. Mit dem Veröffentlichen ihres Datenschutzhinweises wird sie eingereicht. Bis zur Verifizierung bleiben Veranstaltungen verborgen und Newsletter können nicht versendet werden.'
   PENDING: 'Veranstaltungen bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
   REJECTED: 'Diese Organisation wurde nicht verifiziert. Veranstaltungen bleiben verborgen und Newsletter können nicht senden. Korrigiere die Angaben und fordere anschließend eine neue Prüfung an.'
   reviewNote: 'Hinweis der Prüfung'
@@ -590,6 +658,9 @@ privacy:
   title: 'Datenschutzerklärung fehlt'
   message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jede Veranstaltung dieser Organisation.'
   action: 'Einrichten'
+action:
+  create_event: 'Veranstaltung erstellen'
+  create_first_event: 'Erstelle deine erste Veranstaltung'
 stat:
   events: 'Veranstaltungen'
   newsletters: 'Newsletter'
@@ -602,10 +673,12 @@ link:
 <i18n lang="yaml" locale="fr">
 subtitle: 'Aperçu de cette organisation'
 status:
+  DRAFT: 'Non soumise'
   PENDING: 'Vérification en attente'
   VERIFIED: 'Vérifiée'
   REJECTED: 'Non vérifiée'
 note:
+  DRAFT: "Cette organisation n'a pas encore été soumise à la vérification. Publier sa politique de confidentialité la soumet. Tant qu'elle n'est pas vérifiée, les événements restent masqués et les newsletters ne peuvent pas être envoyées."
   PENDING: "Les événements restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
   REJECTED: "Cette organisation n'a pas été vérifiée. Les événements restent masqués et les newsletters ne peuvent pas être envoyées. Corrige les informations, puis demande une nouvelle vérification."
   reviewNote: 'Note du vérificateur'
@@ -619,6 +692,9 @@ privacy:
   title: 'Politique de confidentialité manquante'
   message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses événements."
   action: 'Configurer'
+action:
+  create_event: 'Créer un événement'
+  create_first_event: 'Crée ton premier événement'
 stat:
   events: 'Événements'
   newsletters: 'Newsletters'
@@ -631,10 +707,12 @@ link:
 <i18n lang="yaml" locale="pl">
 subtitle: 'Przegląd tej organizacji'
 status:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na weryfikację'
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Niezweryfikowana'
 note:
+  DRAFT: 'Ta organizacja nie została jeszcze zgłoszona do weryfikacji. Opublikowanie jej informacji o ochronie danych zgłasza ją. Do czasu weryfikacji wydarzenia pozostają ukryte, a newslettery nie mogą być wysyłane.'
   PENDING: 'Wydarzenia pozostają ukryte, a newslettery nie mogą być wysyłane, dopóki ta organizacja nie zostanie zweryfikowana.'
   REJECTED: 'Ta organizacja nie została zweryfikowana. Wydarzenia pozostają ukryte, a newslettery nie mogą być wysyłane. Popraw dane, a następnie poproś o ponowną weryfikację.'
   reviewNote: 'Uwaga weryfikatora'
@@ -648,6 +726,9 @@ privacy:
   title: 'Brak informacji o ochronie danych'
   message: 'Tej organizacji nie można zweryfikować, dopóki nie opublikuje informacji o ochronie danych. Stanowi ona podstawę dla każdego wydarzenia tej organizacji.'
   action: 'Skonfiguruj'
+action:
+  create_event: 'Utwórz wydarzenie'
+  create_first_event: 'Utwórz swoje pierwsze wydarzenie'
 stat:
   events: 'Wydarzenia'
   newsletters: 'Newslettery'
@@ -660,10 +741,12 @@ link:
 <i18n lang="yaml" locale="cs">
 subtitle: 'Přehled této organizace'
 status:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na ověření'
   VERIFIED: 'Ověřená'
   REJECTED: 'Neověřená'
 note:
+  DRAFT: 'Tato organizace ještě nebyla odeslána k ověření. Zveřejněním jejích informací o ochraně osobních údajů se odešle. Do ověření zůstanou akce skryté a newslettery nelze odesílat.'
   PENDING: 'Akce zůstávají skryté a newslettery nelze odesílat, dokud nebude tato organizace ověřena.'
   REJECTED: 'Tato organizace nebyla ověřena. Akce zůstávají skryté a newslettery nelze odesílat. Oprav údaje a poté požádej o nové ověření.'
   reviewNote: 'Poznámka ověřovatele'
@@ -677,6 +760,9 @@ privacy:
   title: 'Chybí zásady ochrany osobních údajů'
   message: 'Tuto organizaci nelze ověřit, dokud nezveřejní zásady ochrany osobních údajů. Jsou základem pro každou akci této organizace.'
   action: 'Nastavit'
+action:
+  create_event: 'Vytvořit akci'
+  create_first_event: 'Vytvoř svou první akci'
 stat:
   events: 'Akce'
   newsletters: 'Newslettery'

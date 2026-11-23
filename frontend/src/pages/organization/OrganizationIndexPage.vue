@@ -92,6 +92,20 @@
         <div class="text-body2 q-mt-xs text-center">
           {{ t('empty.description') }}
         </div>
+        <q-btn
+          class="q-mt-lg"
+          color="primary"
+          icon="add"
+          :label="t('action.create')"
+          unelevated
+          no-caps
+          rounded
+          data-test="organization-create-empty"
+          @click="showCreateDialog"
+        />
+        <div class="text-body2 q-mt-md text-center">
+          {{ t('empty.invite_hint', { email: user?.email ?? '' }) }}
+        </div>
       </div>
     </div>
   </page-state-handler>
@@ -108,6 +122,7 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import OrganizationCreateDialog from '@/components/organization/OrganizationCreateDialog.vue';
 import OrganizationCardSkeleton from '@/components/organization/OrganizationCardSkeleton.vue';
 import { useOrganizationsStore } from '@/stores/organizations-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { countryName } from '@/utils/countries';
 import type {
   Organization,
@@ -119,6 +134,7 @@ const router = useRouter();
 const quasar = useQuasar();
 const store = useOrganizationsStore();
 const { data, isLoading: loading, error } = storeToRefs(store);
+const { user } = storeToRefs(useProfileStore());
 
 // Started during setup, not awaited: the stores flag themselves loading before
 // the first render, so the page renders its skeletons instead of an idle frame.
@@ -129,6 +145,7 @@ const organizations = computed<Organization[]>(() => data.value ?? []);
 function statusIcon(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'verified';
   if (status === 'REJECTED') return 'cancel';
+  if (status === 'DRAFT') return 'edit_note';
   return 'hourglass_empty';
 }
 
@@ -163,6 +180,11 @@ function showCreateDialog() {
   color: var(--md3-on-secondary-container);
 }
 
+.status--draft {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+}
+
 .status--rejected {
   background: var(--md3-error-container);
   color: var(--md3-on-error-container);
@@ -175,12 +197,14 @@ subtitle: 'Manage the organizations you run events and newsletters under.'
 action:
   create: 'Create organization'
 status:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting verification'
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
 empty:
   title: 'No organizations yet'
   description: 'Create an organization to run events and newsletters.'
+  invite_hint: 'Already part of an organization? Ask its admin to add you using {email}.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -189,12 +213,14 @@ subtitle: 'Verwalte die Organisationen, unter denen du Veranstaltungen und Newsl
 action:
   create: 'Organisation erstellen'
 status:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Warten auf Verifizierung'
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
 empty:
   title: 'Noch keine Organisationen'
   description: 'Erstelle eine Organisation, um Veranstaltungen und Newsletter zu betreiben.'
+  invite_hint: 'Gehörst du schon zu einer Organisation? Bitte ihren Admin, dich mit {email} hinzuzufügen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -203,12 +229,14 @@ subtitle: 'Gérez les organisations sous lesquelles vous organisez événements 
 action:
   create: 'Créer une organisation'
 status:
+  DRAFT: 'Non soumise'
   PENDING: 'En attente de vérification'
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
 empty:
   title: 'Aucune organisation'
   description: 'Crée une organisation pour gérer des événements et des newsletters.'
+  invite_hint: "Tu fais déjà partie d'une organisation ? Demande à son administrateur de t'ajouter avec {email}."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -217,12 +245,14 @@ subtitle: 'Zarządzaj organizacjami, w ramach których prowadzisz wydarzenia i n
 action:
   create: 'Utwórz organizację'
 status:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na weryfikację'
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Odrzucona'
 empty:
   title: 'Brak organizacji'
   description: 'Utwórz organizację, aby prowadzić wydarzenia i newslettery.'
+  invite_hint: 'Należysz już do organizacji? Poproś jej administratora, aby dodał cię, używając adresu {email}.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -231,10 +261,12 @@ subtitle: 'Spravuj organizace, pod kterými pořádáš akce a newslettery.'
 action:
   create: 'Vytvořit organizaci'
 status:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na ověření'
   VERIFIED: 'Ověřená'
   REJECTED: 'Zamítnutá'
 empty:
   title: 'Zatím žádné organizace'
   description: 'Vytvoř organizaci, abys mohl pořádat akce a newslettery.'
+  invite_hint: 'Už patříš do nějaké organizace? Požádej jejího správce, ať tě přidá pod adresou {email}.'
 </i18n>

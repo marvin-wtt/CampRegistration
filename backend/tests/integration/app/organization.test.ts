@@ -97,7 +97,7 @@ describe(BASE, () => {
   });
 
   describe(`POST ${BASE}`, () => {
-    it('should respond with `201`, start PENDING and make the creator an admin', async () => {
+    it('should respond with `201`, start as a draft and make the creator an admin', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
 
@@ -107,7 +107,8 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body.data.verificationStatus).toBe('PENDING');
+      expect(body.data.verificationStatus).toBe('DRAFT');
+      expect(body.data.submittedAt).toBeNull();
       // Same shape as every other single-organization response.
       expect(body.data.ownedEvents).toBe(0);
       expect(body.data.ownedNewsletters).toBe(0);
@@ -282,6 +283,43 @@ describe(BASE, () => {
       expect(body.data.reviewedAt).toBeNull();
     });
 
+    it('should return a rejected organization without a notice to draft', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const organization = await OrganizationFactory.create(
+        {
+          verificationStatus: 'REJECTED',
+          members: { create: { userId: user.id, role: 'ADMIN' } },
+        },
+        { privacyNotice: null },
+      );
+
+      const { body } = await request()
+        .patch(`${BASE}/${organization.id}`)
+        .send({ registrationNumber: 'NEW-12345' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      // A review it can't pass would only sit in the queue.
+      expect(body.data.verificationStatus).toBe('DRAFT');
+      expect(body.data.submittedAt).toBeNull();
+    });
+
+    it('should leave a draft a draft when the legal identity changes', async () => {
+      const { accessToken, organization } = await createOrganizationWithRole(
+        'ADMIN',
+        'DRAFT',
+      );
+
+      const { body } = await request()
+        .patch(`${BASE}/${organization.id}`)
+        .send({ registrationNumber: 'NEW-12345' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.verificationStatus).toBe('DRAFT');
+    });
+
     it.each([
       ['contactEmail', 'new@example.com'],
       ['phone', '+49 30 999999'],
@@ -383,9 +421,8 @@ describe(BASE, () => {
   describe('review notifications', () => {
     const mailer = NoOpMailer.prototype;
 
-    it('should notify administrators when an organization is submitted', async () => {
+    it('should not notify administrators about a new draft', async () => {
       await UserFactory.create({ role: 'ADMIN', email: 'mod1@example.com' });
-      await UserFactory.create({ role: 'ADMIN', email: 'mod2@example.com' });
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
 
@@ -394,6 +431,23 @@ describe(BASE, () => {
         .send(validBody())
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
+
+      // Submission waits for the privacy notice.
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('should notify administrators when an organization is resubmitted', async () => {
+      await UserFactory.create({ role: 'ADMIN', email: 'mod1@example.com' });
+      await UserFactory.create({ role: 'ADMIN', email: 'mod2@example.com' });
+      const { accessToken, organization } = await createOrganizationWithRole(
+        'ADMIN',
+        'REJECTED',
+      );
+
+      await request()
+        .post(`${BASE}/${organization.id}/verification`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
 
       // One per moderator, so each sees it in their own inbox and language.
       const recipients = vi
@@ -405,14 +459,15 @@ describe(BASE, () => {
     });
 
     it('should not notify anyone when there are no administrators', async () => {
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
+      const { accessToken, organization } = await createOrganizationWithRole(
+        'ADMIN',
+        'REJECTED',
+      );
 
       await request()
-        .post(BASE)
-        .send(validBody())
+        .post(`${BASE}/${organization.id}/verification`)
         .auth(accessToken, { type: 'bearer' })
-        .expect(201);
+        .expect(200);
 
       expect(mailer.sendMail).not.toHaveBeenCalled();
     });
@@ -688,6 +743,23 @@ describe(BASE, () => {
 
       expect(body.data.verificationStatus).toBe('PENDING');
       expect(body.data.reviewNote).toBeNull();
+    });
+
+    it('should respond with `422` while no privacy notice is published', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const organization = await OrganizationFactory.create(
+        {
+          verificationStatus: 'REJECTED',
+          members: { create: { userId: user.id, role: 'ADMIN' } },
+        },
+        { privacyNotice: null },
+      );
+
+      await request()
+        .post(`${BASE}/${organization.id}/verification`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
     });
 
     it('should respond with `409` when the organization was not rejected', async () => {

@@ -837,7 +837,7 @@ const newsletter = computed(() =>
 /** `null` while the organization is verified and the newsletter can send. */
 const blockedReason = computed<'pending' | 'rejected' | null>(() => {
   const status = newsletter.value?.organizationVerificationStatus;
-  if (status === 'PENDING') {
+  if (status === 'PENDING' || status === 'DRAFT') {
     return 'pending';
   }
   if (status === 'REJECTED') {

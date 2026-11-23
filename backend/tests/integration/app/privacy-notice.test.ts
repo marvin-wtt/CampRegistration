@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { NoOpMailer } from '#core/mail/drivers/noop.mailer';
 import {
   EventFactory,
   OrganizationFactory,
@@ -17,7 +18,7 @@ import { eventListed } from './fixtures/registration.fixtures.js';
 
 /** An organization whose notice was never published — the blocked state. */
 const organizationWithoutNotice = async (
-  verificationStatus: 'PENDING' | 'VERIFIED' = 'PENDING',
+  verificationStatus: 'DRAFT' | 'PENDING' | 'VERIFIED' | 'REJECTED' = 'PENDING',
 ) =>
   OrganizationFactory.create({ verificationStatus }, { privacyNotice: null });
 
@@ -496,6 +497,49 @@ describe('privacy notices', () => {
         where: { scope: 'ORGANIZATION', scopeId: organization.id },
       });
       expect(versions).toBe(1);
+    });
+
+    it('should submit a draft organization for review', async () => {
+      const moderator = await UserFactory.create({
+        role: 'ADMIN',
+        email: 'mod@example.com',
+      });
+      const organization = await organizationWithoutNotice('DRAFT');
+      const accessToken = await organizationAdmin(organization.id);
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({ content: completePrivacyNoticeContent() })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const updated = await prisma.organization.findUnique({
+        where: { id: organization.id },
+      });
+      expect(updated?.verificationStatus).toBe('PENDING');
+      expect(updated?.submittedAt).not.toBeNull();
+
+      const recipients = vi
+        .mocked(NoOpMailer.prototype.sendMail)
+        .mock.calls.map((call) => call[0].to);
+      expect(JSON.stringify(recipients)).toContain(moderator.email);
+    });
+
+    it('should not resubmit a rejected organization', async () => {
+      const organization = await organizationWithoutNotice('REJECTED');
+      const accessToken = await organizationAdmin(organization.id);
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({ content: completePrivacyNoticeContent() })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const updated = await prisma.organization.findUnique({
+        where: { id: organization.id },
+      });
+      // Resubmitting after a rejection stays the owner's explicit request.
+      expect(updated?.verificationStatus).toBe('REJECTED');
     });
 
     it('should not change the verification status', async () => {

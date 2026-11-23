@@ -142,6 +142,7 @@ const {
 // Clearing the select removes the filter entirely, matching the other admin
 // tables — so there is no explicit "all" option.
 const statusOptions = computed(() => [
+  { label: t('status.DRAFT'), value: 'DRAFT' },
   { label: t('status.PENDING'), value: 'PENDING' },
   { label: t('status.VERIFIED'), value: 'VERIFIED' },
   { label: t('status.REJECTED'), value: 'REJECTED' },
@@ -180,7 +181,7 @@ const columns = computed<QTableColumn<Organization>[]>(() => [
     field: 'submittedAt',
     align: 'left',
     sortable: true,
-    format: (val: string) => d(new Date(val), 'short'),
+    format: (val: string | null) => (val ? d(new Date(val), 'short') : '—'),
   },
   {
     name: 'action',
@@ -194,6 +195,7 @@ const columns = computed<QTableColumn<Organization>[]>(() => [
 function statusColor(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'positive';
   if (status === 'REJECTED') return 'negative';
+  if (status === 'DRAFT') return 'tertiary';
   return 'warning';
 }
 
@@ -331,6 +333,7 @@ function review(organization: Organization) {
 title: 'Organizations'
 search: 'Search by name'
 status:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting review'
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
@@ -369,6 +372,7 @@ notify:
 title: 'Organisationen'
 search: 'Nach Name suchen'
 status:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Wartet auf Prüfung'
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
@@ -407,6 +411,7 @@ notify:
 title: 'Organisations'
 search: 'Rechercher par nom'
 status:
+  DRAFT: 'Non soumise'
   PENDING: 'En attente de contrôle'
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
@@ -445,6 +450,7 @@ notify:
 title: 'Organizacje'
 search: 'Szukaj po nazwie'
 status:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na sprawdzenie'
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Odrzucona'
@@ -483,6 +489,7 @@ notify:
 title: 'Organizace'
 search: 'Hledat podle názvu'
 status:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na kontrolu'
   VERIFIED: 'Ověřená'
   REJECTED: 'Zamítnutá'

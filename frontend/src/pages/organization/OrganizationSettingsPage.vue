@@ -356,7 +356,8 @@ const locked = computed(() => !canOrg('organization.edit'));
 const reverificationRequired = computed(
   () =>
     organization.value !== undefined &&
-    organization.value.verificationStatus !== 'PENDING' &&
+    (organization.value.verificationStatus === 'VERIFIED' ||
+      organization.value.verificationStatus === 'REJECTED') &&
     requiresReverification(organization.value, payload(form.value)),
 );
 

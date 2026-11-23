@@ -75,13 +75,16 @@ export class OrganizationService extends BaseService {
     });
   }
 
-  /** The creating user becomes its first ADMIN, so an organization is never ownerless. */
+  /**
+   * The creating user becomes its first ADMIN, so an organization is never
+   * ownerless. It starts as a draft: it can't be verified before it publishes a
+   * privacy notice, and that notice can only be written once it exists.
+   */
   async createOrganization(userId: string, data: OrganizationCreateData) {
     return this.prisma.organization.create({
       data: {
         ...data,
-        verificationStatus: 'PENDING',
-        submittedAt: new Date(),
+        verificationStatus: 'DRAFT',
         members: {
           create: { userId, role: 'ADMIN' },
         },
@@ -104,14 +107,15 @@ export class OrganizationService extends BaseService {
     organization: Organization,
     data: OrganizationUpdateData,
   ) {
+    // Neither a draft nor a pending organization has a verdict to revoke.
     const demote =
       requiresReverification(organization, data) &&
-      organization.verificationStatus !== 'PENDING';
+      (organization.verificationStatus === 'VERIFIED' ||
+        organization.verificationStatus === 'REJECTED');
 
     const demoteDate = demote
       ? {
-          verificationStatus: 'PENDING' as const,
-          submittedAt: new Date(),
+          ...(await this.reviewEntry(organization.id)),
           reviewNote: null,
           reviewedAt: null,
           reviewedByUserId: null,
@@ -142,6 +146,14 @@ export class OrganizationService extends BaseService {
 
   /** Puts a previously rejected organization back into the moderation queue. */
   async resubmitForVerification(id: string) {
+    const blocker = await this.privacyNoticeService.verificationBlockReason(id);
+    if (blocker) {
+      throw new ApiError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        `Organization cannot be submitted while ${blocker}.`,
+      );
+    }
+
     return this.prisma.organization.update({
       where: { id },
       data: {
@@ -196,10 +208,36 @@ export class OrganizationService extends BaseService {
     });
   }
 
+  /**
+   * Submits a draft once its privacy notice is published, so no organization
+   * waits in the queue for a review it can't pass. Null when nothing changed.
+   */
+  async submitDraft(id: string): Promise<Organization | null> {
+    const { count } = await this.prisma.organization.updateMany({
+      where: { id, verificationStatus: 'DRAFT' },
+      data: { verificationStatus: 'PENDING', submittedAt: new Date() },
+    });
+
+    return count > 0 ? this.getOrganizationById(id) : null;
+  }
+
+  // Where an organization re-entering review lands: the queue only takes it
+  // with a published notice, otherwise it waits as a draft.
+  private async reviewEntry(id: string) {
+    const blocker = await this.privacyNoticeService.verificationBlockReason(id);
+
+    return blocker
+      ? { verificationStatus: 'DRAFT' as const, submittedAt: null }
+      : { verificationStatus: 'PENDING' as const, submittedAt: new Date() };
+  }
+
   async getOverviewCounts() {
-    const [total, pending, verified, rejected] = await this.prisma.$transaction(
-      [
+    const [total, draft, pending, verified, rejected] =
+      await this.prisma.$transaction([
         this.prisma.organization.count(),
+        this.prisma.organization.count({
+          where: { verificationStatus: 'DRAFT' },
+        }),
         this.prisma.organization.count({
           where: { verificationStatus: 'PENDING' },
         }),
@@ -209,9 +247,8 @@ export class OrganizationService extends BaseService {
         this.prisma.organization.count({
           where: { verificationStatus: 'REJECTED' },
         }),
-      ],
-    );
+      ]);
 
-    return { total, pending, verified, rejected };
+    return { total, draft, pending, verified, rejected };
   }
 }
