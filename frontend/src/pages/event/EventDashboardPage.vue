@@ -77,9 +77,9 @@
             v-for="card in column.cards"
             :key="card.key"
           >
-            <setup-checklist-card
-              v-if="card.key === 'setup' && event"
-              :event
+            <onboarding-checklist-card
+              v-if="card.key === 'onboarding' && event"
+              :phase
               :style="card.style"
             />
             <attention-card
@@ -147,7 +147,7 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import EventSummaryHeader from '@/components/event/dashboard/EventSummaryHeader.vue';
 import AttentionCard from '@/components/event/dashboard/AttentionCard.vue';
 import TasksCard from '@/components/event/dashboard/TasksCard.vue';
-import SetupChecklistCard from '@/components/event/dashboard/SetupChecklistCard.vue';
+import OnboardingChecklistCard from '@/components/event/dashboard/OnboardingChecklistCard.vue';
 import TodayProgramCard from '@/components/event/dashboard/TodayProgramCard.vue';
 import TodayDutiesCard from '@/components/event/dashboard/TodayDutiesCard.vue';
 import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
@@ -173,7 +173,7 @@ import { useNavigationSettings } from '@/composables/eventNavigationSettings';
 import { type EventPhase, useEventPhase } from '@/composables/eventPhase';
 import type { HideableNavigationItem } from '@camp-registration/common/settings';
 type CardKey =
-  | 'setup'
+  | 'onboarding'
   | 'attention'
   | 'tasks'
   | 'program'
@@ -190,18 +190,20 @@ type Column = 'main' | 'side';
 const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
   setup: [
     ['attention', 'side'],
-    ['setup', 'main'],
+    ['onboarding', 'main'],
     ['tasks', 'side'],
     ['registrations', 'main'],
   ],
   registration: [
     ['attention', 'side'],
+    ['onboarding', 'main'],
     ['tasks', 'side'],
     ['registrations', 'main'],
     ['demographics', 'main'],
   ],
   preparation: [
     ['attention', 'side'],
+    ['onboarding', 'main'],
     ['tasks', 'side'],
     ['registrations', 'main'],
     ['readiness', 'side'],
@@ -348,6 +350,9 @@ function isAvailable(key: CardKey): boolean {
     case 'registrations':
     case 'demographics':
       return registrations;
+    case 'onboarding':
+      // Set up by those who may change the event.
+      return can('event.edit');
     case 'tasks':
       return features.value.tasks;
     case 'program':
