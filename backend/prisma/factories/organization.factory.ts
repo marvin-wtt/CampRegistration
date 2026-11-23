@@ -32,6 +32,8 @@ export const OrganizationFactory = {
       addressZipCode: faker.location.zipCode(),
       addressCity: faker.location.city(),
       registrationNumber: faker.string.alphanumeric(10).toUpperCase(),
+      // Every status but a draft has been submitted.
+      submittedAt: data.verificationStatus === 'DRAFT' ? null : new Date(),
       ...data,
     };
   },

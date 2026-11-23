@@ -2,6 +2,10 @@ import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { PrivacyNoticeService } from './privacy-notice.service.js';
+import { OrganizationService } from '#app/organization/organization.service';
+import { OrganizationReviewPendingMessage } from '#app/organization/organization.messages';
+import { UserService } from '#app/user/user.service';
+import type { Organization } from '#generated/prisma/client.js';
 import {
   EventPrivacyNoticeResource,
   OrganizationPrivacyNoticeResource,
@@ -14,6 +18,9 @@ export class PrivacyNoticeController extends BaseController {
   constructor(
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(OrganizationService)
+    private readonly organizationService: OrganizationService,
+    @inject(UserService) private readonly userService: UserService,
   ) {
     super();
   }
@@ -38,6 +45,14 @@ export class PrivacyNoticeController extends BaseController {
       organization.id,
       content,
     );
+
+    // The notice was the one thing a draft lacked to be reviewed.
+    const submitted = await this.organizationService.submitDraft(
+      organization.id,
+    );
+    if (submitted) {
+      await this.notifyReviewPending(submitted);
+    }
 
     res.resource(new OrganizationPrivacyNoticeResource(notice));
   }
@@ -78,5 +93,14 @@ export class PrivacyNoticeController extends BaseController {
     );
 
     res.resource(new PublishedPrivacyNoticeResource(notice));
+  }
+
+  // Tells system administrators an organization is waiting on them.
+  private async notifyReviewPending(organization: Organization) {
+    const administrators = await this.userService.getAdministrators();
+
+    await OrganizationReviewPendingMessage.enqueueBulk(
+      administrators.map((recipient) => ({ organization, recipient })),
+    );
   }
 }

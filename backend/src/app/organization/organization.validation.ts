@@ -12,7 +12,7 @@ const index = z.object({
     .object({
       view: z.enum(['all', 'assigned']),
       name: z.string(),
-      status: z.enum(['PENDING', 'VERIFIED', 'REJECTED']),
+      status: z.enum(['DRAFT', 'PENDING', 'VERIFIED', 'REJECTED']),
       cursor: z.ulid(),
       limit: z.coerce.number().int().positive().max(100),
       sortBy: z.enum([

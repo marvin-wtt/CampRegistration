@@ -160,6 +160,7 @@ const showUnverifiedWarning = computed(() => {
 function statusColor(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'positive';
   if (status === 'REJECTED') return 'negative';
+  if (status === 'DRAFT') return 'secondary';
   return 'warning';
 }
 
@@ -234,6 +235,7 @@ title: 'Move to another organization'
 field:
   organization: 'Target organization'
 status:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting review'
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
@@ -250,6 +252,7 @@ title: 'In andere Organisation verschieben'
 field:
   organization: 'Zielorganisation'
 status:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Wartet auf Prüfung'
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
@@ -266,6 +269,7 @@ title: 'Déplacer vers une autre organisation'
 field:
   organization: 'Organisation cible'
 status:
+  DRAFT: 'Non soumise'
   PENDING: 'En attente de contrôle'
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
@@ -282,6 +286,7 @@ title: 'Przenieś do innej organizacji'
 field:
   organization: 'Organizacja docelowa'
 status:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na sprawdzenie'
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Odrzucona'
@@ -298,6 +303,7 @@ title: 'Přesunout do jiné organizace'
 field:
   organization: 'Cílová organizace'
 status:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na kontrolu'
   VERIFIED: 'Ověřená'
   REJECTED: 'Zamítnutá'

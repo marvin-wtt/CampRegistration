@@ -1,7 +1,8 @@
 import type { Identifiable } from './Identifiable.js';
 
+// DRAFT: not submitted yet — submission waits for a published privacy notice.
 export type OrganizationVerificationStatus =
-  'PENDING' | 'VERIFIED' | 'REJECTED';
+  'DRAFT' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 export interface Organization extends Identifiable {
   name: string;
@@ -20,7 +21,8 @@ export interface Organization extends Identifiable {
   verificationNote: string | null;
   reviewNote: string | null;
   reviewedAt: string | null;
-  submittedAt: string;
+  // Null while it is a draft.
+  submittedAt: string | null;
   createdAt: string;
   updatedAt: string | null;
 }

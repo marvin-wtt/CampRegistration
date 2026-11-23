@@ -77,9 +77,9 @@ export class PrivacyNoticeService extends BaseService {
   }
 
   /**
-   * The only write. Publishing deliberately leaves `verificationStatus` alone:
-   * demoting the organization would pull its live events into a pending state
-   * and teach everyone not to touch the notice again.
+   * The only write. Publishing never demotes the organization: that would pull
+   * its live events into a pending state and teach everyone not to touch the
+   * notice again. A draft's first notice submits it — see the controller.
    */
   async publishOrganizationNotice(
     organizationId: string,

@@ -139,7 +139,9 @@
             t(
               event.organizationVerificationStatus === 'REJECTED'
                 ? 'status.organizationRejectedHint'
-                : 'status.pendingVerificationHint',
+                : event.organizationVerificationStatus === 'DRAFT'
+                  ? 'status.organizationDraftHint'
+                  : 'status.pendingVerificationHint',
               { organization: event.organizationName },
             )
           }}
@@ -340,6 +342,14 @@ const status = computed<Status>(() => {
   // Takes precedence over the registration window: while the organization is
   // unverified the event is unlisted and refuses registrations, so showing
   // "registration open" here would be a plain untruth.
+  if (event.organizationVerificationStatus === 'DRAFT') {
+    return {
+      kind: 'blocked',
+      icon: 'edit_note',
+      label: t('status.organizationDraft'),
+    };
+  }
+
   if (event.organizationVerificationStatus === 'PENDING') {
     return {
       kind: 'blocked',
@@ -824,6 +834,8 @@ status:
   opens: 'Opens {date}'
   unscheduled: 'Registration not scheduled'
   closed: 'Registration closed'
+  organizationDraft: 'Organization setup not finished'
+  organizationDraftHint: "{organization} hasn't been submitted for verification yet, so this event is hidden from the public listing and refuses registrations."
   pendingVerification: 'Pending verification'
   organizationRejected: 'Organization rejected'
   pendingVerificationHint: '{organization} is still awaiting verification, so this event is hidden from the public listing and refuses registrations — whatever its registration window says.'
@@ -861,6 +873,8 @@ status:
   opens: 'Öffnet {date}'
   unscheduled: 'Anmeldung nicht geplant'
   closed: 'Anmeldung geschlossen'
+  organizationDraft: 'Einrichtung der Organisation nicht abgeschlossen'
+  organizationDraftHint: '{organization} wurde noch nicht zur Verifizierung eingereicht, daher ist diese Veranstaltung nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
   pendingVerification: 'Verifizierung ausstehend'
   organizationRejected: 'Organisation abgelehnt'
   pendingVerificationHint: '{organization} wartet noch auf die Verifizierung. Diese Veranstaltung ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab — unabhängig vom Anmeldezeitraum.'
@@ -898,6 +912,8 @@ status:
   opens: 'Ouvre le {date}'
   unscheduled: 'Inscription non planifiée'
   closed: 'Inscription fermée'
+  organizationDraft: "Configuration de l'organisation inachevée"
+  organizationDraftHint: "{organization} n'a pas encore été soumise à la vérification : cet événement est masqué de la liste publique et refuse les inscriptions."
   pendingVerification: 'Vérification en attente'
   organizationRejected: 'Organisation refusée'
   pendingVerificationHint: "{organization} attend encore sa vérification : cet événement est masqué de la liste publique et refuse les inscriptions, quelle que soit sa période d'inscription."
@@ -937,6 +953,8 @@ status:
   opens: 'Otwiera się {date}'
   unscheduled: 'Rejestracja nie zaplanowana'
   closed: 'Rejestracja zamknięta'
+  organizationDraft: 'Konfiguracja organizacji niezakończona'
+  organizationDraftHint: '{organization} nie została jeszcze zgłoszona do weryfikacji, więc to wydarzenie jest ukryte na liście publicznej i odrzuca zapisy.'
   pendingVerification: 'Oczekuje na weryfikację'
   organizationRejected: 'Organizacja odrzucona'
   pendingVerificationHint: '{organization} wciąż oczekuje na weryfikację, więc to wydarzenie jest ukryte na liście publicznej i odrzuca zapisy — niezależnie od okresu rejestracji.'
@@ -974,6 +992,8 @@ status:
   opens: 'Otevírá se {date}'
   unscheduled: 'Registrace není naplánována'
   closed: 'Registrace uzavřena'
+  organizationDraft: 'Nastavení organizace není dokončené'
+  organizationDraftHint: '{organization} ještě nebyla odeslána k ověření, takže tato akce je skrytá ve veřejném seznamu a odmítá registrace.'
   pendingVerification: 'Čeká na ověření'
   organizationRejected: 'Organizace zamítnuta'
   pendingVerificationHint: '{organization} stále čeká na ověření, takže tato akce je skrytá ve veřejném seznamu a odmítá registrace — bez ohledu na registrační období.'

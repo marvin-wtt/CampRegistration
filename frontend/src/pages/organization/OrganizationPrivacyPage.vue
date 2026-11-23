@@ -1186,6 +1186,17 @@ async function publish() {
     content.value = { ...emptyPrivacyNoticeContent(), ...notice.content };
     publishedSnapshot.value = JSON.stringify(content.value);
 
+    // A draft's first notice submits it for review on the server.
+    if (organization.value?.verificationStatus === 'DRAFT') {
+      void organizationStore.reload();
+      quasar.notify({
+        type: 'positive',
+        message: t('notify.submitted'),
+        timeout: 8000,
+        multiLine: true,
+      });
+    }
+
     // Publishing lifts the blocker that refuses verification, but nothing puts
     // a rejected organization back into the queue on its own.
     if (organization.value?.verificationStatus === 'REJECTED') {
@@ -1365,6 +1376,7 @@ action:
   addPurpose: 'Add another purpose'
   remove: 'Remove'
 notify:
+  submitted: 'Published. The organization has been submitted for verification.'
   rejected: 'Published. This organization is still rejected — publishing alone does not request a new review.'
   rejectedAction: 'Overview'
   publishFailed: 'Publishing failed'
@@ -1460,6 +1472,7 @@ action:
   addPurpose: 'Weiteren Zweck hinzufügen'
   remove: 'Entfernen'
 notify:
+  submitted: 'Veröffentlicht. Die Organisation wurde zur Verifizierung eingereicht.'
   rejected: 'Veröffentlicht. Diese Organisation ist weiterhin abgelehnt – das Veröffentlichen allein fordert keine neue Prüfung an.'
   rejectedAction: 'Übersicht'
   publishFailed: 'Veröffentlichen fehlgeschlagen'
@@ -1555,6 +1568,7 @@ action:
   addPurpose: 'Ajouter une finalité'
   remove: 'Supprimer'
 notify:
+  submitted: "Publiée. L'organisation a été soumise à la vérification."
   rejected: 'Publié. Cette organisation reste refusée : la publication seule ne demande pas de nouvelle vérification.'
   rejectedAction: 'Aperçu'
   publishFailed: 'Échec de la publication'
@@ -1650,6 +1664,7 @@ action:
   addPurpose: 'Přidat další účel'
   remove: 'Odebrat'
 notify:
+  submitted: 'Zveřejněno. Organizace byla odeslána k ověření.'
   rejected: 'Zveřejněno. Tato organizace je stále zamítnutá — samotné zveřejnění o nové ověření nežádá.'
   rejectedAction: 'Přehled'
   publishFailed: 'Publikování se nezdařilo'
@@ -1745,6 +1760,7 @@ action:
   addPurpose: 'Dodaj kolejny cel'
   remove: 'Usuń'
 notify:
+  submitted: 'Opublikowano. Organizacja została zgłoszona do weryfikacji.'
   rejected: 'Opublikowano. Ta organizacja nadal jest odrzucona — sama publikacja nie zgłasza prośby o ponowną weryfikację.'
   rejectedAction: 'Przegląd'
   publishFailed: 'Publikacja nie powiodła się'

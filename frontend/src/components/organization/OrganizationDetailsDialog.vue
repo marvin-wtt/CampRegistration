@@ -8,7 +8,10 @@
         <div class="row items-start no-wrap">
           <div class="col">
             <div class="text-h6">{{ organization.name }}</div>
-            <div class="text-caption text-on-surface-variant">
+            <div
+              v-if="organization.submittedAt"
+              class="text-caption text-on-surface-variant"
+            >
               {{
                 t('submitted', {
                   date: d(new Date(organization.submittedAt), 'short'),
@@ -90,6 +93,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 <i18n lang="yaml" locale="en">
 submitted: 'Submitted {date}'
 status:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting review'
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
@@ -100,6 +104,7 @@ action:
 <i18n lang="yaml" locale="de">
 submitted: 'Eingereicht am {date}'
 status:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Wartet auf Prüfung'
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
@@ -110,6 +115,7 @@ action:
 <i18n lang="yaml" locale="fr">
 submitted: 'Soumise le {date}'
 status:
+  DRAFT: 'Non soumise'
   PENDING: 'En attente de contrôle'
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
@@ -120,6 +126,7 @@ action:
 <i18n lang="yaml" locale="pl">
 submitted: 'Zgłoszono {date}'
 status:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na sprawdzenie'
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Odrzucona'
@@ -130,6 +137,7 @@ action:
 <i18n lang="yaml" locale="cs">
 submitted: 'Odesláno {date}'
 status:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na kontrolu'
   VERIFIED: 'Ověřená'
   REJECTED: 'Zamítnutá'

@@ -531,6 +531,7 @@ all_newsletters: 'All newsletters'
 all_organizations: 'All organizations'
 listed_events: 'Event overview'
 verification:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting review'
   REJECTED: 'Rejected'
 </i18n>
@@ -553,6 +554,7 @@ all_newsletters: 'Alle Newsletter'
 all_organizations: 'Alle Organisationen'
 listed_events: 'Veranstaltungsübersicht'
 verification:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Wird geprüft'
   REJECTED: 'Abgelehnt'
 </i18n>
@@ -575,6 +577,7 @@ all_newsletters: 'Toutes les newsletters'
 all_organizations: 'Toutes les organisations'
 listed_events: 'Aperçu des événements'
 verification:
+  DRAFT: 'Non soumise'
   PENDING: 'En attente de vérification'
   REJECTED: 'Refusée'
 </i18n>
@@ -597,6 +600,7 @@ all_newsletters: 'Wszystkie newslettery'
 all_organizations: 'Wszystkie organizacje'
 listed_events: 'Przegląd wydarzeń'
 verification:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na weryfikację'
   REJECTED: 'Odrzucona'
 </i18n>
@@ -619,6 +623,7 @@ all_newsletters: 'Všechny newslettery'
 all_organizations: 'Všechny organizace'
 listed_events: 'Přehled akcí'
 verification:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na ověření'
   REJECTED: 'Zamítnuto'
 </i18n>

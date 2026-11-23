@@ -15,7 +15,10 @@
             <div class="text-h6">
               {{ organization.name }}
             </div>
-            <div class="text-caption text-on-surface-variant">
+            <div
+              v-if="organization.submittedAt"
+              class="text-caption text-on-surface-variant"
+            >
               {{
                 t('submitted', {
                   date: d(new Date(organization.submittedAt), 'short'),
@@ -246,6 +249,7 @@ current: 'Current'
 submitted: 'Submitted {date}'
 decision: 'Decision'
 status:
+  DRAFT: 'Not submitted'
   PENDING: 'Awaiting review'
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
@@ -277,6 +281,7 @@ current: 'Aktuell'
 submitted: 'Eingereicht am {date}'
 decision: 'Entscheidung'
 status:
+  DRAFT: 'Nicht eingereicht'
   PENDING: 'Wartet auf Prüfung'
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
@@ -308,6 +313,7 @@ current: 'Actuel'
 submitted: 'Soumise le {date}'
 decision: 'Décision'
 status:
+  DRAFT: 'Non soumise'
   PENDING: 'En attente de contrôle'
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
@@ -341,6 +347,7 @@ current: 'Obecnie'
 submitted: 'Zgłoszono {date}'
 decision: 'Decyzja'
 status:
+  DRAFT: 'Nie zgłoszono'
   PENDING: 'Oczekuje na sprawdzenie'
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Odrzucona'
@@ -372,6 +379,7 @@ current: 'Aktuální'
 submitted: 'Odesláno {date}'
 decision: 'Rozhodnutí'
 status:
+  DRAFT: 'Neodesláno'
   PENDING: 'Čeká na kontrolu'
   VERIFIED: 'Ověřená'
   REJECTED: 'Zamítnutá'

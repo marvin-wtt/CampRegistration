@@ -109,6 +109,8 @@ enum ConfirmationMode {
 }
 
 enum OrganizationVerificationStatus {
+  // Created, not yet submitted: submission waits for a published privacy notice.
+  DRAFT
   PENDING
   VERIFIED
   REJECTED
@@ -117,7 +119,7 @@ enum OrganizationVerificationStatus {
 model Organization {
   id                 String                         @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
   name               String                         @db.VarChar(255)
-  verificationStatus OrganizationVerificationStatus @default(PENDING) @map("verification_status")
+  verificationStatus OrganizationVerificationStatus @default(DRAFT) @map("verification_status")
 
   contactEmail       String  @map("contact_email") @db.VarChar(255)
   phone              String? @db.VarChar(50)
@@ -133,7 +135,7 @@ model Organization {
   reviewNote       String?   @map("review_note") @db.Text
   reviewedAt       DateTime? @map("reviewed_at")
   reviewedByUserId String?   @map("reviewed_by_user_id") @db.Char(26)
-  submittedAt      DateTime  @default(now()) @map("submitted_at")
+  submittedAt      DateTime? @map("submitted_at")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
