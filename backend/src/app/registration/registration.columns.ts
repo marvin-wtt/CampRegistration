@@ -80,7 +80,7 @@ export function computedRegistrationData(
     emails: all(answers, 'email'),
     phoneNumbers: all(answers, 'phone'),
     // An empty answer is no role: the registration is a participant's.
-    role: first(answers, 'role') || null,
+    role: all(answers, 'role')[0] ?? null,
     gender: first(answers, 'gender'),
   };
 }
