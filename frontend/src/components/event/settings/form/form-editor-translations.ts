@@ -1,4 +1,5 @@
 import type {
+  EventDataTag,
   PaymentTotalMode,
   GroupCountryMatch,
 } from '@camp-registration/common/form';
@@ -34,6 +35,7 @@ type LocaleSection = {
     privacyCategory: Record<string, string>;
     privacyConsentPurpose: Record<string, string>;
     privacyConsentFor: Record<string, string>;
+    eventDataType: Record<EventDataTag, string>;
   };
 };
 
@@ -92,6 +94,22 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         privacyCategory: privacyDe.dataCategory,
         privacyConsentPurpose: privacyDe.purpose,
         privacyConsentFor: privacyDe.dataCategory,
+        eventDataType: {
+          first_name: 'Vorname',
+          last_name: 'Nachname',
+          name: 'Name',
+          email: 'E-Mail (Kontakt)',
+          phone: 'Telefonnummer (Kontakt)',
+          address: 'Adresse',
+          street: 'Straße & Hausnummer',
+          zip_code: 'Postleitzahl',
+          city: 'Ort',
+          country: 'Land',
+          date_of_birth: 'Geburtsdatum',
+          gender: 'Geschlecht',
+          role: 'Rolle',
+          payment_amount: 'Beeinflusst den Preis',
+        },
         showPaymentTotal: {
           nonZero: 'Wenn nicht null',
           always: 'Immer',
@@ -156,6 +174,22 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         privacyCategory: privacyEn.dataCategory,
         privacyConsentPurpose: privacyEn.purpose,
         privacyConsentFor: privacyEn.dataCategory,
+        eventDataType: {
+          first_name: 'First name',
+          last_name: 'Last name',
+          name: 'Name',
+          email: 'Email (contact)',
+          phone: 'Phone number (contact)',
+          address: 'Address',
+          street: 'Street & number',
+          zip_code: 'Zip code',
+          city: 'City',
+          country: 'Country',
+          date_of_birth: 'Date of birth',
+          gender: 'Gender',
+          role: 'Role',
+          payment_amount: 'Affects the price',
+        },
         showPaymentTotal: {
           nonZero: 'When not zero',
           always: 'Always',
@@ -219,6 +253,22 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         privacyCategory: privacyFr.dataCategory,
         privacyConsentPurpose: privacyFr.purpose,
         privacyConsentFor: privacyFr.dataCategory,
+        eventDataType: {
+          first_name: 'Prénom',
+          last_name: 'Nom de famille',
+          name: 'Nom',
+          email: 'E-mail (contact)',
+          phone: 'Numéro de téléphone (contact)',
+          address: 'Adresse',
+          street: 'Rue & numéro',
+          zip_code: 'Code postal',
+          city: 'Ville',
+          country: 'Pays',
+          date_of_birth: 'Date de naissance',
+          gender: 'Sexe',
+          role: 'Rôle',
+          payment_amount: 'Modifie le prix',
+        },
         showPaymentTotal: {
           nonZero: 'Si non nul',
           always: 'Toujours',
@@ -283,6 +333,22 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         privacyCategory: privacyPl.dataCategory,
         privacyConsentPurpose: privacyPl.purpose,
         privacyConsentFor: privacyPl.dataCategory,
+        eventDataType: {
+          first_name: 'Imię',
+          last_name: 'Nazwisko',
+          name: 'Imię i nazwisko',
+          email: 'E-mail (kontakt)',
+          phone: 'Numer telefonu (kontakt)',
+          address: 'Adres',
+          street: 'Ulica i numer domu',
+          zip_code: 'Kod pocztowy',
+          city: 'Miejscowość',
+          country: 'Kraj',
+          date_of_birth: 'Data urodzenia',
+          gender: 'Płeć',
+          role: 'Rola',
+          payment_amount: 'Wpływa na cenę',
+        },
         showPaymentTotal: {
           nonZero: 'Gdy niezerowa',
           always: 'Zawsze',
@@ -347,6 +413,22 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         privacyCategory: privacyCs.dataCategory,
         privacyConsentPurpose: privacyCs.purpose,
         privacyConsentFor: privacyCs.dataCategory,
+        eventDataType: {
+          first_name: 'Jméno',
+          last_name: 'Příjmení',
+          name: 'Celé jméno',
+          email: 'E-mail (kontakt)',
+          phone: 'Telefonní číslo (kontakt)',
+          address: 'Adresa',
+          street: 'Ulice a číslo domu',
+          zip_code: 'PSČ',
+          city: 'Obec',
+          country: 'Země',
+          date_of_birth: 'Datum narození',
+          gender: 'Pohlaví',
+          role: 'Role',
+          payment_amount: 'Ovlivňuje cenu',
+        },
         showPaymentTotal: {
           nonZero: 'Když není nulová',
           always: 'Vždy',

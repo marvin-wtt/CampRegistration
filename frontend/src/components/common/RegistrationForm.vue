@@ -22,9 +22,9 @@
           <q-avatar
             size="88px"
             font-size="44px"
-            :color="badgeColor"
-            :text-color="badgeTextColor"
-            :icon="submitState !== 'saving' ? badgeIcon : undefined"
+            :color="`${statusView.color}-container`"
+            :text-color="`on-${statusView.color}-container`"
+            :icon="statusView.icon"
             class="registration-submit-status__badge"
           >
             <q-spinner
@@ -34,9 +34,11 @@
             />
           </q-avatar>
 
-          <div class="text-h5 text-weight-medium">{{ statusTitle }}</div>
+          <div class="text-h5 text-weight-medium">
+            {{ t(`${statusView.key}.title`) }}
+          </div>
           <p class="text-body1 text-on-surface-variant q-mb-none">
-            {{ statusText }}
+            {{ t(`${statusView.key}.text`) }}
           </p>
         </q-card-section>
 
@@ -88,46 +90,16 @@
         </q-card-actions>
 
         <q-card-actions
-          v-else-if="
-            submitState === 'priceChanged' || submitState === 'consentChanged'
-          "
+          v-else-if="statusView.action"
           align="center"
           class="q-pb-md"
         >
           <m-btn
             primary
-            icon="refresh"
-            :label="t('submit.priceChanged.reload')"
-            data-test="registration-price-reload"
-            @click="reloadPage"
-          />
-        </q-card-actions>
-
-        <q-card-actions
-          v-else-if="submitState === 'consentMissing'"
-          align="center"
-          class="q-pb-md"
-        >
-          <m-btn
-            primary
-            icon="edit"
-            :label="t('submit.consentMissing.edit')"
-            data-test="registration-consent-edit"
-            @click="editAnswers"
-          />
-        </q-card-actions>
-
-        <q-card-actions
-          v-else-if="submitState === 'error'"
-          align="center"
-          class="q-pb-md"
-        >
-          <m-btn
-            primary
-            icon="refresh"
-            :label="t('submit.error.retry')"
-            data-test="registration-submit-retry"
-            @click="retrySubmit"
+            :icon="statusView.action.icon"
+            :label="t(statusView.action.label)"
+            :data-test="statusView.action.test"
+            @click="runAction(statusView.action.kind)"
           />
         </q-card-actions>
       </q-card>
@@ -164,12 +136,18 @@ import { CustomError, SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
-import {
-  startAutoDataUpdate,
-  startAutoThemeUpdate,
-} from '@/composables/survey';
+import { startAutoThemeUpdate } from '@/composables/survey';
 import { addMarkdownRenderer } from '@/lib/surveyJs/textProcessing';
-import { readAsDataURL } from '@/utils/readAsDataURL';
+import {
+  attachFileStorage,
+  showStoredFiles,
+  toStoredFiles,
+} from '@/lib/surveyJs/fileStorage';
+import {
+  submitStatusView,
+  type SubmitAction,
+  type SubmitState,
+} from '@/components/common/registrationSubmitStatus';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import {
   addAmountSummary,
@@ -181,15 +159,11 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
+import { registrationRefusal } from '@/services/RegistrationService';
 import {
-  isConsentChangedError,
-  isConsentMissingError,
-  isPriceChangedError,
-} from '@/services/RegistrationService';
-import {
-  addEventFileSlotResolver,
-  unconsentedQuestions,
   consentTexts,
+  prepareEventSurvey,
+  unconsentedQuestions,
 } from '@camp-registration/common/form';
 import { useErrorExtractor } from '@/composables/errorText';
 
@@ -212,16 +186,15 @@ interface Props {
     displayedConsents?: Record<string, string>,
   ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
-  moderation?: boolean;
-  readonly?: boolean;
+  // `moderate`: a manager edits the answers; `view`: they are only shown.
+  mode?: 'register' | 'moderate' | 'view';
   // The categories the notice rests on consent (`consentBasedCategories`);
   // without them every category a consent question covers counts.
   consentCategories?: ReadonlySet<string> | undefined;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  moderation: false,
-  readonly: false,
+  mode: 'register',
 });
 
 const emit = defineEmits<{
@@ -234,15 +207,7 @@ const emit = defineEmits<{
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
-const submitState = ref<
-  | 'saving'
-  | 'success'
-  | 'error'
-  | 'priceChanged'
-  | 'consentChanged'
-  | 'consentMissing'
-  | null
->(null);
+const submitState = ref<SubmitState | null>(null);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
@@ -258,167 +223,76 @@ watch([submitState, submitted], ([state, done]) =>
   emit('activeChange', state === null && !done),
 );
 
-const statusTitle = computed(() => {
-  switch (submitState.value) {
-    case 'saving':
-      return t('submit.saving.title');
-    case 'success':
-      switch (submittedRegistration.value?.status) {
-        case 'PENDING':
-          return t('complete.pending.title');
-        case 'WAITLISTED':
-          return t('complete.waitlisted.title');
-        default:
-          return t('complete.title');
-      }
-    case 'error':
-      return t('submit.error.title');
-    case 'priceChanged':
-      return t('submit.priceChanged.title');
-    case 'consentChanged':
-      return t('submit.consentChanged.title');
-    case 'consentMissing':
-      return t('submit.consentMissing.title');
-    default:
-      return '';
-  }
-});
+// Only read while a state is shown; `saving` stands in otherwise.
+const statusView = computed(() =>
+  submitStatusView(
+    submitState.value ?? 'saving',
+    submittedRegistration.value?.status,
+  ),
+);
 
-const statusText = computed(() => {
-  switch (submitState.value) {
-    case 'saving':
-      return t('submit.saving.text');
-    case 'success':
-      switch (submittedRegistration.value?.status) {
-        case 'PENDING':
-          return t('complete.pending.text');
-        case 'WAITLISTED':
-          return t('complete.waitlisted.text');
-        default:
-          return t('complete.text');
-      }
-    case 'error':
-      return t('submit.error.text');
-    case 'priceChanged':
-      return t('submit.priceChanged.text');
-    case 'consentChanged':
-      return t('submit.consentChanged.text');
-    case 'consentMissing':
-      return t('submit.consentMissing.text');
-    default:
-      return '';
-  }
-});
+const actions: Record<SubmitAction, () => void> = {
+  reload: () => window.location.reload(),
+  edit: editAnswers,
+  retry: retrySubmit,
+};
 
-const badgeColor = computed(() => {
-  switch (submitState.value) {
-    case 'success':
-      switch (submittedRegistration.value?.status) {
-        case 'PENDING':
-          return 'info-container';
-        case 'WAITLISTED':
-          return 'warning-container';
-        default:
-          return 'positive-container';
-      }
-    case 'error':
-      return 'error-container';
-    case 'priceChanged':
-    case 'consentChanged':
-    case 'consentMissing':
-      return 'warning-container';
-    default:
-      return 'primary-container';
-  }
-});
+function runAction(kind: SubmitAction) {
+  actions[kind]();
+}
 
-const badgeTextColor = computed(() => {
-  switch (submitState.value) {
-    case 'success':
-      switch (submittedRegistration.value?.status) {
-        case 'PENDING':
-          return 'on-info-container';
-        case 'WAITLISTED':
-          return 'on-warning-container';
-        default:
-          return 'on-positive-container';
-      }
-    case 'error':
-      return 'on-error-container';
-    case 'priceChanged':
-    case 'consentChanged':
-    case 'consentMissing':
-      return 'on-warning-container';
-    default:
-      return 'on-primary-container';
-  }
-});
-
-const badgeIcon = computed(() => {
-  if (submitState.value === 'priceChanged') {
-    return 'price_change';
-  }
-  if (submitState.value === 'consentChanged') {
-    return 'edit_note';
-  }
-  if (submitState.value !== 'success') {
-    return 'error';
-  }
-
-  switch (submittedRegistration.value?.status) {
-    case 'PENDING':
-      return 'schedule';
-    case 'WAITLISTED':
-      return 'hourglass_top';
-    default:
-      return 'check_circle';
-  }
-});
-
-// A readonly form reuses the moderation layout (TOC, no validation) and shows
-// answers as text (survey-core's view mode) instead of disabled inputs.
-const moderationLayout = props.moderation || props.readonly;
+// A manager's form: a table of contents, no validation, no Complete button,
+// nothing checked or redirected on completion. Viewing shows the answers as
+// text (survey-core's view mode) instead of disabled inputs.
+const forManager = props.mode !== 'register';
 
 const model = createModel(
-  props.eventDetails.id,
-  moderationLayout
+  forManager
     ? createModerationForm(props.eventDetails.form)
     : props.eventDetails.form,
 );
-model.validationEnabled = !moderationLayout;
-model.readOnly = props.readonly;
-if (props.readonly) {
+model.validationEnabled = !forManager;
+if (props.mode === 'view') {
+  model.readOnly = true;
   model.readOnlyMode = 'view';
 }
+// After `validationEnabled`, which the form reads as a variable; before the
+// data and the locks, written in the locale. This also puts the event's logo
+// on the model before the first render, so the header renders once.
+const eventSurvey = prepareEventSurvey(model, props.eventDetails, {
+  group: props.group,
+  locale: locale.value,
+});
 if (props.data) {
   model.data = props.data;
-  mapFileIdToFileContent(model);
+  showStoredFiles(model, (name) => api.getFileUrl(name));
 }
 lockPurgedQuestions(model, props.eventDetails, t('purgedNote'));
 
 // After loading data: assigning `model.data` fires no change event. Managers
 // never see the Complete button, so neither needs the total.
-const amountDue = moderationLayout
-  ? null
-  : trackAmountDue(model, props.eventDetails);
+const amountDue = forManager ? null : trackAmountDue(model, props.eventDetails);
 if (amountDue) {
   addAmountSummary(model, amountDue);
 }
 
 const bgColor = ref<string>();
 
-const eventData = toRef(props.eventDetails);
+const eventData = toRef(props, 'eventDetails');
+
+watch(locale, (value) => {
+  model.locale = value;
+});
+watch(eventData, (event) => {
+  eventSurvey.setEvent(event);
+});
 
 watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
-// Before the first render, not `onMounted`: this is also what puts the event's
-// logo on the model, and applying it afterwards renders the header twice — once
-// without a logo, once with.
+// Before the first render, not `onMounted`, so the theme never flashes.
 onBeforeMount(() => {
-  // Auto variables update on locale change
-  startAutoDataUpdate(model, eventData, props.group);
   startAutoThemeUpdate(model, eventData, bgColor);
 });
 
@@ -430,11 +304,10 @@ function createModerationForm(form: object) {
   };
 }
 
-function createModel(eventId: string, form: object): SurveyModel {
+function createModel(form: object): SurveyModel {
   const survey = new SurveyModel(form);
-  survey.locale = locale.value;
 
-  if (moderationLayout) {
+  if (forManager) {
     const hideComplete = () => {
       survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
     };
@@ -442,42 +315,12 @@ function createModel(eventId: string, form: object): SurveyModel {
     survey.onCurrentPageChanged.add(hideComplete);
   }
 
-  // Handle file uploads
-  survey.onUploadFiles.add(async (_, options) => {
-    const uploadFileFn = props.uploadFileFn;
-    if (!uploadFileFn) {
-      options.callback([], [t('upload.unavailable')]);
-      return;
-    }
-
-    try {
-      // The stored value is the server's file name; the local copy is only
-      // read back so the question can preview it.
-      const files = await Promise.all(
-        options.files.map(async (file) => ({
-          file: {
-            name: await uploadFileFn(file),
-            type: file.type,
-            size: file.size,
-          },
-          content: await readAsDataURL(file),
-        })),
-      );
-
-      options.callback(files);
-    } catch (e: unknown) {
-      options.callback([], [extractErrorText(e)]);
-    }
-  });
-  // Remove file from storage
-  survey.onClearFiles.add((_, options) => {
-    // Files cannot be deleted as the user has no permissions to do so.
-    // Files will be deleted eventually by a cleanup job
-    options.callback('success');
+  attachFileStorage(survey, {
+    upload: props.uploadFileFn,
+    errorText: extractErrorText,
+    unavailableText: t('upload.unavailable'),
   });
   addMarkdownRenderer(survey);
-  // The links the server writes too: consent texts holding one are compared.
-  addEventFileSlotResolver(survey, eventId);
 
   emphasizeForwardNavigation(survey);
 
@@ -486,7 +329,7 @@ function createModel(eventId: string, form: object): SurveyModel {
   // manager editing a registration is never sent away.
   let pendingRedirect: string | undefined;
   survey.onNavigateToUrl.add((_, options) => {
-    pendingRedirect = props.moderation ? undefined : options.url;
+    pendingRedirect = forManager ? undefined : options.url;
     options.allow = false;
   });
 
@@ -498,7 +341,7 @@ function createModel(eventId: string, form: object): SurveyModel {
   // question itself is required; this catches one the form hides. A manager's
   // edit is not checked: the consent behind it is theirs to hold.
   survey.onCompleting.add((sender, options) => {
-    if (props.moderation) {
+    if (forManager) {
       return;
     }
     // Hidden answers are dropped on completion, so they never reach the server.
@@ -525,7 +368,7 @@ function createModel(eventId: string, form: object): SurveyModel {
     submitError.value = undefined;
     submitState.value = 'saving';
 
-    mapFileQuestionValues(sender);
+    toStoredFiles(sender);
 
     // What the form presented, if it presented a price at all. Only for the
     // server to compare: it charges its own amount, whatever this says.
@@ -536,7 +379,7 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     try {
       const registration = await submitFn(
-        eventId,
+        props.eventDetails.id,
         sender.data ?? {},
         sender.locale,
         displayedTotal,
@@ -559,16 +402,9 @@ function createModel(eventId: string, form: object): SurveyModel {
     } catch (e: unknown) {
       // Its cause is unknown (a changed price or form, a passed deadline, an
       // outdated page), so the person starts over on a freshly loaded page.
-      if (isPriceChangedError(e)) {
-        submitState.value = 'priceChanged';
-        return;
-      }
-      if (isConsentChangedError(e)) {
-        submitState.value = 'consentChanged';
-        return;
-      }
-      if (isConsentMissingError(e)) {
-        submitState.value = 'consentMissing';
+      const refusal = registrationRefusal(e);
+      if (refusal) {
+        submitState.value = refusal;
         return;
       }
       submitError.value = extractErrorText(e);
@@ -583,10 +419,6 @@ function createModel(eventId: string, form: object): SurveyModel {
 function editAnswers() {
   model.clear(false, false);
   submitState.value = null;
-}
-
-function reloadPage() {
-  window.location.reload();
 }
 
 function retrySubmit() {
@@ -620,58 +452,6 @@ function hasCustomCompletedHtml(survey: SurveyModel): boolean {
     !survey.locCompletedHtml.isEmpty ||
     survey.renderedCompletedHtml !== survey.completedHtml
   );
-}
-
-function mapFileIdToFileContent(survey: SurveyModel) {
-  const questions = survey.getAllQuestions(false, undefined, true);
-  questions.forEach((question) => {
-    if (question.getType() !== 'file') {
-      return;
-    }
-
-    const mapToContent = (file: unknown) => {
-      if (typeof file !== 'string') {
-        return file;
-      }
-
-      const url = file.match(/^https?:\/\//) ? file : api.getFileUrl(file);
-
-      return {
-        name: file,
-        type: '',
-        content: url,
-      };
-    };
-
-    if (Array.isArray(question.value)) {
-      question.value = question.value.map(mapToContent);
-    } else {
-      question.value = mapToContent(question.value);
-    }
-  });
-}
-
-function mapFileQuestionValues(survey: SurveyModel) {
-  const questions = survey.getAllQuestions(false, undefined, true);
-  questions.forEach((question) => {
-    if (question.getType() !== 'file') {
-      return;
-    }
-
-    if (Array.isArray(question.value)) {
-      question.value = question.value.map((value) => {
-        return isFile(value) ? value.name : value;
-      });
-    } else {
-      question.value = isFile(question.value)
-        ? question.value.name
-        : question.value;
-    }
-  });
-}
-
-function isFile(file: unknown): file is Pick<File, 'name'> {
-  return file != null && typeof file === 'object' && 'name' in file;
 }
 
 defineExpose({

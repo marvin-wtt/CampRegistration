@@ -11,7 +11,7 @@ const allergies = {
   privacyCategory: 'allergies',
 };
 
-const names = (saved: unknown, edited: unknown) =>
+const names = (saved: object, edited: object) =>
   lostSensitiveQuestions(saved, edited).map((question) => question.name);
 
 describe('lostSensitiveQuestions', () => {

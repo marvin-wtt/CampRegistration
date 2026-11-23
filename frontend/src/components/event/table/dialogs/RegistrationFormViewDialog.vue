@@ -37,7 +37,7 @@
           :event-details="event"
           :data="data"
           :group
-          readonly
+          mode="view"
         />
       </q-scroll-area>
     </q-card>

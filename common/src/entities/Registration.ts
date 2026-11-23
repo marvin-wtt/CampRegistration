@@ -27,7 +27,7 @@ export interface Registration extends Identifiable, Timestamps {
   locale: string;
   room?: Translatable | null;
   customFiles?: Record<string, string>;
-  /** The wording of each consent given, as shown, by answer path (`kids[0].consent`). */
+  /** The wording of each consent given, as shown, by answer path (`kids.0.consent`). */
   consentTexts?: Record<string, string> | null;
 }
 

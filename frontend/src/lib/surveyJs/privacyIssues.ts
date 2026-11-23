@@ -3,6 +3,7 @@ import { type Question, QuestionMatrixDropdownModelBase } from 'survey-core';
 import {
   consentBasedCategories,
   formPrivacyIssues,
+  privacyCategoryOf,
   privacyIssueKind,
   type FormPrivacyIssueKind,
   type FormPrivacyIssues,
@@ -17,7 +18,7 @@ import {
  * Why a question keeps the event from taking registrations, or `required`: a
  * consent-based answer is mandatory, so registering depends on consent.
  */
-export type QuestionPrivacyIssueKind = FormPrivacyIssueKind | 'required';
+type QuestionPrivacyIssueKind = FormPrivacyIssueKind | 'required';
 
 export interface QuestionPrivacyIssue {
   kind: QuestionPrivacyIssueKind;
@@ -52,7 +53,7 @@ function issueOf(question: Question): QuestionPrivacyIssue | null {
 }
 
 /** What the form check found, and the categories that rely on consent. */
-export interface FormPrivacyState {
+interface FormPrivacyState {
   issues: FormPrivacyIssues;
   consentBased: ReadonlySet<string>;
   /**
@@ -95,7 +96,7 @@ function questionPrivacyIssue(
 ): QuestionPrivacyIssue | null {
   const own = issueFor(
     {
-      category: question.getPropertyValue('privacyCategory'),
+      category: privacyCategoryOf(question),
       required: question.isRequired || !!question.requiredIf,
     },
     state,

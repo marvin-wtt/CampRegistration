@@ -1,3 +1,4 @@
+import { participantsOnly } from '#app/registration/registration.capacity';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
@@ -175,9 +176,7 @@ export class EventService extends BaseService {
   private eventResourceInclude() {
     return {
       registrations: {
-        where: {
-          OR: [{ role: 'participant' }, { role: null }],
-        },
+        where: participantsOnly,
         select: { group: true },
       },
       organization: {

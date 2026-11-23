@@ -125,7 +125,7 @@ import type { CTableColumnTemplate } from '@/types/CTableTemplate';
 import type { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { objectValueByPath } from '@/utils/objectValueByPath';
+import { valueAtPath } from '@camp-registration/common/form';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
 import RegistrationActionList from '@/components/event/table/RegistrationActionList.vue';
@@ -194,7 +194,7 @@ const fields = computed<Field[]>(() => {
       const value =
         typeof column.field === 'function'
           ? column.field(registration.value!)
-          : objectValueByPath(column.field, registration.value!);
+          : valueAtPath(column.field, registration.value!);
 
       return {
         name: column.name,

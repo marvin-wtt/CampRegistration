@@ -1,13 +1,11 @@
 import {
-  type CalculatedValue,
-  type ChoiceItem,
   type Question,
   QuestionBooleanModel,
   QuestionExpressionModel,
   QuestionSelectBase,
   type SurveyModel,
 } from 'survey-core';
-import { PAYMENT_AMOUNT_TAG } from '../utils/amountDue.js';
+import { isPriced, priceOf } from './properties/accessors.js';
 
 /**
  * What the answers add to the event price, in major units, negative for a
@@ -24,10 +22,10 @@ export function extractPaymentAmounts(survey: SurveyModel): number[] {
   // Nested: the questions of every dynamic panel entry, each its own answer.
   const questions = survey
     .getAllQuestions(false, false, true)
-    .filter(isTagged)
+    .filter(isPriced)
     .filter((question) => question.isVisibleInSurvey);
 
-  const calculated = survey.calculatedValues.filter(isTagged);
+  const calculated = survey.calculatedValues.filter(isPriced);
 
   return [
     ...questions.flatMap(questionAmounts),
@@ -37,27 +35,19 @@ export function extractPaymentAmounts(survey: SurveyModel): number[] {
 
 function questionAmounts(question: Question): unknown[] {
   if (question instanceof QuestionBooleanModel) {
-    return question.booleanValue === true ? [price(question)] : [];
+    return question.booleanValue === true ? [priceOf(question)] : [];
   }
   if (question instanceof QuestionSelectBase) {
     // Visible choices only: one hidden by `choicesVisibleIf` doesn't count.
     return question.visibleChoices
       .filter((choice) => question.isItemSelected(choice))
-      .map(price);
+      .map(priceOf);
   }
   if (question instanceof QuestionExpressionModel) {
     return [question.value];
   }
 
   return [];
-}
-
-function isTagged(item: Question | CalculatedValue): boolean {
-  return item.getPropertyValue('eventDataType') === PAYMENT_AMOUNT_TAG;
-}
-
-function price(item: Question | ChoiceItem): unknown {
-  return item.getPropertyValue('price');
 }
 
 // Expressions may yield numeric strings; anything else adds nothing.

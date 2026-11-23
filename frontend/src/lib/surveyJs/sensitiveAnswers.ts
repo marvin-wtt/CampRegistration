@@ -1,25 +1,39 @@
+import { SurveyModel, type Question } from 'survey-core';
 import {
-  answerPath,
-  extractPrivacyTags,
+  buildFieldIndex,
   isSpecialCategory,
-  specialCategoryAnswerKeys,
-  type PrivacyTaggedQuestion,
+  privacyCategoryOf,
+  specialCategoryFieldTest,
 } from '@camp-registration/common/form';
 
 /**
- * The special-category questions of the saved form whose answers the edited
- * form no longer stores where they are: deleted, untagged, renamed or moved
- * (docs/privacy.md, 5, "Form changes after registrations exist"). Stored
- * answers there would stop counting as sensitive. A type change or another
- * special category keeps the location, so it is no loss.
+ * The special-category questions of the saved form whose stored answers the
+ * edited form would no longer treat as sensitive: deleted, untagged, renamed
+ * or moved (docs/privacy.md, 5, "Form changes after registrations exist").
+ * Every stored path of the saved form is checked against the edited one with
+ * the purge's own test, so a type change or another special category, which
+ * keep the answers sensitive, is no loss.
  */
 export function lostSensitiveQuestions(
-  saved: unknown,
-  edited: unknown,
-): PrivacyTaggedQuestion[] {
-  const kept = specialCategoryAnswerKeys(edited);
-  return extractPrivacyTags(saved).tagged.filter(
-    (question) =>
-      isSpecialCategory(question.category) && !kept.has(answerPath(question)),
-  );
+  saved: object,
+  edited: object,
+  /** The locale their titles are read in. */
+  locale?: string,
+): Question[] {
+  const stillSensitive = specialCategoryFieldTest(edited);
+  const lost = new Map<string, Question>();
+  const model = new SurveyModel(saved);
+  if (locale) {
+    model.locale = locale;
+  }
+
+  for (const [path, question] of buildFieldIndex(model)) {
+    if (
+      isSpecialCategory(privacyCategoryOf(question)) &&
+      !stillSensitive(path)
+    ) {
+      lost.set(question.id, question);
+    }
+  }
+  return [...lost.values()];
 }

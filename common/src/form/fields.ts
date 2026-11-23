@@ -14,6 +14,13 @@ import {
   SurveyModel,
 } from 'survey-core';
 import { isSpecialCategory } from './privacyTags.js';
+import {
+  PATH_SEPARATOR,
+  PATH_WILDCARD,
+  pathPatterns,
+  withoutWildcard,
+} from './answerPaths.js';
+import { eventDataTypeOf, privacyCategoryOf } from './properties/accessors.js';
 
 interface SelectData {
   label: string;
@@ -23,9 +30,6 @@ interface SelectData {
 interface FormField extends SelectData {
   question: Question;
 }
-
-const WILDCARD = '*';
-const SEPARATOR = '.';
 
 function removeMarkdownUrls(input: string): string {
   // Regular expression to match Markdown URLs
@@ -60,13 +64,13 @@ function buildLabelAndValue(
   const nameParts = [parentName, question.getValueName()].filter(Boolean);
 
   if (ARRAY_OUTPUT_TYPES.has(question.getType())) {
-    titleParts.push(WILDCARD);
-    nameParts.push(WILDCARD);
+    titleParts.push(PATH_WILDCARD);
+    nameParts.push(PATH_WILDCARD);
   }
 
   return {
     label: removeMarkdownUrls(titleParts.join(' > ')),
-    value: nameParts.join(SEPARATOR),
+    value: nameParts.join(PATH_SEPARATOR),
   };
 }
 
@@ -82,7 +86,7 @@ function matrixRowFields(
     return (question.rows as ItemValue[]).flatMap((row) =>
       (question.columns as MatrixDropdownColumn[]).map((column) => ({
         label: `${label} > ${row.text} > ${column.title}`,
-        value: [value, String(row.value), column.name].join(SEPARATOR),
+        value: [value, String(row.value), column.name].join(PATH_SEPARATOR),
         question: column.templateQuestion,
       })),
     );
@@ -91,7 +95,7 @@ function matrixRowFields(
   if (question instanceof QuestionMatrixDynamicModel) {
     return (question.columns as MatrixDropdownColumn[]).map((column) => ({
       label: `${label} > ${column.title}`,
-      value: [value, column.name].join(SEPARATOR),
+      value: [value, column.name].join(PATH_SEPARATOR),
       question: column.templateQuestion,
     }));
   }
@@ -99,7 +103,7 @@ function matrixRowFields(
   if (question instanceof QuestionMatrixModel) {
     return (question.rows as ItemValue[]).map((row) => ({
       label: `${label} > ${row.text}`,
-      value: [value, String(row.value)].join(SEPARATOR),
+      value: [value, String(row.value)].join(PATH_SEPARATOR),
       question,
     }));
   }
@@ -158,7 +162,7 @@ export function extractFormFields(
     .filter(
       ({ question }) =>
         !options.withoutSpecialCategories ||
-        !isSpecialCategory(question.getPropertyValue('privacyCategory')),
+        !isSpecialCategory(privacyCategoryOf(question)),
     )
     .map(({ label, value }) => ({ label, value }));
 }
@@ -189,8 +193,17 @@ export function buildFieldIndex(model: SurveyModel): Map<string, Question> {
   return index;
 }
 
-export function withoutWildcard(path: string): string {
-  return path.endsWith(`${SEPARATOR}${WILDCARD}`) ? path.slice(0, -2) : path;
+/**
+ * The question behind a stored field path, a concrete one (`kids.0.meds`)
+ * included, read off `buildFieldIndex`.
+ */
+export function questionAtPath(
+  index: ReadonlyMap<string, Question>,
+  path: string,
+): Question | undefined {
+  return pathPatterns(path)
+    .map((pattern) => index.get(pattern))
+    .find((question) => question !== undefined);
 }
 
 export function extractEventDataTypes(form: object): string[] {
@@ -198,8 +211,8 @@ export function extractEventDataTypes(form: object): string[] {
   const tags = new Set<string>();
 
   for (const question of survey.getAllQuestions(false, undefined, true)) {
-    const tag: unknown = question.getPropertyValue('eventDataType');
-    if (typeof tag === 'string') {
+    const tag = eventDataTypeOf(question);
+    if (tag) {
       tags.add(tag);
     }
   }
@@ -216,7 +229,7 @@ function getNestedQuestion(
       return undefined;
     }
 
-    if (key === WILDCARD) {
+    if (key === PATH_WILDCARD) {
       continue;
     }
 
@@ -337,7 +350,7 @@ function findFormQuestion(
   model: SurveyModel,
   field: string,
 ): Question | undefined {
-  const [firstField, ...parts] = field.split(SEPARATOR) as [
+  const [firstField, ...parts] = field.split(PATH_SEPARATOR) as [
     string,
     ...string[],
   ];

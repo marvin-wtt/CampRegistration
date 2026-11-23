@@ -8,7 +8,7 @@ import type {
   QuestionSelectBase,
   QuestionTextModel,
 } from 'survey-core';
-import { setVariables } from '@camp-registration/common/form';
+import { prepareEventSurvey } from '@camp-registration/common/form';
 import type { Event } from '#generated/prisma/client.js';
 
 /** A registrant as the seeder invents them, before any form is involved. */
@@ -114,14 +114,13 @@ export function buildRegistrationData(
   options: { waitingList?: boolean } = {},
 ): { data: Record<string, unknown>; fileFields: FileField[] } {
   const survey = new SurveyModel(event.form);
-  survey.locale = 'en-US';
-  setVariables(
+  prepareEventSurvey(
     survey,
     {
       ...event,
       freePlaces: freePlacesFor(event, options.waitingList ?? false),
-    } as Parameters<typeof setVariables>[1],
-    { group: registrant.group },
+    } as Parameters<typeof prepareEventSurvey>[1],
+    { group: registrant.group, locale: 'en-US' },
   );
 
   const book = answerBook(registrant);

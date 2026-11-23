@@ -1,4 +1,5 @@
 import { type Base, Serializer } from 'survey-core';
+import { EVENT_DATA_TYPE_PROPERTY } from '@camp-registration/common/form';
 
 function hideProperty(className: string, propertyName: string) {
   const property = Serializer.getProperty(className, propertyName);
@@ -31,7 +32,10 @@ export function hideIrrelevantProperties(): void {
   hideProperty('question', 'correctAnswer');
 
   // Content-only elements collect no answer that could be mapped.
-  const eventDataType = Serializer.getProperty('question', 'eventDataType');
+  const eventDataType = Serializer.getProperty(
+    'question',
+    EVENT_DATA_TYPE_PROPERTY,
+  );
   if (eventDataType) {
     eventDataType.visibleIf = (obj: Base) =>
       !['html', 'image'].includes(obj.getType());

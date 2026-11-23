@@ -695,7 +695,6 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
   noticeFramework,
   presetLegalBasis,
-  EVENT_DATA_TYPE_DATA_CATEGORIES,
   DEFAULT_SPECIAL_CATEGORY_BASIS,
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_PURPOSE_KEYS,
@@ -751,6 +750,7 @@ import { useNotifier } from '@/composables/notifier';
 import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
 import { localeText, useLocaleTextModel } from '@/composables/localeText';
 import {
+  eventDataTagPrivacyCategory,
   extractEventDataTypes,
   extractPrivacyTags,
 } from '@camp-registration/common/form';
@@ -1004,7 +1004,7 @@ const formCategories = computed<PrivacyDataCategoryKey[]>(() => {
     }
   }
   for (const tag of extractEventDataTypes(form)) {
-    const category = EVENT_DATA_TYPE_DATA_CATEGORIES[tag];
+    const category = eventDataTagPrivacyCategory(tag);
     if (category) {
       found.add(category);
     }

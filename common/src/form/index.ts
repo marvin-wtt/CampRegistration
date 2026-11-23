@@ -1,40 +1,28 @@
-import questions from './questions/index.js';
-import functions from './functions/index.js';
-import properties from './properties/index.js';
+import { registerFormExtensions } from './register.js';
 import { setVariables, VARIABLE_NAMES } from './variables/index.js';
-import { Serializer, ComponentCollection, FunctionFactory } from 'survey-core';
 
-for (const component of questions) {
-  ComponentCollection.Instance.remove(component.name);
-  ComponentCollection.Instance.add(component);
-}
+// On import, so nothing that reads a form can run without them.
+registerFormExtensions();
 
-for (const fn of functions) {
-  FunctionFactory.Instance.unregister(fn.name);
-  FunctionFactory.Instance.register(fn.name, fn.func, fn.isAsync);
-}
-
-for (const property of properties) {
-  Serializer.removeProperty(property.className, property.propertyInfo.name);
-  Serializer.addProperty(property.className, property.propertyInfo);
-}
-
-Serializer.getProperty('file', 'storeDataAsText').visible = false;
-Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
-
+export { registerFormExtensions };
 export { setVariables, VARIABLE_NAMES };
 export { formLintOptions } from './lint.js';
 export { extractEventData } from './eventData.js';
+export {
+  EVENT_DATA_TYPES,
+  eventDataTagsFor,
+  eventDataTagPrivacyCategory,
+  isEventDataTag,
+  type EventDataTag,
+} from './eventDataTypes.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
   answeredSpecialCategoryQuestions,
-  answerPath,
   clearSpecialCategoryAnswers,
   consentAnswers,
   consentTexts,
   isSpecialCategory,
   extractPrivacyTags,
-  specialCategoryAnswerKeys,
   taggedSpecialCategories,
   uncoveredConsentCategories,
   unconsentedQuestions,
@@ -51,7 +39,23 @@ export {
   type FormPrivacyIssueKind,
   type FormPrivacyIssues,
 } from './privacyCompliance.js';
+export { specialCategoryFieldTest } from './purgedFields.js';
 export {
+  reservedNameIssue,
+  reservedNameUses,
+  type ReservedNameIssue,
+  type ReservedNameUse,
+} from './reservedNames.js';
+export {
+  PATH_SEPARATOR,
+  PATH_WILDCARD,
+  answerPathOf,
+  joinPath,
+  valueAtPath,
+  valuesAtPath,
+} from './answerPaths.js';
+export {
+  buildFieldIndex,
   extractFormFields,
   extractEventDataTypes,
   getSelectOptions,
@@ -66,17 +70,35 @@ export {
   EVENT_BANNER_SLOT,
   FILE_VARIABLE,
 } from './files.js';
+export { fileSlotPath, type FileSlotOptions } from './fileSlots.js';
 export {
-  addEventFileSlotResolver,
-  addFileSlotResolver,
-  fileSlotPath,
-  type FileSlotOptions,
-} from './fileSlots.js';
+  prepareEventSurvey,
+  type EventSurvey,
+  type EventSurveyData,
+  type EventSurveyOptions,
+} from './eventSurvey.js';
 export type { GroupCountryMatch } from './questions/groupCountryMatch.js';
+export { PARTICIPANT_ROLE, isParticipant } from './questions/role.question.js';
 export {
   PAYMENT_TOTAL_MODES,
   type PaymentTotalMode,
 } from './properties/showPaymentTotal.js';
+export {
+  EVENT_DATA_TYPE_PROPERTY,
+  PRICE_PROPERTY,
+  PRIVACY_CATEGORY_PROPERTY,
+  PRIVACY_CONSENT_PROPERTY,
+  PRIVACY_CONSENT_PURPOSE_PROPERTY,
+  PRIVACY_CONSENT_FOR_PROPERTY,
+  eventDataTypeOf,
+  isPriced,
+  priceOf,
+  privacyCategoryOf,
+  isConsent,
+  consentCategoriesOf,
+  consentPurposesOf,
+} from './properties/accessors.js';
+export { EVENT_DATA_TYPE_EDITOR } from './properties/eventDataType.js';
 export {
   REGISTRATION_PROPERTY_CATEGORY,
   REGISTRATION_PROPERTY_CATEGORY_INDEX,

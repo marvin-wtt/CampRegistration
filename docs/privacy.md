@@ -257,8 +257,8 @@ clone rules in `PrivacyNoticeService`.
 - **[implemented]** Event addendum editor (`EventPrivacyPage.vue`) shows the
   organization baseline, marks each entry's origin (`OriginChip.vue`), can hide
   inherited entries, and suggests categories from the form's `eventDataType` tags
-  (`EVENT_DATA_TYPE_DATA_CATEGORIES`) — identity, contact, address, date of birth,
-  gender only. "Hide inherited" is a view filter; inherited entries are locked and
+  (`eventDataTagPrivacyCategory`, from the tag registry in `eventDataTypes.ts`) —
+  identity, contact, address, date of birth, gender only. "Hide inherited" is a view filter; inherited entries are locked and
   cannot be removed.
 - **[implemented]** Each inherited entry gets keep / change / exclude in the event
   editor (`InheritedEntryToggle.vue`), with exclusion unavailable for mandatory
@@ -790,7 +790,7 @@ registrations over a configuration mistake.
 
 - **[implemented]** One nullable JSON column, `Registration.consentTexts`, keyed by
   where the answer lives: `{ "consent_privacy": "I agree that photographs of …" }`,
-  `kids[0].consent_health` inside a dynamic panel
+  `kids.0.consent_health` inside a dynamic panel
   (migration `20261118120000_add_registration_consent_texts`). Existing
   registrations stay `null`, like the notice stamp. Managers see it in the
   registration resource.
@@ -833,7 +833,7 @@ then record wording the registrant never saw.
   UTC, so no runtime zone moves them, and every formatted value has one kind of
   space only (`uniformSpaces`) — engines' locale data differ mostly in that.
 - A link inside a consent text (`{_file.rules}`) is written by one resolver on both
-  sides (`addEventFileSlotResolver`): the root-relative route of the slot
+  sides (`prepareEventSurvey`): the root-relative route of the slot
   (`fileSlotPath`), nothing fetched. It is compared, and stored, as that link.
 - **[review]** The link names the slot, not the document behind it. Replacing the
   linked file is not detected.

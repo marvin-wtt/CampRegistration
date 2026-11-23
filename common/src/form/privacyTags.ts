@@ -4,6 +4,13 @@ import {
   type SurveyModel,
 } from 'survey-core';
 import { SPECIAL_CATEGORY_DATA_KEYS } from '../privacy/catalogue.js';
+import {
+  consentCategoriesOf,
+  consentPurposesOf,
+  isConsent,
+  privacyCategoryOf,
+} from './properties/accessors.js';
+import { answerPathOf } from './answerPaths.js';
 
 /**
  * Reads the privacy tags of a form (docs/privacy.md, section 5): which
@@ -30,19 +37,9 @@ export interface PrivacyTaggedQuestion {
   name: string;
   /** The key its answer is stored under, when it differs from `name`. */
   valueName?: string;
-  /**
-   * The value path of the dynamic panel or matrix holding it (`kids`; `kids.*`
-   * in a dropdown matrix, whose rows are stored by name), whose entries each
-   * hold a copy; absent at the top level.
-   */
-  within?: string;
+  /** In a dynamic panel or matrix, whose entries each hold a copy. */
+  nested?: true;
   category: string;
-}
-
-/** A tagged question's answer key, prefixed by where it lives: `kids.meds`. */
-export function answerPath(question: PrivacyTaggedQuestion): string {
-  const key = question.valueName ?? question.name;
-  return question.within ? `${question.within}.${key}` : key;
 }
 
 export interface ConsentQuestion {
@@ -88,7 +85,7 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
       ? element.valueName
       : undefined;
 
-  const tag = (element: ElementJson, name: string, within?: string) => {
+  const tag = (element: ElementJson, name: string, nested: boolean) => {
     if (
       typeof element.privacyCategory === 'string' &&
       element.privacyCategory
@@ -97,40 +94,33 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
       tags.tagged.push({
         name,
         ...(valueName ? { valueName } : {}),
-        ...(within ? { within } : {}),
+        ...(nested ? { nested: true as const } : {}),
         category: element.privacyCategory,
       });
     }
   };
 
-  // `within`: the value path entries of a dynamic panel or matrix live under.
-  // A plain panel stores nothing of its own, so it adds no step.
-  const walk = (elements: ElementJson[], within?: string) => {
+  // A plain panel stores nothing of its own; a dynamic panel or matrix keeps
+  // a copy of its questions per entry.
+  const walk = (elements: ElementJson[], nested: boolean) => {
     for (const element of elements) {
       const type = element.type;
       const name = nameOf(element);
-      const path = (key: string) => (within ? `${within}.${key}` : key);
 
       if (type === 'panel') {
-        walk(asElements(element.elements), within);
+        walk(asElements(element.elements), nested);
         continue;
       }
       if (type === 'paneldynamic' && name) {
-        walk(
-          asElements(element.templateElements),
-          path(valueNameOf(element) ?? name),
-        );
+        walk(asElements(element.templateElements), true);
       }
       // A column takes the question properties, the tag among them: SurveyJS
       // gives it to every cell, so the purge clears the cells too.
       if ((type === 'matrixdynamic' || type === 'matrixdropdown') && name) {
-        const matrix = path(valueNameOf(element) ?? name);
-        // A dropdown matrix stores its rows by name: `kids.anna.meds`.
-        const rows = type === 'matrixdropdown' ? `${matrix}.*` : matrix;
         for (const column of asElements(element.columns)) {
           const columnName = nameOf(column);
           if (columnName) {
-            tag(column, columnName, rows);
+            tag(column, columnName, true);
           }
         }
       }
@@ -138,7 +128,7 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
         continue;
       }
 
-      tag(element, name, within);
+      tag(element, name, nested);
       if (type === 'boolean' && element.privacyConsent === true) {
         tags.consents.push({
           name,
@@ -151,24 +141,11 @@ export function extractPrivacyTags(form: unknown): FormPrivacyTags {
 
   const json = form as { pages?: unknown; elements?: unknown };
   for (const page of asElements(json.pages)) {
-    walk(asElements(page.elements));
+    walk(asElements(page.elements), false);
   }
-  walk(asElements(json.elements));
+  walk(asElements(json.elements), false);
 
   return tags;
-}
-
-/**
- * Where the answers of special-category questions are stored, as paths without
- * entry indices (`allergies`, `kids.meds`; `kids.*.meds` for a dropdown
- * matrix's rows) — those "Delete sensitive data" clears (docs/privacy.md, 8).
- */
-export function specialCategoryAnswerKeys(form: unknown): Set<string> {
-  return new Set(
-    extractPrivacyTags(form)
-      .tagged.filter((question) => isSpecialCategory(question.category))
-      .map(answerPath),
-  );
 }
 
 /** The special categories the form's questions are tagged with. */
@@ -204,17 +181,6 @@ export function uncoveredConsentCategories(
   ];
 }
 
-function categoriesOf(question: Question): string[] {
-  return strings(question.getPropertyValue('privacyConsentFor'));
-}
-
-function isConsentQuestion(question: Question): boolean {
-  return (
-    question.getType() === 'boolean' &&
-    question.getPropertyValue('privacyConsent') === true
-  );
-}
-
 /**
  * The answers of every consent asked for `purpose`, one per copy of the
  * question — a dynamic panel holds one per entry. Empty when the form never
@@ -228,10 +194,7 @@ export function consentAnswers(
     .getAllQuestions(false, false, true)
     .filter(
       (question) =>
-        isConsentQuestion(question) &&
-        strings(question.getPropertyValue('privacyConsentPurpose')).includes(
-          purpose,
-        ),
+        isConsent(question) && consentPurposesOf(question).includes(purpose),
     )
     .map((question) => question.value as unknown);
 }
@@ -266,7 +229,7 @@ function consentGiven(
 ): boolean {
   const scope = new Set(entriesOf(question));
   const covering = consents.filter((consent) =>
-    categoriesOf(consent).includes(category),
+    consentCategoriesOf(consent).includes(category),
   );
 
   const inScope = (consent: Question) => {
@@ -312,14 +275,15 @@ export function unconsentedQuestions(
   options: UnconsentedOptions = {},
 ): Question[] {
   const questions = survey.getAllQuestions(false, false, true);
-  const consents = questions.filter(isConsentQuestion);
-  const relying = consentCategories ?? new Set(consents.flatMap(categoriesOf));
+  const consents = questions.filter(isConsent);
+  const relying =
+    consentCategories ?? new Set(consents.flatMap(consentCategoriesOf));
 
   return questions.filter((question) => {
-    const category: unknown = question.getPropertyValue('privacyCategory');
+    const category = privacyCategoryOf(question);
 
     return (
-      typeof category === 'string' &&
+      category !== undefined &&
       relying.has(category) &&
       !question.isEmpty() &&
       (!options.visibleOnly || isShown(question)) &&
@@ -348,13 +312,13 @@ export function consentTexts(
   // its wording is proof like any other.
   for (const question of survey.getAllQuestions(false, false, true)) {
     if (
-      !isConsentQuestion(question) ||
+      !isConsent(question) ||
       (options.givenOnly && question.value !== true)
     ) {
       continue;
     }
 
-    texts[consentKey(question)] = [question.title, question.description]
+    texts[answerPathOf(question)] = [question.title, question.description]
       .filter((part): part is string => !!part)
       // The question's own processor: inside a dynamic panel it fills
       // `{panel.*}` from its entry too.
@@ -363,23 +327,6 @@ export function consentTexts(
   }
 
   return texts;
-}
-
-/**
- * Where a consent's answer lives: its value name, or `kids[1].consent` inside
- * a dynamic panel, where every entry has its own copy of the question; nested
- * panels prefix their own path.
- */
-function consentKey(question: Question): string {
-  const owner = question.parentQuestion;
-  if (owner instanceof QuestionPanelDynamicModel) {
-    const index = owner.panels.findIndex((panel) =>
-      panel.questions.includes(question),
-    );
-    return `${consentKey(owner)}[${index.toString()}].${question.getValueName()}`;
-  }
-
-  return question.getValueName();
 }
 
 const SPECIAL_CATEGORIES = new Set<unknown>(SPECIAL_CATEGORY_DATA_KEYS);
@@ -397,8 +344,7 @@ export function answeredSpecialCategoryQuestions(
     .getAllQuestions(false, false, true)
     .filter(
       (question) =>
-        isSpecialCategory(question.getPropertyValue('privacyCategory')) &&
-        !question.isEmpty(),
+        isSpecialCategory(privacyCategoryOf(question)) && !question.isEmpty(),
     );
 }
 
@@ -409,7 +355,7 @@ export function answeredSpecialCategoryQuestions(
  */
 export function clearSpecialCategoryAnswers(survey: SurveyModel): void {
   for (const question of survey.getAllQuestions(false, false, true)) {
-    if (isSpecialCategory(question.getPropertyValue('privacyCategory'))) {
+    if (isSpecialCategory(privacyCategoryOf(question))) {
       question.clearValue();
     }
   }

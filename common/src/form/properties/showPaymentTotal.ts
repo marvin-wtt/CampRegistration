@@ -1,4 +1,4 @@
-import type { PropertyDefinition } from './ProptertyDefinition.js';
+import type { PropertyDefinition } from './PropertyDefinition.js';
 
 export const PAYMENT_TOTAL_MODES = ['nonZero', 'always', 'never'] as const;
 export type PaymentTotalMode = (typeof PAYMENT_TOTAL_MODES)[number];
