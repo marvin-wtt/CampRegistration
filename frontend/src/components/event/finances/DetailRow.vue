@@ -16,10 +16,7 @@
       >
         {{ label }}
       </q-item-label>
-      <q-item-label
-        class="ellipsis"
-        :class="valueClass"
-      >
+      <q-item-label :class="[valueClass, { ellipsis: !wrap }]">
         <slot>{{ value }}</slot>
       </q-item-label>
     </q-item-section>
@@ -41,6 +38,7 @@ const {
   value = undefined,
   tone = undefined,
   warn = false,
+  wrap = false,
 } = defineProps<{
   icon: string;
   label?: string | undefined;
@@ -49,6 +47,8 @@ const {
   tone?: string | undefined;
   /** Something is missing: icon and value in warning. */
   warn?: boolean;
+  /** Values that must be read in full, such as an IBAN. */
+  wrap?: boolean;
 }>();
 
 const valueClass = computed(() => (warn ? 'text-warning' : ''));

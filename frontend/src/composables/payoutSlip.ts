@@ -1,6 +1,7 @@
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import type { Payout } from '@camp-registration/common/entities';
+import { formatIban } from '@camp-registration/common/utils';
 import { parseLocalDate } from '@/utils/date';
 import { printPayoutSlip } from '@/components/event/finances/printPayoutSlip';
 
@@ -26,6 +27,10 @@ export function usePayoutSlip() {
         createdByName: payout.createdByName,
         recipientName: payout.recipientName,
         note: payout.note,
+        bankAccount: payout.bankAccount && {
+          ...payout.bankAccount,
+          iban: formatIban(payout.bankAccount.iban),
+        },
         signature: payout.signature,
         signedAt: payout.signedAt
           ? d(new Date(payout.signedAt), 'dateTime', locale)

@@ -28,8 +28,22 @@
           {{ t('finance.statement.outdatedNoSign') }}
         </q-banner>
 
+        <!-- Their own account, confirmed with the signature; optional.
+             Once paid, the money went where it went: shown, not changed. -->
+        <payout-bank-account-fields
+          v-if="
+            !payout.outdated &&
+            payout.direction === 'OUT' &&
+            !(locked && bankAccount === null)
+          "
+          v-model="bankAccount"
+          :default-holder="payout.recipientName"
+          :suggestion="lastBankAccount"
+          :readonly="locked"
+        />
+
         <signature-pad
-          v-else
+          v-if="!payout.outdated"
           v-model="signature"
           :label="
             t('finance.statement.signHere', { name: payout.recipientName })
@@ -66,7 +80,7 @@
           :label="t('finance.statement.sign')"
           icon="draw"
           color="primary"
-          :disable="!signature || payout.outdated"
+          :disable="!signature || payout.outdated || !bankAccountValid"
           :loading="saving"
           data-test="payout-sign"
           @click="sign"
@@ -81,12 +95,21 @@ import { computed, ref } from 'vue';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { Payout } from '@camp-registration/common/entities';
+import type {
+  Payout,
+  PayoutBankAccount,
+} from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import SignaturePad from '@/components/common/inputs/SignaturePad.vue';
 import SignatureFullscreenDialog from '@/components/common/inputs/SignatureFullscreenDialog.vue';
 import PayoutStatementView from '@/components/event/finances/PayoutStatementView.vue';
+import PayoutBankAccountFields from '@/components/event/finances/PayoutBankAccountFields.vue';
+import {
+  isBankAccountValid,
+  sameBankAccount,
+  useLastBankAccount,
+} from '@/composables/payoutBankAccount';
 import { useFinanceStore } from '@/stores/finance-store';
 
 const { payout: opened } = defineProps<{
@@ -108,6 +131,19 @@ const payout = computed(
 );
 
 const signature = ref<string | null>(null);
+// As recorded when opened: a change is judged against what the fields
+// started from, so a correction made meanwhile isn't written back over.
+const initialBankAccount = opened.bankAccount;
+const bankAccount = ref<PayoutBankAccount | null>(initialBankAccount);
+// Offered behind "Add", never filled in unasked: none may mean cash.
+const lastBankAccount = useLastBankAccount()({
+  userId: opened.recipientUserId,
+  name: opened.recipientName,
+});
+const locked = computed(() => payout.value.bankAccountLocked);
+const bankAccountValid = computed(
+  () => locked.value || isBankAccountValid(bankAccount.value),
+);
 const quasar = useQuasar();
 
 function signLarge() {
@@ -135,7 +171,14 @@ async function sign() {
   }
   saving.value = true;
   try {
-    onDialogOK(await financeStore.signPayout(payout.value.id, signature.value));
+    const changed =
+      !locked.value && !sameBankAccount(initialBankAccount, bankAccount.value);
+    onDialogOK(
+      await financeStore.signPayout(payout.value.id, {
+        signature: signature.value,
+        ...(changed ? { bankAccount: bankAccount.value } : {}),
+      }),
+    );
   } catch {
     // Reported by the store.
   } finally {

@@ -1146,6 +1146,178 @@ describe('finances', () => {
       });
     });
 
+    describe('bank details', () => {
+      const SIGNATURE = 'M10 20 L30 40 Q50 60 70 40';
+      const BANK = {
+        holder: 'Erika Musterfrau',
+        iban: 'de89 3704 0044 0532 0130 00',
+        bic: 'cobadeff',
+      };
+
+      const createPayout = async (
+        event: Event,
+        token: string,
+        data: Record<string, unknown>,
+      ) => {
+        const { body } = await request()
+          .post(`/api/v1/events/${event.id}/payouts`)
+          .send({ direction: 'OUT', amount: 8865, ...data })
+          .auth(token, { type: 'bearer' })
+          .expect(201);
+        return body.data as {
+          id: string;
+          bankAccount: unknown;
+          bankAccountLocked: boolean;
+        };
+      };
+
+      it('are optional, normalized and cleared with null', async () => {
+        const { event, user, token } = await setup('TREASURER');
+        const cash = await createPayout(event, token, {
+          recipientUserId: user.id,
+        });
+        expect(cash.bankAccount).toBeNull();
+
+        const payout = await createPayout(event, token, {
+          recipientUserId: user.id,
+          bankAccount: BANK,
+        });
+        expect(payout.bankAccount).toEqual({
+          holder: 'Erika Musterfrau',
+          iban: 'DE89370400440532013000',
+          bic: 'COBADEFF',
+        });
+        expect(payout.bankAccountLocked).toBe(false);
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}/payouts/${payout.id}`)
+          .send({ bankAccount: null })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect(body.data.bankAccount).toBeNull();
+        expect(body.data.outdated).toBe(false);
+
+        const entries = await prisma.auditLog.findMany({
+          where: { entityId: payout.id, action: 'updated' },
+        });
+        expect(JSON.stringify(entries)).not.toContain('DE89');
+        expect(entries[0]?.details).toMatchObject({
+          changedFields: ['bankAccount'],
+        });
+      });
+
+      it('refuses an invalid IBAN and money handed back', async () => {
+        const { event, user, token } = await setup('TREASURER');
+
+        await request()
+          .post(`/api/v1/events/${event.id}/payouts`)
+          .send({
+            recipientUserId: user.id,
+            direction: 'OUT',
+            amount: 100,
+            bankAccount: { ...BANK, iban: 'DE88370400440532013000' },
+          })
+          .auth(token, { type: 'bearer' })
+          .expect(400);
+
+        const { body } = await request()
+          .post(`/api/v1/events/${event.id}/payouts`)
+          .send({
+            recipientUserId: user.id,
+            direction: 'IN',
+            amount: 100,
+            bankAccount: BANK,
+          })
+          .auth(token, { type: 'bearer' })
+          .expect(400);
+        expect(body.errorCode).toBe('PAYOUT_BANK_DETAILS_DIRECTION');
+      });
+
+      it('are added by the recipient when signing, and locked with it', async () => {
+        const { event, token } = await setup('TREASURER');
+        const counselor = await addManager(event, 'COUNSELOR');
+        const payout = await createPayout(event, token, {
+          recipientUserId: counselor.user.id,
+        });
+        const payoutUrl = `/api/v1/events/${event.id}/payouts/${payout.id}`;
+
+        // Signing is the only way the recipient writes them.
+        await request()
+          .patch(payoutUrl)
+          .send({ bankAccount: BANK })
+          .auth(counselor.token, { type: 'bearer' })
+          .expect(403);
+
+        const { body } = await request()
+          .put(`${payoutUrl}/signature`)
+          .send({ signature: SIGNATURE, bankAccount: BANK })
+          .auth(counselor.token, { type: 'bearer' })
+          .expect(200);
+        expect(body.data.bankAccount.iban).toBe('DE89370400440532013000');
+        expect(body.data.bankAccountLocked).toBe(true);
+
+        const signed = await prisma.auditLog.findFirstOrThrow({
+          where: { entityId: payout.id, action: 'signed' },
+        });
+        expect(signed.details).toMatchObject({
+          changedFields: ['bankAccount'],
+        });
+
+        const { body: locked } = await request()
+          .patch(payoutUrl)
+          .send({ bankAccount: { ...BANK, holder: 'Someone else' } })
+          .auth(token, { type: 'bearer' })
+          .expect(409);
+        expect(locked.errorCode).toBe('PAYOUT_BANK_DETAILS_LOCKED');
+
+        // The same details again are no change.
+        await request()
+          .patch(payoutUrl)
+          .send({ bankAccount: BANK, note: 'Transfer' })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+
+        await request()
+          .delete(`${payoutUrl}/signature`)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        await request()
+          .patch(payoutUrl)
+          .send({ bankAccount: null })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+      });
+
+      it('stay editable with a scan until paid', async () => {
+        const { event, user, token } = await setup('TREASURER');
+        const payout = await createPayout(event, token, {
+          recipientUserId: user.id,
+        });
+        const payoutUrl = `/api/v1/events/${event.id}/payouts/${payout.id}`;
+        await attachFile({ payoutId: payout.id });
+
+        await request()
+          .patch(payoutUrl)
+          .send({ bankAccount: BANK, paidOn: '2026-07-28' })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+
+        const { body } = await request()
+          .patch(payoutUrl)
+          .send({ bankAccount: null })
+          .auth(token, { type: 'bearer' })
+          .expect(409);
+        expect(body.errorCode).toBe('PAYOUT_BANK_DETAILS_LOCKED');
+        // Paid by mistake: unmarking it frees them in the same save.
+        const { body: unmarked } = await request()
+          .patch(payoutUrl)
+          .send({ paidOn: null, bankAccount: null })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        expect(unmarked.data.bankAccount).toBeNull();
+      });
+    });
+
     it('refuses a payout without a recipient', async () => {
       const { event, token } = await setup();
 

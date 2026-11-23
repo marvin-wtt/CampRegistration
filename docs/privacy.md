@@ -1074,6 +1074,13 @@ verification:
 
 - **[implemented]** `TREASURER` holds no registration permission. Nothing in
   finances, expenses or payouts reads registration data.
+- **[implemented]** A payout may carry the recipient's bank details (holder,
+  IBAN, BIC), always optional (`docs/finances.md`). Only who sees the payout sees
+  them — director and treasurer all, a recipient their own. They enter them, or
+  the recipient does when signing; no profile keeps them across events. The audit log records
+  that they changed, never their values. They live and go with the finance
+  records: the export includes them, and deleting the payout or the event
+  deletes them.
 - **[planned, with `feat/payments`]** To match payments to registrations, the
   treasurer gets a fixed, read-only projection of each registration — never
   `data`, never files:

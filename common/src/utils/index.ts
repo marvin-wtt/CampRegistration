@@ -6,3 +6,4 @@ export * from './money.js';
 export * from './uniformSpaces.js';
 export * from './amountDue.js';
 export * from './party.js';
+export * from './iban.js';

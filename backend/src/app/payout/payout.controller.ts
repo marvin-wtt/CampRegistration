@@ -69,7 +69,11 @@ export class PayoutController extends BaseController {
     const { body } = await req.validate(validator.sign);
     const payout = req.modelOrFail('payout');
 
-    const signed = await this.payoutService.signPayout(payout, body.signature);
+    const signed = await this.payoutService.signPayout(
+      payout,
+      body.signature,
+      body.bankAccount,
+    );
 
     void this.realtimeService.emit(
       signed.eventId,

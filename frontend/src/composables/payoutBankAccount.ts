@@ -3,7 +3,7 @@ import type {
   PayoutBankAccount,
 } from '@camp-registration/common/entities';
 import {
-  BIC_PATTERN,
+  isValidBic,
   isValidIban,
   partyKey,
   recipientKey,
@@ -16,7 +16,7 @@ export function isBankAccountValid(bankAccount: PayoutBankAccount | null) {
     bankAccount === null ||
     (bankAccount.holder.length > 0 &&
       isValidIban(bankAccount.iban) &&
-      (bankAccount.bic === null || BIC_PATTERN.test(bankAccount.bic)))
+      (bankAccount.bic === null || isValidBic(bankAccount.bic)))
   );
 }
 

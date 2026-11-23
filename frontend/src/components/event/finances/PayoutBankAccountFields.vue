@@ -10,7 +10,7 @@
       color="primary"
       class="self-start"
       data-test="payout-bank-add"
-      @click="open = true"
+      @click="add"
     />
 
     <div
@@ -66,7 +66,9 @@
         spellcheck="false"
         outlined
         rounded
-        :rules="[(v: string) => !v || BIC_PATTERN.test(v) || t('bicInvalid')]"
+        :rules="[
+          (v: string) => !v || isValidBic(normalizeBic(v)) || t('bicInvalid'),
+        ]"
         lazy-rules
         data-test="payout-bank-bic"
         @update:model-value="(v) => (bic = normalizeBic(String(v ?? '')))"
@@ -81,16 +83,22 @@ import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { PayoutBankAccount } from '@camp-registration/common/entities';
 import {
-  BIC_PATTERN,
   formatIban,
+  isValidBic,
   isValidIban,
   normalizeBic,
   normalizeIban,
 } from '@camp-registration/common/utils';
 
-const { defaultHolder, readonly = false } = defineProps<{
+const {
+  defaultHolder,
+  suggestion = null,
+  readonly = false,
+} = defineProps<{
   /** Prefilled as the holder when the fields are opened empty. */
   defaultHolder: string;
+  /** Filled in once "Add" is chosen, e.g. the person's last account. */
+  suggestion?: PayoutBankAccount | null;
   readonly?: boolean;
 }>();
 
@@ -114,6 +122,15 @@ watch([open, holder, iban, bic], () => {
       }
     : null;
 });
+
+function add() {
+  if (suggestion) {
+    holder.value = suggestion.holder;
+    iban.value = formatIban(suggestion.iban);
+    bic.value = suggestion.bic ?? '';
+  }
+  open.value = true;
+}
 
 function remove() {
   open.value = false;

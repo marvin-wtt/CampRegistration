@@ -15,7 +15,10 @@ import {
   type StatementExpense,
   type StatementPayout,
 } from '#app/payout/payout.statement';
-import type { PayoutDirection } from '@camp-registration/common/entities';
+import type {
+  PayoutBankAccount,
+  PayoutDirection,
+} from '@camp-registration/common/entities';
 import type { PrismaTransaction } from '#core/database/transaction';
 
 export type PayoutWithPrefix = Payout & {
@@ -62,12 +65,14 @@ export interface PayoutCreateInput {
   amount: number;
   paidOn?: string | null | undefined;
   note?: string | null | undefined;
+  bankAccount?: PayoutBankAccount | null | undefined;
 }
 
 /** Amount, direction and recipient are frozen in the statement. */
 export interface PayoutUpdateInput {
   paidOn?: string | null | undefined;
   note?: string | null | undefined;
+  bankAccount?: PayoutBankAccount | null | undefined;
   fileIds?: string[] | undefined;
 }
 
@@ -124,6 +129,8 @@ export class PayoutService extends BaseService {
     createdByUserId: string,
     locale: string,
   ) {
+    assertBankAccountAllowed(data.direction, data.bankAccount);
+
     return this.transaction(async (tx) => {
       // The counter's row lock comes first: every read after it sees the
       // receipts up to `lastReceiptNumber`, none committed in between.
@@ -182,6 +189,7 @@ export class PayoutService extends BaseService {
           amount: data.amount,
           paidOn: data.paidOn ?? null,
           note: data.note ?? null,
+          ...bankAccountColumns(data.bankAccount ?? null),
           statement: statement as unknown as Prisma.InputJsonValue,
           createdByUserId,
           createdAt,
@@ -203,6 +211,16 @@ export class PayoutService extends BaseService {
   ): Promise<PayoutView> {
     return this.transaction(async (tx) => {
       const before = await this.lock(tx, payout);
+      const bankAccount = changedBankAccount(before, data.bankAccount);
+      if (bankAccount !== undefined) {
+        assertBankAccountAllowed(before.direction, bankAccount);
+        // Locked only if paid before and after: marking it paid with them
+        // and unmarking a mistake both work in one save.
+        assertBankAccountEditable({
+          signature: before.signature,
+          paidOn: data.paidOn === null ? null : before.paidOn,
+        });
+      }
       // A scan may have further pages; a drawn signature is replaced only by
       // removing it first.
       const added = (data.fileIds ?? []).filter(
@@ -224,7 +242,12 @@ export class PayoutService extends BaseService {
 
       const after = await tx.payout.update({
         where: { id: payout.id },
-        data: { paidOn: data.paidOn, note: data.note, files },
+        data: {
+          paidOn: data.paidOn,
+          note: data.note,
+          ...(bankAccount !== undefined ? bankAccountColumns(bankAccount) : {}),
+          files,
+        },
         include,
       });
 
@@ -253,18 +276,31 @@ export class PayoutService extends BaseService {
   async signPayout(
     payout: PayoutWithPrefix,
     signature: string,
+    bankAccountInput?: PayoutBankAccount | null,
   ): Promise<PayoutView> {
     return this.transaction(async (tx) => {
       const before = await this.lock(tx, payout);
       this.assertSignable(before);
+      const bankAccount = changedBankAccount(before, bankAccountInput);
+      if (bankAccount !== undefined) {
+        assertBankAccountAllowed(before.direction, bankAccount);
+        assertBankAccountEditable(before);
+      }
 
       const signed = await tx.payout.update({
         where: { id: payout.id },
-        data: { signature, signedAt: new Date() },
+        data: {
+          signature,
+          signedAt: new Date(),
+          ...(bankAccount !== undefined ? bankAccountColumns(bankAccount) : {}),
+        },
         include,
       });
 
-      await this.audit.recordFor(payoutAuditPolicy, 'signed', signed);
+      await this.audit.recordFor(payoutAuditPolicy, 'signed', signed, {
+        details:
+          bankAccount !== undefined ? { changedFields: ['bankAccount'] } : {},
+      });
 
       return { ...signed, outdated: before.outdated };
     });
@@ -387,5 +423,78 @@ export class PayoutService extends BaseService {
     }
 
     return { userId: party.userId, name: party.name };
+  }
+}
+
+/** The columns as one value; `null` unless all required ones are set. */
+export function readBankAccount(
+  payout: Pick<Payout, 'bankAccountHolder' | 'bankIban' | 'bankBic'>,
+): PayoutBankAccount | null {
+  if (!payout.bankAccountHolder || !payout.bankIban) {
+    return null;
+  }
+
+  return {
+    holder: payout.bankAccountHolder,
+    iban: payout.bankIban,
+    bic: payout.bankBic,
+  };
+}
+
+/** Signed on screen, they were confirmed with it; paid, the money went there. */
+export function isBankAccountLocked(
+  payout: Pick<Payout, 'signature' | 'paidOn'>,
+): boolean {
+  return payout.signature !== null || payout.paidOn !== null;
+}
+
+function bankAccountColumns(bankAccount: PayoutBankAccount | null) {
+  return {
+    bankAccountHolder: bankAccount?.holder ?? null,
+    bankIban: bankAccount?.iban ?? null,
+    bankBic: bankAccount?.bic ?? null,
+  };
+}
+
+/** `undefined` when nothing changes: resending the same details is no edit. */
+function changedBankAccount(
+  payout: Payout,
+  input: PayoutBankAccount | null | undefined,
+): PayoutBankAccount | null | undefined {
+  if (input === undefined) {
+    return undefined;
+  }
+  const current = readBankAccount(payout);
+  const same =
+    current?.holder === input?.holder &&
+    current?.iban === input?.iban &&
+    current?.bic === input?.bic;
+
+  return same ? undefined : input;
+}
+
+/** Money handed back goes to the event's account, never the person's. */
+function assertBankAccountAllowed(
+  direction: PayoutDirection,
+  bankAccount: PayoutBankAccount | null | undefined,
+) {
+  if (direction === 'IN' && bankAccount) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Only payouts to a person take bank details.',
+      { code: 'PAYOUT_BANK_DETAILS_DIRECTION' },
+    );
+  }
+}
+
+function assertBankAccountEditable(
+  payout: Pick<Payout, 'signature' | 'paidOn'>,
+) {
+  if (isBankAccountLocked(payout)) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'The bank details are locked by the signature or the payment.',
+      { code: 'PAYOUT_BANK_DETAILS_LOCKED' },
+    );
   }
 }

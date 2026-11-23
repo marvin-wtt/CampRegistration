@@ -1,4 +1,5 @@
 import type {
+  PayoutBankAccount,
   PayoutDirection,
   PayoutStatementContent,
 } from '@camp-registration/common/entities';
@@ -17,6 +18,8 @@ export interface PrintPayoutSlipPayload extends PayoutStatementContent {
   createdByName: string | null;
   recipientName: string;
   note: string | null;
+  /** IBAN grouped for print; empty lines to fill in on an `OUT` slip without. */
+  bankAccount: PayoutBankAccount | null;
   /** SVG path data, drawn in `SIGNATURE_VIEWBOX`. */
   signature: string | null;
   signedAt: string | null;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BIC_PATTERN,
   formatIban,
+  isValidBic,
   isValidIban,
   normalizeBic,
   normalizeIban,
@@ -14,6 +14,9 @@ describe('isValidIban', () => {
     'PL61109010140000071219812874',
     'CZ6508000000192000145399',
     'GB82WEST12345698765432',
+    // Missing from the hand-written table this replaced.
+    'LY83002048000020100120361',
+    'OM810180000001299123456',
   ])('accepts %s', (iban) => {
     expect(isValidIban(iban)).toBe(true);
   });
@@ -53,12 +56,16 @@ describe('normalizeIban / formatIban', () => {
 
 describe('BIC', () => {
   it('accepts 8 and 11 characters once normalized', () => {
-    expect(BIC_PATTERN.test(normalizeBic('cobade ff'))).toBe(true);
-    expect(BIC_PATTERN.test('COBADEFFXXX')).toBe(true);
+    expect(isValidBic(normalizeBic('cobade ff'))).toBe(true);
+    expect(isValidBic('COBADEFFXXX')).toBe(true);
+  });
+
+  it('rejects an unknown country', () => {
+    expect(isValidBic('COBAZZFF')).toBe(false);
   });
 
   it('rejects other lengths', () => {
-    expect(BIC_PATTERN.test('COBADEF')).toBe(false);
-    expect(BIC_PATTERN.test('COBADEFFXX')).toBe(false);
+    expect(isValidBic('COBADEF')).toBe(false);
+    expect(isValidBic('COBADEFFXX')).toBe(false);
   });
 });

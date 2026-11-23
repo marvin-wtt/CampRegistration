@@ -69,6 +69,14 @@
           hide-bottom-space
           data-test="payout-note"
         />
+        <!-- Money handed back goes to the event's account, not theirs. -->
+        <payout-bank-account-fields
+          v-if="direction === 'OUT' && !(locked && bankAccount === null)"
+          v-model="bankAccount"
+          :default-holder="recipient.name ?? ''"
+          :suggestion="lastBankAccount"
+          :readonly="locked"
+        />
         <!-- Money has moved or it hasn't: never a date ahead. -->
         <event-date-input
           v-model="paidOn"
@@ -121,12 +129,19 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
   FinanceBalance,
   Payout,
+  PayoutBankAccount,
   PayoutDirection,
 } from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
 import EventDateInput from '@/components/event/EventDateInput.vue';
+import PayoutBankAccountFields from '@/components/event/finances/PayoutBankAccountFields.vue';
+import {
+  isBankAccountValid,
+  sameBankAccount,
+  useLastBankAccount,
+} from '@/composables/payoutBankAccount';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate } from '@/utils/date';
@@ -181,6 +196,18 @@ const paidOn = ref<string | null>(
       : null,
 );
 const note = ref<string>(props.payout?.note ?? '');
+const bankAccount = ref<PayoutBankAccount | null>(
+  props.payout?.bankAccount ?? null,
+);
+// Offered behind "Add", never filled in unasked: none may mean cash.
+const lastBankAccount = useLastBankAccount()(recipient.value);
+// Signed on screen they stay; paid they stay unless unmarked in this save.
+const locked = computed(
+  () =>
+    !!props.payout &&
+    (props.payout.signature !== null ||
+      (props.payout.paidOn !== null && paidOn.value !== null)),
+);
 const today = formatLocalDate(new Date());
 const saving = ref(false);
 
@@ -212,12 +239,17 @@ const after = computed<number | null>(() => {
 });
 
 async function submit() {
+  if (!isBankAccountValid(bankAccount.value)) {
+    return;
+  }
   const existing = props.payout;
   if (existing) {
+    const changed = !sameBankAccount(existing.bankAccount, bankAccount.value);
     await save(() =>
       financeStore.updatePayout(existing.id, {
         paidOn: paidOn.value,
         note: note.value.trim() || null,
+        ...(changed ? { bankAccount: bankAccount.value } : {}),
       }),
     );
     return;
@@ -233,6 +265,7 @@ async function submit() {
     amount: amount.value,
     paidOn: paidOn.value,
     note: note.value.trim() || null,
+    bankAccount: direction.value === 'OUT' ? bankAccount.value : null,
   };
 
   await save(() => financeStore.createPayout(data));
