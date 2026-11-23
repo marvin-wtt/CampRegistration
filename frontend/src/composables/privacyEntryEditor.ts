@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import {
   DEFAULT_SPECIAL_CATEGORY_BASIS,
+  needsLegalReference,
   isSpecialCategory,
   type PrivacyDataCategoryEntry,
   type PrivacyDataCategoryRef,
@@ -60,6 +61,10 @@ export function usePrivacyEntryEditor(content: Ref<EditableEntries>) {
     const entry = dataCategory(key);
     if (entry) {
       entry.specialCategoryBasis = value ?? null;
+      // The server keeps it only with a basis that names a law.
+      if (!needsLegalReference(entry.specialCategoryBasis)) {
+        entry.legalReference = null;
+      }
     }
   }
 

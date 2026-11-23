@@ -56,7 +56,12 @@
               —
               {{ specialBasisLabel(category.specialCategoryBasis) }}
               <!-- Art. 9(2)(g): the law it rests on, as the organizer names it. -->
-              <template v-if="category.legalReference">
+              <template
+                v-if="
+                  category.legalReference &&
+                  needsLegalReference(category.specialCategoryBasis)
+                "
+              >
                 ({{ to(category.legalReference) }})
               </template>
             </span>
@@ -217,8 +222,10 @@
       />
     </section>
 
-    <!-- The platform's own legal text, GDPR only: under another law the
-         organization's free text is the whole notice (docs/privacy.md, 4). -->
+    <!-- The platform's own legal text, cited from the law's record: for a
+         guided notice, and for a free-text one only when published before the
+         framework setting existed. Otherwise the organization's free text is
+         the whole notice (docs/privacy.md, 4). -->
     <template v-if="legalText">
       <!-- It describes how the registration form behaves, which is the same for
          every organization and every event, so nothing about it is the
@@ -295,6 +302,7 @@ import { useI18n } from 'vue-i18n';
 import DOMPurify from 'dompurify';
 import {
   generatesLegalText,
+  needsLegalReference,
   isConsentBoundException,
   isCustomKey,
   isSpecialCategory,

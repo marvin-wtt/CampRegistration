@@ -24,6 +24,13 @@
         :model-value="model?.website ?? ''"
         :label="t('website')"
         :disable="!canEdit"
+        :rules="[
+          (value: string) =>
+            !value ||
+            /^https?:\/\/\S+\.\S+/i.test(value) ||
+            t('websiteInvalid'),
+        ]"
+        lazy-rules
         type="url"
         dense
         outlined
@@ -61,6 +68,7 @@ title: 'Supervisory authority'
 name: 'Name of the authority'
 website: 'Website (optional)'
 required: 'Name the authority registrants can complain to'
+websiteInvalid: 'Enter the full address, starting with https://'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -68,6 +76,7 @@ title: 'Aufsichtsbehörde'
 name: 'Name der Aufsichtsbehörde'
 website: 'Website (optional)'
 required: 'Nenne die Behörde, bei der sich Angemeldete beschweren können'
+websiteInvalid: 'Gib die vollständige Adresse an, beginnend mit https://'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -75,6 +84,7 @@ title: 'Autorité de contrôle'
 name: 'Nom de l’autorité'
 website: 'Site web (facultatif)'
 required: 'Indiquez l’autorité auprès de laquelle les inscrits peuvent introduire une réclamation'
+websiteInvalid: 'Indiquez l’adresse complète, commençant par https://'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -82,6 +92,7 @@ title: 'Dozorový úřad'
 name: 'Název úřadu'
 website: 'Web (nepovinné)'
 required: 'Uveď úřad, u kterého si přihlášení mohou stěžovat'
+websiteInvalid: 'Zadej celou adresu začínající https://'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -89,4 +100,5 @@ title: 'Organ nadzorczy'
 name: 'Nazwa organu'
 website: 'Strona internetowa (opcjonalnie)'
 required: 'Podaj organ, do którego zgłoszeni mogą wnieść skargę'
+websiteInvalid: 'Podaj pełny adres zaczynający się od https://'
 </i18n>

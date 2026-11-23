@@ -73,6 +73,7 @@ describe('TranslatedInput', () => {
       },
     });
 
+    await wrapper.find('[data-test="add-translation-fr"]').trigger('click');
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
 
@@ -91,7 +92,7 @@ describe('TranslatedInput', () => {
           number: true,
         },
         type: 'number' as const,
-        locales: ['de', 'fr'],
+        countries: ['de', 'fr'],
         'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
       },
     });
@@ -115,6 +116,7 @@ describe('TranslatedInput', () => {
       },
     });
 
+    await wrapper.find('[data-test="add-translation-fr"]').trigger('click');
     const inputs = wrapper.findAll('input');
     await inputs[0]!.setValue('Test Value de');
     await inputs[1]!.setValue('Test Value fr');
@@ -136,7 +138,7 @@ describe('TranslatedInput', () => {
           number: true,
         },
         type: 'number' as const,
-        locales: ['de', 'fr'],
+        countries: ['de', 'fr'],
         noTranslation: true,
       },
     });
@@ -154,7 +156,7 @@ describe('TranslatedInput', () => {
           number: true,
         },
         type: 'number' as const,
-        locales: ['de', 'fr'],
+        countries: ['de', 'fr'],
         noTranslation: true,
         'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
       },
@@ -203,6 +205,77 @@ describe('TranslatedInput', () => {
     expect(wrapper.props().modelValue).toStrictEqual({
       de: 'Hallo',
       cz: 'Ahoj',
+    });
+  });
+
+  describe('adding languages one at a time', () => {
+    it('should show the default language and offer the others', () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: undefined,
+          locales: ['de', 'fr', 'pl'],
+        },
+      });
+
+      expect(wrapper.findAll('input')).toHaveLength(1);
+      expect(wrapper.find('[data-test="add-translation-de"]').exists()).toBe(
+        false,
+      );
+      expect(wrapper.find('[data-test="add-translation-fr"]').exists()).toBe(
+        true,
+      );
+      expect(wrapper.find('[data-test="add-translation-pl"]').exists()).toBe(
+        true,
+      );
+    });
+
+    it('should show every language that already has text', () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo', pl: 'Cześć' },
+          locales: ['de', 'fr', 'pl'],
+        },
+      });
+
+      expect(wrapper.findAll('input')).toHaveLength(2);
+      expect(wrapper.find('[data-test="add-translation-fr"]').exists()).toBe(
+        true,
+      );
+    });
+
+    it('should translate into a language as it is added', async () => {
+      translateText.mockResolvedValue({ fr: 'Bonjour' });
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo' },
+          locales: ['de', 'fr'],
+          'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+        },
+      });
+      await flushPromises();
+
+      await wrapper.find('[data-test="add-translation-fr"]').trigger('click');
+      await flushPromises();
+
+      expect(translateText).toHaveBeenCalledWith('Hallo', ['fr'], 'de');
+      expect(wrapper.props().modelValue).toStrictEqual({
+        de: 'Hallo',
+        fr: 'Bonjour',
+      });
+    });
+
+    it('should list every group for values per country', () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: undefined,
+          countries: ['de', 'fr', 'pl'],
+        },
+      });
+
+      expect(wrapper.findAll('input')).toHaveLength(3);
+      expect(wrapper.find('[data-test="add-translation"]').exists()).toBe(
+        false,
+      );
     });
   });
 });
