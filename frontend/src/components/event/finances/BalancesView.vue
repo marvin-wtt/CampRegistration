@@ -74,7 +74,11 @@
       />
     </div>
 
-    <p class="text-caption text-on-surface-variant q-mb-none">
+    <!-- Explains the cards; with none, the empty state says enough. -->
+    <p
+      v-if="balances.length > 0"
+      class="text-caption text-on-surface-variant q-mb-none"
+    >
       {{
         viewsAll ? t('finance.balance.formula') : t('finance.balance.ownOnly')
       }}

@@ -135,7 +135,8 @@ transfer between event funds and a person.
 
 ```
 Payout  id, eventId, number, recipientUserId?, recipientName,
-        direction (OUT | IN), amount, paidOn?, note?, signature?,
+        direction (OUT | IN), amount, paidOn?, note?,
+        bankAccountHolder?, bankIban?, bankBic?, signature?,
         signedAt?, statement (Json), createdByUserId
 File    … payoutId?   (a scan of the slip signed on paper)
 EventFinance  eventId, payoutNumberPrefix (default "P"),
@@ -185,6 +186,21 @@ Positive: the event owes them. Negative: they owe the event. Zero: settled.
   and earlier payouts recorded later belong to later slips. An earlier payout
   shows its paid date if it had one; one still to pay shows just its number,
   since a frozen "to pay" would go stale.
+
+- **Bank details** (`OUT` only, optional — cash, PayPal and the like need
+  none): account holder, IBAN and an optional BIC. The treasurer enters them
+  with the payout, offered the person's latest account in the event behind "Add
+  bank details" (never filled in unasked, since none may mean cash); the
+  recipient can add or correct them when signing on screen, so the account's
+  owner confirms it (`PUT /payouts/:id/signature` takes `bankAccount`, the only
+  way a counselor writes them). IBANs are checked (country length, mod 97) in
+  `common` and stored without spaces. They are not part of the statement and
+  never make it outdated; the slip prints them next to the signature, or empty
+  lines to fill in by hand. Entered with an on-screen signature they are locked
+  with it (taking the signature back unlocks them); otherwise they stay editable
+  until the payout is paid (`409 PAYOUT_BANK_DETAILS_LOCKED`); unmarking it
+  frees them in the same save. The audit log
+  records that they changed, never their values.
 
 ### Frozen statements
 

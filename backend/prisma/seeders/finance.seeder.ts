@@ -37,6 +37,8 @@ interface SeedPayout {
   note?: string;
   /** Signed by the recipient on screen. */
   signed?: boolean;
+  /** Paid by transfer to this IBAN (a valid example account). */
+  iban?: string;
 }
 
 // A plain stroke, enough to show a signed statement.
@@ -243,6 +245,7 @@ const SPRING: SeedLedger = {
       recipient: 'erika',
       note: 'Bank transfer',
       signed: true,
+      iban: 'DE89370400440532013000',
     },
     {
       // Agreed and signed, the transfer still to be made.
@@ -252,6 +255,7 @@ const SPRING: SeedLedger = {
       recipient: 'peter',
       note: 'Bank transfer',
       signed: true,
+      iban: 'FR1420041010050500013M02606',
     },
   ],
   deleted: [12],
@@ -519,6 +523,8 @@ class FinanceSeeder extends BaseSeeder {
           amount: minor(item.amount),
           paidOn: item.day === null ? null : date(item.day),
           note: item.note ?? null,
+          bankAccountHolder: item.iban ? (recipient.name ?? null) : null,
+          bankIban: item.iban ?? null,
           signature: item.signed ? SEED_SIGNATURE : null,
           signedAt: item.signed ? event.endAt : null,
           createdByUserId: USER_IDS.john,

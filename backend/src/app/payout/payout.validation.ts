@@ -2,7 +2,14 @@ import { z, type ZodType } from 'zod';
 import { DateSchema } from '#core/validation/helper';
 import { RECORD_VIEWS } from '@camp-registration/common/permissions';
 import { FINANCE_AMOUNT } from '#app/expense/expense.validation';
+import {
+  isValidBic,
+  isValidIban,
+  normalizeBic,
+  normalizeIban,
+} from '@camp-registration/common/utils';
 import type {
+  PayoutBankAccount,
   PayoutCreateData,
   PayoutSignatureData,
   PayoutUpdateData,
@@ -19,6 +26,28 @@ const fields = {
   // Empty while the payout is agreed but not made yet.
   paidOn: DateSchema.nullable(),
   note: z.string().trim().max(255).nullable(),
+  // All or nothing; `null` clears them.
+  bankAccount: z
+    .object({
+      holder: z.string().trim().min(1).max(255),
+      iban: z
+        .string()
+        .transform(normalizeIban)
+        .refine(isValidIban, { message: 'Invalid IBAN' }),
+      bic: z
+        .string()
+        .transform(normalizeBic)
+        .pipe(
+          z.union([
+            z.literal(''),
+            z.string().refine(isValidBic, { message: 'Invalid BIC' }),
+          ]),
+        )
+        .transform((bic) => bic || null)
+        .nullable()
+        .default(null),
+    })
+    .nullable() satisfies ZodType<PayoutBankAccount | null>,
 };
 
 const index = z.object({
@@ -35,6 +64,7 @@ const store = z.object({
     amount: fields.amount,
     paidOn: fields.paidOn.optional(),
     note: fields.note.optional(),
+    bankAccount: fields.bankAccount.optional(),
   }) satisfies ZodType<PayoutCreateData>,
 });
 
@@ -46,6 +76,7 @@ const update = z.object({
     .object({
       paidOn: fields.paidOn.optional(),
       note: fields.note.optional(),
+      bankAccount: fields.bankAccount.optional(),
       fileIds: z.array(z.ulid()).max(10).optional(),
     })
     .strict() satisfies ZodType<PayoutUpdateData>,
@@ -62,6 +93,7 @@ const sign = z.object({
       .min(1)
       .max(100_000)
       .regex(/^[MLQCZmlqcz0-9 .,-]+$/),
+    bankAccount: fields.bankAccount.optional(),
   }) satisfies ZodType<PayoutSignatureData>,
 });
 

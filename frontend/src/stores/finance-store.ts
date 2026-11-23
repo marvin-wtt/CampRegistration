@@ -36,6 +36,7 @@ import type {
   FinanceSummary,
   Payout,
   PayoutCreateData,
+  PayoutSignatureData,
   PayoutUpdateData,
 } from '@camp-registration/common/entities';
 import { hasNoCategory } from '@/utils/expenseState';
@@ -324,10 +325,13 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   /** The recipient's signature under the statement. */
-  function signPayout(payoutId: string, signature: string): Promise<Payout> {
+  function signPayout(
+    payoutId: string,
+    data: PayoutSignatureData,
+  ): Promise<Payout> {
     return payouts.mutate(
       'sign',
-      (eventId) => api.signPayout(eventId, payoutId, { signature }),
+      (eventId) => api.signPayout(eventId, payoutId, data),
       { apply: replaceById, feedback: 'result' },
     );
   }

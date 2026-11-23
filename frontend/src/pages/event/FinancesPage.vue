@@ -155,6 +155,7 @@
         :label="t('finance.action.expense')"
         color="primary-container"
         text-color="on-primary-container"
+        allow-color
         no-caps
         data-test="finance-add-fab"
         @click="dialogs.capture"

@@ -126,6 +126,21 @@
           <h2 class="slip-section-title">{{ t('declaration') }}</h2>
           <p class="slip-declaration">{{ data.declaration }}</p>
 
+          <!-- Optional: filled in by hand when not recorded. -->
+          <dl
+            v-if="data.direction === 'OUT'"
+            class="slip-bank"
+          >
+            <dt>{{ t('bankHolder') }}</dt>
+            <dd>{{ data.bankAccount?.holder }}</dd>
+            <dt>{{ t('iban') }}</dt>
+            <dd class="mono">{{ data.bankAccount?.iban }}</dd>
+            <template v-if="!data.bankAccount || data.bankAccount.bic">
+              <dt>{{ t('bic') }}</dt>
+              <dd class="mono">{{ data.bankAccount?.bic }}</dd>
+            </template>
+          </dl>
+
           <div class="slip-signature">
             <svg
               v-if="data.signature"
@@ -409,6 +424,27 @@ function t(key: string, named: Record<string, unknown> = {}): string {
   line-height: 1.55;
 }
 
+.slip-bank {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2.5mm 4mm;
+  align-items: end;
+  width: 120mm;
+  margin: 6mm 0 0;
+  font-size: 10pt;
+}
+
+.slip-bank dt {
+  color: var(--slip-muted);
+  font-size: 8.5pt;
+}
+
+.slip-bank dd {
+  margin: 0;
+  min-height: 5mm;
+  border-bottom: 1px solid var(--slip-muted);
+}
+
 .slip-signature {
   width: 90mm;
   margin-top: 8mm;
@@ -469,6 +505,9 @@ declaration: 'Declaration'
 signature: 'Signature of {name}'
 signedOn: '{name} · signed {date}'
 signRecipient: 'Date, signature of {name}'
+bankHolder: 'Account holder'
+iban: 'IBAN'
+bic: 'BIC'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -490,6 +529,9 @@ declaration: 'Erklärung'
 signature: 'Unterschrift von {name}'
 signedOn: '{name} · unterschrieben am {date}'
 signRecipient: 'Datum, Unterschrift von {name}'
+bankHolder: 'Kontoinhaber'
+iban: 'IBAN'
+bic: 'BIC'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -511,6 +553,9 @@ declaration: 'Déclaration'
 signature: 'Signature de {name}'
 signedOn: '{name} · signé le {date}'
 signRecipient: 'Date, signature de {name}'
+bankHolder: 'Titulaire du compte'
+iban: 'IBAN'
+bic: 'BIC'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -532,6 +577,9 @@ declaration: 'Oświadczenie'
 signature: 'Podpis: {name}'
 signedOn: '{name} · podpisano {date}'
 signRecipient: 'Data, podpis: {name}'
+bankHolder: 'Właściciel rachunku'
+iban: 'IBAN'
+bic: 'BIC'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -553,4 +601,7 @@ declaration: 'Prohlášení'
 signature: 'Podpis: {name}'
 signedOn: '{name} · podepsáno {date}'
 signRecipient: 'Datum, podpis: {name}'
+bankHolder: 'Majitel účtu'
+iban: 'IBAN'
+bic: 'BIC'
 </i18n>

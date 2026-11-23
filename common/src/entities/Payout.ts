@@ -6,6 +6,14 @@ import type { ServiceFile } from './ServiceFile.js';
 /** `OUT` pays a person from event funds; `IN` is money they hand back. */
 export type PayoutDirection = 'OUT' | 'IN';
 
+/** Where an `OUT` payout is transferred to. Optional: cash, PayPal, … */
+export interface PayoutBankAccount {
+  holder: string;
+  /** Normalized: no spaces, upper case. */
+  iban: string;
+  bic: string | null;
+}
+
 export interface Payout extends Identifiable, Ownable, Timestamps {
   number: number;
   /** `number` with the event's prefix, as written on the slip: `P3`. */
@@ -17,6 +25,12 @@ export interface Payout extends Identifiable, Ownable, Timestamps {
   /** `YYYY-MM-DD` the money moved; `null` while the payout is still to be made. */
   paidOn: string | null;
   note: string | null;
+  bankAccount: PayoutBankAccount | null;
+  /**
+   * Bank details entered with the on-screen signature are locked with it;
+   * any are locked once paid.
+   */
+  bankAccountLocked: boolean;
   /** The recipient's signature under the statement, as SVG path data. */
   signature: string | null;
   signedAt: string | null;
@@ -63,6 +77,8 @@ export interface PayoutStatementContent {
 /** Drawn in a 600 × 200 box; see `SIGNATURE_VIEWBOX`. */
 export interface PayoutSignatureData {
   signature: string;
+  /** The recipient's own details, signed together with the statement. */
+  bankAccount?: PayoutBankAccount | null | undefined;
 }
 
 export const SIGNATURE_VIEWBOX = { width: 600, height: 200 } as const;
@@ -75,12 +91,15 @@ export interface PayoutCreateData {
   amount: number;
   paidOn?: string | null | undefined;
   note?: string | null | undefined;
+  /** `OUT` only. */
+  bankAccount?: PayoutBankAccount | null | undefined;
 }
 
 /** Amount, direction and recipient are frozen in the statement. */
 export interface PayoutUpdateData {
   paidOn?: string | null | undefined;
   note?: string | null | undefined;
+  bankAccount?: PayoutBankAccount | null | undefined;
   /** Scans of the signed paper slip; temporary uploads to attach. */
   fileIds?: string[] | undefined;
 }

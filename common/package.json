@@ -57,5 +57,8 @@
   },
   "engines": {
     "node": ">=24"
+  },
+  "dependencies": {
+    "ibantools": "^4.5.4"
   }
 }

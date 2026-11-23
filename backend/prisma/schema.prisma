@@ -563,27 +563,32 @@ enum PayoutDirection {
 // A transfer between event funds and a person, never a cost: `OUT` pays
 // them, `IN` is money they hand back.
 model Payout {
-  id              String          @id @unique(map: "payouts_id_unique") @default(ulid()) @db.Char(26)
-  eventId         String          @map("event_id") @db.Char(26)
-  number          Int             @db.UnsignedInt
-  recipientUserId String?         @map("recipient_user_id") @db.Char(26)
-  recipientName   String          @map("recipient_name") @db.VarChar(255)
-  direction       PayoutDirection
-  amount          Int             @db.UnsignedInt
+  id                String          @id @unique(map: "payouts_id_unique") @default(ulid()) @db.Char(26)
+  eventId           String          @map("event_id") @db.Char(26)
+  number            Int             @db.UnsignedInt
+  recipientUserId   String?         @map("recipient_user_id") @db.Char(26)
+  recipientName     String          @map("recipient_name") @db.VarChar(255)
+  direction         PayoutDirection
+  amount            Int             @db.UnsignedInt
   // When the money moved; `null` while the payout is still to be made (the
   // statement is usually signed first, the transfer follows).
-  paidOn          String?         @map("paid_on") @db.Char(10)
-  note            String?         @db.VarChar(255)
+  paidOn            String?         @map("paid_on") @db.Char(10)
+  note              String?         @db.VarChar(255)
+  // Where an `OUT` payout is transferred to; all three unset otherwise. Not
+  // part of the statement, so changing them never makes it outdated.
+  bankAccountHolder String?         @map("bank_account_holder") @db.VarChar(255)
+  bankIban          String?         @map("bank_iban") @db.VarChar(34)
+  bankBic           String?         @map("bank_bic") @db.VarChar(11)
   // The recipient's signature under the statement, as SVG path data. A scan
   // of a slip signed on paper is one of `files` instead.
-  signature       String?         @db.Text
-  signedAt        DateTime?       @map("signed_at")
+  signature         String?         @db.Text
+  signedAt          DateTime?       @map("signed_at")
   // `{ content, basis }`, frozen at creation and never written again: see
   // "Frozen statements" in docs/finances.md.
-  statement       Json
-  createdByUserId String?         @map("created_by_user_id") @db.Char(26)
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime?       @updatedAt @map("updated_at")
+  statement         Json
+  createdByUserId   String?         @map("created_by_user_id") @db.Char(26)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime?       @updatedAt @map("updated_at")
 
   event     Event        @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
   // The same event id: a payout reads its number prefix from here.

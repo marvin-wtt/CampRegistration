@@ -2,7 +2,11 @@ import type { Payout as PayoutData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { ownedByRequester } from '#core/permission/ownership';
 import { FileResource } from '#app/file/file.resource';
-import type { PayoutView } from '#app/payout/payout.service';
+import {
+  isBankAccountLocked,
+  readBankAccount,
+  type PayoutView,
+} from '#app/payout/payout.service';
 import { readStatement } from '#app/payout/payout.statement';
 
 export class PayoutResource extends JsonResource<PayoutView, PayoutData> {
@@ -19,6 +23,8 @@ export class PayoutResource extends JsonResource<PayoutView, PayoutData> {
       amount: this.data.amount,
       paidOn: this.data.paidOn,
       note: this.data.note,
+      bankAccount: readBankAccount(this.data),
+      bankAccountLocked: isBankAccountLocked(this.data),
       signature: this.data.signature,
       signedAt: this.data.signedAt?.toISOString() ?? null,
       files: FileResource.collection(this.data.files).transform(),

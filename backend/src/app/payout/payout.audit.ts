@@ -17,6 +17,13 @@ const FIELD_ALLOWLIST: (keyof Payout)[] = [
   'signedAt',
 ];
 
+// Logged as one field, never with values: the audit log keeps no free text.
+const BANK_ACCOUNT_KEYS: (keyof Payout)[] = [
+  'bankAccountHolder',
+  'bankIban',
+  'bankBic',
+];
+
 const VALUE_KEYS = ['direction', 'amount', 'paidOn'] as const;
 
 export const payoutAuditPolicy: AuditChangePolicy<Payout> = {
@@ -26,7 +33,14 @@ export const payoutAuditPolicy: AuditChangePolicy<Payout> = {
   identity: payoutIdentity,
 
   details(before, after) {
-    const fields = changedKeysByAllowList(before, after, FIELD_ALLOWLIST);
+    const fields: string[] = changedKeysByAllowList(
+      before,
+      after,
+      FIELD_ALLOWLIST,
+    );
+    if (changedKeysByAllowList(before, after, BANK_ACCOUNT_KEYS).length > 0) {
+      fields.push('bankAccount');
+    }
     if (fields.length === 0) {
       return {};
     }

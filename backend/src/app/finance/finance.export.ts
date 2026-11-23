@@ -2,7 +2,11 @@ import i18n from '#core/i18n/i18n.client';
 import type { CellValue, Sheet } from '#utils/spreadsheet';
 import { zipPathSegment } from '#utils/zip';
 import { computeCategoryTotals } from '#app/finance/finance.balances';
-import { fromMinorUnits, translate } from '@camp-registration/common/utils';
+import {
+  formatIban,
+  fromMinorUnits,
+  translate,
+} from '@camp-registration/common/utils';
 import type {
   Expense,
   FinanceCategory,
@@ -120,6 +124,9 @@ export function buildFinanceSheets(
         { header: t('column.amount'), width: 12, numFmt: MONEY },
         { header: t('column.currency'), width: 9 },
         { header: t('column.note'), width: 32 },
+        { header: t('column.bankAccountHolder'), width: 24 },
+        { header: t('column.iban'), width: 30 },
+        { header: t('column.bic'), width: 13 },
       ],
       rows: data.payouts.map((p) => [
         `${data.payoutNumberPrefix}${p.number.toString()}`,
@@ -129,6 +136,9 @@ export function buildFinanceSheets(
         money(p.amount),
         data.currency,
         p.note,
+        p.bankAccountHolder,
+        p.bankIban ? formatIban(p.bankIban) : null,
+        p.bankBic,
       ]),
     },
     {
