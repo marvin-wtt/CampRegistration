@@ -114,8 +114,7 @@ export function privacyNoticeCompleteness(
     };
   }
 
-  // Nothing structural to check when the organization wrote its own prose: the
-  // only thing the platform can still tell is whether there is any text at all.
+  // A guided notice under a church law names the authority the author entered.
   if (
     needsEnteredAuthority(content) &&
     !content.supervisoryAuthority?.name.trim()
@@ -123,6 +122,8 @@ export function privacyNoticeCompleteness(
     gaps.push('supervisory_authority');
   }
 
+  // Nothing structural to check when the organization wrote its own prose: the
+  // only thing the platform can still tell is whether there is any text at all.
   if (content.mode === 'free_text') {
     if (isBlank(content.freeText)) {
       gaps.push('free_text');

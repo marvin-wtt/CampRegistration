@@ -260,6 +260,38 @@ describe('privacy notices', () => {
         });
       });
 
+      it('should refuse a church law outside its country', async () => {
+        const organization = await OrganizationFactory.create(
+          { country: 'fr', verificationStatus: 'PENDING' },
+          { privacyNotice: null },
+        );
+        const accessToken = await organizationAdmin(organization.id);
+
+        await request()
+          .put(publishUrl(organization.id))
+          .send({ content: churchNotice('kdg') })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(422);
+      });
+
+      it('should refuse an authority website that is not http(s)', async () => {
+        const organization = await organizationWithoutNotice();
+        const accessToken = await organizationAdmin(organization.id);
+
+        await request()
+          .put(publishUrl(organization.id))
+          .send({
+            content: churchNotice('kdg', {
+              supervisoryAuthority: {
+                name: 'Datenschutzaufsicht',
+                website: 'javascript:alert(document.cookie)',
+              },
+            }),
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
       it('should refuse a notice that names no supervisory authority', async () => {
         const organization = await organizationWithoutNotice();
         const accessToken = await organizationAdmin(organization.id);

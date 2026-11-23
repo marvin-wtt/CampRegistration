@@ -114,11 +114,17 @@ describe('attachPrivacyIssues', () => {
       privacyConsentFor: ['health'],
     };
     const required = { ...allergies, isRequired: true };
+    const guidedNotice = {
+      mode: 'builder',
+      dataCategories: [
+        { key: 'health', specialCategoryBasis: 'explicit_consent' },
+      ],
+    } as unknown as ComposedPrivacyNotice;
 
     it('gets a note linking to the privacy settings', () => {
       const { privacy, options, panelOf } = setup([required, consent]);
 
-      privacy.setNotice(null);
+      privacy.setNotice(guidedNotice);
       const panel = panelOf('allergies');
       panel.onClick();
 
@@ -151,15 +157,26 @@ describe('attachPrivacyIssues', () => {
         consent,
       ]);
 
-      privacy.setNotice(null);
+      privacy.setNotice(guidedNotice);
 
       expect(panelOf('kids').messageText).toBe('required:health:meds');
+    });
+
+    it('gets none under a free-text notice, which has no basis to set', () => {
+      const { privacy, marked } = setup([required, consent]);
+
+      privacy.setNotice({
+        mode: 'free_text',
+        dataCategories: [],
+      } as unknown as ComposedPrivacyNotice);
+
+      expect(marked('allergies')).toBe(false);
     });
 
     it('gets none when optional', () => {
       const { privacy, marked } = setup([allergies, consent]);
 
-      privacy.setNotice(null);
+      privacy.setNotice(guidedNotice);
 
       expect(marked('allergies')).toBe(false);
     });

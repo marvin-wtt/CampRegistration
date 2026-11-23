@@ -16,6 +16,7 @@ import {
   publishableAddendum,
   refusedExclusions,
   frameworkRecord,
+  frameworksFor,
   needsEnteredAuthority,
   needsLegalReference,
   noticeFramework,
@@ -90,6 +91,7 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeContent,
   ): Promise<OrganizationPrivacyNotice> {
     const sanitized = this.sanitizeContent(content);
+    await this.assertFrameworkAvailable(organizationId, sanitized);
     const locales = await this.organizationLocales(organizationId);
     const completeness = privacyNoticeCompleteness(sanitized, { locales });
 
@@ -107,6 +109,40 @@ export class PrivacyNoticeService extends BaseService {
     );
 
     return this.toOrganizationNotice(published, locales);
+  }
+
+  /**
+   * A guided notice cites a law offered in the organization's country
+   * (`frameworksFor`). The one already published stays allowed, so an
+   * organization that moves country can still republish until it switches.
+   */
+  private async assertFrameworkAvailable(
+    organizationId: string,
+    content: PrivacyNoticeContent,
+  ): Promise<void> {
+    if (content.mode === 'free_text') {
+      return;
+    }
+    const framework = noticeFramework(content);
+    const organization = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { country: true },
+    });
+    if (frameworksFor(organization.country).includes(framework)) {
+      return;
+    }
+    const published = await this.latestVersion('ORGANIZATION', organizationId);
+    const current = published?.content as PrivacyNoticeContent | undefined;
+    if (
+      current?.mode !== 'free_text' &&
+      noticeFramework(current) === framework
+    ) {
+      return;
+    }
+    throw new ApiError(
+      httpStatus.UNPROCESSABLE_ENTITY,
+      `The framework ${framework} is not available in this country`,
+    );
   }
 
   /**

@@ -126,7 +126,12 @@ const ContentSchema = z.object({
   supervisoryAuthority: z
     .object({
       name: z.string().max(255),
-      website: z.url().max(255).nullish(),
+      // Rendered as a link on the public notice: http(s) only, like
+      // `Organization.website`.
+      website: z
+        .url({ protocol: /^https?$/, hostname: z.regexes.domain })
+        .max(255)
+        .nullish(),
     })
     .nullish(),
   mode: z.enum(['builder', 'free_text']),

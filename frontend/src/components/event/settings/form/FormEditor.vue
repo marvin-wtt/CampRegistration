@@ -38,6 +38,7 @@ import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import type { ConsentQuestionTexts } from '@/lib/surveyJs/consentQuestion';
 import { attachPrivacyIssues } from '@/lib/surveyJs/privacyIssues';
 import { lostSensitiveQuestions } from '@/lib/surveyJs/sensitiveAnswers';
+import { isSensitiveDataCleared } from '@camp-registration/common/privacy';
 import { APP_LOCALES } from '@/i18n/locales';
 import { allGroupValues } from '@camp-registration/common/utils';
 import {
@@ -391,7 +392,7 @@ function saveForm(
 creator.saveSurveyFunc = (saveNo: number, callback: SaveCallback) => {
   const form: SurveyJSEventData = creator.JSON;
   const lost =
-    props.hasRegistrations && !props.event.sensitiveDataPurgedAt
+    props.hasRegistrations && !isSensitiveDataCleared(props.event)
       ? lostSensitiveQuestions(savedForm, form)
       : [];
   if (lost.length === 0) {

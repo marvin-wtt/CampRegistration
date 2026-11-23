@@ -55,6 +55,11 @@ function issueOf(question: Question): QuestionPrivacyIssue | null {
 export interface FormPrivacyState {
   issues: FormPrivacyIssues;
   consentBased: ReadonlySet<string>;
+  /**
+   * Whether the notice is guided: only then can a category be given another
+   * basis, which the note on a required question points to.
+   */
+  guided: boolean;
 }
 
 interface TaggedElement {
@@ -64,7 +69,7 @@ interface TaggedElement {
 
 function issueFor(
   { category, required }: TaggedElement,
-  { issues, consentBased }: FormPrivacyState,
+  { issues, consentBased, guided }: FormPrivacyState,
 ): QuestionPrivacyIssue | null {
   if (typeof category !== 'string') {
     return null;
@@ -72,7 +77,7 @@ function issueFor(
   // A blocking issue first: it has to be fixed either way.
   const kind =
     privacyIssueKind(category, issues) ??
-    (required && consentBased.has(category) ? 'required' : null);
+    (guided && required && consentBased.has(category) ? 'required' : null);
   return kind ? { kind, category } : null;
 }
 
@@ -138,6 +143,7 @@ export function attachPrivacyIssues(
     const state: FormPrivacyState = {
       issues: formPrivacyIssues(creator.JSON, notice),
       consentBased: consentBasedCategories(notice),
+      guided: notice?.mode === 'builder',
     };
     // Dynamic panel templates too: their questions have boxes of their own.
     for (const question of creator.survey.getAllQuestions(false, true, true)) {
