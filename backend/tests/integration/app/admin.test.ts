@@ -68,6 +68,7 @@ describe('/api/v1/admin/overview', () => {
         },
         organizations: {
           total: expect.any(Number),
+          draft: expect.any(Number),
           pending: expect.any(Number),
           verified: expect.any(Number),
           rejected: expect.any(Number),

@@ -30,7 +30,7 @@ export class OrganizationResource extends JsonResource<
       verificationNote: this.data.verificationNote ?? null,
       reviewNote: this.data.reviewNote ?? null,
       reviewedAt: this.data.reviewedAt?.toISOString() ?? null,
-      submittedAt: this.data.submittedAt.toISOString(),
+      submittedAt: this.data.submittedAt?.toISOString() ?? null,
       createdAt: this.data.createdAt.toISOString(),
       updatedAt: this.data.updatedAt?.toISOString() ?? null,
     };

@@ -14,8 +14,8 @@ import { EventService } from '#app/event/event.service';
 import { EventResource } from '#app/event/event.resource';
 import { NewsletterService } from '#app/newsletter/newsletter.service';
 import { NewsletterResource } from '#app/newsletter/newsletter.resource';
-import { UserService } from '#app/user/user.service';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
+import { UserService } from '#app/user/user.service';
 import {
   OrganizationReviewPendingMessage,
   OrganizationVerifiedMessage,
@@ -30,9 +30,9 @@ export class OrganizationController extends BaseController {
     @inject(EventService) private readonly eventService: EventService,
     @inject(NewsletterService)
     private readonly newsletterService: NewsletterService,
-    @inject(UserService) private readonly userService: UserService,
     @inject(OrganizationMemberService)
     private readonly organizationMemberService: OrganizationMemberService,
+    @inject(UserService) private readonly userService: UserService,
   ) {
     super();
   }
@@ -142,6 +142,8 @@ export class OrganizationController extends BaseController {
    * decision. Enqueued, so a slow or unreachable mail server never fails the
    * request that triggered it.
    */
+
+  // Tells system administrators an organization is waiting on them.
   private async notifyReviewPending(organization: Organization) {
     const administrators = await this.userService.getAdministrators();
 
@@ -174,8 +176,6 @@ export class OrganizationController extends BaseController {
       userId,
       body,
     );
-
-    await this.notifyReviewPending(organization);
 
     res
       .status(httpStatus.CREATED)

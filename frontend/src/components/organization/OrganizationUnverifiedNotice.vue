@@ -40,7 +40,7 @@
       <template #side>
         <q-btn
           v-if="target"
-          :label="t('action')"
+          :label="actionLabel"
           outline
           rounded
           no-caps
@@ -74,7 +74,7 @@
           />
           <q-btn
             v-if="target"
-            :label="t('action')"
+            :label="actionLabel"
             unelevated
             rounded
             no-caps
@@ -115,7 +115,10 @@ const { canOrgFor } = useOrganizationPermissions();
 const detailsOpen = ref(false);
 
 /** `null` while the organization is verified and nothing is being held back. */
-const reason = computed<'pending' | 'rejected' | null>(() => {
+const reason = computed<'draft' | 'pending' | 'rejected' | null>(() => {
+  if (verificationStatus === 'DRAFT') {
+    return 'draft';
+  }
   if (verificationStatus === 'PENDING') {
     return 'pending';
   }
@@ -125,14 +128,33 @@ const reason = computed<'pending' | 'rejected' | null>(() => {
   return null;
 });
 
-const icon = computed(() =>
-  reason.value === 'rejected' ? 'gpp_bad' : 'gpp_maybe',
+const icon = computed(() => {
+  if (reason.value === 'rejected') return 'gpp_bad';
+  if (reason.value === 'draft') return 'edit_note';
+  return 'gpp_maybe';
+});
+
+// A draft waits on someone who can finish the organization's setup. Everyone
+// else learns whom to ask instead of waiting for a review that never comes.
+const canFinishSetup = computed(() =>
+  canOrgFor(organizationId, 'organization.edit'),
 );
 
 const title = computed(() => t(`${subject}.${reason.value}.title`));
 
-const message = computed(() =>
-  t(`${subject}.${reason.value}.message`, { organization: organizationName }),
+const message = computed(() => {
+  const text = t(`${subject}.${reason.value}.message`, {
+    organization: organizationName,
+  });
+  if (reason.value !== 'draft' || canFinishSetup.value) {
+    return text;
+  }
+
+  return `${text} ${t('ask_admin', { organization: organizationName })}`;
+});
+
+const actionLabel = computed(() =>
+  reason.value === 'draft' ? t('finish_action') : t('action'),
 );
 
 const target = computed<RouteLocationRaw | undefined>(() =>
@@ -154,6 +176,10 @@ const target = computed<RouteLocationRaw | undefined>(() =>
 
 <i18n lang="yaml" locale="en">
 event:
+  draft:
+    title: 'This event cannot go live yet'
+    message: "{organization} hasn't been submitted for verification yet, so this event is hidden from the public listing and cannot accept registrations. Its setup needs to be finished first."
+    short: 'Hidden — organization setup not finished'
   pending:
     title: 'This event is not reaching anyone yet'
     message: '{organization} is still awaiting verification, so this event is hidden from the public listing and cannot accept registrations — regardless of its registration window.'
@@ -163,6 +189,10 @@ event:
     message: '{organization} was not verified, so this event stays hidden from the public listing and cannot accept registrations. Correct the organization details and submit them for verification again.'
     short: 'Cannot go live — organization not verified'
 newsletter:
+  draft:
+    title: 'This newsletter cannot send yet'
+    message: "{organization} hasn't been submitted for verification yet. Set everything up now — sending and adding subscribers stay disabled until it is verified."
+    short: 'Sending disabled — organization setup not finished'
   pending:
     title: 'This newsletter cannot send yet'
     message: '{organization} is awaiting verification. Set everything up now — sending and adding subscribers stay disabled until then.'
@@ -171,12 +201,18 @@ newsletter:
     title: 'This newsletter cannot send'
     message: '{organization} was not verified. Correct its details and submit them again.'
     short: 'Sending and new subscribers disabled — organization not verified'
+finish_action: 'Finish setup'
+ask_admin: 'Ask an admin of {organization} to finish its setup.'
 action: 'Open organization'
 close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 event:
+  draft:
+    title: 'Diese Veranstaltung kann noch nicht live gehen'
+    message: '{organization} wurde noch nicht zur Verifizierung eingereicht, daher ist diese Veranstaltung nicht öffentlich sichtbar und nimmt keine Anmeldungen an. Zuerst muss die Einrichtung abgeschlossen werden.'
+    short: 'Verborgen — Einrichtung der Organisation nicht abgeschlossen'
   pending:
     title: 'Diese Veranstaltung erreicht noch niemanden'
     message: '{organization} wartet noch auf die Verifizierung. Diese Veranstaltung ist daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an — unabhängig vom Anmeldezeitraum.'
@@ -186,6 +222,10 @@ event:
     message: '{organization} wurde nicht verifiziert. Diese Veranstaltung bleibt daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an. Korrigiere die Angaben der Organisation und reiche sie erneut zur Verifizierung ein.'
     short: 'Nicht live — Organisation nicht verifiziert'
 newsletter:
+  draft:
+    title: 'Dieser Newsletter kann noch nicht versendet werden'
+    message: '{organization} wurde noch nicht zur Verifizierung eingereicht. Richte jetzt alles ein — Versand und neue Abonnenten bleiben bis zur Verifizierung deaktiviert.'
+    short: 'Versand deaktiviert — Einrichtung der Organisation nicht abgeschlossen'
   pending:
     title: 'Dieser Newsletter kann noch nicht senden'
     message: '{organization} wartet auf die Verifizierung. Du kannst alles vorbereiten — Senden und das Hinzufügen von Abonnenten sind bis dahin deaktiviert.'
@@ -194,12 +234,18 @@ newsletter:
     title: 'Dieser Newsletter kann nicht senden'
     message: '{organization} wurde nicht verifiziert. Korrigiere die Angaben und reiche sie erneut ein.'
     short: 'Senden und neue Abonnenten deaktiviert — nicht verifiziert'
+finish_action: 'Einrichtung abschließen'
+ask_admin: 'Bitte einen Admin von {organization}, die Einrichtung abzuschließen.'
 action: 'Organisation öffnen'
 close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 event:
+  draft:
+    title: 'Cet événement ne peut pas encore être mis en ligne'
+    message: "{organization} n'a pas encore été soumise à la vérification : cet événement est masqué de la liste publique et ne peut pas accepter d'inscriptions. Sa configuration doit d'abord être terminée."
+    short: "Masqué — configuration de l'organisation inachevée"
   pending:
     title: "Cet événement n'atteint encore personne"
     message: "{organization} attend encore sa vérification : cet événement est masqué de la liste publique et ne peut pas accepter d'inscriptions, quelle que soit la période d'inscription."
@@ -209,6 +255,10 @@ event:
     message: "{organization} n'a pas été vérifiée : cet événement reste masqué de la liste publique et ne peut pas accepter d'inscriptions. Corrige les informations de l'organisation et soumets-les à nouveau."
     short: 'Non publiable — organisation non vérifiée'
 newsletter:
+  draft:
+    title: 'Cette newsletter ne peut pas encore être envoyée'
+    message: "{organization} n'a pas encore été soumise à la vérification. Préparez tout dès maintenant : l'envoi et l'ajout d'abonnés restent désactivés jusqu'à sa vérification."
+    short: "Envoi désactivé — configuration de l'organisation inachevée"
   pending:
     title: 'Cette newsletter ne peut pas encore être envoyée'
     message: "{organization} attend sa vérification. Préparez tout dès maintenant : l'envoi et l'ajout d'abonnés restent désactivés d'ici là."
@@ -217,12 +267,18 @@ newsletter:
     title: 'Cette newsletter ne peut pas être envoyée'
     message: "{organization} n'a pas été vérifiée. Corrigez ses informations et soumettez-les à nouveau."
     short: 'Envoi et nouveaux abonnés désactivés — organisation non vérifiée'
+finish_action: 'Terminer la configuration'
+ask_admin: "Demande à un administrateur de {organization} d'en terminer la configuration."
 action: "Ouvrir l'organisation"
 close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 event:
+  draft:
+    title: 'To wydarzenie nie może jeszcze ruszyć'
+    message: '{organization} nie została jeszcze zgłoszona do weryfikacji, więc to wydarzenie jest ukryte na liście publicznej i nie przyjmuje zapisów. Najpierw trzeba dokończyć jej konfigurację.'
+    short: 'Ukryte — konfiguracja organizacji niezakończona'
   pending:
     title: 'To wydarzenie nie dociera jeszcze do nikogo'
     message: '{organization} wciąż oczekuje na weryfikację, więc to wydarzenie jest ukryte na liście publicznej i nie przyjmuje zapisów — niezależnie od okresu rejestracji.'
@@ -232,6 +288,10 @@ event:
     message: '{organization} nie została zweryfikowana, więc to wydarzenie pozostaje ukryte na liście publicznej i nie przyjmuje zapisów. Popraw dane organizacji i zgłoś je ponownie do weryfikacji.'
     short: 'Brak publikacji — organizacja niezweryfikowana'
 newsletter:
+  draft:
+    title: 'Tego newslettera nie można jeszcze wysłać'
+    message: '{organization} nie została jeszcze zgłoszona do weryfikacji. Przygotuj wszystko już teraz — wysyłka i dodawanie subskrybentów pozostają wyłączone do czasu weryfikacji.'
+    short: 'Wysyłka wyłączona — konfiguracja organizacji niezakończona'
   pending:
     title: 'Tego newslettera nie można jeszcze wysłać'
     message: '{organization} oczekuje na weryfikację. Możesz wszystko przygotować — wysyłka i dodawanie subskrybentów są do tego czasu wyłączone.'
@@ -240,12 +300,18 @@ newsletter:
     title: 'Tego newslettera nie można wysłać'
     message: '{organization} nie została zweryfikowana. Popraw jej dane i zgłoś je ponownie.'
     short: 'Wysyłka i nowi subskrybenci wyłączeni — brak weryfikacji'
+finish_action: 'Dokończ konfigurację'
+ask_admin: 'Poproś administratora {organization} o dokończenie konfiguracji.'
 action: 'Otwórz organizację'
 close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 event:
+  draft:
+    title: 'Tuto akci zatím nelze zveřejnit'
+    message: '{organization} ještě nebyla odeslána k ověření, takže tato akce je skrytá ve veřejném seznamu a nepřijímá registrace. Nejdřív je potřeba dokončit její nastavení.'
+    short: 'Skrytá — nastavení organizace není dokončené'
   pending:
     title: 'Tato akce zatím nikoho neoslovuje'
     message: '{organization} stále čeká na ověření, takže tato akce je skrytá ve veřejném seznamu a nepřijímá registrace — bez ohledu na registrační období.'
@@ -255,6 +321,10 @@ event:
     message: '{organization} nebyla ověřena, takže tato akce zůstává skrytá ve veřejném seznamu a nepřijímá registrace. Uprav údaje organizace a odešli je znovu k ověření.'
     short: 'Nelze zveřejnit — organizace neověřena'
 newsletter:
+  draft:
+    title: 'Tento newsletter zatím nelze odeslat'
+    message: '{organization} ještě nebyla odeslána k ověření. Vše si můžeš připravit — odesílání a přidávání odběratelů zůstává do ověření vypnuté.'
+    short: 'Odesílání vypnuto — nastavení organizace není dokončené'
   pending:
     title: 'Tento newsletter zatím nelze odeslat'
     message: '{organization} čeká na ověření. Vše si můžete připravit — odesílání a přidávání odběratelů zůstává do té doby vypnuté.'
@@ -263,6 +333,8 @@ newsletter:
     title: 'Tento newsletter nelze odeslat'
     message: '{organization} nebyla ověřena. Uprav její údaje a odešli je znovu.'
     short: 'Odesílání a noví odběratelé vypnuti — organizace neověřena'
+finish_action: 'Dokončit nastavení'
+ask_admin: 'Požádej správce {organization}, ať dokončí její nastavení.'
 action: 'Otevřít organizaci'
 close: 'Zavřít'
 </i18n>

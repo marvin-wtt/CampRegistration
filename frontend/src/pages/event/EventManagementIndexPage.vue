@@ -21,6 +21,7 @@
             no-caps
             :round="quasar.screen.lt.sm"
             :rounded="quasar.screen.gt.xs"
+            data-test="event-create"
             @click="onCreateEvent()"
           />
         </template>
@@ -95,22 +96,17 @@ import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { storeToRefs } from 'pinia';
-import { useQuasar } from 'quasar';
 import EventCardSection from '@/components/event/index/EventCardSection.vue';
 import EventCardSkeleton from '@/components/event/index/EventCardSkeleton.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import EventCreateDialog from '@/components/event/index/EventCreateDialog.vue';
 import { isEventArchived, phaseOf, type EventPhase } from '@/utils/eventPhase';
-import { useRouter } from 'vue-router';
-import { useOrganizationsStore } from '@/stores/organizations-store';
-import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import { useQuasar } from 'quasar';
+import { useCreateEventFlow } from '@/composables/createEventFlow';
 
 const { t } = useI18n();
 const quasar = useQuasar();
-const router = useRouter();
 const assignedEventsStore = useAssignedEventsStore();
-const organizationsStore = useOrganizationsStore();
-const { eventCreationOrganizationIds } = useOrganizationPermissions();
+const { createEvent } = useCreateEventFlow();
 
 const {
   data: events,
@@ -178,35 +174,8 @@ function byStartDesc(a: Event, b: Event) {
   return new Date(b.startAt).getTime() - new Date(a.startAt).getTime();
 }
 
-async function onCreateEvent() {
-  // A event must name an organization the user belongs to. Without one, send
-  // them to create an organization rather than into a dialog that would 403.
-  await organizationsStore.fetchData();
-
-  if (eventCreationOrganizationIds.value.length === 0) {
-    quasar
-      .dialog({
-        title: t('organization_required.title'),
-        message: t('organization_required.message'),
-        cancel: {
-          outline: true,
-          color: 'primary',
-        },
-        ok: {
-          label: t('organization_required.action'),
-          color: 'primary',
-          rounded: true,
-        },
-      })
-      .onOk(() => {
-        void router.push({ name: 'management.organizations' });
-      });
-    return;
-  }
-
-  quasar.dialog({
-    component: EventCreateDialog,
-  });
+function onCreateEvent() {
+  void createEvent();
 }
 </script>
 
@@ -245,10 +214,6 @@ async function onCreateEvent() {
 
 <i18n lang="yaml" locale="en">
 title: 'My events'
-organization_required:
-  title: 'Organization required'
-  message: 'Events are run by an organization. Create one first — you can start building your event right after, even before it is verified.'
-  action: 'Go to organizations'
 subtitle: 'Manage registrations, rooms and program for the events you run.'
 group:
   ongoing: 'Happening now'
@@ -265,10 +230,6 @@ empty:
 
 <i18n lang="yaml" locale="de">
 title: 'Meine Veranstaltungen'
-organization_required:
-  title: 'Organisation erforderlich'
-  message: 'Veranstaltungen werden von einer Organisation betrieben. Erstelle zuerst eine — deine Veranstaltung kannst du direkt danach anlegen, auch vor der Verifizierung.'
-  action: 'Zu den Organisationen'
 subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Veranstaltungen, die du leitest.'
 group:
   ongoing: 'Aktuell'
@@ -285,10 +246,6 @@ empty:
 
 <i18n lang="yaml" locale="fr">
 title: 'Mes événements'
-organization_required:
-  title: 'Organisation requise'
-  message: "Les événements sont gérés par une organisation. Crée-en une d'abord — tu pourras préparer ton événement juste après, même avant la vérification."
-  action: 'Aller aux organisations'
 subtitle: 'Gérez les inscriptions, les chambres et le programme des événements que vous dirigez.'
 group:
   ongoing: 'En cours'
@@ -305,10 +262,6 @@ empty:
 
 <i18n lang="yaml" locale="pl">
 title: 'Moje wydarzenia'
-organization_required:
-  title: 'Wymagana organizacja'
-  message: 'Wydarzenia prowadzone są przez organizację. Najpierw utwórz organizację — wydarzenie możesz przygotować zaraz potem, jeszcze przed weryfikacją.'
-  action: 'Przejdź do organizacji'
 subtitle: 'Zarządzaj zapisami, pokojami i programem wydarzeń, które prowadzisz.'
 group:
   ongoing: 'Trwające'
@@ -325,10 +278,6 @@ empty:
 
 <i18n lang="yaml" locale="cs">
 title: 'Moje akce'
-organization_required:
-  title: 'Vyžadována organizace'
-  message: 'Akce pořádá organizace. Nejprve nějakou vytvoř — akci můžeš připravovat hned poté, i před ověřením.'
-  action: 'Přejít na organizace'
 subtitle: 'Spravujte registrace, pokoje a program akcí, které vedete.'
 group:
   ongoing: 'Probíhající'

@@ -6,7 +6,22 @@
     class="row justify-center"
   >
     <div class="column col-sm-10 col-md-8 col-12 q-gutter-md">
-      <div class="text-h6">{{ t('title') }}</div>
+      <div class="row items-center justify-between no-wrap">
+        <div class="text-h6">{{ t('title') }}</div>
+        <q-btn
+          v-if="canCreateEvent"
+          :label="quasar.screen.gt.xs ? t('action.create') : ''"
+          :aria-label="t('action.create')"
+          color="primary"
+          icon="add"
+          unelevated
+          no-caps
+          :round="quasar.screen.lt.sm"
+          :rounded="quasar.screen.gt.xs"
+          data-test="organization-events-create"
+          @click="onCreateEvent"
+        />
+      </div>
 
       <q-banner
         dense
@@ -75,6 +90,18 @@
           size="3rem"
         />
         <div class="text-subtitle1 q-mt-md">{{ t('empty') }}</div>
+        <q-btn
+          v-if="canCreateEvent"
+          class="q-mt-lg"
+          :label="t('action.create')"
+          color="primary"
+          icon="add"
+          unelevated
+          no-caps
+          rounded
+          data-test="organization-events-create-empty"
+          @click="onCreateEvent"
+        />
       </div>
     </div>
   </page-state-handler>
@@ -83,10 +110,14 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useOrganizationEventsStore } from '@/stores/organization-events-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import { useCreateEventFlow } from '@/composables/createEventFlow';
 import type {
   Event,
   EventRegistrationStatus,
@@ -96,6 +127,21 @@ const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 const store = useOrganizationEventsStore();
 const { data, isLoading, error } = storeToRefs(store);
+const quasar = useQuasar();
+const route = useRoute();
+const { eventCreationOrganizationIds } = useOrganizationPermissions();
+const { createEvent } = useCreateEventFlow();
+
+// Matches the create flow's gate, which reads memberships only.
+const canCreateEvent = computed(() =>
+  eventCreationOrganizationIds.value.includes(
+    route.params.organizationId as string,
+  ),
+);
+
+function onCreateEvent() {
+  void createEvent(route.params.organizationId as string);
+}
 
 const events = computed<Event[]>(() => data.value ?? []);
 
@@ -120,6 +166,8 @@ title: 'Events'
 scope: 'You can see every event of this organization and close its registration. Viewing participants requires a separate invitation to the event.'
 listed: 'Unlisted'
 empty: 'This organization has no events yet'
+action:
+  create: 'Create event'
 status:
   open: 'Registration open'
   upcoming: 'Registration upcoming'
@@ -131,6 +179,8 @@ title: 'Veranstaltungen'
 scope: 'Du siehst jede Veranstaltung dieser Organisation und kannst dessen Anmeldung schließen. Für die Teilnehmenden ist eine separate Einladung zur Veranstaltung nötig.'
 listed: 'Nicht gelistet'
 empty: 'Diese Organisation hat noch keine Veranstaltungen'
+action:
+  create: 'Veranstaltung erstellen'
 status:
   open: 'Anmeldung offen'
   upcoming: 'Anmeldung bevorstehend'
@@ -142,6 +192,8 @@ title: 'Événements'
 scope: 'Tu vois chaque événement de cette organisation et peux en fermer les inscriptions. Voir les participants nécessite une invitation distincte au événement.'
 listed: 'Non répertorié'
 empty: "Cette organisation n'a pas encore d'événements"
+action:
+  create: 'Créer un événement'
 status:
   open: 'Inscriptions ouvertes'
   upcoming: 'Inscriptions à venir'
@@ -153,6 +205,8 @@ title: 'Wydarzenia'
 scope: 'Widzisz każde wydarzenie tej organizacji i możesz zamknąć jego rejestrację. Podgląd uczestników wymaga osobnego zaproszenia do wydarzenia.'
 listed: 'Ukryty'
 empty: 'Ta organizacja nie ma jeszcze wydarzeń'
+action:
+  create: 'Utwórz wydarzenie'
 status:
   open: 'Rejestracja otwarta'
   upcoming: 'Rejestracja wkrótce'
@@ -164,6 +218,8 @@ title: 'Akce'
 scope: 'Vidíš každou akci této organizace a můžeš uzavřít její registraci. Zobrazení účastníků vyžaduje samostatné pozvání do akce.'
 listed: 'Skrytý'
 empty: 'Tato organizace zatím nemá žádné akce'
+action:
+  create: 'Vytvořit akci'
 status:
   open: 'Registrace otevřena'
   upcoming: 'Registrace se blíží'

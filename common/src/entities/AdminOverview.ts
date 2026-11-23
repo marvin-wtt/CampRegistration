@@ -5,6 +5,7 @@ export interface AdminOverview {
   };
   organizations: {
     total: number;
+    draft: number;
     pending: number;
     verified: number;
     rejected: number;

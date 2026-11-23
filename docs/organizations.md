@@ -50,6 +50,9 @@ invitations. Both are resolved side by side in
         (created)
             │
             ▼
+          DRAFT
+            │ first privacy notice published
+            ▼
          PENDING ───────review───────▶ VERIFIED
             │                          ▲     │
             │                  reinstate     revoke
@@ -65,17 +68,22 @@ after the fact, and a rejected one can be reinstated without waiting for it to r
 republish them — unpublishing was a safety action, and putting a camp back in front of the public is the organization's
 decision, not the reviewer's.
 
-- Organizations are created `PENDING` with the full verification dataset — registered address, country and registration
-  number — so a submission is always complete enough to review. There is no `DRAFT` state.
+- Organizations are created as `DRAFT` with the full verification dataset — registered address, country and
+  registration number. A review can't pass without a published privacy notice, and that notice can only be written once
+  the organization exists, so **publishing the first notice submits it** (`PENDING`, `submittedAt` set). The queue
+  therefore only holds organizations a reviewer can approve. `submittedAt` is null while it is a draft.
+- Every way back into review goes through the same rule: with a published notice it lands in `PENDING`, without one in
+  `DRAFT`. Resubmitting a rejected organization without a notice is refused (`422`).
 - There is a single `name`, not a separate trading and legal name. Camp organizations are almost always registered under
   the name they operate as, and two near-identical fields only invited confusion.
 - Only system administrators decide (`PATCH /organizations/:id/verification`, bare
   `guard()`), and they can decide again at any time.
-- **Editing the vetted identity sends the organization back to `PENDING`.** Only the fields in
+- **Editing the vetted identity sends a verified or rejected organization back for review** (`PENDING`, or `DRAFT`
+  without a published notice). Only the fields in
   `ORGANIZATION_VERIFICATION_FIELDS` (name, country, address, registration number) trigger it — correcting a phone
   number or website must not pull a live camp out of the public directory. The constant is exported from `common` so the
   client warns about exactly the fields the server acts on.
-- Editing is **not** blocked while `PENDING`. The demotion already re-opens review, so a lock would only freeze an
+- Editing is **not** blocked while `DRAFT` or `PENDING`. The demotion already re-opens review, so a lock would only freeze an
   organization after its first edit.
 - A demotion does **not** unpublish camps. It is not a rejection: the registration guard and public listing already
   exclude unverified organizations, so the camps reappear once it is verified again rather than every edit costing it
@@ -87,11 +95,11 @@ decision, not the reviewer's.
 
 ### Notifications
 
-| Event                                                          | Recipients                                                   | Mailable                           |
-|----------------------------------------------------------------|--------------------------------------------------------------|------------------------------------|
-| Enters `PENDING` (created, resubmitted, or demoted by an edit) | every system administrator                                   | `OrganizationReviewPendingMessage` |
-| Verified                                                       | the organization's `ADMIN` members                           | `OrganizationVerifiedMessage`      |
-| Rejected or revoked                                            | the organization's `ADMIN` members, with the reviewer's note | `OrganizationRejectedMessage`      |
+| Event                                                                         | Recipients                                                   | Mailable                           |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------- |
+| Enters `PENDING` (first notice published, resubmitted, or demoted by an edit) | every system administrator                                   | `OrganizationReviewPendingMessage` |
+| Verified                                                                      | the organization's `ADMIN` members                           | `OrganizationVerifiedMessage`      |
+| Rejected or revoked                                                           | the organization's `ADMIN` members, with the reviewer's note | `OrganizationRejectedMessage`      |
 
 All are enqueued, never awaited inline, so an unreachable mail server cannot fail the request that triggered it. Members
 still holding an unaccepted invitation have no account and are skipped. The reviewer is not notified of their own
@@ -103,7 +111,7 @@ An unverified organization is kept away from two distinct harms, and conflating 
 wrong:
 
 | Harm                                                       | Gated on                      | Enforced by                                             |
-|------------------------------------------------------------|-------------------------------|---------------------------------------------------------|
+| ---------------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
 | Participant data collected for an entity nobody has vetted | accepting a registration      | `registrationOpen` (`camp.guard.ts`)                    |
 | An unvetted entity advertising through the platform        | the camp being visible at all | the organization filter in `buildCampWhere`, and `show` |
 
@@ -147,14 +155,14 @@ An organization `ADMIN` holds a fixed, minimal permission set on **every** camp 
 ```ts
 // common/src/permissions/permissions.ts
 export const ORGANIZATION_CAMP_PERMISSIONS = [
-  "camp.view",
-  "camp.edit",
-  "camp.managers.view",
+  'camp.view',
+  'camp.edit',
+  'camp.managers.view',
 ] as const satisfies readonly Permission[];
 ```
 
 | Capability             | Granted                 | Rationale                                             |
-|------------------------|-------------------------|-------------------------------------------------------|
+| ---------------------- | ----------------------- | ----------------------------------------------------- |
 | See the camp exists    | ✅ `camp.view`          | Ownership implies visibility                          |
 | Close registration     | ✅ `camp.edit`          | The organization is accountable for what it publishes |
 | See who manages it     | ✅ `camp.managers.view` | Accountability for delegated access                   |

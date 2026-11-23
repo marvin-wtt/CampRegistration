@@ -89,6 +89,7 @@
               <q-icon name="info" />
             </template>
             {{ t('unverified_notice') }}
+            {{ t('unverified_privacy') }}
           </q-banner>
         </event-edit-step>
 
@@ -181,7 +182,7 @@
             v-model="data.name"
             :disable="loading"
             :label="t('field.name')"
-            :locales="eventTextLocales(data.countries)"
+            :locales="nameLocales"
             :rules="[
               (val?: string) => !!val || t('validation.name.empty'),
               (val: string) => val.length <= 255 || t('validation.name.length'),
@@ -352,7 +353,8 @@
             :disable="loading"
             :label="t('field.minAge')"
             :rules="[
-              (val?: number) => val != null || t('validation.minAge.empty'),
+              (val?: number | '') =>
+                (val != null && val !== '') || t('validation.minAge.empty'),
               (val: number) => val >= 0 || t('validation.minAge.nonNegative'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
@@ -372,7 +374,8 @@
             :disable="loading"
             :label="t('field.maxAge')"
             :rules="[
-              (val: number) => val != null || t('validation.maxAge.empty'),
+              (val?: number | '') =>
+                (val != null && val !== '') || t('validation.maxAge.empty'),
               (val: number) =>
                 (data.minAge != null && val >= data.minAge) ||
                 t('validation.maxAge.min'),
@@ -438,7 +441,9 @@
             :disable="loading"
             :label="t('field.price')"
             :rules="[
-              (val?: number) => val != null || t('validation.price.empty'),
+              // An untouched or cleared field holds '' rather than undefined.
+              (val?: number | '') =>
+                (val != null && val !== '') || t('validation.price.empty'),
               (val: number) => val >= 0 || t('validation.price.nonNegative'),
             ]"
             hide-bottom-space
@@ -468,13 +473,13 @@
           <q-toggle
             v-model="data.listed"
             :label="t('field.listed')"
-            :disable="selectedOrganizationUnverified"
           />
           <div
-            v-if="selectedOrganizationUnverified"
-            class="text-caption text-grey-7"
+            v-if="data.listed && selectedOrganizationUnverified"
+            class="text-caption text-on-surface-variant"
+            data-test="event-listed-unverified"
           >
-            {{ t('unverified_notice') }}
+            {{ t('listed_unverified') }}
           </div>
         </event-edit-step>
       </q-stepper>
@@ -519,6 +524,12 @@ import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 import { browserTimezone } from '@/utils/timezones';
 
+const props = defineProps<{
+  organizationId?: string | undefined;
+}>();
+
+defineEmits([...useDialogPluginComponent.emits]);
+
 const assignedEventsStore = useAssignedEventsStore();
 const eventStore = useEventsStore();
 const quasar = useQuasar();
@@ -538,6 +549,7 @@ const step = ref<number>(0);
 const loading = ref<boolean>(false);
 const data = ref<EventCreateData>({
   ...DEFAULT_DATA,
+  organizationId: props.organizationId ?? DEFAULT_DATA.organizationId,
 });
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -557,16 +569,20 @@ const organizationOptions = computed<QSelectOption<string>[]>(() => {
     }));
 });
 
+// Untranslated until countries are picked: before that, the fallback would
+// offer every app language for a name that may only ever need one.
+const nameLocales = computed<string[]>(() =>
+  data.value.countries?.length ? eventTextLocales(data.value.countries) : [],
+);
+
 const selectedOrganization = computed<Organization | undefined>(() =>
   (organizations.value ?? []).find(
     (organization) => organization.id === data.value.organizationId,
   ),
 );
 
-/**
- * An unverified organization may still prepare a event, but the API refuses to
- * publish it — mirror that here so the toggle cannot promise what it can't do.
- */
+// An unverified organization's events stay out of the public listing, however
+// they are set, so choosing to list one gets a note rather than a lock.
 const selectedOrganizationUnverified = computed<boolean>(() => {
   const selected = selectedOrganization.value;
 
@@ -589,12 +605,6 @@ watch(selectedOrganization, (organization, previous) => {
   data.value.organizer = organization.name;
 });
 
-watch(selectedOrganizationUnverified, (unverified) => {
-  if (unverified) {
-    data.value.listed = false;
-  }
-});
-
 void loadOrganizations();
 
 async function loadOrganizations() {
@@ -602,7 +612,7 @@ async function loadOrganizations() {
 
   // Skip a pointless choice when there is only one.
   const eligible = organizationOptions.value;
-  if (eligible.length === 1) {
+  if (eligible.length === 1 && !data.value.organizationId) {
     data.value.organizationId = eligible[0]!.value;
   }
 }
@@ -712,14 +722,14 @@ async function onComplete() {
   try {
     // The price is entered in major units; the API takes minor units.
     const currency = data.value.currency ?? 'EUR';
-    await eventStore.createEntry({
+    const event = await eventStore.createEntry({
       ...data.value,
       price: mapPerGroup(data.value.price, (major) =>
         toMinorUnits(major, currency),
       ),
     });
 
-    onDialogOK();
+    onDialogOK(event);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (ignored) {
     loading.value = false;
@@ -790,6 +800,8 @@ organization_note:
   create_action: 'New organization'
 
 unverified_notice: 'This organization is not verified. You can set the event up now, but until it is verified the event stays hidden from the public listing and cannot accept registrations.'
+unverified_privacy: 'Verification requires a published privacy notice, which you can set up on the organization page.'
+listed_unverified: 'The event will only appear on the main page once the organization is verified.'
 rule:
   organization_required: 'Please choose an organization'
 field:
@@ -881,6 +893,8 @@ organization_note:
   create_action: 'Neue Organisation'
 
 unverified_notice: 'Diese Organisation ist nicht verifiziert. Du kannst die Veranstaltung jetzt einrichten, aber bis zur Verifizierung ist es nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
+unverified_privacy: 'Für die Verifizierung muss ein Datenschutzhinweis veröffentlicht sein. Du richtest ihn auf der Seite der Organisation ein.'
+listed_unverified: 'Die Veranstaltung erscheint erst auf der Startseite, wenn die Organisation verifiziert ist.'
 rule:
   organization_required: 'Bitte wähle eine Organisation'
 field:
@@ -972,6 +986,8 @@ organization_note:
   create_action: 'Nouvelle organisation'
 
 unverified_notice: "Cette organisation n'est pas vérifiée. Vous pouvez configurer l'événement dès maintenant, mais tant qu'elle ne l'est pas, il reste masqué de la liste publique et ne peut pas accepter d'inscriptions."
+unverified_privacy: "La vérification nécessite une politique de confidentialité publiée, que vous pouvez configurer sur la page de l'organisation."
+listed_unverified: "L'événement n'apparaîtra sur la page d'accueil qu'une fois l'organisation vérifiée."
 rule:
   organization_required: 'Choisis une organisation'
 field:
@@ -1063,6 +1079,8 @@ organization_note:
   create_action: 'Nowa organizacja'
 
 unverified_notice: 'Ta organizacja nie jest zweryfikowana. Wydarzenie możesz przygotować już teraz, ale do czasu weryfikacji pozostaje ukryty na liście publicznej i nie przyjmuje zapisów.'
+unverified_privacy: 'Weryfikacja wymaga opublikowanej informacji o ochronie danych, którą przygotujesz na stronie organizacji.'
+listed_unverified: 'Wydarzenie pojawi się na stronie głównej dopiero po weryfikacji organizacji.'
 rule:
   organization_required: 'Wybierz organizację'
 field:
@@ -1154,6 +1172,8 @@ organization_note:
   create_action: 'Nová organizace'
 
 unverified_notice: 'Tato organizace není ověřená. Akci můžete připravit už teď, ale do ověření zůstane skrytá ve veřejném seznamu a nebude přijímat registrace.'
+unverified_privacy: 'Ověření vyžaduje zveřejněné informace o ochraně osobních údajů, které nastavíte na stránce organizace.'
+listed_unverified: 'Akce se na úvodní stránce zobrazí až po ověření organizace.'
 rule:
   organization_required: 'Vyber organizaci'
 field:

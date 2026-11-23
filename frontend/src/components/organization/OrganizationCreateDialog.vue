@@ -17,6 +17,7 @@
 
           <q-input
             v-model="data.name"
+            data-test="organization-name"
             :label="t('field.name')"
             :hint="t('hint.name')"
             :rules="[required]"
@@ -30,6 +31,7 @@
           <div class="row q-col-gutter-sm">
             <q-input
               v-model="data.contactEmail"
+              data-test="organization-contactEmail"
               :label="t('field.contactEmail')"
               type="email"
               :rules="[required]"
@@ -69,6 +71,7 @@
 
           <q-input
             v-model="data.addressStreet"
+            data-test="organization-addressStreet"
             :label="t('field.addressStreet')"
             :rules="[required]"
             color="primary"
@@ -80,6 +83,7 @@
           <div class="row q-col-gutter-sm">
             <q-input
               v-model="data.addressZipCode"
+              data-test="organization-addressZipCode"
               :label="t('field.addressZipCode')"
               :rules="[required]"
               color="primary"
@@ -90,6 +94,7 @@
             />
             <q-input
               v-model="data.addressCity"
+              data-test="organization-addressCity"
               :label="t('field.addressCity')"
               :rules="[required]"
               color="primary"
@@ -103,6 +108,7 @@
           <div class="row q-col-gutter-sm">
             <country-select
               v-model="data.country"
+              data-test="organization-country"
               :label="t('field.country')"
               group="EEA"
               :rules="[required]"
@@ -131,10 +137,9 @@
             outlined
           />
 
-          <!-- The review cannot pass without a published privacy notice, and
-               that notice can only be written once the organization exists —
-               so the requirement is stated here rather than discovered on a
-               rejection. -->
+          <!-- Publishing the privacy notice submits the organization, and that
+               notice can only be written once it exists — so the next step is
+               stated here rather than discovered later. -->
           <div class="privacy-note rounded-md">
             <q-icon
               name="privacy_tip"
@@ -157,6 +162,7 @@
           <q-btn
             :label="t('action.create')"
             type="submit"
+            data-test="organization-submit"
             color="primary"
             unelevated
             rounded
@@ -186,8 +192,8 @@ defineEmits([...useDialogPluginComponent.emits]);
 const store = useOrganizationsStore();
 const loading = ref<boolean>(false);
 
-// The full dataset is collected up front: the organization is submitted for
-// moderation the moment it is created, so there is no half-filled state.
+// The full dataset is collected up front: publishing the privacy notice later
+// submits it for moderation without a second round of questions.
 const data = ref<OrganizationCreateData>({
   name: '',
   contactEmail: '',
@@ -252,7 +258,7 @@ async function onSubmit() {
 <i18n lang="yaml" locale="en">
 title: 'Create organization'
 description: 'Your organization is reviewed before it can publish events or send newsletters. You can start building an event straight away.'
-privacyNote: 'Verification also requires a published privacy notice. You can write it under Privacy as soon as the organization exists.'
+privacyNote: 'It is submitted for verification once you publish its privacy notice. You can write it under Privacy as soon as the organization exists.'
 section:
   identity: 'Contact'
   registration: 'Registered address'
@@ -281,7 +287,7 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Organisation erstellen'
 description: 'Deine Organisation wird geprüft, bevor sie Veranstaltungen veröffentlichen oder Newsletter versenden kann. Eine Veranstaltung kannst du sofort anlegen.'
-privacyNote: 'Für die Verifizierung wird außerdem eine veröffentlichte Datenschutzerklärung benötigt. Du kannst sie unter Datenschutz verfassen, sobald die Organisation angelegt ist.'
+privacyNote: 'Sie wird zur Verifizierung eingereicht, sobald du ihre Datenschutzerklärung veröffentlichst. Du kannst sie unter Datenschutz verfassen, sobald die Organisation angelegt ist.'
 section:
   identity: 'Kontakt'
   registration: 'Eingetragene Adresse'
@@ -310,7 +316,7 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Créer une organisation'
 description: 'Ton organisation est vérifiée avant de pouvoir publier des événements ou envoyer des newsletters. Tu peux commencer à préparer un événement immédiatement.'
-privacyNote: 'La vérification exige également une politique de confidentialité publiée. Tu peux la rédiger sous Confidentialité dès que l’organisation existe.'
+privacyNote: 'Elle est soumise à la vérification dès que tu publies sa politique de confidentialité. Tu peux la rédiger sous Confidentialité dès que l’organisation existe.'
 section:
   identity: 'Contact'
   registration: 'Adresse enregistrée'
@@ -339,7 +345,7 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Utwórz organizację'
 description: 'Twoja organizacja zostanie sprawdzona, zanim będzie mogła publikować wydarzenia lub wysyłać newslettery. Wydarzenie możesz zacząć przygotowywać od razu.'
-privacyNote: 'Weryfikacja wymaga też opublikowanej informacji o ochronie danych. Możesz ją przygotować w sekcji Prywatność, gdy tylko organizacja powstanie.'
+privacyNote: 'Zostanie zgłoszona do weryfikacji, gdy opublikujesz jej informację o ochronie danych. Możesz ją przygotować w sekcji Prywatność, gdy tylko organizacja powstanie.'
 section:
   identity: 'Kontakt'
   registration: 'Adres rejestrowy'
@@ -368,7 +374,7 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Vytvořit organizaci'
 description: 'Tvoje organizace bude ověřena, než bude moci zveřejňovat akce nebo posílat newslettery. Akci můžeš začít připravovat hned.'
-privacyNote: 'Ověření také vyžaduje zveřejněné zásady ochrany osobních údajů. Můžeš je sepsat v sekci Soukromí, jakmile organizace vznikne.'
+privacyNote: 'K ověření se odešle, jakmile zveřejníš její zásady ochrany osobních údajů. Můžeš je sepsat v sekci Soukromí, jakmile organizace vznikne.'
 section:
   identity: 'Kontakt'
   registration: 'Registrovaná adresa'
