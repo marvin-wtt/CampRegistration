@@ -14,6 +14,9 @@ import {
   gapsInSection,
   generatesLegalText,
   isEmptyAddendum,
+  isEventCustomKey,
+  nextCustomKey,
+  nextEventCustomKey,
   privacyNoticeCompleteness,
   maxSpecialCategoryWeeks,
   supervisoryAuthorityFor,
@@ -332,6 +335,24 @@ describe('the catalogue', () => {
   });
 });
 
+describe('event custom keys', () => {
+  it('never produce a key the organization range can', () => {
+    const key = nextEventCustomKey([]);
+
+    expect(isEventCustomKey(key)).toBe(true);
+    expect(isEventCustomKey(nextCustomKey([]))).toBe(false);
+  });
+
+  it('take the lowest number not in use', () => {
+    expect(
+      nextEventCustomKey([
+        { key: 'custom:event-1' },
+        { key: 'custom:event-3' },
+      ]),
+    ).toBe('custom:event-2');
+  });
+});
+
 describe('isEmptyAddendum', () => {
   it('should treat a missing and an empty-listed addendum alike', () => {
     expect(isEmptyAddendum({})).toBe(true);
@@ -357,6 +378,25 @@ describe('isEmptyAddendum', () => {
 });
 
 describe('composePrivacyNotice', () => {
+  it('keeps an event entry and an organization entry of the same number apart', () => {
+    const organization = completeContent();
+    organization.recipients.push({
+      key: nextCustomKey(organization.recipients),
+      label: { en: 'Sports club' },
+    });
+    const eventKey = nextEventCustomKey([]);
+
+    const composed = composePrivacyNotice(organization, {
+      recipients: [{ key: eventKey, label: { en: 'Host families' } }],
+    });
+
+    expect(composed.recipients.map((entry) => entry.label?.en)).toEqual([
+      undefined,
+      'Sports club',
+      'Host families',
+    ]);
+  });
+
   it('merges the event addendum into the organization notice', () => {
     const composed = composePrivacyNotice(completeContent(), {
       purposes: [{ key: 'photo_publication', legalBasis: 'consent' }],
@@ -726,6 +766,17 @@ describe('privacyNoticeCompleteness — translations', () => {
     ).gaps;
 
     expect(gaps).toEqual(['legitimate_interest_explanation']);
+  });
+
+  it('reads an event text keyed by country in the language it writes', () => {
+    const content = withExplanation({ gb: 'Memories', cz: '' });
+
+    expect(
+      privacyNoticeCompleteness(content, { locales: ['en'] }).complete,
+    ).toBe(true);
+    expect(
+      privacyNoticeCompleteness(content, { locales: ['cs'] }).gaps,
+    ).toEqual(['legitimate_interest_explanation']);
   });
 
   it('accepts it once every locale has text', () => {

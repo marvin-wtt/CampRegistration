@@ -69,7 +69,6 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -85,7 +84,8 @@ defineProps<{
 
 const { t } = useI18n();
 
-const open = ref(false);
+// Whether "add more" is open. Bound where the page closes it itself.
+const open = defineModel<boolean>('open', { default: false });
 </script>
 
 <style lang="scss" scoped>

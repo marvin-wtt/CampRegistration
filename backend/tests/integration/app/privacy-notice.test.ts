@@ -122,6 +122,25 @@ describe('privacy notices', () => {
       expect(versions).toBe(0);
     });
 
+    it('should refuse an organization entry with an event key', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+
+      await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: completePrivacyNoticeContent({
+            recipients: [
+              { key: 'event_staff' },
+              { key: 'platform_operator' },
+              { key: 'custom:event-1', label: { en: 'Host families' } },
+            ],
+          }),
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
     it('should refuse a law the platform has no record of', async () => {
       const organization = await organizationWithoutNotice();
       const accessToken = await organizationAdmin(organization.id);

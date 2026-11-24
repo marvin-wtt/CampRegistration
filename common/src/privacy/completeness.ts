@@ -1,4 +1,5 @@
 import type { Translatable } from '../entities/Translatable.js';
+import { COUNTRY_LOCALES } from '../locales.js';
 import {
   isCustomKey,
   isSpecialCategory,
@@ -301,8 +302,18 @@ function isBlankIn(
   }
   const filled = (text: string | undefined) =>
     typeof text === 'string' && text.trim().length > 0;
+  // An event's texts are keyed by country (`gb`), so a locale counts as
+  // written where it or a country writing it holds text.
   if (locales?.length) {
-    return !locales.every((locale) => filled(value[locale]));
+    const entries = Object.entries(value);
+    return !locales.every((locale) =>
+      entries.some(
+        ([key, text]) =>
+          filled(text) &&
+          (key.toLowerCase() === locale ||
+            COUNTRY_LOCALES[key.toLowerCase()] === locale),
+      ),
+    );
   }
   return !Object.values(value).some(filled);
 }

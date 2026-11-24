@@ -1,5 +1,6 @@
 <template>
   <q-card
+    ref="card"
     flat
     bordered
     class="custom-entry q-mb-sm"
@@ -10,6 +11,7 @@
           :model-value="entry.label"
           :label="t(`name.${kind}`)"
           :locales
+          :countries
           default-untranslated
           dense
           outlined
@@ -55,6 +57,7 @@
           :model-value="purpose.legitimateInterest"
           :label="t('legitimateInterest')"
           :locales
+          :countries
           always
           dense
           outlined
@@ -95,9 +98,12 @@
           :legal-reference="category.legalReference"
           :can-edit="canEdit"
           :locales
-          class="custom-entry__inset"
-          @update:model-value="(v) => update({ specialCategoryBasis: v })"
-          @update:legal-reference="(v) => update({ legalReference: v })"
+          :countries
+          class="custom-entry__inset custom-entry__basis"
+          @update:model-value="
+            (v) => update({ specialCategoryBasis: v ?? null })
+          "
+          @update:legal-reference="(v) => update({ legalReference: v ?? null })"
         />
       </template>
     </q-card-section>
@@ -112,7 +118,7 @@
       PrivacyPurposeEntry | PrivacyDataCategoryEntry | PrivacyRecipientEntry
   "
 >
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
@@ -133,7 +139,9 @@ import { usePrivacyLabels } from '@/composables/privacyLabels';
 const props = defineProps<{
   entry: T;
   kind: 'purpose' | 'category' | 'recipient';
-  locales: string[];
+  /** Texts are keyed by `countries` where given (an event's), else `locales`. */
+  locales?: string[] | undefined;
+  countries?: string[] | undefined;
   canEdit: boolean;
 }>();
 
@@ -153,6 +161,33 @@ const purpose = computed(() =>
 const category = computed(() =>
   props.kind === 'category' ? (props.entry as PrivacyDataCategoryEntry) : null,
 );
+
+const card = useTemplateRef<{ $el: HTMLElement }>('card');
+
+/**
+ * Brings a just-added entry into view: it lands in the section's list, away
+ * from the button that added it, so the page scrolls there, puts the cursor
+ * in its name.
+ */
+function reveal() {
+  const element = card.value?.$el;
+  if (!element) {
+    return;
+  }
+
+  const reducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches;
+  element.scrollIntoView({
+    behavior: reducedMotion ? 'auto' : 'smooth',
+    block: 'center',
+  });
+  element
+    .querySelector<HTMLElement>('input, textarea')
+    ?.focus({ preventScroll: true });
+}
+
+defineExpose({ reveal });
 
 function asTranslatable(value: unknown): Translatable | null {
   return (value ?? null) as Translatable | null;
@@ -185,6 +220,10 @@ function setSpecial(special: boolean) {
   // Lines hints and the basis up with the checkbox label.
   &__inset {
     margin-left: 2.25rem;
+  }
+
+  &__basis {
+    max-width: 28rem;
   }
 }
 </style>

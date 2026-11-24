@@ -237,6 +237,32 @@ export function nextCustomKey(existing: readonly { key: string }[]): CustomKey {
   return customKey(String(index));
 }
 
+const EVENT_CUSTOM_PREFIX = 'custom:event-';
+
+/**
+ * An entry an event named itself. Composition merges by key, so an event's
+ * entries draw from a range of their own: a plain `custom:<n>` would silently
+ * replace the organization entry of the same number.
+ */
+export function isEventCustomKey(key: string): boolean {
+  return key.startsWith(EVENT_CUSTOM_PREFIX);
+}
+
+/** The lowest `custom:event-<n>` not already taken. */
+export function nextEventCustomKey(
+  existing: readonly { key: string }[],
+): CustomKey {
+  const taken = new Set(existing.map((entry) => entry.key));
+  const key = (index: number): CustomKey =>
+    `${EVENT_CUSTOM_PREFIX}${String(index)}`;
+  let index = 1;
+  while (taken.has(key(index))) {
+    index += 1;
+  }
+
+  return key(index);
+}
+
 export type PrivacyPurposeRef = PrivacyPurposeKey | CustomKey;
 export type PrivacyDataCategoryRef = PrivacyDataCategoryKey | CustomKey;
 export type PrivacyRecipientRef = PrivacyRecipientKey | CustomKey;
