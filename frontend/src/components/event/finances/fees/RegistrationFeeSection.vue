@@ -4,39 +4,79 @@
     v-if="can('event.payments.view') && fee"
     data-test="registration-fee"
   >
-    <div class="section-title">{{ t('title') }}</div>
-    <q-list>
-      <q-item
-        clickable
-        class="fee-item"
-        @click="dialogs.details(fee)"
-      >
-        <q-item-section avatar>
-          <q-icon
-            name="payments"
-            color="primary"
-          />
-        </q-item-section>
-        <q-item-section>
-          <q-item-label class="row items-center q-gutter-x-sm no-wrap">
-            <span class="text-amount">{{ summary }}</span>
-            <payment-status-chip :status="fee.balance.status" />
-          </q-item-label>
-          <q-item-label caption>
-            {{ t('reference') }} {{ fee.reference }}
-          </q-item-label>
-        </q-item-section>
-        <q-item-section side>
-          <q-icon name="chevron_right" />
-        </q-item-section>
-      </q-item>
-    </q-list>
+    <div class="fee-title">{{ t('title') }}</div>
+    <div class="fee-card rounded-xl column no-wrap">
+      <div class="row items-center no-wrap">
+        <span class="fee-amount text-amount">{{ headline }}</span>
+        <span
+          v-if="headlineCaption"
+          class="fee-caption ellipsis q-ml-sm"
+        >
+          {{ headlineCaption }}
+        </span>
+        <q-space />
+        <payment-status-chip :status="fee.balance.status" />
+      </div>
+
+      <div v-if="progress !== null">
+        <q-linear-progress
+          :value="progress"
+          :color="fee.balance.status === 'PAID' ? 'positive' : 'primary'"
+          track-color="surface-container-highest"
+          size="6px"
+          rounded
+        />
+        <div class="fee-caption q-mt-xs">{{ summary }}</div>
+      </div>
+
+      <div class="row items-center no-wrap">
+        <q-chip
+          clickable
+          dense
+          icon="tag"
+          color="surface-container"
+          text-color="on-surface-variant"
+          class="q-ma-none ellipsis"
+          :aria-label="t('copy')"
+          @click="copyReference"
+        >
+          {{ fee.reference }}
+          <q-tooltip>{{ t('copy') }}</q-tooltip>
+        </q-chip>
+        <q-space />
+        <m-btn
+          v-if="can('event.payments.create')"
+          tonal
+          primary
+          round
+          dense
+          icon="add"
+          :aria-label="t('record')"
+          @click="dialogs.record(fee)"
+        >
+          <q-tooltip>{{ t('record') }}</q-tooltip>
+        </m-btn>
+        <q-btn
+          flat
+          round
+          dense
+          icon="chevron_right"
+          class="q-ml-xs"
+          :aria-label="t('details')"
+          @click="dialogs.details(fee)"
+        >
+          <q-tooltip>{{ t('details') }}</q-tooltip>
+        </q-btn>
+      </div>
+    </div>
   </section>
 </template>
 
 <script lang="ts" setup>
 import { computed, watch } from 'vue';
+import { copyToClipboard, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import PaymentStatusChip from '@/components/event/finances/fees/PaymentStatusChip.vue';
 import { useFeeDialogs } from '@/composables/feeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
@@ -45,6 +85,7 @@ import { useFeeStore } from '@/stores/fee-store';
 
 const { registrationId } = defineProps<{ registrationId: string }>();
 
+const quasar = useQuasar();
 const { t } = useI18n();
 const { money } = useFinanceFormat();
 const { can } = usePermissions();
@@ -64,6 +105,32 @@ watch(
 
 const fee = computed(() => feeStore.byId.get(registrationId));
 
+// As the fee dialog leads: what is open, an excess, or what came in.
+const headline = computed(() => {
+  if (!fee.value) {
+    return '';
+  }
+  const { outstanding, overpaid, amountPaid, currency } = fee.value.balance;
+  const amount =
+    outstanding > 0 ? outstanding : overpaid > 0 ? overpaid : amountPaid;
+  return money(amount, currency);
+});
+
+const headlineCaption = computed(() => {
+  const { outstanding = 0, overpaid = 0 } = fee.value?.balance ?? {};
+  // Otherwise the status chip already says it.
+  return outstanding > 0 ? t('stillOpen') : overpaid > 0 ? t('overpaid') : null;
+});
+
+// `null` without an amount due: nothing to measure against.
+const progress = computed<number | null>(() => {
+  const { amountDue, amountPaid } = fee.value?.balance ?? {};
+  if (!amountDue || amountPaid === undefined) {
+    return null;
+  }
+  return Math.min(1, Math.max(0, amountPaid / amountDue));
+});
+
 const summary = computed(() => {
   if (!fee.value) {
     return '';
@@ -76,11 +143,26 @@ const summary = computed(() => {
         due: money(amountDue, currency),
       });
 });
+
+async function copyReference(): Promise<void> {
+  if (!fee.value) {
+    return;
+  }
+  await copyToClipboard(fee.value.reference);
+  quasar.notify({ type: 'positive', message: t('copied') });
+}
 </script>
 
 <style scoped>
+.fee-card {
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
+}
+
 /* As the registration dialog titles its other sections. */
-.section-title {
+.fee-title {
   padding: 0 4px 8px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -88,38 +170,69 @@ const summary = computed(() => {
   color: var(--md3-primary);
 }
 
-.fee-item {
-  border-radius: 16px;
-  background-color: var(--md3-surface-container-high);
+.fee-amount {
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
+
+.fee-caption {
+  font-size: 0.8125rem;
+  color: var(--md3-on-surface-variant);
 }
 </style>
 
 <i18n lang="yaml" locale="en">
 title: 'Fee'
 paidOf: '{paid} of {due} paid'
-reference: 'Reference'
+copy: 'Copy reference'
+copied: 'Reference copied'
+stillOpen: 'Still open'
+overpaid: 'Paid too much'
+details: 'Fee details'
+record: 'Record payment'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Beitrag'
 paidOf: '{paid} von {due} bezahlt'
-reference: 'Verwendungszweck'
+copy: 'Verwendungszweck kopieren'
+copied: 'Verwendungszweck kopiert'
+stillOpen: 'Noch offen'
+overpaid: 'Zu viel bezahlt'
+details: 'Beitragsdetails'
+record: 'Zahlung erfassen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Frais'
 paidOf: '{paid} payés sur {due}'
-reference: 'Référence'
+copy: 'Copier la référence'
+copied: 'Référence copiée'
+stillOpen: 'Reste à payer'
+overpaid: 'Trop payé'
+details: 'Détails des frais'
+record: 'Enregistrer un paiement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Opłata'
 paidOf: 'Zapłacono {paid} z {due}'
-reference: 'Tytuł przelewu'
+copy: 'Kopiuj tytuł przelewu'
+copied: 'Skopiowano tytuł przelewu'
+stillOpen: 'Pozostało do zapłaty'
+overpaid: 'Nadpłata'
+details: 'Szczegóły opłaty'
+record: 'Zarejestruj płatność'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Poplatek'
 paidOf: 'Zaplaceno {paid} z {due}'
-reference: 'Reference'
+copy: 'Kopírovat referenci'
+copied: 'Reference zkopírována'
+stillOpen: 'Zbývá zaplatit'
+overpaid: 'Přeplaceno'
+details: 'Podrobnosti poplatku'
+record: 'Zaznamenat platbu'
 </i18n>

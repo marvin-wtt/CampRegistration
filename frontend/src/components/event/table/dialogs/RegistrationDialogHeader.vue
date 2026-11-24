@@ -1,29 +1,47 @@
 <template>
   <div class="dialog-header row items-center no-wrap">
     <q-avatar
-      class="header-avatar"
-      size="48px"
+      class="header-avatar rounded-lg"
+      size="56px"
+      square
     >
       {{ initials }}
     </q-avatar>
 
     <div class="col q-ml-md column justify-center overflow-hidden">
-      <div class="text-subtitle1 text-weight-medium ellipsis">
+      <div class="header-name ellipsis">
         {{ personName }}
         <q-tooltip>{{ personName }}</q-tooltip>
       </div>
       <div class="row items-center no-wrap q-mt-xs">
         <span
-          class="status-pill"
+          class="status-pill rounded-full"
           :style="statusStyle"
         >
+          <q-icon
+            :name="statusIcon"
+            size="14px"
+          />
           {{ statusLabel }}
+        </span>
+        <span
+          class="date-pill rounded-full q-ml-xs"
+          :aria-label="registeredOn"
+        >
+          <q-icon
+            name="event"
+            size="14px"
+          />
+          {{ d(registration.createdAt, 'date') }}
+          <q-tooltip>{{ registeredOn }}</q-tooltip>
         </span>
       </div>
     </div>
 
     <!-- Trailing actions (menu, close, …) -->
-    <slot />
+    <div class="row items-center no-wrap self-start">
+      <slot />
+    </div>
   </div>
 </template>
 
@@ -36,7 +54,7 @@ const { registration } = defineProps<{
   registration: Registration;
 }>();
 
-const { t } = useI18n();
+const { t, d } = useI18n();
 
 const personName = computed<string>(() => {
   const firstName = registration.computedData.firstName?.trim() ?? '';
@@ -66,6 +84,22 @@ const statusRole = computed<string>(() => {
   }
 });
 
+const statusIcon = computed<string>(() => {
+  switch (registration.status) {
+    case 'ACCEPTED':
+      return 'check_circle';
+    case 'PENDING':
+      return 'schedule';
+    case 'WAITLISTED':
+    default:
+      return 'hourglass_empty';
+  }
+});
+
+const registeredOn = computed<string>(() =>
+  t('registeredOn', { date: d(registration.createdAt, 'date') }),
+);
+
 const statusStyle = computed(() => ({
   backgroundColor: `var(--md3-${statusRole.value}-container)`,
   color: `var(--md3-on-${statusRole.value}-container)`,
@@ -77,31 +111,47 @@ const statusLabel = computed<string>(() => {
 </script>
 
 <style scoped lang="scss">
+/* Part of the card's surface rather than a band of its own. */
 .dialog-header {
-  padding: 16px 12px 16px 20px;
-  background: var(--md3-surface-container);
+  padding: 20px 12px 12px 20px;
 }
 
 .header-avatar {
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
   font-weight: 600;
-  font-size: 18px;
+  font-size: 20px;
 }
 
-.status-pill {
+.header-name {
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: var(--md3-on-surface);
+}
+
+.status-pill,
+.date-pill {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 999px;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px 0 8px;
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
 }
+
+.date-pill {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+  font-weight: 500;
+}
 </style>
 
 <i18n lang="yaml" locale="en">
+registeredOn: 'Registered on {date}'
 status:
   pending: 'Pending'
   waitlisted: 'Waitlisted'
@@ -109,6 +159,7 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+registeredOn: 'Angemeldet am {date}'
 status:
   pending: 'Ausstehend'
   waitlisted: 'Warteliste'
@@ -116,6 +167,7 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+registeredOn: 'Inscrit le {date}'
 status:
   pending: 'En attente'
   waitlisted: "Liste d'attente"
@@ -123,6 +175,7 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+registeredOn: 'Zgłoszono {date}'
 status:
   pending: 'Oczekuje'
   waitlisted: 'Lista oczekujących'
@@ -130,6 +183,7 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+registeredOn: 'Registrováno {date}'
 status:
   pending: 'Čeká na schválení'
   waitlisted: 'Na čekací listině'
