@@ -1,48 +1,65 @@
 <template>
   <div>
-    <div class="row q-col-gutter-md retention-baseline">
-      <q-input
-        v-model.number="retentionMonths"
-        type="number"
-        :label="t('field.retentionMonths')"
-        :min="1"
-        :max="240"
-        :suffix="t('field.afterEvent')"
-        dense
-        outlined
-        rounded
-        :disable="!canEdit"
-        class="col-12 col-sm-6"
-      />
+    <!-- Each period reads as a sentence: the number with its unit in the
+       field, "after the event ends" beside it. Inside the field as a suffix
+       the long phrase squeezed the number out of sight. -->
+    <div class="retention-period">
+      <div class="text-body2 text-weight-medium">
+        {{ t('retention.baseline.title') }}
+      </div>
+      <div class="text-caption text-on-surface-variant q-mb-sm">
+        {{ t('retention.baseline.hint') }}
+      </div>
+      <div class="retention-period__line">
+        <q-input
+          v-model.number="retentionMonths"
+          type="number"
+          :aria-label="t('retention.baseline.title')"
+          :min="1"
+          :max="240"
+          :suffix="t('unit.months')"
+          dense
+          outlined
+          rounded
+          hide-bottom-space
+          :disable="!canEdit"
+          :rules="[atLeastOneMonth]"
+          lazy-rules
+          class="retention-period__input"
+        />
+        <span class="retention-period__text">{{ t('field.afterEvent') }}</span>
+      </div>
     </div>
 
     <!-- Health and similar answers are only needed around the event, so they
        get a shorter period of their own and their own deletion deadline. -->
-    <div class="q-mt-lg">
+    <div class="retention-period q-mt-lg">
       <div class="text-body2 text-weight-medium">
         {{ t('retention.special.title') }}
       </div>
       <div class="text-caption text-on-surface-variant q-mb-sm">
         {{ t('retention.special.hint') }}
       </div>
-      <div class="row q-col-gutter-md">
+      <div class="retention-period__line">
         <q-input
           v-model.number="specialWeeks"
           type="number"
-          :label="t('field.retentionWeeks')"
+          :aria-label="t('retention.special.title')"
           :min="1"
           :max="maxSpecialWeeks"
+          :suffix="t('unit.weeks')"
           dense
           outlined
           rounded
+          hide-bottom-space
           :disable="!canEdit"
           :error="specialWeeksInvalid"
           :error-message="
             t('retention.special.tooLong', { max: maxSpecialWeeks })
           "
-          :suffix="t('field.afterEvent')"
-          class="col-12 col-sm-6"
+          class="retention-period__input"
         />
+        <span class="retention-period__text">{{ t('field.afterEvent') }}</span>
       </div>
     </div>
 
@@ -63,8 +80,6 @@
         class="inset-card retention-exception q-mb-sm"
       >
         <q-card-section class="q-pa-sm column q-gutter-y-xs">
-          <!-- Scope, end and period read as one sentence, so they sit
-             on one line and the delete button aligns with them. -->
           <div class="row q-col-gutter-sm items-start no-wrap">
             <div class="col row q-col-gutter-sm items-start">
               <q-select
@@ -96,28 +111,6 @@
                 class="col-12 col-sm-6"
                 @update:model-value="(v) => setExceptionUntil(index, v)"
               />
-              <!-- For consent-bound data the period is the upper limit, for
-                 consent that is never withdrawn. -->
-              <q-input
-                v-model.number="exception.months"
-                type="number"
-                :label="
-                  isConsentBoundException(exception)
-                    ? t('field.retentionMaxMonths')
-                    : t('field.retentionMonths')
-                "
-                :min="1"
-                :max="600"
-                dense
-                outlined
-                rounded
-                hide-bottom-space
-                :disable="!canEdit"
-                :rules="[atLeastOneMonth]"
-                lazy-rules
-                :suffix="t('field.afterEvent')"
-                class="col-12 col-sm-6"
-              />
             </div>
             <m-btn
               flat
@@ -129,6 +122,36 @@
               class="col-auto retention-exception__remove"
               @click="removeException(index)"
             />
+          </div>
+
+          <!-- For consent-bound data the period is the upper limit, for
+             consent that is never withdrawn. -->
+          <div class="retention-period__line">
+            <span
+              v-if="isConsentBoundException(exception)"
+              class="retention-period__text"
+            >
+              {{ t('retention.exceptions.atMost') }}
+            </span>
+            <q-input
+              v-model.number="exception.months"
+              type="number"
+              :aria-label="t('retention.exceptions.until')"
+              :min="1"
+              :max="600"
+              :suffix="t('unit.months')"
+              dense
+              outlined
+              rounded
+              hide-bottom-space
+              :disable="!canEdit"
+              :rules="[atLeastOneMonth]"
+              lazy-rules
+              class="retention-period__input"
+            />
+            <span class="retention-period__text">
+              {{ t('field.afterEvent') }}
+            </span>
           </div>
 
           <translated-input
@@ -295,6 +318,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
+  DEFAULT_SPECIAL_CATEGORY_WEEKS,
   RETENTION_UNTIL,
   TRANSFER_SAFEGUARDS,
   customKey,
@@ -338,8 +362,9 @@ const safeguardOptions = computed(() =>
 
 const retentionMonths = computed({
   get: () => content.value.retention?.months ?? 24,
-  set: (months: number) => {
-    ensureRetention().months = months;
+  // A cleared number field yields '', which must not reach the stored notice.
+  set: (months: number | string) => {
+    ensureRetention().months = Number(months) || 0;
   },
 });
 
@@ -349,14 +374,14 @@ const maxSpecialWeeks = computed(() =>
 
 function ensureSpecial() {
   const retention = ensureRetention();
-  retention.specialCategories ??= { weeks: 4 };
+  retention.specialCategories ??= { weeks: DEFAULT_SPECIAL_CATEGORY_WEEKS };
   return retention.specialCategories;
 }
 
 const specialWeeks = computed({
   get: () => content.value.retention?.specialCategories?.weeks ?? 0,
-  set: (weeks: number) => {
-    ensureSpecial().weeks = weeks;
+  set: (weeks: number | string) => {
+    ensureSpecial().weeks = Number(weeks) || 0;
   },
 });
 
@@ -478,10 +503,10 @@ const hasAutomatedDetails = computed(
 </script>
 
 <i18n lang="yaml" locale="en">
+unit:
+  months: 'months'
+  weeks: 'weeks'
 field:
-  retentionWeeks: 'Weeks'
-  retentionMaxMonths: 'At most (months)'
-  retentionMonths: 'Months'
   afterEvent: 'after the event ends'
   transfersEnabled: 'Data is transferred outside the EEA'
   transferCountries: 'Destination countries'
@@ -491,6 +516,9 @@ field:
   automatedDetails: 'Explain the logic and its consequences'
   automatedDetailsHint: 'Meaningful information about the logic involved and what it means for the person is required ({citation}).'
 retention:
+  baseline:
+    title: 'Registration data'
+    hint: 'Kept this long after each event, unless something below says otherwise.'
   special:
     title: 'Health and other sensitive details'
     hint: 'Only needed around the event, so deleted well before the rest. Applies whenever an event collects them.'
@@ -500,6 +528,7 @@ retention:
     hint: 'Most events keep everything for the one period above and can skip this. Add an entry only where the law or a real need says otherwise.'
     scope: 'What it covers'
     until: 'How long'
+    atMost: 'at most'
     consentScopeError: 'Pick a purpose whose legal basis is consent, or choose a fixed period.'
     own: 'Something else…'
     label: 'What it covers'
@@ -515,10 +544,10 @@ missing:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+unit:
+  months: 'Monate'
+  weeks: 'Wochen'
 field:
-  retentionWeeks: 'Wochen'
-  retentionMaxMonths: 'Höchstens (Monate)'
-  retentionMonths: 'Monate'
   afterEvent: 'nach Ende der Veranstaltung'
   transfersEnabled: 'Daten werden außerhalb des EWR übermittelt'
   transferCountries: 'Zielländer'
@@ -528,6 +557,9 @@ field:
   automatedDetails: 'Logik und Folgen erläutern'
   automatedDetailsHint: 'Erforderlich sind aussagekräftige Informationen über die Logik und darüber, was sie für die betroffene Person bedeutet ({citation}).'
 retention:
+  baseline:
+    title: 'Anmeldedaten'
+    hint: 'So lange nach jeder Veranstaltung gespeichert, sofern unten nichts anderes steht.'
   special:
     title: 'Gesundheitsangaben und andere sensible Daten'
     hint: 'Werden nur rund um die Veranstaltung gebraucht und deshalb deutlich früher gelöscht als der Rest. Gilt, sobald eine Veranstaltung sie erhebt.'
@@ -537,6 +569,7 @@ retention:
     hint: 'Die meisten Veranstaltungen speichern alles für die eine Frist oben und können das hier überspringen. Ergänze nur, wo das Gesetz oder ein echter Bedarf etwas anderes verlangt.'
     scope: 'Wofür es gilt'
     until: 'Wie lange'
+    atMost: 'höchstens'
     consentScopeError: 'Wähle einen Zweck, der auf einer Einwilligung beruht, oder eine feste Dauer.'
     own: 'Etwas anderes…'
     label: 'Wofür es gilt'
@@ -552,10 +585,10 @@ missing:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+unit:
+  months: 'mois'
+  weeks: 'semaines'
 field:
-  retentionWeeks: 'Semaines'
-  retentionMaxMonths: 'Au plus (mois)'
-  retentionMonths: 'Mois'
   afterEvent: 'après la fin de l’événement'
   transfersEnabled: "Les données sont transférées hors de l'EEE"
   transferCountries: 'Pays de destination'
@@ -565,6 +598,9 @@ field:
   automatedDetails: 'Expliquer la logique et ses conséquences'
   automatedDetailsHint: "Des informations utiles sur la logique sous-jacente et sur ce qu'elle implique pour la personne sont exigées ({citation})."
 retention:
+  baseline:
+    title: 'Données d’inscription'
+    hint: 'Conservées aussi longtemps après chaque événement, sauf indication contraire ci-dessous.'
   special:
     title: 'Données de santé et autres données sensibles'
     hint: 'Nécessaires uniquement autour de l’événement, elles sont donc supprimées bien avant le reste. S’applique dès qu’un événement les collecte.'
@@ -574,6 +610,7 @@ retention:
     hint: "La plupart des événements conservent tout pendant la durée unique ci-dessus et peuvent passer cette étape. N'ajoutez une entrée que si la loi ou un besoin réel l'impose."
     scope: 'Ce que cela couvre'
     until: 'Combien de temps'
+    atMost: 'au plus'
     consentScopeError: 'Choisissez une finalité fondée sur le consentement, ou une durée déterminée.'
     own: 'Autre chose…'
     label: 'Ce que cela couvre'
@@ -589,10 +626,10 @@ missing:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+unit:
+  months: 'měsíců'
+  weeks: 'týdnů'
 field:
-  retentionWeeks: 'Týdnů'
-  retentionMaxMonths: 'Nejvýše (měsíců)'
-  retentionMonths: 'Měsíců'
   afterEvent: 'po skončení akce'
   transfersEnabled: 'Údaje se předávají mimo EHP'
   transferCountries: 'Cílové země'
@@ -602,6 +639,9 @@ field:
   automatedDetails: 'Vysvětli logiku a její důsledky'
   automatedDetailsHint: 'Vyžadují se smysluplné informace o použitém postupu a o tom, co znamená pro danou osobu ({citation}).'
 retention:
+  baseline:
+    title: 'Údaje z přihlášek'
+    hint: 'Uchovávají se po tuto dobu po každé akci, pokud níže není uvedeno jinak.'
   special:
     title: 'Zdravotní a další citlivé údaje'
     hint: 'Jsou potřeba jen kolem akce, proto se mažou mnohem dříve než zbytek. Platí, jakmile je akce shromažďuje.'
@@ -611,6 +651,7 @@ retention:
     hint: 'Většina akcí uchovává vše po jednu dobu uvedenou výše a tohle může přeskočit. Přidej záznam jen tam, kde to vyžaduje zákon nebo skutečná potřeba.'
     scope: 'Čeho se týká'
     until: 'Jak dlouho'
+    atMost: 'nejvýše'
     consentScopeError: 'Vyber účel, který stojí na souhlasu, nebo zvol pevně danou dobu.'
     own: 'Něco jiného…'
     label: 'Čeho se týká'
@@ -626,10 +667,10 @@ missing:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+unit:
+  months: 'miesięcy'
+  weeks: 'tygodni'
 field:
-  retentionWeeks: 'Tygodnie'
-  retentionMaxMonths: 'Najwyżej (miesiące)'
-  retentionMonths: 'Miesiące'
   afterEvent: 'po zakończeniu wydarzenia'
   transfersEnabled: 'Dane są przekazywane poza EOG'
   transferCountries: 'Kraje docelowe'
@@ -639,6 +680,9 @@ field:
   automatedDetails: 'Wyjaśnij logikę i jej konsekwencje'
   automatedDetailsHint: 'Wymagane są istotne informacje o zasadach podejmowania decyzji i o tym, co oznaczają dla danej osoby ({citation}).'
 retention:
+  baseline:
+    title: 'Dane zgłoszeń'
+    hint: 'Przechowywane przez ten czas po każdym wydarzeniu, chyba że poniżej podano inaczej.'
   special:
     title: 'Dane o zdrowiu i inne dane wrażliwe'
     hint: 'Potrzebne tylko w związku z wydarzeniem, dlatego usuwane znacznie wcześniej niż reszta. Obowiązuje, gdy wydarzenie je zbiera.'
@@ -648,6 +692,7 @@ retention:
     hint: 'Większość wydarzeń przechowuje wszystko przez jeden okres podany wyżej i może to pominąć. Dodaj wpis tylko tam, gdzie wymaga tego prawo lub realna potrzeba.'
     scope: 'Czego dotyczy'
     until: 'Jak długo'
+    atMost: 'najwyżej'
     consentScopeError: 'Wybierz cel oparty na zgodzie albo określony czas.'
     own: 'Coś innego…'
     label: 'Czego dotyczy'
@@ -667,8 +712,25 @@ $field-max: 32rem;
 $field-max-narrow: 28rem;
 $indent-toggle: 2.75rem;
 
-.retention-baseline {
+.retention-period {
   max-width: $field-max;
+
+  &__line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  &__input {
+    width: 9rem;
+  }
+
+  // Centred on a dense field's 40px height, and kept there when an error
+  // message grows the field below it.
+  &__text {
+    line-height: 40px;
+  }
 }
 
 // Short rows of numbers: sprawling them across the page makes several of them
