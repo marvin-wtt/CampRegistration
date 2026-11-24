@@ -12,6 +12,7 @@ export default {
     expenses: 'Dépenses',
     balances: 'Soldes',
     summary: 'Synthèse',
+    income: 'Recettes',
   },
   type: {
     expense: 'Dépense',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Réessayer',
     add: 'Ajouter',
+    addIncome: 'Enregistrer une recette',
+    income: 'Recette',
     addExpense: 'Ajouter une dépense',
     expense: 'Dépense',
     addFile: 'Autre fichier',
@@ -94,6 +97,9 @@ export default {
     edit: 'Modifier',
   },
   capture: {
+    incomeHint:
+      'Une subvention ou un don ? C’est une recette, pas un remboursement.',
+    asIncome: 'Enregistrer comme recette',
     keepOriginal: "Conservez l'original papier.",
     newExpense: 'Nouvelle dépense',
     newRefund: 'Nouveau remboursement',
@@ -129,9 +135,6 @@ export default {
     owedToEvent: 'Dû à l’événement',
     settled: 'Soldé',
     pending: 'Paiement convenu',
-    stillOpen: 'Encore ouvert',
-    agreedUnpaid: 'Convenu, pas encore payé',
-    toComeBack: 'À récupérer',
     settledProgress: '{settled} sur {total} soldés',
     eventOwes: 'L’événement doit à {name}',
     owesEvent: '{name} doit à l’événement',
@@ -203,24 +206,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Tous les justificatifs sont complets.',
+    feesReceived: 'Frais d’inscription',
+    result: 'Résultat',
+    noGroup: 'Sans groupe',
     total: 'Total dépensé',
     totalCaption: '{expenses} de dépenses − {refunds} de remboursements',
     expenses: 'Dépenses',
     refunds: 'Remboursements',
-    net: 'Net dépensé',
-    byCategory: 'Par catégorie',
     refundedCaption: '{amount} remboursés',
     uncategorized: 'Sans catégorie',
-    paidFrom: 'Payé par',
-    people: 'Personnes',
-    gross: 'Brut, avant remboursements.',
-    receiptFiles: 'Fichiers des justificatifs',
     recordsNote:
       'Les justificatifs papier et l’export font foi ; les fichiers sont une copie pratique.',
   },
   categories: {
     ungrouped: 'Sans groupe',
+    expenses: 'Dépenses',
+    income: 'Recettes',
     title: 'Catégories',
     subtitle:
       'Pour cet événement uniquement. Copiées quand le prochain événement est créé à partir de celui-ci.',
@@ -233,6 +234,7 @@ export default {
     noGroup: 'sans groupe',
     archive: 'Archiver',
     restore: 'Restaurer',
+    usedIncome: '{n} recette | {n} recettes',
     used: '{n} dépense | {n} dépenses',
     unused: 'inutilisée',
     showArchived: 'Afficher les archivées ({count})',
@@ -280,6 +282,11 @@ export default {
   },
   settings: {
     title: 'Paramètres des finances',
+    incomeNumbers: 'Numéros des recettes',
+    incomePrefixHint:
+      'Les recettes sont numérotées à part, comme les versements, pour classer une lettre de subvention ou un reçu de don sous son numéro.',
+    incomeLocked:
+      'Le préfixe est fixé dès la première recette, pour que les documents classés restent cohérents.',
     payoutNumbers: 'Numéros de versement',
     flagMissingCategories: 'Signaler les dépenses sans catégorie',
     flagMissingCategoriesHint:
@@ -298,5 +305,22 @@ export default {
     name: 'Saisissez un nom',
     prefix: 'Jusqu’à 8 lettres, chiffres ou tirets',
     recipient: 'Choisissez qui reçoit l’argent',
+  },
+  fee: {
+    allGroups: 'Tous les groupes',
+    title: 'Frais d’inscription',
+    status: {
+      NOT_REQUIRED: 'Rien à payer',
+      UNPAID: 'Non payé',
+      PARTIAL: 'Payé en partie',
+      PAID: 'Payé',
+      OVERPAID: 'Trop payé',
+      REFUNDED: 'Remboursé',
+    },
+    method: {
+      BANK_TRANSFER: 'Virement',
+      CASH: 'Espèces',
+      OTHER: 'Autre',
+    },
   },
 };

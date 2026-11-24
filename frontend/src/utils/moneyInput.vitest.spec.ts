@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { amountDigits, formatAmountDigits } from '@/utils/moneyInput';
+import {
+  amountDigits,
+  amountFromInput,
+  formatAmountDigits,
+} from '@/utils/moneyInput';
 
 describe('amountDigits', () => {
   it.each([
@@ -12,6 +16,18 @@ describe('amountDigits', () => {
     ['12345678901', '123456789'],
   ])('reads %j as %j', (text, digits) => {
     expect(amountDigits(text)).toBe(digits);
+  });
+});
+
+describe('amountFromInput', () => {
+  it.each([
+    ['47,80', 4780],
+    ['0', 0],
+    ['0,00 €', 0],
+    ['', null],
+    ['€', null],
+  ])('reads %j as %j', (text, amount) => {
+    expect(amountFromInput(text)).toBe(amount);
   });
 });
 

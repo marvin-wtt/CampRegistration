@@ -54,6 +54,7 @@ export class RetentionController extends BaseController {
 
     await this.retentionService.purgeRegistrationData(event);
     void this.realtimeService.emitInvalidation(event.id, 'registration');
+    void this.realtimeService.emitInvalidation(event.id, 'registration_fee');
     res.status(httpStatus.NO_CONTENT).send();
   }
 

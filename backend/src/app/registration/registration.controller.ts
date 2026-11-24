@@ -16,6 +16,8 @@ import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitli
 import { changesForRegistration } from '#app/registration/registration.changes';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
+import ApiError from '#core/router/ApiError';
+import { hasEventPermission } from '#app/event/event.guard';
 import { inject } from 'inversify';
 import { isDeepStrictEqual } from 'node:util';
 
@@ -81,6 +83,18 @@ export class RegistrationController extends BaseController {
       'created',
     );
 
+    // The fees view lists every registration by its own resource.
+
+    void this.realtimeService.emit(
+      event.id,
+
+      'registration_fee',
+
+      registration.id,
+
+      'created',
+    );
+
     res
       .status(httpStatus.CREATED)
       .resource(new RegistrationResource(registration));
@@ -143,17 +157,44 @@ export class RegistrationController extends BaseController {
       'updated',
     );
 
+    // The fees view lists every registration by its own resource.
+
+    void this.realtimeService.emit(
+      event.id,
+
+      'registration_fee',
+
+      registration.id,
+
+      'updated',
+    );
+
     res.resource(new RegistrationResource(registration));
   }
 
   async destroy(req: Request, res: Response) {
     const {
-      query: { suppressMessage, reason },
+      query: { suppressMessage, reason, settlement },
     } = await req.validate(validator.destroy);
     const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
-    await this.registrationService.deleteRegistration(registration, reason);
+    // Keeping or writing off money is a refund decision.
+    if (
+      settlement &&
+      !(await hasEventPermission('event.payments.refund')(req))
+    ) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Settling payments needs the refund permission.',
+      );
+    }
+
+    await this.registrationService.deleteRegistration(
+      registration,
+      reason,
+      settlement,
+    );
 
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(event, registration);
@@ -163,6 +204,18 @@ export class RegistrationController extends BaseController {
       event.id,
       'registration',
       registration.id,
+      'deleted',
+    );
+
+    // The fees view lists every registration by its own resource.
+
+    void this.realtimeService.emit(
+      event.id,
+
+      'registration_fee',
+
+      registration.id,
+
       'deleted',
     );
 

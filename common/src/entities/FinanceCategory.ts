@@ -14,8 +14,11 @@ export interface FinanceCategory extends Identifiable {
   name: Translatable;
   position: number;
   archivedAt: string | null;
-  /** Expenses filed under it; a used category can only be archived. */
-  expenseCount: number;
+  /**
+   * Records filed under it — expenses or income, by its kind. A used
+   * category can only be archived.
+   */
+  recordCount: number;
 }
 
 export interface FinanceCategoryCreateData {

@@ -12,6 +12,7 @@ export default {
     expenses: 'Ausgaben',
     balances: 'Salden',
     summary: 'Übersicht',
+    income: 'Einnahmen',
   },
   type: {
     expense: 'Ausgabe',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Erneut versuchen',
     add: 'Hinzufügen',
+    addIncome: 'Einnahme erfassen',
+    income: 'Einnahme',
     addExpense: 'Ausgabe erfassen',
     expense: 'Ausgabe',
     addFile: 'Weitere Datei',
@@ -94,6 +97,9 @@ export default {
     edit: 'Bearbeiten',
   },
   capture: {
+    incomeHint:
+      'Ein Zuschuss oder eine Spende? Das ist eine Einnahme, keine Erstattung.',
+    asIncome: 'Als Einnahme erfassen',
     keepOriginal: 'Papierbeleg bitte aufbewahren.',
     newExpense: 'Neue Ausgabe',
     newRefund: 'Neue Erstattung',
@@ -129,9 +135,6 @@ export default {
     owedToEvent: 'Der Veranstaltung geschuldet',
     settled: 'Ausgeglichen',
     pending: 'Zahlung vereinbart',
-    stillOpen: 'Noch offen',
-    agreedUnpaid: 'Vereinbart, nicht bezahlt',
-    toComeBack: 'Zurückzubekommen',
     settledProgress: '{settled} von {total} ausgeglichen',
     eventOwes: 'Veranstaltung schuldet {name}',
     owesEvent: '{name} schuldet der Veranstaltung',
@@ -202,24 +205,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Alle Belege sind vollständig.',
+    feesReceived: 'Teilnahmebeiträge',
+    result: 'Ergebnis',
+    noGroup: 'Ohne Gruppe',
     total: 'Gesamtausgaben',
     totalCaption: '{expenses} Ausgaben − {refunds} Erstattungen',
     expenses: 'Ausgaben',
     refunds: 'Erstattungen',
-    net: 'Netto ausgegeben',
-    byCategory: 'Nach Kategorie',
     refundedCaption: '{amount} erstattet',
     uncategorized: 'Ohne Kategorie',
-    paidFrom: 'Bezahlt von',
-    people: 'Personen',
-    gross: 'Brutto, vor Erstattungen.',
-    receiptFiles: 'Belegdateien',
     recordsNote:
       'Die Papierbelege und der Export sind die Unterlagen; Dateien sind eine Kopie zur Bequemlichkeit.',
   },
   categories: {
     ungrouped: 'Ohne Gruppe',
+    expenses: 'Ausgaben',
+    income: 'Einnahmen',
     title: 'Kategorien',
     subtitle:
       'Nur für diese Veranstaltung. Wird kopiert, wenn die nächste Veranstaltung auf dieser aufbaut.',
@@ -232,6 +233,7 @@ export default {
     noGroup: 'ohne Gruppe',
     archive: 'Archivieren',
     restore: 'Wiederherstellen',
+    usedIncome: '{n} Einnahme | {n} Einnahmen',
     used: '{n} Ausgabe | {n} Ausgaben',
     unused: 'unbenutzt',
     showArchived: 'Archivierte anzeigen ({count})',
@@ -279,6 +281,11 @@ export default {
   },
   settings: {
     title: 'Finanzeinstellungen',
+    incomeNumbers: 'Einnahmenummern',
+    incomePrefixHint:
+      'Einnahmen werden wie Auszahlungen eigenständig nummeriert, damit ein Bewilligungsbescheid oder eine Spendenquittung unter ihrer Nummer abgelegt werden kann.',
+    incomeLocked:
+      'Das Präfix ist fest, sobald die erste Einnahme existiert, damit abgelegte Dokumente weiter passen.',
     payoutNumbers: 'Auszahlungsnummern',
     flagMissingCategories: 'Ausgaben ohne Kategorie markieren',
     flagMissingCategoriesHint:
@@ -297,5 +304,22 @@ export default {
     name: 'Gib einen Namen ein',
     prefix: 'Bis zu 8 Buchstaben, Ziffern oder Bindestriche',
     recipient: 'Wähle, wer das Geld bekommt',
+  },
+  fee: {
+    allGroups: 'Alle Gruppen',
+    title: 'Teilnahmebeiträge',
+    status: {
+      NOT_REQUIRED: 'Nichts fällig',
+      UNPAID: 'Offen',
+      PARTIAL: 'Teilweise bezahlt',
+      PAID: 'Bezahlt',
+      OVERPAID: 'Überzahlt',
+      REFUNDED: 'Erstattet',
+    },
+    method: {
+      BANK_TRANSFER: 'Überweisung',
+      CASH: 'Bar',
+      OTHER: 'Sonstiges',
+    },
   },
 };

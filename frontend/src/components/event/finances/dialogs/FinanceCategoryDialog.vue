@@ -12,6 +12,26 @@
       @cancel="onDialogOK"
     >
       <div class="column no-wrap q-gutter-y-md">
+        <!-- Expense and income categories are lists of their own. -->
+        <m-btn-group
+          connected
+          class="kind-switch"
+          data-test="category-kind"
+        >
+          <m-btn
+            v-for="option in KINDS"
+            :key="option.value"
+            class="q-btn--toggle"
+            :class="{ 'q-btn--selected': listKind === option.value }"
+            :aria-pressed="listKind === option.value"
+            :label="t(option.label)"
+            :icon="option.icon"
+            primary
+            no-caps
+            :data-test="`category-kind-${option.value}`"
+            @click="switchKind(option.value)"
+          />
+        </m-btn-group>
         <q-card
           v-for="group in sections"
           :key="group.id ?? 'top'"
@@ -96,8 +116,13 @@
                   <q-item-label>{{ to(category.name) }}</q-item-label>
                   <q-item-label caption>
                     {{
-                      category.expenseCount > 0
-                        ? t('finance.categories.used', category.expenseCount)
+                      category.recordCount > 0
+                        ? t(
+                            listKind === 'INCOME'
+                              ? 'finance.categories.usedIncome'
+                              : 'finance.categories.used',
+                            category.recordCount,
+                          )
                         : t('finance.categories.unused')
                     }}
                   </q-item-label>
@@ -223,7 +248,14 @@
                     {{ to(category.name) }}
                   </q-item-label>
                   <q-item-label caption>
-                    {{ t('finance.categories.used', category.expenseCount) }}
+                    {{
+                      t(
+                        listKind === 'INCOME'
+                          ? 'finance.categories.usedIncome'
+                          : 'finance.categories.used',
+                        category.recordCount,
+                      )
+                    }}
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
@@ -257,7 +289,11 @@ import { storeToRefs } from 'pinia';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { FinanceCategory } from '@camp-registration/common/entities';
+import { MBtnGroup } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtnGroup';
+import type {
+  FinanceCategory,
+  FinanceCategoryKind,
+} from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import CategoryNameForm from '@/components/event/finances/CategoryNameForm.vue';
@@ -274,6 +310,11 @@ interface Section {
   categories: FinanceCategory[];
 }
 
+const { kind: initialKind = 'EXPENSE' } = defineProps<{
+  /** The list the dialog opens on; it can switch to the other. */
+  kind?: FinanceCategoryKind;
+}>();
+
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
@@ -281,7 +322,22 @@ const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const financeStore = useFinanceStore();
-const { categories: storeCategories } = storeToRefs(financeStore);
+const { categories: expenseCategories, incomeCategories } =
+  storeToRefs(financeStore);
+const KINDS = [
+  {
+    value: 'EXPENSE',
+    label: 'finance.categories.expenses',
+    icon: 'receipt_long',
+  },
+  { value: 'INCOME', label: 'finance.categories.income', icon: 'savings' },
+] as const;
+const listKind = ref<FinanceCategoryKind>(initialKind);
+const storeCategories = computed(() =>
+  listKind.value === 'INCOME'
+    ? incomeCategories.value
+    : expenseCategories.value,
+);
 const { data: event } = storeToRefs(useEventDetailsStore());
 
 const locales = computed(() => event.value?.locales ?? []);
@@ -291,6 +347,20 @@ const showArchived = ref(false);
 // the ungrouped ones, `false` while nothing is being added.
 const addingIn = ref<string | null | false>(false);
 const addingGroup = ref(false);
+
+// Half-typed edits belong to the list they were started in.
+function switchKind(value: FinanceCategoryKind) {
+  listKind.value = value;
+  editingId.value = null;
+  addingIn.value = false;
+  addingGroup.value = false;
+  if (value === 'INCOME') {
+    void financeStore.loadIncomeCategories();
+  }
+}
+if (initialKind === 'INCOME') {
+  void financeStore.loadIncomeCategories();
+}
 
 const all = computed(() =>
   [...(storeCategories.value ?? [])].sort(
@@ -380,19 +450,27 @@ function move(section: Section, index: number, delta: number) {
   }
   const siblings = all.value.filter((c) => c.parentId === category.parentId);
   const target = siblings.findIndex((c) => c.id === neighbour.id);
-  void financeStore.orderCategories({
-    items: orderWith(
-      new Map([[category.id, { parentId: category.parentId, index: target }]]),
-    ),
-  });
+  void financeStore.orderCategories(
+    {
+      items: orderWith(
+        new Map([
+          [category.id, { parentId: category.parentId, index: target }],
+        ]),
+      ),
+    },
+    listKind.value,
+  );
 }
 
 function regroup(category: FinanceCategory, parentId: string | null) {
-  void financeStore.orderCategories({
-    items: orderWith(
-      new Map([[category.id, { parentId, index: Number.MAX_SAFE_INTEGER }]]),
-    ),
-  });
+  void financeStore.orderCategories(
+    {
+      items: orderWith(
+        new Map([[category.id, { parentId, index: Number.MAX_SAFE_INTEGER }]]),
+      ),
+    },
+    listKind.value,
+  );
 }
 
 function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
@@ -407,7 +485,7 @@ function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
       icon: 'drive_file_move',
       onClick: () => regroup(category, target.id),
     })),
-    category.expenseCount > 0
+    category.recordCount > 0
       ? {
           label: t('finance.categories.archive'),
           icon: 'archive',
@@ -424,11 +502,15 @@ function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
 }
 
 function archive(category: FinanceCategory, value: boolean) {
-  void financeStore.updateCategory(category.id, { archived: value });
+  void financeStore.updateCategory(
+    category.id,
+    { archived: value },
+    listKind.value,
+  );
 }
 
 function remove(category: FinanceCategory) {
-  void financeStore.deleteCategory(category.id);
+  void financeStore.deleteCategory(category.id, listKind.value);
 }
 
 function startAdding(sectionId: string | null) {
@@ -450,21 +532,30 @@ type CategoryName = string | Record<string, string>;
 
 function renameOf(category: FinanceCategory) {
   return (name: CategoryName) =>
-    financeStore.updateCategory(category.id, { name });
+    financeStore.updateCategory(category.id, { name }, listKind.value);
 }
 
 function createCategory(parentId: string | null, name: CategoryName) {
-  return financeStore.createCategory({ name, parentId });
+  return financeStore.createCategory({ name, parentId }, listKind.value);
 }
 
 async function createGroup(name: CategoryName) {
-  const created = await financeStore.createCategory({ name });
+  const created = await financeStore.createCategory({ name }, listKind.value);
   // Shown as a group although it holds no categories yet.
   groupIds.value = new Set([...groupIds.value, created.id]);
 }
 </script>
 
 <style scoped>
+.kind-switch {
+  display: flex;
+}
+
+.kind-switch > :deep(.q-btn) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* On the dialog's own surface, outlined: a card's darker fill would read as
    a hole in the dialog. */
 .section-card {

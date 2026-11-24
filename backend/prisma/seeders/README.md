@@ -123,6 +123,10 @@ ledger:
 Spring Camp also has Maria as `TREASURER` and Peter as `COUNSELOR`. Most receipts have a scanned PDF; a few don't, for
 the "missing receipt file" filter.
 
+Spring Camp and Summer Camp also carry registration fees, rotating over the accepted registrations: paid by transfer,
+a deposit only, unpaid, cash, a transfer paid twice (overpaid), a sibling discount set by hand, and a cancellation
+refunded with a fee kept. Log in as Maria on Spring Camp for the treasurer's view without registration access.
+
 ## Newsletters
 
 | Newsletter             | Organization         | John's role        | Subscribers | Sent |

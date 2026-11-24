@@ -99,6 +99,11 @@ const tokens = computed<
           caption: t('token.registration.price.caption'),
         },
         {
+          value: 'reference',
+          label: t('token.registration.reference.label'),
+          caption: t('token.registration.reference.caption'),
+        },
+        {
           value: 'computedData',
           label: t('token.registration.computed.label'),
           caption: t('token.registration.computed.caption'),
@@ -189,6 +194,9 @@ token:
     price:
       label: 'Price'
       caption: 'What this registration costs, with currency'
+    reference:
+      label: 'Transfer reference'
+      caption: 'For the description of a bank transfer, e.g. K7MX-0042'
     computed:
       label: 'Computed'
       caption: 'Fields computed based on data tag'
@@ -258,6 +266,9 @@ token:
     price:
       label: 'Preis'
       caption: 'Was diese Anmeldung kostet, mit Währung'
+    reference:
+      label: 'Verwendungszweck'
+      caption: 'Für die Überweisung, z. B. K7MX-0042'
     computed:
       label: 'Berechnet'
       caption: 'Felder, die basierend auf dem Daten-Tag berechnet werden'
@@ -332,6 +343,9 @@ token:
     price:
       label: 'Prix'
       caption: 'Coût de cette inscription, avec devise'
+    reference:
+      label: 'Référence du virement'
+      caption: 'À indiquer dans le libellé du virement, p. ex. K7MX-0042'
     computed:
       label: 'Calculé'
       caption: 'Champs calculés en fonction du tag de données'
@@ -401,6 +415,9 @@ token:
     price:
       label: 'Cena'
       caption: 'Koszt tego zgłoszenia, z walutą'
+    reference:
+      label: 'Tytuł przelewu'
+      caption: 'Do wpisania w tytule przelewu, np. K7MX-0042'
     computed:
       label: 'Obliczone'
       caption: 'Pola obliczane na podstawie danych zgłoszenia'
@@ -470,6 +487,9 @@ token:
     price:
       label: 'Cena'
       caption: 'Cena této registrace, s měnou'
+    reference:
+      label: 'Reference platby'
+      caption: 'Do zprávy pro příjemce u převodu, např. K7MX-0042'
     computed:
       label: 'Vypočtené'
       caption: 'Pole vypočítaná na základě dat registrace'

@@ -15,10 +15,17 @@ import { ulid } from '#utils/ulid';
 type Translatable = string | Record<string, string>;
 
 export type FinanceCategoryWithCount = FinanceCategory & {
-  _count: { expenses: number };
+  _count: { expenses: number; incomes: number };
 };
 
-const withCount = { _count: { select: { expenses: true } } } as const;
+const withCount = {
+  _count: { select: { expenses: true, incomes: true } },
+} as const;
+
+/** Expenses or income filed under it: then it can't go or become a group. */
+function inUse(category: { _count: { expenses: number; incomes: number } }) {
+  return category._count.expenses + category._count.incomes > 0;
+}
 
 /** What a new event's category rows are built from; ids are fresh. */
 export type FinanceCategoryCreateManyData = Omit<
@@ -106,7 +113,7 @@ export class FinanceCategoryService extends BaseService {
 
   /** Only unused categories go; a used one is archived instead. */
   async deleteCategory(category: FinanceCategoryWithCount) {
-    if (category._count.expenses > 0) {
+    if (inUse(category)) {
       throw new ApiError(
         httpStatus.CONFLICT,
         'A category in use can only be archived.',
@@ -134,7 +141,7 @@ export class FinanceCategoryService extends BaseService {
   /**
    * Applies one kind's reordered tree in one go. The tree keeps one level of
    * grouping: a parent is a top-level category of the same kind, has no
-   * expenses, and a category with children stays at the top.
+   * records, and a category with children stays at the top.
    */
   async reorderCategories(
     eventId: string,
@@ -166,9 +173,9 @@ export class FinanceCategoryService extends BaseService {
           'Categories can only be grouped one level deep.',
         );
       }
-      if (parent._count.expenses > 0) {
+      if (inUse(parent)) {
         throw this.invalidTree(
-          'A category with expenses cannot become a group.',
+          'A category with records cannot become a group.',
         );
       }
     }
@@ -235,12 +242,15 @@ export class FinanceCategoryService extends BaseService {
   defaultCategories(
     countries: readonly string[],
   ): FinanceCategoryCreateManyData {
-    return defaultFinanceCategoriesForCountries(countries).map((category) => ({
-      id: ulid(),
-      parentId: null,
-      name: category.name,
-      position: category.position,
-    }));
+    return (['EXPENSE', 'INCOME'] as const).flatMap((kind) =>
+      defaultFinanceCategoriesForCountries(countries, kind).map((category) => ({
+        id: ulid(),
+        kind,
+        parentId: null,
+        name: category.name,
+        position: category.position,
+      })),
+    );
   }
 
   /**
@@ -287,8 +297,8 @@ export class FinanceCategoryService extends BaseService {
     if (parent.parentId !== null) {
       throw this.invalidTree('Categories can only be grouped one level deep.');
     }
-    if (parent._count.expenses > 0) {
-      throw this.invalidTree('A category with expenses cannot become a group.');
+    if (inUse(parent)) {
+      throw this.invalidTree('A category with records cannot become a group.');
     }
   }
 

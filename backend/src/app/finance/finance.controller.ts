@@ -4,6 +4,8 @@ import { BaseController } from '#core/base/BaseController';
 import { FinanceService } from '#app/finance/finance.service';
 import validator from '#app/finance/finance.validation';
 import { FileService } from '#app/file/file.service';
+import { PaymentService } from '#app/payment/payment.service';
+import { hasEventPermission } from '#app/event/event.guard';
 import {
   buildFinanceSheets,
   exportFileName,
@@ -21,6 +23,7 @@ export class FinanceController extends BaseController {
   constructor(
     @inject(FinanceService) private readonly financeService: FinanceService,
     @inject(FileService) private readonly fileService: FileService,
+    @inject(PaymentService) private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -64,7 +67,11 @@ export class FinanceController extends BaseController {
     const locale = req.preferredLocale();
 
     const data = await this.financeService.getExportData(event.id);
-    const sheets = buildFinanceSheets(data, locale);
+    // Payer names are payment data: only for those who may see payments.
+    const fees = (await hasEventPermission('event.payments.view')(req))
+      ? await this.paymentService.getExportData(event.id)
+      : undefined;
+    const sheets = buildFinanceSheets({ ...data, fees }, locale);
 
     res.setHeader(
       'Content-Disposition',

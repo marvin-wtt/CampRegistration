@@ -8,6 +8,7 @@ import choreSeeder from './chore.seeder';
 import newsletterSeeder from './newsletter.seeder';
 import auditSeeder from './audit.seeder';
 import financeSeeder from './finance.seeder';
+import paymentSeeder from './payment.seeder';
 import organizationSeeder from './organization.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
@@ -25,6 +26,7 @@ async function main() {
     taskSeeder,
     choreSeeder,
     financeSeeder,
+    paymentSeeder,
     newsletterSeeder,
     auditSeeder,
   ];

@@ -1107,10 +1107,21 @@ verification:
   | contact email                      | Payment reminders and refunds                                     |
   | address                            | Only once invoices are generated (invoice recipient)              |
   | status, created at                 | Cancelled or waitlisted registrations owe nothing or get a refund |
+  | group                              | Price and currency are per group; fees are totalled per group     |
   | `quotedAmount`, currency, payments | What is due, what was paid, the balance                           |
 
   Amounts are already stored on the registration (`quotedAmount`), so no form
-  answer is needed. Date of birth, gender, group, room and every answer stay out.
+  answer is needed. Date of birth, gender, room and every answer stay out. The
+  group is the one exception to "no registration data": price and currency
+  depend on it, and partners often collect their own group's fees. It is the
+  group chosen before the form, never derived from an answer.
+
+- **[implemented]** Manual income (grants, donations, `docs/finances.md`) may
+  name its payer, and a donor can be a private person. The name is kept for
+  the accounting retention period — ten years from the end of the year the
+  money arrived (or was recorded, if it never did) — then the monthly
+  `income-record-retention` job clears it; the amounts stay. Like the other
+  finance records it is part of the finance export and goes with the event.
 
 - **[planned]** It is a separate endpoint and resource with its own permission
   (skill: `add-permission`), not a filter on the registration resource:

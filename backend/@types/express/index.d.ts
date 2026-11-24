@@ -29,6 +29,11 @@ import type { ChoreWithSlots } from '#app/chore/chore.types';
 import type { FinanceCategoryWithCount } from '#app/financeCategory/finance-category.service';
 import type { ExpenseWithFiles } from '#app/expense/expense.service';
 import type { PayoutWithPrefix } from '#app/payout/payout.service';
+import type { IncomeView } from '#app/income/income.service';
+import type {
+  PaymentWithRefunds,
+  RegistrationFeeData,
+} from '#app/payment/payment.service';
 
 declare global {
   namespace Express {
@@ -65,6 +70,9 @@ declare global {
       financeCategory?: FinanceCategoryWithCount;
       expense?: ExpenseWithFiles;
       payout?: PayoutWithPrefix;
+      income?: IncomeView;
+      payment?: PaymentWithRefunds;
+      registrationFee?: RegistrationFeeData;
     }
 
     interface AuthUser {

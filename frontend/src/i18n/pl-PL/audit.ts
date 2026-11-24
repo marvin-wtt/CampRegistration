@@ -33,10 +33,21 @@ export default {
         timezone: 'Strefa czasowa',
         form: 'Formularz rejestracyjny',
         payoutNumberPrefix: 'Prefiks numerów wypłat',
+        incomeNumberPrefix: 'Prefiks numerów przychodów',
       },
     },
     registration: {
       label: 'Zgłoszenie',
+      actions: {
+        payment_recorded: 'Zarejestrowano płatność',
+        payment_updated: 'Zmieniono płatność',
+        payment_deleted: 'Usunięto płatność',
+        payment_refunded: 'Zwrócono opłatę',
+        payment_refund_deleted: 'Usunięto zwrot',
+        payment_settled: 'Rozliczono płatności przy usunięciu',
+        amount_due_adjusted: 'Ustalono kwotę należną',
+        amount_due_reset: 'Przywrócono kwotę z wyceny',
+      },
       fields: {
         data: 'Odpowiedź z formularza',
         customData: 'Pole niestandardowe',
@@ -44,12 +55,31 @@ export default {
         status: 'Status',
         country: 'Kraj',
         group: 'Grupa',
+        amount: 'Kwota',
+        method: 'Metoda płatności',
+        paidOn: 'Zapłacono',
+        refundedOn: 'Zwrócono',
+        amountDueReduction: 'Odjęto od kwoty należnej',
+        refunded: 'Zwrócono',
+        held: 'Zatrzymano',
+        settlement: 'Rozliczenie',
+        quotedAmount: 'Wycena',
+        from: 'Z',
+        to: 'Na',
       },
       values: {
         status: {
           ACCEPTED: 'Zaakceptowano',
           PENDING: 'Oczekuje',
           WAITLISTED: 'Lista oczekujących',
+        },
+        method: {
+          BANK_TRANSFER: 'Przelew',
+          CASH: 'Gotówka',
+          OTHER: 'Inne',
+        },
+        settlement: {
+          RETAINED: 'Zatrzymano',
         },
       },
       reasons: {
@@ -138,6 +168,19 @@ export default {
       kinds: {
         sensitive: 'Dane wrażliwe',
         registrations: 'Wszystkie dane zgłoszeń',
+      },
+    },
+    income: {
+      label: 'Przychód',
+      fields: {
+        amount: 'Kwota',
+        originalAmount: 'Kwota pierwotna',
+        originalCurrency: 'Waluta pierwotna',
+        receivedOn: 'Data wpływu',
+        description: 'Opis',
+        payerName: 'Od',
+        categoryId: 'Kategoria',
+        files: 'Dokumenty',
       },
     },
     payout: {

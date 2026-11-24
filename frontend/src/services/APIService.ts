@@ -31,6 +31,7 @@ import { useOrganizationMemberService } from '@/services/OrganizationMemberServi
 import { useTranslationService } from '@/services/TranslationService';
 import { useAuditService } from '@/services/AuditService';
 import { useFinanceService } from '@/services/FinanceService';
+import { usePaymentService } from '@/services/PaymentService';
 
 export function useAPIService() {
   return {
@@ -66,6 +67,7 @@ export function useAPIService() {
     ...useTranslationService(),
     ...useAuditService(),
     ...useFinanceService(),
+    ...usePaymentService(),
   };
 }
 

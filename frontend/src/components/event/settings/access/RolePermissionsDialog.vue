@@ -221,6 +221,7 @@ const GROUP_ORDER = [
   'chore_assignments',
   'expenses',
   'payouts',
+  'income',
   'finances',
   'audit',
 ];
@@ -241,6 +242,7 @@ const GROUP_ICONS: Record<string, string> = {
   chore_assignments: 'checklist',
   expenses: 'receipt_long',
   payouts: 'payments',
+  income: 'savings',
   finances: 'tune',
   audit: 'history',
 };
@@ -657,6 +659,7 @@ permissions:
     chore_assignments: 'Duty roster'
     expenses: 'Expenses'
     payouts: 'Payouts'
+    income: 'Income'
     finances: 'Finance settings'
     audit: 'Audit log'
   action:
@@ -702,6 +705,7 @@ permissions:
     chore_assignments: 'Dienstplan'
     expenses: 'Ausgaben'
     payouts: 'Auszahlungen'
+    income: 'Einnahmen'
     finances: 'Finanzeinstellungen'
     audit: 'Änderungsprotokoll'
   action:
@@ -747,6 +751,7 @@ permissions:
     chore_assignments: 'Plan des corvées'
     expenses: 'Dépenses'
     payouts: 'Versements'
+    income: 'Recettes'
     finances: 'Paramètres financiers'
     audit: 'Journal d’audit'
   action:
@@ -792,6 +797,7 @@ permissions:
     chore_assignments: 'Grafik dyżurów'
     expenses: 'Wydatki'
     payouts: 'Wypłaty'
+    income: 'Przychody'
     finances: 'Ustawienia finansów'
     audit: 'Dziennik zmian'
   action:
@@ -837,6 +843,7 @@ permissions:
     chore_assignments: 'Rozpis služeb'
     expenses: 'Výdaje'
     payouts: 'Výplaty'
+    income: 'Příjmy'
     finances: 'Nastavení financí'
     audit: 'Protokol změn'
   action:

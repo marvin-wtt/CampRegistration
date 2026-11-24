@@ -33,10 +33,21 @@ export default {
         timezone: 'Časové pásmo',
         form: 'Registrační formulář',
         payoutNumberPrefix: 'Předpona čísel výplat',
+        incomeNumberPrefix: 'Předpona čísel příjmů',
       },
     },
     registration: {
       label: 'Registrace',
+      actions: {
+        payment_recorded: 'Platba zaznamenána',
+        payment_updated: 'Platba změněna',
+        payment_deleted: 'Platba smazána',
+        payment_refunded: 'Poplatek vrácen',
+        payment_refund_deleted: 'Vrácení smazáno',
+        payment_settled: 'Platby vyúčtovány při smazání',
+        amount_due_adjusted: 'Dlužná částka stanovena',
+        amount_due_reset: 'Dlužná částka vrácena na nabídku',
+      },
       fields: {
         data: 'Odpověď z formuláře',
         customData: 'Vlastní pole',
@@ -44,12 +55,31 @@ export default {
         status: 'Stav',
         country: 'Země',
         group: 'Skupina',
+        amount: 'Částka',
+        method: 'Způsob platby',
+        paidOn: 'Zaplaceno',
+        refundedOn: 'Vráceno',
+        amountDueReduction: 'Odečteno z dlužné částky',
+        refunded: 'Vráceno',
+        held: 'Drženo',
+        settlement: 'Vyúčtování',
+        quotedAmount: 'Nabídka',
+        from: 'Z',
+        to: 'Na',
       },
       values: {
         status: {
           ACCEPTED: 'Přijato',
           PENDING: 'Čeká na schválení',
           WAITLISTED: 'Na čekací listině',
+        },
+        method: {
+          BANK_TRANSFER: 'Převod',
+          CASH: 'Hotovost',
+          OTHER: 'Jiné',
+        },
+        settlement: {
+          RETAINED: 'Ponecháno',
         },
       },
       reasons: {
@@ -138,6 +168,19 @@ export default {
       kinds: {
         sensitive: 'Citlivé údaje',
         registrations: 'Všechny údaje z přihlášek',
+      },
+    },
+    income: {
+      label: 'Příjem',
+      fields: {
+        amount: 'Částka',
+        originalAmount: 'Původní částka',
+        originalCurrency: 'Původní měna',
+        receivedOn: 'Přijato dne',
+        description: 'Popis',
+        payerName: 'Od',
+        categoryId: 'Kategorie',
+        files: 'Dokumenty',
       },
     },
     payout: {

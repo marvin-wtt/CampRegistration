@@ -12,6 +12,7 @@ export default {
     expenses: 'Wydatki',
     balances: 'Salda',
     summary: 'Podsumowanie',
+    income: 'Przychody',
   },
   type: {
     expense: 'Wydatek',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Spróbuj ponownie',
     add: 'Dodaj',
+    addIncome: 'Zapisz przychód',
+    income: 'Przychód',
     addExpense: 'Dodaj wydatek',
     expense: 'Wydatek',
     addFile: 'Kolejny plik',
@@ -94,6 +97,8 @@ export default {
     edit: 'Edytuj',
   },
   capture: {
+    incomeHint: 'Dotacja lub darowizna? To przychód, a nie zwrot.',
+    asIncome: 'Zapisz jako przychód',
     keepOriginal: 'Zachowaj oryginał paragonu.',
     newExpense: 'Nowy wydatek',
     newRefund: 'Nowy zwrot',
@@ -128,9 +133,6 @@ export default {
     owedToEvent: 'Należne wydarzeniu',
     settled: 'Rozliczone',
     pending: 'Płatność uzgodniona',
-    stillOpen: 'Jeszcze otwarte',
-    agreedUnpaid: 'Uzgodnione, niezapłacone',
-    toComeBack: 'Do odzyskania',
     settledProgress: 'Rozliczono {settled} z {total}',
     eventOwes: 'Wydarzenie jest winne: {name}',
     owesEvent: '{name}: dług wobec wydarzenia',
@@ -201,24 +203,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Wszystkie paragony są kompletne.',
+    feesReceived: 'Opłaty uczestników',
+    result: 'Wynik',
+    noGroup: 'Bez grupy',
     total: 'Łącznie wydano',
     totalCaption: 'Wydatki {expenses} − zwroty {refunds}',
     expenses: 'Wydatki',
     refunds: 'Zwroty',
-    net: 'Wydano netto',
-    byCategory: 'Według kategorii',
     refundedCaption: 'zwrócono {amount}',
     uncategorized: 'Bez kategorii',
-    paidFrom: 'Zapłacone przez',
-    people: 'Osoby',
-    gross: 'Brutto, przed zwrotami.',
-    receiptFiles: 'Pliki paragonów',
     recordsNote:
       'Dokumentami są papierowe paragony i eksport; pliki to wygodna kopia.',
   },
   categories: {
     ungrouped: 'Bez grupy',
+    expenses: 'Wydatki',
+    income: 'Przychody',
     title: 'Kategorie',
     subtitle:
       'Tylko dla tego wydarzenia. Kopiowane, gdy kolejne wydarzenie powstaje na jego podstawie.',
@@ -231,6 +231,7 @@ export default {
     noGroup: 'bez grupy',
     archive: 'Archiwizuj',
     restore: 'Przywróć',
+    usedIncome: 'Przychody: {n}',
     used: 'Wydatki: {n}',
     unused: 'nieużywana',
     showArchived: 'Pokaż zarchiwizowane ({count})',
@@ -278,6 +279,11 @@ export default {
   },
   settings: {
     title: 'Ustawienia finansów',
+    incomeNumbers: 'Numery przychodów',
+    incomePrefixHint:
+      'Przychody mają własną numerację, jak wypłaty, aby decyzję o dotacji lub potwierdzenie darowizny można było odłożyć pod jej numerem.',
+    incomeLocked:
+      'Prefiks jest ustalony po zapisaniu pierwszego przychodu, aby odłożone dokumenty nadal pasowały.',
     payoutNumbers: 'Numery wypłat',
     flagMissingCategories: 'Oznaczaj wydatki bez kategorii',
     flagMissingCategoriesHint:
@@ -296,5 +302,22 @@ export default {
     name: 'Wpisz nazwę',
     prefix: 'Do 8 liter, cyfr lub myślników',
     recipient: 'Wybierz, kto otrzyma pieniądze',
+  },
+  fee: {
+    allGroups: 'Wszystkie grupy',
+    title: 'Opłaty uczestników',
+    status: {
+      NOT_REQUIRED: 'Nic do zapłaty',
+      UNPAID: 'Niezapłacone',
+      PARTIAL: 'Częściowo zapłacone',
+      PAID: 'Zapłacone',
+      OVERPAID: 'Nadpłacone',
+      REFUNDED: 'Zwrócone',
+    },
+    method: {
+      BANK_TRANSFER: 'Przelew',
+      CASH: 'Gotówka',
+      OTHER: 'Inne',
+    },
   },
 };

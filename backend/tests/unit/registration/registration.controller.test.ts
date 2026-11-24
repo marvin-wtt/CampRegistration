@@ -411,6 +411,7 @@ describe('RegistrationController.destroy', () => {
     expect(registrationService.deleteRegistration).toHaveBeenCalledWith(
       registration,
       undefined,
+      undefined,
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
       event,
