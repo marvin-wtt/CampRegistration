@@ -93,7 +93,6 @@ describe('TranslatedInput', () => {
       },
     });
 
-    await addLanguage(wrapper, 'fr');
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
 
@@ -136,7 +135,6 @@ describe('TranslatedInput', () => {
       },
     });
 
-    await addLanguage(wrapper, 'fr');
     const inputs = wrapper.findAll('input');
     await inputs[0]!.setValue('Test Value de');
     await inputs[1]!.setValue('Test Value fr');
@@ -228,11 +226,27 @@ describe('TranslatedInput', () => {
     });
   });
 
+  it('should show every language without the add menu by default', () => {
+    const wrapper = mount(TranslatedInput, {
+      props: {
+        modelValue: undefined,
+        locales: ['de', 'fr', 'pl'],
+      },
+    });
+
+    expect(wrapper.findAll('input')).toHaveLength(3);
+    expect(wrapper.find('[data-test="add-translation"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test^="remove-translation-"]').exists()).toBe(
+      false,
+    );
+  });
+
   describe('adding languages one at a time', () => {
     it('should show the default language and offer the others in a menu', async () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: undefined,
+          addLanguages: true,
           locales: ['de', 'fr', 'pl'],
         },
       });
@@ -254,6 +268,7 @@ describe('TranslatedInput', () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: { de: 'Hallo', pl: 'Cześć' },
+          addLanguages: true,
           locales: ['de', 'fr', 'pl'],
         },
       });
@@ -265,6 +280,7 @@ describe('TranslatedInput', () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: { de: 'Hallo', pl: 'Cześć' },
+          addLanguages: true,
           locales: ['de', 'fr', 'pl'],
           'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
         },
@@ -285,6 +301,7 @@ describe('TranslatedInput', () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: { de: 'Hallo' },
+          addLanguages: true,
           locales: ['de', 'fr'],
         },
       });
@@ -304,6 +321,7 @@ describe('TranslatedInput', () => {
         props: {
           modelValue: { de: 'Hallo' },
           // In this order pl would sit above de; added, it goes below.
+          addLanguages: true,
           locales: ['fr', 'pl', 'de'],
         },
       });
@@ -325,6 +343,7 @@ describe('TranslatedInput', () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: { de: 'Hallo' },
+          addLanguages: true,
           locales: ['de', 'fr'],
           'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
         },
@@ -340,10 +359,25 @@ describe('TranslatedInput', () => {
       });
     });
 
+    it('should keep a language whose text is cleared by typing', async () => {
+      const wrapper = mount(TranslatedInput, {
+        props: {
+          modelValue: { de: 'Hallo', pl: 'Cześć' },
+          addLanguages: true,
+          locales: ['de', 'fr', 'pl'],
+          'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+        },
+      });
+
+      await wrapper.findAll('input')[1]!.setValue('');
+      expect(wrapper.findAll('input')).toHaveLength(2);
+    });
+
     it('should list every group for values per country', () => {
       const wrapper = mount(TranslatedInput, {
         props: {
           modelValue: undefined,
+          addLanguages: true,
           countries: ['de', 'fr', 'pl'],
         },
       });

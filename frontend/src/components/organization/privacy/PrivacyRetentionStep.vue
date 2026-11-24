@@ -136,6 +136,7 @@
             :model-value="exception.label"
             :label="t('retention.exceptions.label')"
             :locales
+            add-languages
             default-untranslated
             dense
             outlined
@@ -150,6 +151,7 @@
             :model-value="exception.reason"
             :label="t('retention.exceptions.reason')"
             :locales
+            add-languages
             default-untranslated
             dense
             outlined
@@ -269,6 +271,7 @@
               })
             "
             :locales
+            add-languages
             always
             type="textarea"
             dense
