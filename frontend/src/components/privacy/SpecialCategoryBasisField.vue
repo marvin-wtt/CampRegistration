@@ -51,6 +51,7 @@
       :label="t('privacy.editor.field.legalReference')"
       :hint="t('privacy.editor.field.legalReferenceHint')"
       :locales
+      add-languages
       :disable="!canEdit"
       default-untranslated
       always
