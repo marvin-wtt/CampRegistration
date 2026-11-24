@@ -21,4 +21,12 @@ describe('defaultFinanceCategoriesForCountries', () => {
 
     expect(positions).toEqual([0, 1, 2, 3, 4, 5]);
   });
+
+  it('has a list of its own for income', () => {
+    const names = defaultFinanceCategoriesForCountries(['de'], 'INCOME').map(
+      (c) => c.name,
+    );
+
+    expect(names).toEqual(['Zuschüsse', 'Spenden', 'Eigenmittel', 'Sonstiges']);
+  });
 });

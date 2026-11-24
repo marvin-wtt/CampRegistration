@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="column no-wrap expenses-view"
-    :class="{ 'expenses-view--xs': quasar.screen.xs }"
-  >
+  <finance-tab-layout>
     <!-- The total leads; phones keep their filter button beside it. -->
     <finance-totals-strip
       :dense="!wide"
@@ -126,7 +123,7 @@
         </q-list>
       </div>
     </template>
-  </div>
+  </finance-tab-layout>
 </template>
 
 <script lang="ts" setup>
@@ -142,6 +139,7 @@ import ExpenseFilterBar from '@/components/event/finances/ExpenseFilterBar.vue';
 import ExpenseRow from '@/components/event/finances/ExpenseRow.vue';
 import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
 import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
 import { useExpenseFilters } from '@/composables/expenseFilters';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
@@ -204,15 +202,6 @@ const net = computed(() => totals.value.expenses - totals.value.refunds);
 </script>
 
 <style scoped>
-/* Flex gap, not q-gutter: the page's gutter would cancel a gutter's negative margin. */
-.expenses-view {
-  gap: 16px;
-}
-
-.expenses-view--xs {
-  gap: 8px;
-}
-
 .day-group {
   gap: 4px;
 }

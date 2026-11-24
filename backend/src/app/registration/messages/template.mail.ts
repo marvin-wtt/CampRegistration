@@ -245,6 +245,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         customData: this.payload.registration.customData ?? {},
         changes,
         ...this.quotedPrice(event),
+        // For the transfer description; organizers add their bank details.
+        reference: this.payload.registration.paymentReference,
         locale: this.payload.registration.locale,
         // The group's country code; the address's own is `address.country`.
         group: this.payload.registration.group,

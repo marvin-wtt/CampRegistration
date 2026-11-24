@@ -12,6 +12,7 @@ export default {
     expenses: 'Wydatki',
     balances: 'Salda',
     summary: 'Podsumowanie',
+    income: 'Przychody',
   },
   type: {
     expense: 'Wydatek',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Spróbuj ponownie',
     add: 'Dodaj',
+    addIncome: 'Zapisz przychód',
+    income: 'Przychód',
     addExpense: 'Dodaj wydatek',
     expense: 'Wydatek',
     addFile: 'Kolejny plik',
@@ -202,6 +205,14 @@ export default {
   },
   summary: {
     complete: 'Wszystkie paragony są kompletne.',
+    income: 'Przychody i wynik',
+    feesReceived: 'Opłaty uczestników',
+    incomeTotal: 'Otrzymano łącznie',
+    result: 'Wynik',
+    promisedCaption: 'Obiecano {amount}',
+    noGroup: 'Bez grupy',
+    unconverted:
+      'Nie uwzględniono, w innej walucie i bez przeliczenia: {amounts}',
     total: 'Łącznie wydano',
     totalCaption: 'Wydatki {expenses} − zwroty {refunds}',
     expenses: 'Wydatki',
@@ -219,6 +230,7 @@ export default {
   },
   categories: {
     ungrouped: 'Bez grupy',
+    incomeTitle: 'Kategorie przychodów',
     title: 'Kategorie',
     subtitle:
       'Tylko dla tego wydarzenia. Kopiowane, gdy kolejne wydarzenie powstaje na jego podstawie.',
@@ -231,6 +243,7 @@ export default {
     noGroup: 'bez grupy',
     archive: 'Archiwizuj',
     restore: 'Przywróć',
+    usedIncome: 'Przychody: {n}',
     used: 'Wydatki: {n}',
     unused: 'nieużywana',
     showArchived: 'Pokaż zarchiwizowane ({count})',
@@ -278,6 +291,11 @@ export default {
   },
   settings: {
     title: 'Ustawienia finansów',
+    incomeNumbers: 'Numery przychodów',
+    incomePrefixHint:
+      'Przychody mają własną numerację, jak wypłaty, aby decyzję o dotacji lub potwierdzenie darowizny można było odłożyć pod jej numerem.',
+    incomeLocked:
+      'Prefiks jest ustalony po zapisaniu pierwszego przychodu, aby odłożone dokumenty nadal pasowały.',
     payoutNumbers: 'Numery wypłat',
     flagMissingCategories: 'Oznaczaj wydatki bez kategorii',
     flagMissingCategoriesHint:
@@ -296,5 +314,20 @@ export default {
     name: 'Wpisz nazwę',
     prefix: 'Do 8 liter, cyfr lub myślników',
     recipient: 'Wybierz, kto otrzyma pieniądze',
+  },
+  fee: {
+    status: {
+      NOT_REQUIRED: 'Nic do zapłaty',
+      UNPAID: 'Niezapłacone',
+      PARTIAL: 'Częściowo zapłacone',
+      PAID: 'Zapłacone',
+      OVERPAID: 'Nadpłacone',
+      REFUNDED: 'Zwrócone',
+    },
+    method: {
+      BANK_TRANSFER: 'Przelew',
+      CASH: 'Gotówka',
+      OTHER: 'Inne',
+    },
   },
 };

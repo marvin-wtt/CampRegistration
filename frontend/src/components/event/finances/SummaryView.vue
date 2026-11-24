@@ -1,11 +1,11 @@
 <template>
-  <div class="column no-wrap summary-view">
+  <finance-tab-layout loose>
     <!-- The totals, then who paid them: one strip, as on the balances tab. -->
     <finance-totals-strip
       :alert="summary.owedToEvent > 0"
       data-test="finance-summary-totals"
     >
-      <div class="figures row items-end">
+      <finance-figures>
         <finance-figure
           :label="t('finance.summary.total')"
           :value="money(summary.total)"
@@ -29,7 +29,7 @@
           :value="money(summary.owedToEvent)"
           tone="warning"
         />
-      </div>
+      </finance-figures>
 
       <q-separator class="q-my-md" />
 
@@ -124,6 +124,70 @@
         <span class="text-subtitle1 text-weight-bold text-amount">
           {{ money(summary.total) }}
         </span>
+      </q-card-section>
+    </q-card>
+
+    <!-- What came in against what was spent. Promised money is shown but
+         never counted: the result only uses what has arrived. -->
+    <q-card
+      flat
+      bordered
+      class="rounded-xl"
+      data-test="finance-summary-income"
+    >
+      <q-card-section class="text-subtitle1 text-weight-medium">
+        {{ t('finance.summary.income') }}
+      </q-card-section>
+      <div
+        v-for="row in incomeRows"
+        :key="row.key"
+        class="income-row row items-center justify-between no-wrap q-px-md q-py-sm"
+      >
+        <div class="column">
+          <span>{{ row.name }}</span>
+          <span
+            v-if="row.expected > 0"
+            class="text-caption text-on-surface-variant"
+          >
+            {{
+              t('finance.summary.promisedCaption', {
+                amount: money(row.expected),
+              })
+            }}
+          </span>
+        </div>
+        <span class="text-amount">{{ money(row.received, row.currency) }}</span>
+      </div>
+      <q-separator />
+      <q-card-section class="column q-gutter-y-xs">
+        <div class="row items-center justify-between">
+          <span>{{ t('finance.summary.incomeTotal') }}</span>
+          <span class="text-amount">{{ money(receivedTotal) }}</span>
+        </div>
+        <div class="row items-center justify-between">
+          <span>{{ t('finance.summary.total') }}</span>
+          <span class="text-amount">−{{ money(summary.total) }}</span>
+        </div>
+      </q-card-section>
+      <q-separator />
+      <q-card-section class="row items-center justify-between">
+        <span class="text-subtitle1 text-weight-bold">
+          {{ t('finance.summary.result') }}
+        </span>
+        <span
+          class="text-subtitle1 text-weight-bold text-amount"
+          :class="summary.result < 0 ? 'text-error' : undefined"
+        >
+          {{ money(summary.result) }}
+        </span>
+      </q-card-section>
+      <!-- Fees in another currency are never converted: named, not counted. -->
+      <q-card-section
+        v-if="unconverted.length > 0"
+        class="text-caption text-on-surface-variant q-pt-none"
+        data-test="finance-summary-unconverted"
+      >
+        {{ t('finance.summary.unconverted', { amounts: unconverted }) }}
       </q-card-section>
     </q-card>
 
@@ -272,7 +336,7 @@
         </div>
       </q-card-section>
     </q-card>
-  </div>
+  </finance-tab-layout>
 </template>
 
 <script lang="ts" setup>
@@ -286,9 +350,12 @@ import type {
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
 import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
+import FinanceFigures from '@/components/event/finances/FinanceFigures.vue';
 import { groupCategories, useFinanceFormat } from '@/composables/financeFormat';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useGroupLabel } from '@/composables/groupLabel';
 
 const { summary, categories } = defineProps<{
   summary: FinanceSummary;
@@ -299,6 +366,50 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { money } = useFinanceFormat();
 const financeStore = useFinanceStore();
+const groupLabel = useGroupLabel();
+
+// Income categories aren't part of the expense data the page loads.
+void financeStore.loadIncomeCategories();
+
+const receivedTotal = computed(
+  () => summary.incomeReceived + summary.feesReceived,
+);
+
+const incomeRows = computed(() => {
+  const byId = financeStore.incomeCategoriesById;
+  const rows = summary.incomeByCategory.map((total) => {
+    const category = total.categoryId ? byId.get(total.categoryId) : undefined;
+    return {
+      key: total.categoryId ?? 'none',
+      name: category ? to(category.name) : t('finance.summary.uncategorized'),
+      received: total.received,
+      expected: total.expected,
+      currency: summary.currency,
+    };
+  });
+  // A line per group, each in its own currency.
+  const groups = summary.feesByGroup.length > 1;
+  const fees = summary.feesByGroup.map((total) => ({
+    key: `fees-${total.group ?? ''}-${total.currency}`,
+    name: groups
+      ? `${t('finance.summary.feesReceived')} · ${
+          total.group ? groupLabel(total.group) : t('finance.summary.noGroup')
+        }`
+      : t('finance.summary.feesReceived'),
+    received: total.received,
+    expected: 0,
+    currency: total.currency,
+  }));
+
+  return [...rows.sort((a, b) => b.received - a.received), ...fees];
+});
+
+const unconverted = computed(() =>
+  summary.feesByGroup
+    .filter((total) => total.currency !== summary.currency)
+    .map((total) => money(total.received, total.currency))
+    .join(', '),
+);
 
 const noReceiptFiles = computed(
   () => summary.receiptCount === summary.receiptsWithoutFile.length,
@@ -431,16 +542,12 @@ function barWidth(total: number): number {
 </script>
 
 <style scoped>
-.summary-view {
-  gap: 24px;
-}
-
 .export-card {
   background: var(--md3-surface-container);
 }
 
-.figures {
-  gap: 8px 32px;
+.income-row {
+  border-top: 1px solid var(--md3-outline-variant);
 }
 
 .group-row {

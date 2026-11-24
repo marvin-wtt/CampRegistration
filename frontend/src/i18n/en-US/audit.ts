@@ -33,10 +33,21 @@ export default {
         timezone: 'Time zone',
         form: 'Registration form',
         payoutNumberPrefix: 'Payout number prefix',
+        incomeNumberPrefix: 'Income number prefix',
       },
     },
     registration: {
       label: 'Registration',
+      actions: {
+        payment_recorded: 'Payment recorded',
+        payment_updated: 'Payment changed',
+        payment_deleted: 'Payment deleted',
+        payment_refunded: 'Fee refunded',
+        payment_refund_deleted: 'Fee refund deleted',
+        payment_settled: 'Payments settled on deletion',
+        amount_due_adjusted: 'Amount due set',
+        amount_due_reset: 'Amount due reset to the quote',
+      },
       fields: {
         data: 'Form answer',
         customData: 'Custom field',
@@ -44,12 +55,32 @@ export default {
         status: 'Status',
         country: 'Country',
         group: 'Group',
+        amount: 'Amount',
+        method: 'Method',
+        paidOn: 'Paid on',
+        refundedOn: 'Refunded on',
+        amountDueReduction: 'Taken off the amount due',
+        refunded: 'Refunded',
+        held: 'Held',
+        settlement: 'Settlement',
+        quotedAmount: 'Quote',
+        from: 'From',
+        to: 'To',
       },
       values: {
         status: {
           ACCEPTED: 'Accepted',
           PENDING: 'Pending',
           WAITLISTED: 'Waitlisted',
+        },
+        method: {
+          BANK_TRANSFER: 'Bank transfer',
+          CASH: 'Cash',
+          OTHER: 'Other',
+        },
+        settlement: {
+          RETAINED: 'Kept',
+          SETTLED_OUTSIDE: 'Settled outside the app',
         },
       },
       reasons: {
@@ -138,6 +169,19 @@ export default {
       kinds: {
         sensitive: 'Sensitive data',
         registrations: 'All registration data',
+      },
+    },
+    income: {
+      label: 'Income',
+      fields: {
+        amount: 'Amount',
+        originalAmount: 'Original amount',
+        originalCurrency: 'Original currency',
+        receivedOn: 'Received on',
+        description: 'Description',
+        payerName: 'From',
+        categoryId: 'Category',
+        files: 'Documents',
       },
     },
     payout: {

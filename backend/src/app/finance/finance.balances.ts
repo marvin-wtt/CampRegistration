@@ -1,6 +1,9 @@
 import type {
   FinanceBalance,
   FinanceCategoryTotal,
+  FinanceFeeGroupTotal,
+  FinanceIncomeCategoryTotal,
+  FinanceSummary,
 } from '@camp-registration/common/entities';
 import { partyKey } from '@camp-registration/common/utils';
 
@@ -121,4 +124,98 @@ export function computeCategoryTotals(
   }
 
   return [...totals.values()];
+}
+
+export interface SummaryIncome {
+  amount: number;
+  /** `null` while promised but not paid yet. */
+  receivedOn: string | null;
+  categoryId: string | null;
+}
+
+/**
+ * The income half of the summary. The result counts only money that has
+ * arrived, so a promise never makes the event look better off than it is.
+ */
+export function summarizeIncome(
+  incomes: readonly SummaryIncome[],
+  feesReceived: number,
+  spent: number,
+): Pick<
+  FinanceSummary,
+  | 'incomeReceived'
+  | 'incomeExpected'
+  | 'feesReceived'
+  | 'incomeByCategory'
+  | 'result'
+> {
+  const byCategory = new Map<string | null, FinanceIncomeCategoryTotal>();
+  let received = 0;
+  let expected = 0;
+
+  for (const income of incomes) {
+    const total = byCategory.get(income.categoryId) ?? {
+      categoryId: income.categoryId,
+      received: 0,
+      expected: 0,
+      count: 0,
+    };
+    if (income.receivedOn) {
+      total.received += income.amount;
+      received += income.amount;
+    } else {
+      total.expected += income.amount;
+      expected += income.amount;
+    }
+    total.count += 1;
+    byCategory.set(income.categoryId, total);
+  }
+
+  return {
+    incomeReceived: received,
+    incomeExpected: expected,
+    feesReceived,
+    incomeByCategory: [...byCategory.values()],
+    result: received + feesReceived - spent,
+  };
+}
+
+export interface SummaryFeePayment {
+  amount: number;
+  currency: string;
+  /** `null` once the registration is deleted. */
+  registration: { group: string | null } | null;
+  refunds: { amount: number }[];
+}
+
+/**
+ * Fees received net of refunds, per group and currency. Only the event's
+ * currency adds up to `feesReceived`; other currencies are never converted.
+ */
+export function summarizeFees(
+  payments: readonly SummaryFeePayment[],
+  eventCurrency: string,
+): { feesReceived: number; feesByGroup: FinanceFeeGroupTotal[] } {
+  const byGroup = new Map<string, FinanceFeeGroupTotal>();
+  let feesReceived = 0;
+
+  for (const payment of payments) {
+    const net =
+      payment.amount -
+      payment.refunds.reduce((sum, refund) => sum + refund.amount, 0);
+    const group = payment.registration?.group ?? null;
+    const key = `${group ?? ''}|${payment.currency}`;
+    const total = byGroup.get(key) ?? {
+      group,
+      currency: payment.currency,
+      received: 0,
+    };
+    total.received += net;
+    byGroup.set(key, total);
+    if (payment.currency === eventCurrency) {
+      feesReceived += net;
+    }
+  }
+
+  return { feesReceived, feesByGroup: [...byGroup.values()] };
 }

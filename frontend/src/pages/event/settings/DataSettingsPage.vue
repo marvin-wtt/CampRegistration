@@ -582,7 +582,7 @@ event:
   after: 'The public page and registration link stop working, and the event can no longer be used as a template.'
   effect:
     registrations: 'all registrations, including sensitive data'
-    finances: 'the finances: expenses, receipts and payouts'
+    finances: 'the finances: expenses, receipts, payouts, income and the recorded fee payments'
     files: 'all files of the event'
     planning: 'rooms, program, tasks and duty plans'
     messages: 'sent messages and email templates'
@@ -646,7 +646,7 @@ event:
   after: 'Die öffentliche Seite und der Anmeldelink funktionieren nicht mehr, und die Veranstaltung kann nicht mehr als Vorlage genutzt werden.'
   effect:
     registrations: 'alle Anmeldungen, einschließlich sensibler Daten'
-    finances: 'die Finanzen: Ausgaben, Belege und Auszahlungen'
+    finances: 'die Finanzen: Ausgaben, Belege, Auszahlungen, Einnahmen und erfasste Beitragszahlungen'
     files: 'alle Dateien der Veranstaltung'
     planning: 'Zimmer, Programm, Aufgaben und Dienstpläne'
     messages: 'gesendete Nachrichten und E-Mail-Vorlagen'
@@ -710,7 +710,7 @@ event:
   after: 'La page publique et le lien d’inscription ne fonctionnent plus, et l’événement ne peut plus servir de modèle.'
   effect:
     registrations: 'toutes les inscriptions, y compris les données sensibles'
-    finances: 'les finances : dépenses, justificatifs et versements'
+    finances: 'les finances : dépenses, justificatifs, versements, recettes et paiements des frais enregistrés'
     files: 'tous les fichiers de l’événement'
     planning: 'chambres, programme, tâches et plannings de service'
     messages: 'messages envoyés et modèles d’e-mail'
@@ -774,7 +774,7 @@ event:
   after: 'Strona publiczna i link do zgłoszeń przestaną działać, a wydarzenia nie będzie można użyć jako szablonu.'
   effect:
     registrations: 'wszystkie zgłoszenia, łącznie z danymi wrażliwymi'
-    finances: 'finanse: wydatki, paragony i wypłaty'
+    finances: 'finanse: wydatki, paragony, wypłaty, przychody i zarejestrowane wpłaty opłat'
     files: 'wszystkie pliki wydarzenia'
     planning: 'pokoje, program, zadania i grafiki dyżurów'
     messages: 'wysłane wiadomości i szablony e-maili'
@@ -838,7 +838,7 @@ event:
   after: 'Veřejná stránka a odkaz na přihlášku přestanou fungovat a akci už nepůjde použít jako šablonu.'
   effect:
     registrations: 'všechny přihlášky včetně citlivých údajů'
-    finances: 'finance: výdaje, doklady a výplaty'
+    finances: 'finance: výdaje, doklady, výplaty, příjmy a zaznamenané platby poplatků'
     files: 'všechny soubory akce'
     planning: 'pokoje, program, úkoly a rozpisy služeb'
     messages: 'odeslané zprávy a šablony e-mailů'

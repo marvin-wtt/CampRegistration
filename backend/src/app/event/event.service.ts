@@ -11,6 +11,7 @@ import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
+import { freeReferenceCode } from '#app/finance/finance.sequence';
 import {
   calculateFreePlaces,
   eventRegistrationStatus,
@@ -458,7 +459,7 @@ export class EventService extends BaseService {
           // Not stripped: the ids are new ones, generated up front so a
           // category can name its group's new id in this same insert.
           financeCategories: { createMany: { data: financeCategories } },
-          finance: { create: {} },
+          finance: { create: { referenceCode: await freeReferenceCode(tx) } },
         },
         include: { ...this.eventResourceInclude() },
       });

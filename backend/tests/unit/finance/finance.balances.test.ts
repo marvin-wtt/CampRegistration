@@ -4,6 +4,8 @@ import {
   type BalancePayout,
   computeBalances,
   computeCategoryTotals,
+  summarizeFees,
+  summarizeIncome,
 } from '#app/finance/finance.balances';
 
 const expense = (overrides: Partial<BalanceExpense>): BalanceExpense => ({
@@ -182,5 +184,77 @@ describe('computeCategoryTotals', () => {
       },
       { categoryId: null, expenses: 2375, refunds: 0, total: 2375, count: 1 },
     ]);
+  });
+});
+
+describe('summarizeIncome', () => {
+  it('keeps promised income out of the result', () => {
+    const summary = summarizeIncome(
+      [
+        { amount: 300_00, receivedOn: '2026-05-01', categoryId: 'grants' },
+        { amount: 150_00, receivedOn: null, categoryId: 'grants' },
+        { amount: 50_00, receivedOn: '2026-05-02', categoryId: null },
+      ],
+      1_000_00,
+      900_00,
+    );
+
+    expect(summary).toEqual({
+      incomeReceived: 350_00,
+      incomeExpected: 150_00,
+      feesReceived: 1_000_00,
+      incomeByCategory: [
+        { categoryId: 'grants', received: 300_00, expected: 150_00, count: 2 },
+        { categoryId: null, received: 50_00, expected: 0, count: 1 },
+      ],
+      result: 450_00,
+    });
+  });
+
+  it('is zero without any income', () => {
+    expect(summarizeIncome([], 0, 0)).toMatchObject({
+      incomeReceived: 0,
+      incomeExpected: 0,
+      incomeByCategory: [],
+      result: 0,
+    });
+  });
+});
+
+describe('summarizeFees', () => {
+  it('totals per group and currency, adding up only the event currency', () => {
+    const summary = summarizeFees(
+      [
+        {
+          amount: 200_00,
+          currency: 'EUR',
+          registration: { group: 'de' },
+          refunds: [{ amount: 50_00 }],
+        },
+        {
+          amount: 200_00,
+          currency: 'EUR',
+          registration: { group: 'de' },
+          refunds: [],
+        },
+        {
+          amount: 800_00,
+          currency: 'PLN',
+          registration: { group: 'pl' },
+          refunds: [],
+        },
+        { amount: 100_00, currency: 'EUR', registration: null, refunds: [] },
+      ],
+      'EUR',
+    );
+
+    expect(summary).toEqual({
+      feesReceived: 450_00,
+      feesByGroup: [
+        { group: 'de', currency: 'EUR', received: 350_00 },
+        { group: 'pl', currency: 'PLN', received: 800_00 },
+        { group: null, currency: 'EUR', received: 100_00 },
+      ],
+    });
   });
 });

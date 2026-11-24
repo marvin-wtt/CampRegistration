@@ -4,6 +4,7 @@ import type { PerGroup } from '@camp-registration/common/entities';
 import prisma from '../client.js';
 import { MessageTemplateFactory } from './message-template.factory';
 import { OrganizationFactory } from './organization.factory';
+import { randomReferenceCode } from '#app/finance/finance.sequence';
 
 export const EventFactory = {
   build: (
@@ -56,7 +57,7 @@ export const EventFactory = {
         },
       },
       registrationOpensAt: faker.date.past(),
-      finance: { create: {} },
+      finance: { create: { referenceCode: randomReferenceCode() } },
       ...data,
     };
   },

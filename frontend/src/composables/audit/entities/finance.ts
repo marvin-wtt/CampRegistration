@@ -44,3 +44,14 @@ export function usePayoutAuditView(): AuditEntityView {
     formatValue: useMoneyValue(),
   };
 }
+
+export function useIncomeAuditView(): AuditEntityView {
+  return {
+    icon: 'savings',
+    subject(entry) {
+      const number = entry.details?.context?.number;
+      return typeof number === 'number' ? `№ ${number.toString()}` : undefined;
+    },
+    formatValue: useMoneyValue(),
+  };
+}

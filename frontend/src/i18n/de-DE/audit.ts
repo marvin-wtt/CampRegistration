@@ -33,10 +33,21 @@ export default {
         timezone: 'Zeitzone',
         form: 'Anmeldeformular',
         payoutNumberPrefix: 'Präfix der Auszahlungsnummern',
+        incomeNumberPrefix: 'Präfix der Einnahmenummern',
       },
     },
     registration: {
       label: 'Anmeldung',
+      actions: {
+        payment_recorded: 'Zahlung erfasst',
+        payment_updated: 'Zahlung geändert',
+        payment_deleted: 'Zahlung gelöscht',
+        payment_refunded: 'Beitrag erstattet',
+        payment_refund_deleted: 'Erstattung gelöscht',
+        payment_settled: 'Zahlungen beim Löschen abgerechnet',
+        amount_due_adjusted: 'Offener Betrag festgelegt',
+        amount_due_reset: 'Offener Betrag auf das Angebot zurückgesetzt',
+      },
       fields: {
         data: 'Formularantwort',
         customData: 'Benutzerdefiniertes Feld',
@@ -44,12 +55,32 @@ export default {
         status: 'Status',
         country: 'Land',
         group: 'Gruppe',
+        amount: 'Betrag',
+        method: 'Zahlungsart',
+        paidOn: 'Bezahlt am',
+        refundedOn: 'Erstattet am',
+        amountDueReduction: 'Vom Betrag abgezogen',
+        refunded: 'Erstattet',
+        held: 'Gehalten',
+        settlement: 'Abrechnung',
+        quotedAmount: 'Angebot',
+        from: 'Von',
+        to: 'Auf',
       },
       values: {
         status: {
           ACCEPTED: 'Akzeptiert',
           PENDING: 'Ausstehend',
           WAITLISTED: 'Warteliste',
+        },
+        method: {
+          BANK_TRANSFER: 'Überweisung',
+          CASH: 'Bar',
+          OTHER: 'Sonstiges',
+        },
+        settlement: {
+          RETAINED: 'Einbehalten',
+          SETTLED_OUTSIDE: 'Außerhalb der App abgerechnet',
         },
       },
       reasons: {
@@ -138,6 +169,19 @@ export default {
       kinds: {
         sensitive: 'Sensible Daten',
         registrations: 'Alle Anmeldedaten',
+      },
+    },
+    income: {
+      label: 'Einnahme',
+      fields: {
+        amount: 'Betrag',
+        originalAmount: 'Originalbetrag',
+        originalCurrency: 'Originalwährung',
+        receivedOn: 'Eingegangen am',
+        description: 'Beschreibung',
+        payerName: 'Von',
+        categoryId: 'Kategorie',
+        files: 'Dokumente',
       },
     },
     payout: {

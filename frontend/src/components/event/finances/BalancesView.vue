@@ -1,12 +1,12 @@
 <template>
-  <div class="column no-wrap balances-view">
+  <finance-tab-layout loose>
     <!-- What is left to do, by the same rule as each card's status. -->
     <finance-totals-strip
       v-if="viewsAll && balances.length > 0"
       :alert="toComeBack > 0"
       data-test="balance-totals"
     >
-      <div class="figures row items-end">
+      <finance-figures>
         <finance-figure
           :label="t('finance.balance.stillOpen')"
           :value="money(stillOpen)"
@@ -23,7 +23,7 @@
           :value="money(toComeBack)"
           tone="warning"
         />
-      </div>
+      </finance-figures>
       <div class="row items-center no-wrap q-gutter-x-md q-mt-sm">
         <q-linear-progress
           :value="settled / balances.length"
@@ -83,7 +83,7 @@
         viewsAll ? t('finance.balance.formula') : t('finance.balance.ownOnly')
       }}
     </p>
-  </div>
+  </finance-tab-layout>
 </template>
 
 <script lang="ts" setup>
@@ -100,6 +100,8 @@ import { partyKey, recipientKey } from '@camp-registration/common/utils';
 import BalanceCard from '@/components/event/finances/BalanceCard.vue';
 import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
 import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
+import FinanceFigures from '@/components/event/finances/FinanceFigures.vue';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { usePayoutActions } from '@/composables/payoutActions';
@@ -192,17 +194,9 @@ function pay(balance: FinanceBalance, direction: PayoutDirection) {
 </script>
 
 <style scoped>
-.balances-view {
-  gap: 24px;
-}
-
 .balance-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-}
-
-.figures {
-  gap: 8px 32px;
 }
 </style>

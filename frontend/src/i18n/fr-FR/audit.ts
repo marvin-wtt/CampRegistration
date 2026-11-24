@@ -33,10 +33,21 @@ export default {
         timezone: 'Fuseau horaire',
         form: 'Formulaire d’inscription',
         payoutNumberPrefix: 'Préfixe des numéros de versement',
+        incomeNumberPrefix: 'Préfixe des numéros de recette',
       },
     },
     registration: {
       label: 'Inscription',
+      actions: {
+        payment_recorded: 'Paiement enregistré',
+        payment_updated: 'Paiement modifié',
+        payment_deleted: 'Paiement supprimé',
+        payment_refunded: 'Frais remboursés',
+        payment_refund_deleted: 'Remboursement supprimé',
+        payment_settled: 'Paiements réglés à la suppression',
+        amount_due_adjusted: 'Montant dû fixé',
+        amount_due_reset: 'Montant dû remis au devis',
+      },
       fields: {
         data: 'Réponse du formulaire',
         customData: 'Champ personnalisé',
@@ -44,12 +55,32 @@ export default {
         status: 'Statut',
         country: 'Pays',
         group: 'Groupe',
+        amount: 'Montant',
+        method: 'Moyen de paiement',
+        paidOn: 'Payé le',
+        refundedOn: 'Remboursé le',
+        amountDueReduction: 'Déduit du montant dû',
+        refunded: 'Remboursé',
+        held: 'Détenu',
+        settlement: 'Règlement',
+        quotedAmount: 'Devis',
+        from: 'De',
+        to: 'À',
       },
       values: {
         status: {
           ACCEPTED: 'Accepté',
           PENDING: 'En attente',
           WAITLISTED: "Liste d'attente",
+        },
+        method: {
+          BANK_TRANSFER: 'Virement',
+          CASH: 'Espèces',
+          OTHER: 'Autre',
+        },
+        settlement: {
+          RETAINED: 'Conservé',
+          SETTLED_OUTSIDE: "Réglé hors de l'application",
         },
       },
       reasons: {
@@ -138,6 +169,19 @@ export default {
       kinds: {
         sensitive: 'Données sensibles',
         registrations: 'Toutes les données d’inscription',
+      },
+    },
+    income: {
+      label: 'Recette',
+      fields: {
+        amount: 'Montant',
+        originalAmount: 'Montant d’origine',
+        originalCurrency: 'Devise d’origine',
+        receivedOn: 'Reçu le',
+        description: 'Description',
+        payerName: 'De',
+        categoryId: 'Catégorie',
+        files: 'Documents',
       },
     },
     payout: {

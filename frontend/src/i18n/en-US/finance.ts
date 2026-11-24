@@ -12,6 +12,7 @@ export default {
     expenses: 'Expenses',
     balances: 'Balances',
     summary: 'Summary',
+    income: 'Income',
   },
   type: {
     expense: 'Expense',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Try again',
     add: 'Add',
+    addIncome: 'Record income',
+    income: 'Income',
     addExpense: 'Add expense',
     expense: 'Expense',
     addFile: 'Another file',
@@ -201,6 +204,14 @@ export default {
   },
   summary: {
     complete: 'Every receipt is complete.',
+    income: 'Income and result',
+    feesReceived: 'Registration fees',
+    incomeTotal: 'Received in total',
+    result: 'Result',
+    promisedCaption: '{amount} promised',
+    noGroup: 'Without group',
+    unconverted:
+      'Not included, in another currency and not converted: {amounts}',
     total: 'Total spent',
     totalCaption: '{expenses} expenses − {refunds} refunds',
     expenses: 'Expenses',
@@ -218,6 +229,7 @@ export default {
   },
   categories: {
     ungrouped: 'Without group',
+    incomeTitle: 'Income categories',
     title: 'Categories',
     subtitle:
       'For this event only. Copied when the next event is created from this one.',
@@ -230,6 +242,7 @@ export default {
     noGroup: 'no group',
     archive: 'Archive',
     restore: 'Restore',
+    usedIncome: '{n} entry | {n} entries',
     used: '{n} expense | {n} expenses',
     unused: 'unused',
     showArchived: 'Show archived ({count})',
@@ -277,6 +290,11 @@ export default {
   },
   settings: {
     title: 'Finance settings',
+    incomeNumbers: 'Income numbers',
+    incomePrefixHint:
+      'Income is numbered on its own, like payouts, so a grant letter or donation receipt can be filed under its number.',
+    incomeLocked:
+      'The prefix is fixed once the first income exists, so filed documents keep matching.',
     payoutNumbers: 'Payout numbers',
     flagMissingCategories: 'Mark expenses without a category',
     flagMissingCategoriesHint:
@@ -295,5 +313,20 @@ export default {
     name: 'Enter a name',
     prefix: 'Up to 8 letters, digits or dashes',
     recipient: 'Pick who gets the money',
+  },
+  fee: {
+    status: {
+      NOT_REQUIRED: 'Nothing due',
+      UNPAID: 'Unpaid',
+      PARTIAL: 'Partly paid',
+      PAID: 'Paid',
+      OVERPAID: 'Overpaid',
+      REFUNDED: 'Refunded',
+    },
+    method: {
+      BANK_TRANSFER: 'Bank transfer',
+      CASH: 'Cash',
+      OTHER: 'Other',
+    },
   },
 };

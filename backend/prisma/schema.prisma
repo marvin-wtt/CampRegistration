@@ -37,6 +37,9 @@ model User {
   createdExpenses               Expense[]             @relation("ExpenseCreatedBy")
   receivedPayouts               Payout[]              @relation("PayoutRecipient")
   createdPayouts                Payout[]              @relation("PayoutCreatedBy")
+  createdIncomes                Income[]              @relation("IncomeCreatedBy")
+  createdPayments               Payment[]             @relation("PaymentCreatedBy")
+  createdPaymentRefunds         PaymentRefund[]       @relation("PaymentRefundCreatedBy")
   postponedEventRetentionStates EventRetentionState[] @relation("EventRetentionStatePostponedBy")
   adminAccessGrants             AdminAccessGrant[]
 
@@ -246,6 +249,8 @@ model Event {
   financeCategories    FinanceCategory[]
   expenses             Expense[]
   payouts              Payout[]
+  incomes              Income[]
+  payments             Payment[]
   finance              EventFinance?
   retentionStates      EventRetentionState[]
 
@@ -256,16 +261,24 @@ model Event {
 // An event's finance numbering, apart from the event so handing out a number
 // isn't an event edit (no `updatedAt`). Created with the event.
 model EventFinance {
-  eventId            String @id @map("event_id") @db.Char(26)
+  eventId             String @id @map("event_id") @db.Char(26)
   /// Shown before payout numbers (`P1`); fixed once the first payout exists.
-  payoutNumberPrefix String @default("P") @map("payout_number_prefix") @db.VarChar(8)
+  payoutNumberPrefix  String @default("P") @map("payout_number_prefix") @db.VarChar(8)
+  /// Shown before income numbers (`I1`); fixed once the first income exists.
+  incomeNumberPrefix  String @default("I") @map("income_number_prefix") @db.VarChar(8)
   /// The last receipt and payout numbers handed out. Counters rather than
   /// `MAX() + 1`, so deleting the newest record never frees its number.
-  lastReceiptNumber  Int    @default(0) @map("last_receipt_number") @db.UnsignedInt
-  lastPayoutNumber   Int    @default(0) @map("last_payout_number") @db.UnsignedInt
+  lastReceiptNumber   Int    @default(0) @map("last_receipt_number") @db.UnsignedInt
+  lastPayoutNumber    Int    @default(0) @map("last_payout_number") @db.UnsignedInt
+  lastIncomeNumber    Int    @default(0) @map("last_income_number") @db.UnsignedInt
+  /// Starts every transfer reference of the event (`K7MX-0042`), so transfers
+  /// for several events on one bank account stay apart.
+  referenceCode       String @unique(map: "event_finances_reference_code_unique") @map("reference_code") @db.Char(4)
+  lastReferenceNumber Int    @default(0) @map("last_reference_number") @db.UnsignedInt
 
   event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_finances_event_id_foreign")
   payouts Payout[]
+  incomes Income[]
 
   @@map("event_finances")
 }
@@ -339,6 +352,14 @@ model Registration {
   // The currency the registration's amounts are in: its event's at
   // submission, so each amount says what it is in.
   currency                           String?            @db.Char(3)
+  // Set by hand in place of the quote; what is owed is this (or the quote)
+  // minus what refunds cancelled (docs/payments.md).
+  amountDueOverride                  Int?               @map("amount_due_override") @db.UnsignedInt
+  amountDueNote                      String?            @map("amount_due_note") @db.VarChar(255)
+  amountDueAdjustedAt                DateTime?          @map("amount_due_adjusted_at")
+  // The transfer reference (`K7MX-0042`): the event's `referenceCode` and a
+  // number of the event's own.
+  paymentReference                   String             @unique(map: "registrations_payment_reference_unique") @map("payment_reference") @db.VarChar(16)
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
@@ -358,6 +379,7 @@ model Registration {
   files                     File[]
   deliveries                MessageDelivery[]
   choreAssignmentMembers    ChoreAssignmentMember[]
+  payments                  Payment[]
 
   @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
   @@index([eventPrivacyNoticeVersionId], map: "registrations_event_privacy_notice_version_id_index")
@@ -453,6 +475,7 @@ model File {
   newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
   expenseId           String?      @map("expense_id") @db.Char(26) // Prisma does not support morth
   payoutId            String?      @map("payout_id") @db.Char(26) // Prisma does not support morth
+  incomeId            String?      @map("income_id") @db.Char(26) // Prisma does not support morth
   name                String
   originalName        String       @map("original_name")
   field               String?
@@ -475,9 +498,11 @@ model File {
   newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
   expense           Expense?           @relation(fields: [expenseId], references: [id], onDelete: SetNull)
   payout            Payout?            @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  income            Income?            @relation(fields: [incomeId], references: [id], onDelete: SetNull)
 
   @@index([expenseId], map: "files_expense_id_index")
   @@index([payoutId], map: "files_payout_id_index")
+  @@index([incomeId], map: "files_income_id_index")
   @@map("files")
 }
 
@@ -507,6 +532,7 @@ model FinanceCategory {
   parent   FinanceCategory?  @relation("FinanceCategoryGroup", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "finance_categories_parent_id_foreign")
   children FinanceCategory[] @relation("FinanceCategoryGroup")
   expenses Expense[]
+  incomes  Income[]
 
   @@index([eventId], map: "finance_categories_event_id_index")
   @@index([parentId], map: "finance_categories_parent_id_index")
@@ -555,6 +581,39 @@ model Expense {
   @@map("expenses")
 }
 
+// Money the event receives other than registration fees: grants, donations.
+// See "Income" in docs/finances.md. Always shared funds, never a balance.
+model Income {
+  id               String    @id @unique(map: "incomes_id_unique") @default(ulid()) @db.Char(26)
+  eventId          String    @map("event_id") @db.Char(26)
+  number           Int       @db.UnsignedInt
+  amount           Int       @db.UnsignedInt
+  // What the grant letter says, when it is in another currency; set together.
+  originalAmount   Int?      @map("original_amount") @db.UnsignedInt
+  originalCurrency String?   @map("original_currency") @db.Char(3)
+  // When the money arrived; `null` while it is promised but not yet paid.
+  receivedOn       String?   @map("received_on") @db.Char(10)
+  description      String    @db.VarChar(255)
+  // Who gave it: a funder, a sponsor. Free text, for the bookkeeping.
+  payerName        String?   @map("payer_name") @db.VarChar(255)
+  categoryId       String?   @map("category_id") @db.Char(26)
+  createdByUserId  String?   @map("created_by_user_id") @db.Char(26)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "incomes_event_id_foreign")
+  // The same event id: an income reads its number prefix from here.
+  finance   EventFinance     @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: Cascade, map: "incomes_event_id_finance_foreign")
+  category  FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "incomes_category_id_foreign")
+  createdBy User?            @relation("IncomeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "incomes_created_by_user_id_foreign")
+  files     File[]
+
+  @@unique([eventId, number], map: "incomes_event_id_number_unique")
+  @@index([categoryId], map: "incomes_category_id_index")
+  @@index([createdByUserId], map: "incomes_created_by_user_id_index")
+  @@map("incomes")
+}
+
 enum PayoutDirection {
   OUT
   IN
@@ -601,6 +660,92 @@ model Payout {
   @@index([recipientUserId], map: "payouts_recipient_user_id_index")
   @@index([createdByUserId], map: "payouts_created_by_user_id_index")
   @@map("payouts")
+}
+
+// Where a payment came from. Providers join `MANUAL` later (docs/payments.md).
+enum PaymentSource {
+  MANUAL
+}
+
+// Manual payments are recorded once the money arrived. A provider's
+// checkout adds the states before `PAID`; balances count only `PAID`.
+enum PaymentStatus {
+  PAID
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+// How money still held was settled when its registration was deleted.
+enum PaymentSettlement {
+  RETAINED
+  SETTLED_OUTSIDE
+}
+
+// A registration fee that came in. Outlives its registration as the
+// accounting record, with its own snapshot of who paid.
+model Payment {
+  id              String             @id @unique(map: "payments_id_unique") @default(ulid()) @db.Char(26)
+  eventId         String             @map("event_id") @db.Char(26)
+  registrationId  String?            @map("registration_id") @db.Char(26)
+  source          PaymentSource      @default(MANUAL)
+  status          PaymentStatus      @default(PAID)
+  amount          Int                @db.UnsignedInt
+  currency        String             @db.Char(3)
+  method          PaymentMethod
+  // The booking date, a calendar date like `Payout.paidOn`.
+  paidOn          String             @map("paid_on") @db.Char(10)
+  note            String?            @db.VarChar(255)
+  // The registration's name and id when the payment was recorded; the name
+  // is cleared once the accounting retention period is over.
+  payerName       String?            @map("payer_name") @db.VarChar(255)
+  registrationRef String             @map("registration_ref") @db.Char(26)
+  settlement      PaymentSettlement?
+  createdByUserId String?            @map("created_by_user_id") @db.Char(26)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime?          @updatedAt @map("updated_at")
+
+  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payments_event_id_foreign")
+  registration Registration?   @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payments_registration_id_foreign")
+  createdBy    User?           @relation("PaymentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payments_created_by_user_id_foreign")
+  refunds      PaymentRefund[]
+
+  @@index([eventId], map: "payments_event_id_index")
+  @@index([registrationId], map: "payments_registration_id_index")
+  @@index([registrationRef], map: "payments_registration_ref_index")
+  @@index([createdByUserId], map: "payments_created_by_user_id_index")
+  @@map("payments")
+}
+
+// Manual refunds are recorded once sent; providers add `PENDING` and `FAILED`.
+enum PaymentRefundStatus {
+  REFUNDED
+}
+
+// A fee going back to a registrant — not an expense of type `REFUND`.
+model PaymentRefund {
+  id                 String              @id @unique(map: "payment_refunds_id_unique") @default(ulid()) @db.Char(26)
+  paymentId          String              @map("payment_id") @db.Char(26)
+  status             PaymentRefundStatus @default(REFUNDED)
+  amount             Int                 @db.UnsignedInt
+  refundedOn         String              @map("refunded_on") @db.Char(10)
+  reason             String?             @db.VarChar(255)
+  // What this refund took off the amount due (a cancellation); none for an
+  // overpayment. Derived, so deleting the refund gives it back.
+  amountDueReduction Int                 @default(0) @map("amount_due_reduction") @db.UnsignedInt
+  createdByUserId    String?             @map("created_by_user_id") @db.Char(26)
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime?           @updatedAt @map("updated_at")
+
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payment_refunds_payment_id_foreign")
+  createdBy User?   @relation("PaymentRefundCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payment_refunds_created_by_user_id_foreign")
+
+  @@index([paymentId], map: "payment_refunds_payment_id_index")
+  @@index([createdByUserId], map: "payment_refunds_created_by_user_id_index")
+  @@map("payment_refunds")
 }
 
 model Message {

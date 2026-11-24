@@ -1375,6 +1375,8 @@ describe('finances', () => {
       expect(settings.data).toEqual({
         payoutNumberPrefix: 'A',
         payoutNumberPrefixLocked: true,
+        incomeNumberPrefix: 'I',
+        incomeNumberPrefixLocked: false,
       });
 
       await request()
@@ -1474,7 +1476,7 @@ describe('finances', () => {
       expect(lines[2]).toContain('-12.4');
     });
 
-    it('builds a workbook with expenses, payouts and categories', async () => {
+    it('builds a workbook with expenses, payouts, fees and categories', async () => {
       const { event, token } = await setup();
       await createExpense(event, token);
 
@@ -1488,9 +1490,12 @@ describe('finances', () => {
       expect(headers['content-type']).toContain('spreadsheetml');
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(body as ArrayBuffer);
+      // A director may see payments, so the fees come along.
       expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
         'Expenses',
         'Payouts',
+        'Income',
+        'Registration fees',
         'Categories',
       ]);
       expect(workbook.getWorksheet('Expenses')?.rowCount).toBe(2);

@@ -12,6 +12,7 @@ export default {
     expenses: 'Ausgaben',
     balances: 'Salden',
     summary: 'Übersicht',
+    income: 'Einnahmen',
   },
   type: {
     expense: 'Ausgabe',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Erneut versuchen',
     add: 'Hinzufügen',
+    addIncome: 'Einnahme erfassen',
+    income: 'Einnahme',
     addExpense: 'Ausgabe erfassen',
     expense: 'Ausgabe',
     addFile: 'Weitere Datei',
@@ -203,6 +206,14 @@ export default {
   },
   summary: {
     complete: 'Alle Belege sind vollständig.',
+    income: 'Einnahmen und Ergebnis',
+    feesReceived: 'Teilnahmebeiträge',
+    incomeTotal: 'Eingegangen gesamt',
+    result: 'Ergebnis',
+    promisedCaption: '{amount} zugesagt',
+    noGroup: 'Ohne Gruppe',
+    unconverted:
+      'Nicht enthalten, da in anderer Währung und nicht umgerechnet: {amounts}',
     total: 'Gesamtausgaben',
     totalCaption: '{expenses} Ausgaben − {refunds} Erstattungen',
     expenses: 'Ausgaben',
@@ -220,6 +231,7 @@ export default {
   },
   categories: {
     ungrouped: 'Ohne Gruppe',
+    incomeTitle: 'Einnahmekategorien',
     title: 'Kategorien',
     subtitle:
       'Nur für diese Veranstaltung. Wird kopiert, wenn die nächste Veranstaltung auf dieser aufbaut.',
@@ -232,6 +244,7 @@ export default {
     noGroup: 'ohne Gruppe',
     archive: 'Archivieren',
     restore: 'Wiederherstellen',
+    usedIncome: '{n} Einnahme | {n} Einnahmen',
     used: '{n} Ausgabe | {n} Ausgaben',
     unused: 'unbenutzt',
     showArchived: 'Archivierte anzeigen ({count})',
@@ -279,6 +292,11 @@ export default {
   },
   settings: {
     title: 'Finanzeinstellungen',
+    incomeNumbers: 'Einnahmenummern',
+    incomePrefixHint:
+      'Einnahmen werden wie Auszahlungen eigenständig nummeriert, damit ein Bewilligungsbescheid oder eine Spendenquittung unter ihrer Nummer abgelegt werden kann.',
+    incomeLocked:
+      'Das Präfix ist fest, sobald die erste Einnahme existiert, damit abgelegte Dokumente weiter passen.',
     payoutNumbers: 'Auszahlungsnummern',
     flagMissingCategories: 'Ausgaben ohne Kategorie markieren',
     flagMissingCategoriesHint:
@@ -297,5 +315,20 @@ export default {
     name: 'Gib einen Namen ein',
     prefix: 'Bis zu 8 Buchstaben, Ziffern oder Bindestriche',
     recipient: 'Wähle, wer das Geld bekommt',
+  },
+  fee: {
+    status: {
+      NOT_REQUIRED: 'Nichts fällig',
+      UNPAID: 'Offen',
+      PARTIAL: 'Teilweise bezahlt',
+      PAID: 'Bezahlt',
+      OVERPAID: 'Überzahlt',
+      REFUNDED: 'Erstattet',
+    },
+    method: {
+      BANK_TRANSFER: 'Überweisung',
+      CASH: 'Bar',
+      OTHER: 'Sonstiges',
+    },
   },
 };

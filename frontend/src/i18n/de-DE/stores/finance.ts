@@ -28,6 +28,18 @@ export default {
       error: 'Fehler beim Rückgängigmachen der Auszahlung',
     },
   },
+  income: {
+    fetch: { error: 'Einnahmen konnten nicht geladen werden' },
+    create: {
+      success: 'Einnahme erfasst',
+      error: 'Einnahme konnte nicht erfasst werden',
+    },
+    update: { error: 'Einnahme konnte nicht geändert werden' },
+    delete: {
+      success: 'Einnahme gelöscht',
+      error: 'Einnahme konnte nicht gelöscht werden',
+    },
+  },
   financeCategory: {
     fetch: { error: 'Fehler beim Abrufen der Kategorien' },
     create: { error: 'Fehler beim Erstellen der Kategorie' },
@@ -49,6 +61,30 @@ export default {
     updateSettings: {
       success: 'Einstellungen gespeichert',
       error: 'Fehler beim Speichern der Einstellungen',
+    },
+  },
+  fee: {
+    fetch: { error: 'Fehler beim Abrufen der Teilnahmebeiträge' },
+    record: {
+      success: 'Zahlung erfasst',
+      error: 'Fehler beim Erfassen der Zahlung',
+    },
+    amountDue: {
+      success: 'Betrag gespeichert',
+      error: 'Fehler beim Speichern des Betrags',
+    },
+    updatePayment: { error: 'Fehler beim Aktualisieren der Zahlung' },
+    deletePayment: {
+      success: 'Zahlung gelöscht',
+      error: 'Fehler beim Löschen der Zahlung',
+    },
+    refund: {
+      success: 'Erstattung erfasst',
+      error: 'Fehler beim Erfassen der Erstattung',
+    },
+    deleteRefund: {
+      success: 'Erstattung gelöscht',
+      error: 'Fehler beim Löschen der Erstattung',
     },
   },
 };

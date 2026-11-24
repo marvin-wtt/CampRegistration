@@ -7,11 +7,14 @@ import ApiError from '#core/router/ApiError';
 import {
   computeBalances,
   computeCategoryTotals,
+  summarizeFees,
+  summarizeIncome,
 } from '#app/finance/finance.balances';
 import type {
   FinanceBalance,
   FinanceParties,
   FinanceSettings,
+  FinanceSettingsUpdateData,
   FinanceSummary,
 } from '@camp-registration/common/entities';
 
@@ -39,19 +42,21 @@ export class FinanceService extends BaseService {
   async getSummary(eventId: string, currency: string): Promise<FinanceSummary> {
     const { expenses, payouts } = await this.loadLedger(eventId);
     const balances = computeBalances(expenses, payouts);
+    const { incomes, fees } = await this.loadIncome(eventId, currency);
 
     const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
     const spent = expenses.filter((e) => e.type === 'EXPENSE');
     const refunded = expenses.filter((e) => e.type === 'REFUND');
     const byPerson = (e: (typeof expenses)[number]) =>
       e.paidByUserId !== null || e.paidByName !== null;
+    const total =
+      sum(spent.map((e) => e.amount)) - sum(refunded.map((e) => e.amount));
 
     return {
       currency,
       expenses: sum(spent.map((e) => e.amount)),
       refunds: sum(refunded.map((e) => e.amount)),
-      total:
-        sum(spent.map((e) => e.amount)) - sum(refunded.map((e) => e.amount)),
+      total,
       owedToPeople: sum(balances.map((b) => Math.max(b.balance, 0))),
       owedToEvent: sum(balances.map((b) => Math.max(-b.balance, 0))),
       toTransfer: sum(balances.map((b) => b.toPay)),
@@ -65,46 +70,63 @@ export class FinanceService extends BaseService {
         .filter((e) => e.date === null)
         .map((e) => e.receiptNumber),
       byCategory: computeCategoryTotals(expenses),
+      ...summarizeIncome(incomes, fees.feesReceived, total),
+      feesByGroup: fees.feesByGroup,
     };
   }
 
   async getSettings(eventId: string): Promise<FinanceSettings> {
     const finance = await this.prisma.eventFinance.findUniqueOrThrow({
       where: { eventId },
-      select: { payoutNumberPrefix: true, lastPayoutNumber: true },
+      select: {
+        payoutNumberPrefix: true,
+        lastPayoutNumber: true,
+        incomeNumberPrefix: true,
+        lastIncomeNumber: true,
+      },
     });
 
     return {
       payoutNumberPrefix: finance.payoutNumberPrefix,
-      // The counter counts deleted payouts too, whose slips may still be in
-      // someone's folder.
+      // The counters count deleted records too, whose numbers may still be
+      // on paper in someone's folder.
       payoutNumberPrefixLocked: finance.lastPayoutNumber > 0,
+      incomeNumberPrefix: finance.incomeNumberPrefix,
+      incomeNumberPrefixLocked: finance.lastIncomeNumber > 0,
     };
   }
 
   async updateSettings(
     eventId: string,
-    data: { payoutNumberPrefix?: string | undefined },
+    data: FinanceSettingsUpdateData,
   ): Promise<FinanceSettings> {
     const settings = await this.getSettings(eventId);
 
-    if (
-      data.payoutNumberPrefix !== undefined &&
-      data.payoutNumberPrefix !== settings.payoutNumberPrefix
-    ) {
-      const prefix = data.payoutNumberPrefix;
+    for (const sequence of ['payout', 'income'] as const) {
+      const { field, counter, code } = PREFIXES[sequence];
+      const prefix = data[field];
+      if (prefix === undefined || prefix === settings[field]) {
+        continue;
+      }
+
       await this.transaction(async (tx) => {
-        // Conditional on the counter, so a payout created meanwhile can't
+        // Conditional on the counter, so a record created meanwhile can't
         // end up with the old prefix.
-        const { count } = await tx.eventFinance.updateMany({
-          where: { eventId, lastPayoutNumber: 0 },
-          data: { payoutNumberPrefix: prefix },
-        });
+        const { count } =
+          counter === 'lastPayoutNumber'
+            ? await tx.eventFinance.updateMany({
+                where: { eventId, lastPayoutNumber: 0 },
+                data: { payoutNumberPrefix: prefix },
+              })
+            : await tx.eventFinance.updateMany({
+                where: { eventId, lastIncomeNumber: 0 },
+                data: { incomeNumberPrefix: prefix },
+              });
         if (count === 0) {
           throw new ApiError(
             httpStatus.CONFLICT,
-            'The payout prefix is fixed once a payout exists.',
-            { code: 'PAYOUT_PREFIX_LOCKED' },
+            `The ${sequence} prefix is fixed once a ${sequence} exists.`,
+            { code },
           );
         }
 
@@ -113,10 +135,7 @@ export class FinanceService extends BaseService {
           entityType: 'event',
           entityId: eventId,
           eventId,
-          details: {
-            changedFields: ['payoutNumberPrefix'],
-            values: { payoutNumberPrefix: prefix },
-          },
+          details: { changedFields: [field], values: { [field]: prefix } },
         });
       });
     }
@@ -143,32 +162,40 @@ export class FinanceService extends BaseService {
 
   /** Everything the export and the receipt ZIP are built from. */
   async getExportData(eventId: string) {
-    const [event, finance, expenses, payouts, categories] = await Promise.all([
-      this.prisma.event.findUniqueOrThrow({
-        where: { id: eventId },
-        select: { currency: true },
-      }),
-      this.prisma.eventFinance.findUniqueOrThrow({
-        where: { eventId },
-        select: { payoutNumberPrefix: true },
-      }),
-      this.prisma.expense.findMany({
-        where: { eventId },
-        include: { files: { orderBy: { id: 'asc' } } },
-        orderBy: { receiptNumber: 'asc' },
-      }),
-      this.prisma.payout.findMany({
-        where: { eventId },
-        orderBy: { number: 'asc' },
-      }),
-      this.prisma.financeCategory.findMany({ where: { eventId } }),
-    ]);
+    const [event, finance, expenses, payouts, incomes, categories] =
+      await Promise.all([
+        this.prisma.event.findUniqueOrThrow({
+          where: { id: eventId },
+          select: { currency: true },
+        }),
+        this.prisma.eventFinance.findUniqueOrThrow({
+          where: { eventId },
+          select: { payoutNumberPrefix: true, incomeNumberPrefix: true },
+        }),
+        this.prisma.expense.findMany({
+          where: { eventId },
+          include: { files: { orderBy: { id: 'asc' } } },
+          orderBy: { receiptNumber: 'asc' },
+        }),
+        this.prisma.payout.findMany({
+          where: { eventId },
+          orderBy: { number: 'asc' },
+        }),
+        this.prisma.income.findMany({
+          where: { eventId },
+          include: { files: { orderBy: { id: 'asc' } } },
+          orderBy: { number: 'asc' },
+        }),
+        this.prisma.financeCategory.findMany({ where: { eventId } }),
+      ]);
 
     return {
       currency: event.currency,
       payoutNumberPrefix: finance.payoutNumberPrefix,
+      incomeNumberPrefix: finance.incomeNumberPrefix,
       expenses,
       payouts,
+      incomes,
       categories,
     };
   }
@@ -204,4 +231,41 @@ export class FinanceService extends BaseService {
 
     return { expenses, payouts };
   }
+
+  /** Manual income, and the registration fees received net of refunds. */
+  private async loadIncome(eventId: string, currency: string) {
+    const [incomes, payments] = await Promise.all([
+      this.prisma.income.findMany({
+        where: { eventId },
+        select: { amount: true, receivedOn: true, categoryId: true },
+      }),
+      this.prisma.payment.findMany({
+        where: { eventId, status: 'PAID' },
+        select: {
+          amount: true,
+          currency: true,
+          registration: { select: { group: true } },
+          refunds: {
+            where: { status: 'REFUNDED' },
+            select: { amount: true },
+          },
+        },
+      }),
+    ]);
+
+    return { incomes, fees: summarizeFees(payments, currency) };
+  }
 }
+
+const PREFIXES = {
+  payout: {
+    field: 'payoutNumberPrefix',
+    counter: 'lastPayoutNumber',
+    code: 'PAYOUT_PREFIX_LOCKED',
+  },
+  income: {
+    field: 'incomeNumberPrefix',
+    counter: 'lastIncomeNumber',
+    code: 'INCOME_PREFIX_LOCKED',
+  },
+} as const;

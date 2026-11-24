@@ -224,6 +224,8 @@
                 </q-item>
               </q-list>
             </section>
+
+            <registration-fee-section :registration-id />
           </div>
 
           <div
@@ -289,6 +291,7 @@ import RegistrationActionList from '@/components/event/table/RegistrationActionL
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
 import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
+import RegistrationFeeSection from '@/components/event/finances/fees/RegistrationFeeSection.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 

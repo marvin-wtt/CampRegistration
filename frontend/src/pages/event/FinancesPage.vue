@@ -15,12 +15,12 @@
       >
         <template #actions>
           <m-btn
-            v-if="can('event.expenses.create') && quasar.screen.gt.sm"
-            :label="t('finance.action.addExpense')"
+            v-if="addAction && quasar.screen.gt.sm"
+            :label="addAction.label"
             icon="add"
             color="primary"
             data-test="finance-add"
-            @click="dialogs.capture"
+            @click="addAction.onClick"
           />
           <responsive-menu
             v-if="can('event.finances.configure')"
@@ -50,8 +50,35 @@
         />
       </q-tabs>
 
+      <!-- Their own data and loading state, and for their own permissions.
+           The fee ledger opens from the income tab as a view of its own. -->
+      <template v-if="tab === 'income'">
+        <template v-if="showFees">
+          <div
+            v-if="can('event.expenses.view')"
+            class="row"
+          >
+            <m-btn
+              :label="t('finance.tab.income')"
+              icon="arrow_back"
+              color="primary"
+              text
+              rounded
+              no-caps
+              data-test="fees-back"
+              @click="closeFees"
+            />
+          </div>
+          <fees-view />
+        </template>
+        <income-view
+          v-else
+          @open-fees="openFees"
+        />
+      </template>
+
       <div
-        v-if="loading"
+        v-else-if="loading"
         class="column q-gutter-y-sm"
       >
         <q-skeleton
@@ -145,20 +172,20 @@
 
     <!-- Phone: the capture button stays one tap away -->
     <q-page-sticky
-      v-if="can('event.expenses.create') && quasar.screen.lt.md"
+      v-if="addAction && quasar.screen.lt.md"
       position="bottom-right"
       :offset="[16, 16]"
     >
       <m-btn
         fab
         icon="add"
-        :label="t('finance.action.expense')"
+        :label="addAction.short"
         color="primary-container"
         text-color="on-primary-container"
         allow-color
         no-caps
         data-test="finance-add-fab"
-        @click="dialogs.capture"
+        @click="addAction.onClick"
       />
     </q-page-sticky>
   </page-state-handler>
@@ -177,10 +204,13 @@ import ResponsiveMenu, {
 import ExpensesView from '@/components/event/finances/ExpensesView.vue';
 import BalancesView from '@/components/event/finances/BalancesView.vue';
 import SummaryView from '@/components/event/finances/SummaryView.vue';
+import FeesView from '@/components/event/finances/fees/FeesView.vue';
+import IncomeView from '@/components/event/finances/IncomeView.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { usePermissions } from '@/composables/permissions';
 import { useRouteTab } from '@/composables/routeTab';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -188,14 +218,37 @@ const { can } = usePermissions();
 const financeStore = useFinanceStore();
 const dialogs = useFinanceDialogs();
 
-// Started during setup, not awaited: the store flags itself loading first.
-void financeStore.fetchData();
+type FinanceTab = 'expenses' | 'balances' | 'income' | 'summary';
 
-const tabs = computed(() =>
-  can('event.expenses.view')
-    ? (['expenses', 'balances', 'summary'] as const)
-    : (['expenses', 'balances'] as const),
+// Someone who sees only fees (a viewer) has no expense data to load.
+const expenseAccess = computed(
+  () => can('event.expenses.create') || can('event.expenses.view'),
 );
+
+// Started during setup, not awaited: the store flags itself loading first.
+watch(
+  expenseAccess,
+  (access) => {
+    if (access) {
+      void financeStore.fetchData();
+    }
+  },
+  { immediate: true },
+);
+
+const tabs = computed(() => {
+  const list: FinanceTab[] = [];
+  if (expenseAccess.value) {
+    list.push('expenses', 'balances');
+  }
+  if (can('event.expenses.view') || can('event.payments.view')) {
+    list.push('income');
+  }
+  if (can('event.expenses.view')) {
+    list.push('summary');
+  }
+  return list;
+});
 const tab = useRouteTab(tabs);
 
 // Loaded when its tab opens: only those who may see it ever ask, and the
@@ -210,11 +263,66 @@ watch(
   { immediate: true },
 );
 
+const { getStringQueryParam, setQueryParams } = useRouteQueryParams();
+
+// A dashboard link to a fee filter lands on the ledger straight away, and
+// someone who sees only fees has nothing else on this tab.
+const showFees = computed(
+  () =>
+    getStringQueryParam('view') === 'fees' ||
+    getStringQueryParam('fees') !== null ||
+    !can('event.expenses.view'),
+);
+
+function openFees() {
+  setQueryParams({ view: 'fees' });
+}
+
+function closeFees() {
+  setQueryParams({ view: null, fees: null, group: null });
+}
+
+// The ledger is part of the income tab: leaving it leaves the ledger too.
+watch(tab, (value) => {
+  if (
+    value !== 'income' &&
+    (getStringQueryParam('view') !== null ||
+      getStringQueryParam('fees') !== null)
+  ) {
+    closeFees();
+  }
+});
+
+// The main add action follows the tab: income there, expenses elsewhere.
+const addAction = computed(() => {
+  if (tab.value === 'income') {
+    return can('event.income.create') && !showFees.value
+      ? {
+          label: t('finance.action.addIncome'),
+          short: t('finance.action.income'),
+          onClick: dialogs.income,
+        }
+      : null;
+  }
+  return can('event.expenses.create')
+    ? {
+        label: t('finance.action.addExpense'),
+        short: t('finance.action.expense'),
+        onClick: dialogs.capture,
+      }
+    : null;
+});
+
 const menuItems = computed<ResponsiveMenuItem[]>(() => [
   {
     label: t('finance.categories.title'),
     icon: 'category',
     onClick: dialogs.categories,
+  },
+  {
+    label: t('finance.categories.incomeTitle'),
+    icon: 'savings',
+    onClick: dialogs.incomeCategories,
   },
   {
     label: t('finance.settings.title'),

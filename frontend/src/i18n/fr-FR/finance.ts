@@ -12,6 +12,7 @@ export default {
     expenses: 'Dépenses',
     balances: 'Soldes',
     summary: 'Synthèse',
+    income: 'Recettes',
   },
   type: {
     expense: 'Dépense',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Réessayer',
     add: 'Ajouter',
+    addIncome: 'Enregistrer une recette',
+    income: 'Recette',
     addExpense: 'Ajouter une dépense',
     expense: 'Dépense',
     addFile: 'Autre fichier',
@@ -204,6 +207,14 @@ export default {
   },
   summary: {
     complete: 'Tous les justificatifs sont complets.',
+    income: 'Recettes et résultat',
+    feesReceived: 'Frais d’inscription',
+    incomeTotal: 'Reçu au total',
+    result: 'Résultat',
+    promisedCaption: '{amount} promis',
+    noGroup: 'Sans groupe',
+    unconverted:
+      'Non inclus, car dans une autre devise et non converti : {amounts}',
     total: 'Total dépensé',
     totalCaption: '{expenses} de dépenses − {refunds} de remboursements',
     expenses: 'Dépenses',
@@ -221,6 +232,7 @@ export default {
   },
   categories: {
     ungrouped: 'Sans groupe',
+    incomeTitle: 'Catégories de recettes',
     title: 'Catégories',
     subtitle:
       'Pour cet événement uniquement. Copiées quand le prochain événement est créé à partir de celui-ci.',
@@ -233,6 +245,7 @@ export default {
     noGroup: 'sans groupe',
     archive: 'Archiver',
     restore: 'Restaurer',
+    usedIncome: '{n} recette | {n} recettes',
     used: '{n} dépense | {n} dépenses',
     unused: 'inutilisée',
     showArchived: 'Afficher les archivées ({count})',
@@ -280,6 +293,11 @@ export default {
   },
   settings: {
     title: 'Paramètres des finances',
+    incomeNumbers: 'Numéros des recettes',
+    incomePrefixHint:
+      'Les recettes sont numérotées à part, comme les versements, pour classer une lettre de subvention ou un reçu de don sous son numéro.',
+    incomeLocked:
+      'Le préfixe est fixé dès la première recette, pour que les documents classés restent cohérents.',
     payoutNumbers: 'Numéros de versement',
     flagMissingCategories: 'Signaler les dépenses sans catégorie',
     flagMissingCategoriesHint:
@@ -298,5 +316,20 @@ export default {
     name: 'Saisissez un nom',
     prefix: 'Jusqu’à 8 lettres, chiffres ou tirets',
     recipient: 'Choisissez qui reçoit l’argent',
+  },
+  fee: {
+    status: {
+      NOT_REQUIRED: 'Rien à payer',
+      UNPAID: 'Non payé',
+      PARTIAL: 'Payé en partie',
+      PAID: 'Payé',
+      OVERPAID: 'Trop payé',
+      REFUNDED: 'Remboursé',
+    },
+    method: {
+      BANK_TRANSFER: 'Virement',
+      CASH: 'Espèces',
+      OTHER: 'Autre',
+    },
   },
 };

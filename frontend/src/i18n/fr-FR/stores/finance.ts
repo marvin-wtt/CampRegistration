@@ -28,6 +28,18 @@ export default {
       error: "Échec de l'annulation du versement",
     },
   },
+  income: {
+    fetch: { error: 'Impossible de charger les recettes' },
+    create: {
+      success: 'Recette enregistrée',
+      error: 'Impossible d’enregistrer la recette',
+    },
+    update: { error: 'Impossible de modifier la recette' },
+    delete: {
+      success: 'Recette supprimée',
+      error: 'Impossible de supprimer la recette',
+    },
+  },
   financeCategory: {
     fetch: { error: 'Échec du chargement des catégories' },
     create: { error: 'Échec de la création de la catégorie' },
@@ -47,6 +59,30 @@ export default {
     updateSettings: {
       success: 'Paramètres enregistrés',
       error: "Échec de l'enregistrement des paramètres",
+    },
+  },
+  fee: {
+    fetch: { error: "Échec du chargement des frais d'inscription" },
+    record: {
+      success: 'Paiement enregistré',
+      error: "Échec de l'enregistrement du paiement",
+    },
+    amountDue: {
+      success: 'Montant dû enregistré',
+      error: "Échec de l'enregistrement du montant dû",
+    },
+    updatePayment: { error: 'Échec de la mise à jour du paiement' },
+    deletePayment: {
+      success: 'Paiement supprimé',
+      error: 'Échec de la suppression du paiement',
+    },
+    refund: {
+      success: 'Remboursement enregistré',
+      error: "Échec de l'enregistrement du remboursement",
+    },
+    deleteRefund: {
+      success: 'Remboursement supprimé',
+      error: 'Échec de la suppression du remboursement',
     },
   },
 };

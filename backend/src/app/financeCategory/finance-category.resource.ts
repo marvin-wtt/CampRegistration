@@ -14,7 +14,7 @@ export class FinanceCategoryResource extends JsonResource<
       name: this.data.name,
       position: this.data.position,
       archivedAt: this.data.archivedAt?.toISOString() ?? null,
-      expenseCount: this.data._count.expenses,
+      recordCount: this.data._count.expenses + this.data._count.incomes,
     };
   }
 }

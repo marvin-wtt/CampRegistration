@@ -25,6 +25,15 @@ export default {
       error: 'Zrušení výplaty se nezdařilo',
     },
   },
+  income: {
+    fetch: { error: 'Příjmy se nepodařilo načíst' },
+    create: {
+      success: 'Příjem zaznamenán',
+      error: 'Příjem se nepodařilo zaznamenat',
+    },
+    update: { error: 'Příjem se nepodařilo upravit' },
+    delete: { success: 'Příjem smazán', error: 'Příjem se nepodařilo smazat' },
+  },
   financeCategory: {
     fetch: { error: 'Načtení kategorií se nezdařilo' },
     create: { error: 'Vytvoření kategorie se nezdařilo' },
@@ -44,6 +53,30 @@ export default {
     updateSettings: {
       success: 'Nastavení uloženo',
       error: 'Uložení nastavení se nezdařilo',
+    },
+  },
+  fee: {
+    fetch: { error: 'Načtení účastnických poplatků se nezdařilo' },
+    record: {
+      success: 'Platba zaznamenána',
+      error: 'Zaznamenání platby se nezdařilo',
+    },
+    amountDue: {
+      success: 'Dlužná částka uložena',
+      error: 'Uložení dlužné částky se nezdařilo',
+    },
+    updatePayment: { error: 'Úprava platby se nezdařila' },
+    deletePayment: {
+      success: 'Platba smazána',
+      error: 'Smazání platby se nezdařilo',
+    },
+    refund: {
+      success: 'Vrácení zaznamenáno',
+      error: 'Zaznamenání vrácení se nezdařilo',
+    },
+    deleteRefund: {
+      success: 'Vrácení smazáno',
+      error: 'Smazání vrácení se nezdařilo',
     },
   },
 };

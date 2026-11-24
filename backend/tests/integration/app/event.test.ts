@@ -1283,7 +1283,7 @@ describe('/api/v1/events', () => {
         });
       });
 
-      it('should create the default expense categories in the event languages', async () => {
+      it('should create the default expense and income categories in the event languages', async () => {
         const accessToken = await createEventCreatorToken();
 
         const { body } = await request()
@@ -1297,7 +1297,8 @@ describe('/api/v1/events', () => {
           orderBy: { position: 'asc' },
         });
 
-        expect(categories).toHaveLength(6);
+        expect(categories.filter((c) => c.kind === 'EXPENSE')).toHaveLength(6);
+        expect(categories.filter((c) => c.kind === 'INCOME')).toHaveLength(4);
         expect(categories.every((c) => typeof c.name === 'string')).toBe(true);
       });
 

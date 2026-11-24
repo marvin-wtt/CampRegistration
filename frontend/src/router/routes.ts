@@ -236,7 +236,11 @@ const routes: RouteRecordRaw[] = [
                 name: 'management.event.finances',
                 meta: {
                   eventPermission: {
-                    any: ['event.expenses.create', 'event.expenses.view'],
+                    any: [
+                      'event.expenses.create',
+                      'event.expenses.view',
+                      'event.payments.view',
+                    ],
                   },
                 },
                 component: () => import('@/pages/event/FinancesPage.vue'),

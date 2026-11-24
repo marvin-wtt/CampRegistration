@@ -25,6 +25,18 @@ export default {
       error: 'Nie udało się cofnąć wypłaty',
     },
   },
+  income: {
+    fetch: { error: 'Nie udało się pobrać przychodów' },
+    create: {
+      success: 'Przychód zapisany',
+      error: 'Nie udało się zapisać przychodu',
+    },
+    update: { error: 'Nie udało się zmienić przychodu' },
+    delete: {
+      success: 'Przychód usunięty',
+      error: 'Nie udało się usunąć przychodu',
+    },
+  },
   financeCategory: {
     fetch: { error: 'Nie udało się pobrać kategorii' },
     create: { error: 'Nie udało się utworzyć kategorii' },
@@ -44,6 +56,30 @@ export default {
     updateSettings: {
       success: 'Ustawienia zapisane',
       error: 'Nie udało się zapisać ustawień',
+    },
+  },
+  fee: {
+    fetch: { error: 'Nie udało się pobrać opłat za udział' },
+    record: {
+      success: 'Płatność zarejestrowana',
+      error: 'Nie udało się zarejestrować płatności',
+    },
+    amountDue: {
+      success: 'Kwota należna zapisana',
+      error: 'Nie udało się zapisać kwoty należnej',
+    },
+    updatePayment: { error: 'Nie udało się zaktualizować płatności' },
+    deletePayment: {
+      success: 'Płatność usunięta',
+      error: 'Nie udało się usunąć płatności',
+    },
+    refund: {
+      success: 'Zwrot zarejestrowany',
+      error: 'Nie udało się zarejestrować zwrotu',
+    },
+    deleteRefund: {
+      success: 'Zwrot usunięty',
+      error: 'Nie udało się usunąć zwrotu',
     },
   },
 };

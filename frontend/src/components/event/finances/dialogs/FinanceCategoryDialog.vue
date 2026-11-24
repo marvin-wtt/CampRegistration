@@ -4,7 +4,11 @@
     @hide="onDialogHide"
   >
     <dialog-card
-      :title="t('finance.categories.title')"
+      :title="
+        kind === 'INCOME'
+          ? t('finance.categories.incomeTitle')
+          : t('finance.categories.title')
+      "
       :subtitle="t('finance.categories.subtitle')"
       icon="category"
       :width="640"
@@ -96,8 +100,13 @@
                   <q-item-label>{{ to(category.name) }}</q-item-label>
                   <q-item-label caption>
                     {{
-                      category.expenseCount > 0
-                        ? t('finance.categories.used', category.expenseCount)
+                      category.recordCount > 0
+                        ? t(
+                            kind === 'INCOME'
+                              ? 'finance.categories.usedIncome'
+                              : 'finance.categories.used',
+                            category.recordCount,
+                          )
                         : t('finance.categories.unused')
                     }}
                   </q-item-label>
@@ -223,7 +232,14 @@
                     {{ to(category.name) }}
                   </q-item-label>
                   <q-item-label caption>
-                    {{ t('finance.categories.used', category.expenseCount) }}
+                    {{
+                      t(
+                        kind === 'INCOME'
+                          ? 'finance.categories.usedIncome'
+                          : 'finance.categories.used',
+                        category.recordCount,
+                      )
+                    }}
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
@@ -257,7 +273,10 @@ import { storeToRefs } from 'pinia';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { FinanceCategory } from '@camp-registration/common/entities';
+import type {
+  FinanceCategory,
+  FinanceCategoryKind,
+} from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import CategoryNameForm from '@/components/event/finances/CategoryNameForm.vue';
@@ -274,6 +293,11 @@ interface Section {
   categories: FinanceCategory[];
 }
 
+const { kind = 'EXPENSE' } = defineProps<{
+  /** Expense and income categories are lists of their own. */
+  kind?: FinanceCategoryKind;
+}>();
+
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
@@ -281,7 +305,11 @@ const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const financeStore = useFinanceStore();
-const { categories: storeCategories } = storeToRefs(financeStore);
+const { categories: expenseCategories, incomeCategories } =
+  storeToRefs(financeStore);
+const storeCategories = computed(() =>
+  kind === 'INCOME' ? incomeCategories.value : expenseCategories.value,
+);
 const { data: event } = storeToRefs(useEventDetailsStore());
 
 const locales = computed(() => event.value?.locales ?? []);
@@ -380,19 +408,27 @@ function move(section: Section, index: number, delta: number) {
   }
   const siblings = all.value.filter((c) => c.parentId === category.parentId);
   const target = siblings.findIndex((c) => c.id === neighbour.id);
-  void financeStore.orderCategories({
-    items: orderWith(
-      new Map([[category.id, { parentId: category.parentId, index: target }]]),
-    ),
-  });
+  void financeStore.orderCategories(
+    {
+      items: orderWith(
+        new Map([
+          [category.id, { parentId: category.parentId, index: target }],
+        ]),
+      ),
+    },
+    kind,
+  );
 }
 
 function regroup(category: FinanceCategory, parentId: string | null) {
-  void financeStore.orderCategories({
-    items: orderWith(
-      new Map([[category.id, { parentId, index: Number.MAX_SAFE_INTEGER }]]),
-    ),
-  });
+  void financeStore.orderCategories(
+    {
+      items: orderWith(
+        new Map([[category.id, { parentId, index: Number.MAX_SAFE_INTEGER }]]),
+      ),
+    },
+    kind,
+  );
 }
 
 function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
@@ -407,7 +443,7 @@ function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
       icon: 'drive_file_move',
       onClick: () => regroup(category, target.id),
     })),
-    category.expenseCount > 0
+    category.recordCount > 0
       ? {
           label: t('finance.categories.archive'),
           icon: 'archive',
@@ -424,11 +460,11 @@ function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
 }
 
 function archive(category: FinanceCategory, value: boolean) {
-  void financeStore.updateCategory(category.id, { archived: value });
+  void financeStore.updateCategory(category.id, { archived: value }, kind);
 }
 
 function remove(category: FinanceCategory) {
-  void financeStore.deleteCategory(category.id);
+  void financeStore.deleteCategory(category.id, kind);
 }
 
 function startAdding(sectionId: string | null) {
@@ -450,15 +486,15 @@ type CategoryName = string | Record<string, string>;
 
 function renameOf(category: FinanceCategory) {
   return (name: CategoryName) =>
-    financeStore.updateCategory(category.id, { name });
+    financeStore.updateCategory(category.id, { name }, kind);
 }
 
 function createCategory(parentId: string | null, name: CategoryName) {
-  return financeStore.createCategory({ name, parentId });
+  return financeStore.createCategory({ name, parentId }, kind);
 }
 
 async function createGroup(name: CategoryName) {
-  const created = await financeStore.createCategory({ name });
+  const created = await financeStore.createCategory({ name }, kind);
   // Shown as a group although it holds no categories yet.
   groupIds.value = new Set([...groupIds.value, created.id]);
 }

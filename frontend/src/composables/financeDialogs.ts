@@ -5,6 +5,7 @@ import ExpenseDetailsDialog from '@/components/event/finances/dialogs/ExpenseDet
 import PayoutDetailsDialog from '@/components/event/finances/dialogs/PayoutDetailsDialog.vue';
 import FinanceCategoryDialog from '@/components/event/finances/dialogs/FinanceCategoryDialog.vue';
 import FinanceSettingsDialog from '@/components/event/finances/dialogs/FinanceSettingsDialog.vue';
+import IncomeDialog from '@/components/event/finances/dialogs/IncomeDialog.vue';
 
 /**
  * The finance tabs' entry dialogs. The details dialogs stay open through
@@ -35,9 +36,28 @@ export function useFinanceDialogs() {
     quasar.dialog({ component: FinanceCategoryDialog });
   }
 
+  function incomeCategories() {
+    quasar.dialog({
+      component: FinanceCategoryDialog,
+      componentProps: { kind: 'INCOME' },
+    });
+  }
+
+  function income() {
+    quasar.dialog({ component: IncomeDialog });
+  }
+
   function settings() {
     quasar.dialog({ component: FinanceSettingsDialog });
   }
 
-  return { capture, expenseDetails, payoutDetails, categories, settings };
+  return {
+    capture,
+    expenseDetails,
+    payoutDetails,
+    categories,
+    incomeCategories,
+    income,
+    settings,
+  };
 }

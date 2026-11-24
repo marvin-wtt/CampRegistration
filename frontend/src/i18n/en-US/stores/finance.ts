@@ -22,6 +22,15 @@ export default {
     update: { error: 'Failed to update the payout' },
     delete: { success: 'Payout undone', error: 'Failed to undo the payout' },
   },
+  income: {
+    fetch: { error: 'Failed to fetch the income' },
+    create: {
+      success: 'Income recorded',
+      error: 'Failed to record the income',
+    },
+    update: { error: 'Failed to update the income' },
+    delete: { success: 'Income deleted', error: 'Failed to delete the income' },
+  },
   financeCategory: {
     fetch: { error: 'Failed to fetch categories' },
     create: { error: 'Failed to create the category' },
@@ -41,6 +50,30 @@ export default {
     updateSettings: {
       success: 'Settings saved',
       error: 'Failed to save the settings',
+    },
+  },
+  fee: {
+    fetch: { error: 'Failed to fetch the registration fees' },
+    record: {
+      success: 'Payment recorded',
+      error: 'Failed to record the payment',
+    },
+    amountDue: {
+      success: 'Amount due saved',
+      error: 'Failed to save the amount due',
+    },
+    updatePayment: { error: 'Failed to update the payment' },
+    deletePayment: {
+      success: 'Payment deleted',
+      error: 'Failed to delete the payment',
+    },
+    refund: {
+      success: 'Refund recorded',
+      error: 'Failed to record the refund',
+    },
+    deleteRefund: {
+      success: 'Refund deleted',
+      error: 'Failed to delete the refund',
     },
   },
 };
