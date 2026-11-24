@@ -33,6 +33,7 @@ export * from './User.js';
 
 export * from './Message.js';
 export * from './MessageTemplate.js';
+export * from './MessageContext.js';
 export * from './MessageDelivery.js';
 
 export * from './Newsletter.js';

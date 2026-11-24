@@ -1,5 +1,7 @@
 import type { Event, Registration } from '#generated/prisma/client.js';
+import type { RegistrationMessageContext } from '@camp-registration/common/entities';
 import {
+  countryName,
   formatMoney,
   fromMinorUnits,
   translate,
@@ -40,33 +42,30 @@ import type {
 import { htmlToPreviewText } from '#core/mail/emailPreview';
 import { htmlToText } from 'html-to-text';
 
-function dateToString(date: Date | string | null): string | null {
-  if (date === null) {
-    return date;
-  }
-  return typeof date === 'string' ? date : date.toISOString();
-}
+const NUMERIC_DATE: Intl.DateTimeFormatOptions = {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+};
+
+const NUMERIC_DATE_TIME: Intl.DateTimeFormatOptions = {
+  ...NUMERIC_DATE,
+  hour: '2-digit',
+  minute: '2-digit',
+};
 
 /**
- * Only ever called with `event.startAt`/`endAt` — a UTC-carrier `Date`
- * (see `@camp-registration/common/utils`), never a real instant. Rendered
- * server-side with no viewer to cancel out a conversion, so `timeZone: 'UTC'`
- * is required to reproduce the organizer's literal digits regardless of the
- * server's own configured timezone.
+ * Event dates and birth dates are UTC carriers of the digits the organizer or
+ * participant entered (see `@camp-registration/common/utils`), so they format
+ * in UTC. A real instant, like `createdAt`, formats in the event's timezone.
  */
-function formatEventDate(
-  date: Date | string | null,
+function formatDate(
+  date: Date,
   locale: string,
-): string | null {
-  if (date === null) {
-    return null;
-  }
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: 'long',
-    timeStyle: 'short',
-    timeZone: 'UTC',
-  }).format(d);
+  options: Intl.DateTimeFormatOptions,
+  timeZone = 'UTC',
+): string {
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(date);
 }
 
 export interface RegistrationTemplatePayload {
@@ -177,15 +176,15 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     };
   }
 
-  private mailAnswers?: Record<string, unknown>;
+  private mailAnswers?: { data: Record<string, unknown>; role: unknown };
 
   /**
-   * The answers a template may print: special-category ones cleared through
-   * the form (docs/privacy.md, 6). Done here, at render time, so the mail shows
-   * the snapshot it was queued with. A form that can't be read yields none —
-   * never all of them.
+   * The answers a template may print, as shown in the template's language:
+   * special-category ones cleared through the form (docs/privacy.md, 6). Done
+   * here, at render time, so the mail shows the snapshot it was queued with. A
+   * form that can't be read yields none — never all of them.
    */
-  private answers(): Record<string, unknown> {
+  private answers(): { data: Record<string, unknown>; role: unknown } {
     if (this.mailAnswers) {
       return this.mailAnswers;
     }
@@ -193,67 +192,105 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     const { event, registration } = this.payload;
     try {
       // `freePlaces` only feeds `visibleIf`, which moves no stored answer.
-      this.mailAnswers = new RegistrationForm(
+      const form = new RegistrationForm(
         { ...event, freePlaces: 0 },
         registration.group,
-        registration.locale,
-      )
-        .load(registration.data)
-        .withoutSensitiveAnswers();
+        this.contact().locale,
+      ).load(registration.data);
+      form.withoutSensitiveAnswers();
+      // A tag no question carries is missing.
+      const tagged: Partial<Record<string, unknown[]>> =
+        form.extractEventData('displayValue');
+
+      this.mailAnswers = {
+        // Dates like the other dates: in the registration's full locale.
+        data: form.displayData(this.locale()),
+        role: tagged.role?.[0],
+      };
     } catch (error) {
       logger.warn(
         `Registration ${registration.id}: answers left out of the mail, form unreadable: ${describeError(error)}`,
       );
-      this.mailAnswers = {};
+      this.mailAnswers = { data: {}, role: undefined };
     }
 
     return this.mailAnswers;
   }
 
-  private context(changes: string): object {
-    const event = this.payload.event;
+  /**
+   * Listed field by field, so a new column never becomes printable by
+   * accident. Event texts follow the template's language (the group's), dates
+   * the registration's full locale.
+   */
+  private context(changes: string): RegistrationMessageContext {
+    const { event, registration } = this.payload;
+    const contact = this.contact();
+    const eventContext = translateEventContext(event, contact);
+    const locale = this.locale();
+    const country = (code: string | null) =>
+      code ? countryName(code, contact.locale) : null;
+    const answers = this.answers();
+    const displayedRole =
+      typeof answers.role === 'string' && answers.role ? answers.role : null;
 
     return {
       event: {
-        // In the template's language: it was picked by the same group.
-        ...translateEventContext(event, this.contact()),
-        // Format dates using the registration's full locale
-        startAt: formatEventDate(event.startAt, this.locale()),
-        endAt: formatEventDate(event.endAt, this.locale()),
+        name: eventContext.name,
+        organizer: eventContext.organizer,
+        contactEmail: eventContext.contactEmail,
+        countries: event.countries
+          .map((code) => countryName(code, contact.locale))
+          .join(', '),
+        startAt: formatDate(event.startAt, locale, NUMERIC_DATE_TIME),
+        endAt: formatDate(event.endAt, locale, NUMERIC_DATE_TIME),
+        minAge: event.minAge,
+        maxAge: event.maxAge,
+        maxParticipants: eventContext.maxParticipants,
+        location: eventContext.location,
+        price: eventContext.price,
+        priceWithCurrency: eventContext.priceWithCurrency,
       },
       registration: {
-        id: this.payload.registration.id,
-        status: this.payload.registration.status,
-        data: this.answers(),
+        id: registration.id,
+        data: answers.data,
         computedData: {
-          firstName: this.payload.registration.firstName,
-          lastName: this.payload.registration.lastName,
-          dateOfBirth: dateToString(
-            this.payload.registration.dateOfBirth,
-          )?.split('T')[0],
-          gender: this.payload.registration.gender,
+          firstName: registration.firstName,
+          lastName: registration.lastName,
+          dateOfBirth: registration.dateOfBirth
+            ? formatDate(registration.dateOfBirth, locale, NUMERIC_DATE)
+            : null,
+          gender: registration.gender,
           address: {
-            street: this.payload.registration.street,
-            city: this.payload.registration.city,
-            zipCode: this.payload.registration.zipCode,
-            country: this.payload.registration.country,
+            street: registration.street,
+            city: registration.city,
+            zipCode: registration.zipCode,
+            country: country(registration.country),
           },
-          role: this.payload.registration.role,
-          emails: this.payload.registration.emails,
-          phoneNumbers: this.payload.registration.phoneNumbers,
+          // By the choice's label; the stored value without a role question.
+          role: displayedRole ?? registration.role,
+          emails: registration.emails ?? [],
+          phoneNumbers: registration.phoneNumbers ?? [],
         },
-        customData: this.payload.registration.customData ?? {},
+        customData: registration.customData ?? {},
         changes,
+        status: registration.status,
         ...this.quotedPrice(event),
         // For the transfer description; organizers add their bank details.
-        reference: this.payload.registration.paymentReference,
-        locale: this.payload.registration.locale,
-        // The group's country code; the address's own is `address.country`.
-        group: this.payload.registration.group,
-        room: null,
-        // Use snake case because form keys should be snake case too
-        updatedAt: dateToString(this.payload.registration.updatedAt),
-        createdAt: dateToString(this.payload.registration.createdAt),
+        reference: registration.paymentReference,
+        locale: registration.locale,
+        group: country(registration.group),
+        createdAt: formatDate(
+          registration.createdAt,
+          locale,
+          NUMERIC_DATE_TIME,
+          event.timezone,
+        ),
+        updatedAt: formatDate(
+          registration.updatedAt ?? registration.createdAt,
+          locale,
+          NUMERIC_DATE_TIME,
+          event.timezone,
+        ),
       },
     };
   }

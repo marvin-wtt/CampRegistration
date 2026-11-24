@@ -289,8 +289,26 @@ export class RegistrationForm {
   }
 
   /** The answers of the questions tagged with an `eventDataType`, by tag. */
-  extractEventData(): Record<string, unknown[]> {
-    return extractEventData(this.survey);
+  extractEventData(
+    field: 'value' | 'displayValue' = 'value',
+  ): Record<string, unknown[]> {
+    return extractEventData(this.survey, field);
+  }
+
+  /**
+   * The response shaped like `data`, but as a reader sees it in the survey's
+   * locale: choices by their labels, yes/no as words, dates numeric — in
+   * `dateLocale`'s format.
+   */
+  displayData(dateLocale = this.survey.locale): Record<string, unknown> {
+    const display: Record<string, unknown> = {};
+    for (const question of this.survey.getAllQuestions()) {
+      if (!question.isEmpty()) {
+        display[question.getValueName()] = displayValueOf(question, dateLocale);
+      }
+    }
+
+    return display;
   }
 
   /**
@@ -473,4 +491,38 @@ export class RegistrationForm {
       .getAllQuestions(false, undefined, true)
       .filter((question) => question.getType() === FILE_TYPE);
   }
+}
+
+const NUMERIC_DATE: Intl.DateTimeFormatOptions = {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+};
+
+const DATE_INPUT_FORMATS: Partial<Record<string, Intl.DateTimeFormatOptions>> =
+  {
+    date: NUMERIC_DATE,
+    'datetime-local': { ...NUMERIC_DATE, hour: '2-digit', minute: '2-digit' },
+  };
+
+// SurveyJS shows a date input's value as stored (`2027-07-12`). Its digits
+// are local ones, so they are formatted as UTC to keep them.
+function displayValueOf(question: Question, locale: string): unknown {
+  const options = DATE_INPUT_FORMATS[String(question.inputType)];
+  const value: unknown = question.value;
+  if (!options || typeof value !== 'string') {
+    return question.displayValue;
+  }
+
+  const date = new Date(
+    value.length === 10 ? `${value}T00:00:00Z` : `${value}Z`,
+  );
+  if (Number.isNaN(date.getTime())) {
+    return question.displayValue;
+  }
+
+  return new Intl.DateTimeFormat(locale || undefined, {
+    ...options,
+    timeZone: 'UTC',
+  }).format(date);
 }
