@@ -14,31 +14,15 @@
       <div class="legal-document-editor__header q-px-md">
         <!-- One locale at a time: legal documents are long, so all five side by
              side (as a translated input would show them) is unworkable. -->
-        <q-tabs
+        <locale-tabs
           v-if="!sharedMode"
           v-model="activeLocale"
-          align="left"
-          dense
-          no-caps
-          mobile-arrows
-          outside-arrows
-          active-color="primary"
-          indicator-color="primary"
-          class="col legal-document-editor__tabs text-on-surface-variant"
-        >
-          <q-tab
-            v-for="loc in locales"
-            :key="loc"
-            :name="loc"
-          >
-            <div class="row items-center no-wrap q-gutter-xs">
-              <country-icon :locale="loc" />
-              <span class="text-caption text-weight-medium">
-                {{ loc.toUpperCase() }}
-              </span>
-            </div>
-          </q-tab>
-        </q-tabs>
+          :locales
+          :filled="filledLocales"
+          add-languages
+          class="col legal-document-editor__tabs"
+          @remove="(loc) => (translations[loc] = '')"
+        />
         <div
           v-else
           class="text-caption text-on-surface-variant q-py-sm"
@@ -92,7 +76,7 @@
 import { APP_LOCALES } from '@/i18n/locales';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
 import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import { useLegalService } from '@/services/LegalService';
 import { useAction } from '@/composables/action';
@@ -222,6 +206,10 @@ const activeContent = computed<string>({
     }
   },
 });
+
+const filledLocales = computed<string[]>(() =>
+  locales.filter((loc) => (translations[loc] ?? '').trim().length > 0),
+);
 
 // The document as it would be stored: a plain string in shared mode, the
 // per-locale record otherwise.
