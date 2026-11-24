@@ -9,6 +9,7 @@ import {
   feeTotalsByGroup,
   matchesFeeFilter,
   matchesFeeSearch,
+  sortFees,
 } from '@/utils/registrationFee';
 
 function fee(
@@ -157,5 +158,49 @@ describe('feeTotalsByCurrency', () => {
       ['EUR', 5000],
       ['PLN', 30000],
     ]);
+  });
+});
+
+describe('sortFees', () => {
+  const fees = [
+    fee(
+      { outstanding: 0 },
+      {
+        id: 'a',
+        lastName: 'Weber',
+        reference: 'K7MX-0003',
+        createdAt: '2026-05-03T00:00:00.000Z',
+      },
+    ),
+    fee(
+      { outstanding: 15000 },
+      {
+        id: 'b',
+        lastName: 'Adler',
+        reference: 'K7MX-0002',
+        createdAt: '2026-05-01T00:00:00.000Z',
+      },
+    ),
+    fee(
+      { outstanding: 15000 },
+      {
+        id: 'c',
+        lastName: 'Meyer',
+        reference: 'K7MX-0001',
+        createdAt: '2026-05-02T00:00:00.000Z',
+      },
+    ),
+  ];
+  const ids = (sort: Parameters<typeof sortFees>[1]) =>
+    sortFees(fees, sort).map((f) => f.id);
+
+  it('sorts by last name by default', () => {
+    expect(ids('name')).toEqual(['b', 'c', 'a']);
+  });
+
+  it('sorts by reference, newest and most open, ties by name', () => {
+    expect(ids('reference')).toEqual(['c', 'b', 'a']);
+    expect(ids('newest')).toEqual(['a', 'c', 'b']);
+    expect(ids('outstanding')).toEqual(['b', 'c', 'a']);
   });
 });

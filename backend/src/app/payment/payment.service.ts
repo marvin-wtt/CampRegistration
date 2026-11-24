@@ -70,7 +70,7 @@ export type FeeExportPayment = PaymentWithRefunds & {
 };
 
 /** Years payer names of deleted registrations are kept (HGB § 257, AO § 147). */
-const DEFAULT_RECORD_RETENTION_YEARS = 10;
+export const DEFAULT_RECORD_RETENTION_YEARS = 10;
 
 @injectable()
 export class PaymentService extends BaseService {
@@ -360,7 +360,7 @@ export class PaymentService extends BaseService {
     years = DEFAULT_RECORD_RETENTION_YEARS,
   ): Promise<number> {
     // A 2016 payment is kept through 2026: due in 2027 with ten years.
-    const cutoff = `${now.getUTCFullYear() - years}-01-01`;
+    const cutoff = `${(now.getUTCFullYear() - years).toString()}-01-01`;
 
     const { count } = await this.prisma.payment.updateMany({
       where: {

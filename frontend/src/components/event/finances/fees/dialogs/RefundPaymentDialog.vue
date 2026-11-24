@@ -5,12 +5,26 @@
   >
     <dialog-card
       :title="t('title')"
-      :subtitle="t('subtitle', { amount: money(payment.refundable, currency) })"
+      :subtitle="
+        t('subtitle', { amount: money(selected.refundable, currency) })
+      "
       icon="undo"
       @submit="submit"
       @cancel="onDialogCancel"
     >
       <div class="column no-wrap q-gutter-y-md">
+        <!-- Several payments: the newest first, each with what is left. -->
+        <q-select
+          v-if="choices.length > 1"
+          v-model="selected"
+          :options="choices"
+          :option-label="paymentLabel"
+          :label="t('payment')"
+          outlined
+          rounded
+          data-test="refund-payment"
+          @update:model-value="onSelect"
+        />
         <amount-input
           v-model="amount"
           :currency
@@ -28,7 +42,7 @@
 
         <!-- Only for a fee that still belongs to a registration. -->
         <q-toggle
-          v-if="payment.registrationId"
+          v-if="selected.registrationId"
           v-model="reduceAmountDue"
           color="primary"
           data-test="refund-cancellation"
@@ -97,10 +111,11 @@ import AmountInput from '@/components/event/finances/AmountInput.vue';
 import EventDateInput from '@/components/event/EventDateInput.vue';
 import { useFeeStore } from '@/stores/fee-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { formatLocalDate } from '@/utils/date';
+import { formatLocalDate, parseLocalDate } from '@/utils/date';
 
-const { payment, fee = undefined } = defineProps<{
-  payment: Payment;
+const { payment = undefined, fee = undefined } = defineProps<{
+  /** The payment to refund; without it, one of the fee's is picked. */
+  payment?: Payment | undefined;
   /** Its registration's fee; absent once the registration is deleted. */
   fee?: RegistrationFee | undefined;
 }>();
@@ -110,26 +125,49 @@ defineEmits([...useDialogPluginComponent.emits]);
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const { t } = useI18n();
+const { t, d } = useI18n();
 const { money } = useFinanceFormat();
 const feeStore = useFeeStore();
 
-const currency = computed(() => payment.currency);
+// Newest first: a refund usually answers the latest payment.
+const choices = computed<Payment[]>(() =>
+  payment
+    ? [payment]
+    : (fee?.payments ?? [])
+        .filter((p) => p.refundable > 0)
+        .sort((a, b) => b.paidOn.localeCompare(a.paidOn)),
+);
+// Opened from a fee only while one of its payments is refundable.
+const selected = ref<Payment>(choices.value[0] as Payment);
+const currency = computed(() => selected.value.currency);
 const today = formatLocalDate(new Date());
 const overpaid = computed(() => fee?.balance.overpaid ?? 0);
 
 // An excess is given back as it is; otherwise it is a cancellation.
-const amount = ref<number | null>(
-  Math.min(overpaid.value || payment.refundable, payment.refundable) || null,
-);
+function suggested(p: Payment): number | null {
+  return Math.min(overpaid.value || p.refundable, p.refundable) || null;
+}
+const amount = ref<number | null>(suggested(selected.value));
 const reduceAmountDue = ref(overpaid.value === 0);
 const refundedOn = ref<string | null>(today);
 const reason = ref('');
 const saving = ref(false);
 
 const tooMuch = computed(
-  () => amount.value !== null && amount.value > payment.refundable,
+  () => amount.value !== null && amount.value > selected.value.refundable,
 );
+
+function paymentLabel(p: Payment): string {
+  return [
+    t(`finance.fee.method.${p.method}`),
+    d(parseLocalDate(p.paidOn), 'date'),
+    t('left', { amount: money(p.refundable, p.currency) }),
+  ].join(' · ');
+}
+
+function onSelect(p: Payment) {
+  amount.value = suggested(p);
+}
 
 async function submit() {
   if (amount.value === null || refundedOn.value === null || tooMuch.value) {
@@ -137,7 +175,7 @@ async function submit() {
   }
   saving.value = true;
   try {
-    await feeStore.refundPayment(payment, {
+    await feeStore.refundPayment(selected.value, {
       amount: amount.value,
       refundedOn: refundedOn.value,
       reason: reason.value.trim() || null,
@@ -153,6 +191,8 @@ async function submit() {
 </script>
 
 <i18n lang="yaml" locale="en">
+payment: 'Payment'
+left: '{amount} left'
 title: 'Refund'
 subtitle: 'Up to {amount} of this payment'
 tooMuch: 'More than is left of this payment.'
@@ -165,6 +205,8 @@ submit: 'Record refund'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+payment: 'Zahlung'
+left: 'noch {amount}'
 title: 'Erstatten'
 subtitle: 'Bis zu {amount} dieser Zahlung'
 tooMuch: 'Mehr als von dieser Zahlung übrig ist.'
@@ -177,6 +219,8 @@ submit: 'Erstattung erfassen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+payment: 'Paiement'
+left: '{amount} restants'
 title: 'Rembourser'
 subtitle: "Jusqu'à {amount} de ce paiement"
 tooMuch: 'Plus que ce qui reste de ce paiement.'
@@ -189,6 +233,8 @@ submit: 'Enregistrer le remboursement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+payment: 'Płatność'
+left: 'pozostało {amount}'
 title: 'Zwróć'
 subtitle: 'Do {amount} z tej płatności'
 tooMuch: 'Więcej niż pozostało z tej płatności.'
@@ -201,6 +247,8 @@ submit: 'Zarejestruj zwrot'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+payment: 'Platba'
+left: 'zbývá {amount}'
 title: 'Vrátit'
 subtitle: 'Až {amount} z této platby'
 tooMuch: 'Víc, než z této platby zbývá.'

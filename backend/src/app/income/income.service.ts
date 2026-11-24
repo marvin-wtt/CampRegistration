@@ -6,6 +6,7 @@ import { FileService } from '#app/file/file.service';
 import { FinanceCategoryService } from '#app/financeCategory/finance-category.service';
 import { incomeAuditPolicy } from '#app/income/income.audit';
 import { nextFinanceNumber } from '#app/finance/finance.sequence';
+import { DEFAULT_RECORD_RETENTION_YEARS } from '#app/payment/payment.service';
 
 export type IncomeView = Income & {
   finance: { incomeNumberPrefix: string };
@@ -141,6 +142,35 @@ export class IncomeService extends BaseService {
 
       return after;
     });
+  }
+
+  /**
+   * Clears the payer's name — a donor may be a private person — once the
+   * accounting retention period has passed, counted from the end of the year
+   * it arrived (or was recorded, if it never did). The amounts stay.
+   */
+  async clearExpiredPayerNames(
+    now = new Date(),
+    years = DEFAULT_RECORD_RETENTION_YEARS,
+  ): Promise<number> {
+    const year = now.getUTCFullYear() - years;
+    const cutoff = `${year.toString()}-01-01`;
+
+    const { count } = await this.prisma.income.updateMany({
+      where: {
+        payerName: { not: null },
+        OR: [
+          { receivedOn: { lt: cutoff } },
+          {
+            receivedOn: null,
+            createdAt: { lt: new Date(`${cutoff}T00:00:00Z`) },
+          },
+        ],
+      },
+      data: { payerName: null },
+    });
+
+    return count;
   }
 
   async deleteIncome(income: IncomeView) {

@@ -100,6 +100,34 @@
           </div>
         </q-slide-transition>
 
+        <!-- Money back from a purchase reduces the costs: it is a refund
+             among the expenses, never income. -->
+        <div
+          v-if="!income && can('event.expenses.create')"
+          class="refund-hint rounded-lg"
+          :class="quasar.screen.xs ? 'column' : 'row items-center no-wrap'"
+          data-test="income-refund-hint"
+        >
+          <div class="row no-wrap items-start col refund-hint__text">
+            <q-icon
+              name="info"
+              size="20px"
+              class="refund-hint__icon"
+            />
+            <span class="text-body2">{{ t('refundHint') }}</span>
+          </div>
+          <m-btn
+            :label="t('asRefund')"
+            color="primary"
+            text
+            rounded
+            no-caps
+            class="self-end"
+            data-test="income-as-refund"
+            @click="switchToRefund"
+          />
+        </div>
+
         <q-input
           v-model="form.description"
           :label="t('finance.field.description')"
@@ -163,18 +191,6 @@
 
       <template #actions>
         <m-btn
-          v-if="income && can('event.income.delete')"
-          :label="t('finance.action.delete')"
-          icon="delete"
-          color="error"
-          text
-          rounded
-          :disable="saving"
-          data-test="income-delete"
-          @click="remove"
-        />
-        <q-space />
-        <m-btn
           v-if="!quasar.screen.lt.sm"
           :label="t('finance.action.cancel')"
           color="primary"
@@ -196,6 +212,19 @@
   </responsive-dialog>
 </template>
 
+<script lang="ts">
+import type { ReceiptFile as PrefillFile } from '@/composables/receiptUploads';
+
+/** A new income started elsewhere, e.g. a grant first entered as a refund. */
+export interface IncomePrefill {
+  amount: number | null;
+  description: string;
+  receivedOn: string | null;
+  /** Already uploaded: only their ids and names carry over. */
+  files: Pick<PrefillFile, 'key' | 'id' | 'name'>[];
+}
+</script>
+
 <script lang="ts" setup>
 import { computed, reactive, ref, useTemplateRef } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -215,12 +244,14 @@ import { useIncomeStore } from '@/stores/income-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { usePermissions } from '@/composables/permissions';
 import { formatLocalDate } from '@/utils/date';
+import { useFinanceDialogs } from '@/composables/financeDialogs';
 
 const FOREIGN_CURRENCIES = ['PLN', 'CZK', 'GBP', 'CHF', 'USD', 'DKK', 'HUF'];
 
-const { income = undefined } = defineProps<{
+const { income = undefined, prefill = undefined } = defineProps<{
   /** Edits this one; records a new income without. */
   income?: Income | undefined;
+  prefill?: IncomePrefill | undefined;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -249,12 +280,16 @@ const payers = computed(() =>
 );
 
 const form = reactive({
-  amount: income?.amount ?? null,
+  amount: income?.amount ?? prefill?.amount ?? null,
   originalAmount: income?.originalAmount ?? null,
   originalCurrency: income?.originalCurrency ?? null,
-  description: income?.description ?? '',
+  description: income?.description ?? prefill?.description ?? '',
   // Usually recorded as it arrives; cleared for a promise.
-  receivedOn: income ? income.receivedOn : formatLocalDate(new Date()),
+  receivedOn: income
+    ? income.receivedOn
+    : prefill
+      ? prefill.receivedOn
+      : formatLocalDate(new Date()),
   payerName: income?.payerName ?? null,
   categoryId: income?.categoryId ?? null,
 });
@@ -267,7 +302,19 @@ const {
   uploadedIds,
   add: addFiles,
   remove: removeFile,
+  reset: resetFiles,
 } = useReceiptUploads(income?.files ?? []);
+
+if (prefill) {
+  resetFiles(
+    prefill.files.map((f) => ({
+      ...f,
+      url: null,
+      preview: null,
+      uploading: false,
+    })),
+  );
+}
 
 function addCurrency(value: string, done: (item?: string) => void) {
   const code = value.trim().toUpperCase();
@@ -310,46 +357,41 @@ async function save() {
   }
 }
 
-function remove() {
-  if (!income) {
-    return;
-  }
-  quasar
-    .dialog({
-      title: t('deleteTitle', { label: income.label }),
-      message: t('deleteMessage'),
-      cancel: {
-        label: t('finance.action.cancel'),
-        color: 'primary',
-        flat: true,
-        rounded: true,
-      },
-      ok: {
-        label: t('finance.action.delete'),
-        color: 'error',
-        rounded: true,
-        unelevated: true,
-      },
-    })
-    .onOk(() => void confirmRemove(income.id));
-}
+const dialogs = useFinanceDialogs();
 
-async function confirmRemove(incomeId: string) {
-  saving.value = true;
-  try {
-    await incomeStore.deleteIncome(incomeId);
-    onDialogOK();
-  } catch {
-    // Reported by the store.
-  } finally {
-    saving.value = false;
-  }
+// Hands what was typed to the expense capture, as a refund.
+function switchToRefund() {
+  const prefill = {
+    type: 'REFUND' as const,
+    amount: form.amount,
+    description: form.description,
+    date: form.receivedOn,
+    files: files.value.flatMap((f) =>
+      f.id ? [{ key: f.key, id: f.id, name: f.name }] : [],
+    ),
+  };
+  onDialogCancel();
+  dialogs.captureFrom(prefill);
 }
 </script>
 
 <style scoped>
 .text-mono {
   font-variant-numeric: tabular-nums;
+}
+
+.refund-hint {
+  gap: 4px 8px;
+  padding: 8px 4px 4px 12px;
+  background: var(--md3-surface-container-high);
+}
+
+.refund-hint__text {
+  gap: 8px;
+}
+
+.refund-hint__icon {
+  color: var(--md3-on-surface-variant);
 }
 
 .original-row {
@@ -364,6 +406,8 @@ async function confirmRemove(incomeId: string) {
 </style>
 
 <i18n lang="yaml" locale="en">
+refundHint: 'Money back from a purchase? That is a refund under expenses.'
+asRefund: 'Record as refund'
 newTitle: 'Record income'
 editTitle: 'Edit income'
 descriptionPlaceholder: 'e.g. State youth grant'
@@ -371,11 +415,11 @@ receivedOn: 'Received on'
 promisedHint: 'Not received yet: counts as promised'
 payer: 'From'
 payerHint: 'Who gave it: a funder, a sponsor'
-deleteTitle: 'Delete {label}?'
-deleteMessage: 'Its number is not given out again.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+refundHint: 'Geld zurück aus einem Einkauf? Das ist eine Erstattung bei den Ausgaben.'
+asRefund: 'Als Erstattung erfassen'
 newTitle: 'Einnahme erfassen'
 editTitle: 'Einnahme bearbeiten'
 descriptionPlaceholder: 'z. B. Landesjugendplan-Zuschuss'
@@ -383,11 +427,11 @@ receivedOn: 'Eingegangen am'
 promisedHint: 'Noch nicht eingegangen: zählt als zugesagt'
 payer: 'Von'
 payerHint: 'Wer es gegeben hat: ein Förderer, ein Sponsor'
-deleteTitle: '{label} löschen?'
-deleteMessage: 'Die Nummer wird nicht erneut vergeben.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+refundHint: 'Argent rendu sur un achat ? C’est un remboursement dans les dépenses.'
+asRefund: 'Enregistrer comme remboursement'
 newTitle: 'Enregistrer une recette'
 editTitle: 'Modifier la recette'
 descriptionPlaceholder: 'p. ex. subvention régionale jeunesse'
@@ -395,11 +439,11 @@ receivedOn: 'Reçu le'
 promisedHint: 'Pas encore reçu : compte comme promis'
 payer: 'De'
 payerHint: 'Qui l’a donné : un financeur, un sponsor'
-deleteTitle: 'Supprimer {label} ?'
-deleteMessage: 'Son numéro ne sera pas réattribué.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+refundHint: 'Zwrot pieniędzy za zakup? To zwrot w wydatkach.'
+asRefund: 'Zapisz jako zwrot'
 newTitle: 'Zapisz przychód'
 editTitle: 'Edytuj przychód'
 descriptionPlaceholder: 'np. dotacja na pracę z młodzieżą'
@@ -407,11 +451,11 @@ receivedOn: 'Data wpływu'
 promisedHint: 'Jeszcze nie wpłynęło: liczone jako obiecane'
 payer: 'Od'
 payerHint: 'Kto przekazał: grantodawca, sponsor'
-deleteTitle: 'Usunąć {label}?'
-deleteMessage: 'Jego numer nie zostanie użyty ponownie.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+refundHint: 'Peníze zpět z nákupu? To je vratka mezi výdaji.'
+asRefund: 'Zaznamenat jako vratku'
 newTitle: 'Zaznamenat příjem'
 editTitle: 'Upravit příjem'
 descriptionPlaceholder: 'např. dotace na práci s mládeží'
@@ -419,6 +463,4 @@ receivedOn: 'Přijato dne'
 promisedHint: 'Zatím nepřijato: počítá se jako přislíbené'
 payer: 'Od'
 payerHint: 'Kdo ho poskytl: donor, sponzor'
-deleteTitle: 'Smazat {label}?'
-deleteMessage: 'Jeho číslo se znovu nepřidělí.'
 </i18n>

@@ -80,7 +80,6 @@ export default {
         },
         settlement: {
           RETAINED: 'Conservé',
-          SETTLED_OUTSIDE: "Réglé hors de l'application",
         },
       },
       reasons: {

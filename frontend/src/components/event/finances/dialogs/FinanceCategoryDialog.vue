@@ -4,11 +4,7 @@
     @hide="onDialogHide"
   >
     <dialog-card
-      :title="
-        kind === 'INCOME'
-          ? t('finance.categories.incomeTitle')
-          : t('finance.categories.title')
-      "
+      :title="t('finance.categories.title')"
       :subtitle="t('finance.categories.subtitle')"
       icon="category"
       :width="640"
@@ -16,6 +12,26 @@
       @cancel="onDialogOK"
     >
       <div class="column no-wrap q-gutter-y-md">
+        <!-- Expense and income categories are lists of their own. -->
+        <m-btn-group
+          connected
+          class="kind-switch"
+          data-test="category-kind"
+        >
+          <m-btn
+            v-for="option in KINDS"
+            :key="option.value"
+            class="q-btn--toggle"
+            :class="{ 'q-btn--selected': listKind === option.value }"
+            :aria-pressed="listKind === option.value"
+            :label="t(option.label)"
+            :icon="option.icon"
+            primary
+            no-caps
+            :data-test="`category-kind-${option.value}`"
+            @click="switchKind(option.value)"
+          />
+        </m-btn-group>
         <q-card
           v-for="group in sections"
           :key="group.id ?? 'top'"
@@ -102,7 +118,7 @@
                     {{
                       category.recordCount > 0
                         ? t(
-                            kind === 'INCOME'
+                            listKind === 'INCOME'
                               ? 'finance.categories.usedIncome'
                               : 'finance.categories.used',
                             category.recordCount,
@@ -234,7 +250,7 @@
                   <q-item-label caption>
                     {{
                       t(
-                        kind === 'INCOME'
+                        listKind === 'INCOME'
                           ? 'finance.categories.usedIncome'
                           : 'finance.categories.used',
                         category.recordCount,
@@ -273,6 +289,7 @@ import { storeToRefs } from 'pinia';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { MBtnGroup } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtnGroup';
 import type {
   FinanceCategory,
   FinanceCategoryKind,
@@ -293,8 +310,8 @@ interface Section {
   categories: FinanceCategory[];
 }
 
-const { kind = 'EXPENSE' } = defineProps<{
-  /** Expense and income categories are lists of their own. */
+const { kind: initialKind = 'EXPENSE' } = defineProps<{
+  /** The list the dialog opens on; it can switch to the other. */
   kind?: FinanceCategoryKind;
 }>();
 
@@ -307,8 +324,19 @@ const { to } = useObjectTranslation();
 const financeStore = useFinanceStore();
 const { categories: expenseCategories, incomeCategories } =
   storeToRefs(financeStore);
+const KINDS = [
+  {
+    value: 'EXPENSE',
+    label: 'finance.categories.expenses',
+    icon: 'receipt_long',
+  },
+  { value: 'INCOME', label: 'finance.categories.income', icon: 'savings' },
+] as const;
+const listKind = ref<FinanceCategoryKind>(initialKind);
 const storeCategories = computed(() =>
-  kind === 'INCOME' ? incomeCategories.value : expenseCategories.value,
+  listKind.value === 'INCOME'
+    ? incomeCategories.value
+    : expenseCategories.value,
 );
 const { data: event } = storeToRefs(useEventDetailsStore());
 
@@ -319,6 +347,20 @@ const showArchived = ref(false);
 // the ungrouped ones, `false` while nothing is being added.
 const addingIn = ref<string | null | false>(false);
 const addingGroup = ref(false);
+
+// Half-typed edits belong to the list they were started in.
+function switchKind(value: FinanceCategoryKind) {
+  listKind.value = value;
+  editingId.value = null;
+  addingIn.value = false;
+  addingGroup.value = false;
+  if (value === 'INCOME') {
+    void financeStore.loadIncomeCategories();
+  }
+}
+if (initialKind === 'INCOME') {
+  void financeStore.loadIncomeCategories();
+}
 
 const all = computed(() =>
   [...(storeCategories.value ?? [])].sort(
@@ -416,7 +458,7 @@ function move(section: Section, index: number, delta: number) {
         ]),
       ),
     },
-    kind,
+    listKind.value,
   );
 }
 
@@ -427,7 +469,7 @@ function regroup(category: FinanceCategory, parentId: string | null) {
         new Map([[category.id, { parentId, index: Number.MAX_SAFE_INTEGER }]]),
       ),
     },
-    kind,
+    listKind.value,
   );
 }
 
@@ -460,11 +502,15 @@ function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
 }
 
 function archive(category: FinanceCategory, value: boolean) {
-  void financeStore.updateCategory(category.id, { archived: value }, kind);
+  void financeStore.updateCategory(
+    category.id,
+    { archived: value },
+    listKind.value,
+  );
 }
 
 function remove(category: FinanceCategory) {
-  void financeStore.deleteCategory(category.id, kind);
+  void financeStore.deleteCategory(category.id, listKind.value);
 }
 
 function startAdding(sectionId: string | null) {
@@ -486,21 +532,30 @@ type CategoryName = string | Record<string, string>;
 
 function renameOf(category: FinanceCategory) {
   return (name: CategoryName) =>
-    financeStore.updateCategory(category.id, { name }, kind);
+    financeStore.updateCategory(category.id, { name }, listKind.value);
 }
 
 function createCategory(parentId: string | null, name: CategoryName) {
-  return financeStore.createCategory({ name, parentId }, kind);
+  return financeStore.createCategory({ name, parentId }, listKind.value);
 }
 
 async function createGroup(name: CategoryName) {
-  const created = await financeStore.createCategory({ name }, kind);
+  const created = await financeStore.createCategory({ name }, listKind.value);
   // Shown as a group although it holds no categories yet.
   groupIds.value = new Set([...groupIds.value, created.id]);
 }
 </script>
 
 <style scoped>
+.kind-switch {
+  display: flex;
+}
+
+.kind-switch > :deep(.q-btn) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* On the dialog's own surface, outlined: a card's darker fill would read as
    a hole in the dialog. */
 .section-card {

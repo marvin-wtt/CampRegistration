@@ -7,6 +7,8 @@ import {
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
+import { resolve } from '#core/ioc/container';
+import { IncomeService } from '#app/income/income.service';
 import type { Event } from '#generated/prisma/client.js';
 
 describe('income', () => {
@@ -60,7 +62,7 @@ describe('income', () => {
     ]);
   });
 
-  it('keeps promised and received income apart in the summary', async () => {
+  it('counts promised income in the expected result, not the received one', async () => {
     const { event, token } = await setup();
 
     await createIncome(event, token, { receivedOn: '2026-06-01' });
@@ -74,7 +76,8 @@ describe('income', () => {
     expect(body.data).toMatchObject({
       incomeReceived: 300000,
       incomeExpected: 50000,
-      result: 300000,
+      result: 350000,
+      receivedResult: 300000,
     });
   });
 
@@ -139,5 +142,27 @@ describe('income', () => {
       .get(`/api/v1/events/${event.id}/incomes`)
       .auth(coordinator.token, { type: 'bearer' })
       .expect(403);
+  });
+
+  it('clears the payer name ten years after the money arrived', async () => {
+    const { event, token } = await setup();
+    const income = await createIncome(event, token, {
+      receivedOn: '2026-06-01',
+      payerName: 'Jane Doe',
+    });
+
+    const service = resolve(IncomeService);
+    // Received 2026-06-01: kept through 2036.
+    expect(await service.clearExpiredPayerNames(new Date('2036-12-31'))).toBe(
+      0,
+    );
+    expect(await service.clearExpiredPayerNames(new Date('2037-01-01'))).toBe(
+      1,
+    );
+
+    const stored = await prisma.income.findUniqueOrThrow({
+      where: { id: income.id },
+    });
+    expect(stored).toMatchObject({ payerName: null, amount: 300000 });
   });
 });

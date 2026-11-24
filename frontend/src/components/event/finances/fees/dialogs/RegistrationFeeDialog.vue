@@ -176,13 +176,28 @@
         </q-list>
       </div>
 
+      <!-- Paying and paying back; an excess makes giving back the next step. -->
       <template
-        v-if="can('event.payments.create')"
+        v-if="can('event.payments.create') || canRefund"
         #actions
       >
         <m-btn
+          v-if="canRefund"
+          :label="t('refundAction')"
+          icon="undo"
+          :text="!overpaid"
+          :unelevated="overpaid"
+          rounded
+          color="primary"
+          data-test="fee-refund-action"
+          @click="dialogs.refundFee(fee)"
+        />
+        <m-btn
+          v-if="can('event.payments.create')"
           :label="t('record')"
           icon="add_card"
+          :text="overpaid"
+          :unelevated="!overpaid"
           rounded
           color="primary"
           data-test="fee-record"
@@ -266,6 +281,13 @@ const headlineCaption = computed(() => {
       ? t('overpaid')
       : t('paid');
 });
+
+const canRefund = computed(
+  () =>
+    can('event.payments.refund') &&
+    fee.value.payments.some((p) => p.refundable > 0),
+);
+const overpaid = computed(() => fee.value.balance.overpaid > 0);
 
 const amountDueText = computed(() => {
   const due = fee.value.balance.amountDue;

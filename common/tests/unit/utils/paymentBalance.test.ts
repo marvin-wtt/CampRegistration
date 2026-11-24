@@ -38,8 +38,10 @@ describe('amountDue', () => {
 });
 
 describe('paymentBalance', () => {
-  const status = (source: typeof quoted, payments: ReturnType<typeof paid>[]) =>
-    paymentBalance(source, 'EUR', payments).status;
+  const status = (
+    source: Parameters<typeof paymentBalance>[0],
+    payments: ReturnType<typeof paid>[],
+  ) => paymentBalance(source, 'EUR', payments).status;
 
   it('reads unpaid, partial, paid and overpaid', () => {
     expect(status(quoted, [])).toBe('UNPAID');

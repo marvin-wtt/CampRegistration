@@ -30,9 +30,14 @@ export function useFeeDialogs() {
     });
   }
 
+  /** From the fee: its refundable payments to pick from. */
+  function refundFee(fee: RegistrationFee) {
+    quasar.dialog({ component: RefundPaymentDialog, componentProps: { fee } });
+  }
+
   function amountDue(fee: RegistrationFee) {
     quasar.dialog({ component: AmountDueDialog, componentProps: { fee } });
   }
 
-  return { details, record, refund, amountDue };
+  return { details, record, refund, refundFee, amountDue };
 }

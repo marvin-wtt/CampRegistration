@@ -47,6 +47,10 @@ export interface FinanceFeeGroupTotal {
   currency: string;
   /** Net of refunds, in `currency`. */
   received: number;
+  /** Still owed by accepted registrations. */
+  outstanding: number;
+  /** Paid beyond what is due: to be paid back. */
+  toRefund: number;
 }
 
 export interface FinanceSummary {
@@ -78,14 +82,23 @@ export interface FinanceSummary {
    * than the event's are left out; they can't be added up.
    */
   feesReceived: number;
+  /** Still owed by accepted registrations, event currency only. */
+  feesOutstanding: number;
+  /** Overpaid and to be paid back, event currency only. */
+  feesToRefund: number;
   /**
    * Fees received per group, each in its own currency — a group paying in
    * another currency is shown, never converted.
    */
   feesByGroup: FinanceFeeGroupTotal[];
   incomeByCategory: FinanceIncomeCategoryTotal[];
-  /** Received income and fees − `total`. Promised income doesn't count yet. */
+  /**
+   * What the event will end with: all income and fees expected, promised
+   * and still owed included, − `total`.
+   */
   result: number;
+  /** The same from what has arrived only: the cash view. */
+  receivedResult: number;
 }
 
 export interface FinanceSettings {

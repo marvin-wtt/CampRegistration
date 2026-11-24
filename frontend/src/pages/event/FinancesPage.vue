@@ -10,7 +10,7 @@
     >
       <page-header
         :title="t('finance.title')"
-        :subtitle="t('finance.subtitle')"
+        :subtitle="quasar.screen.xs ? undefined : t('finance.subtitle')"
         :inline-actions="quasar.screen.lt.md"
       >
         <template #actions>
@@ -31,9 +31,75 @@
         </template>
       </page-header>
 
+      <!-- A sub-page of the income tab: its way back takes the tab bar's
+           place, at the same height, as phones do it. -->
+      <div
+        v-if="tab === 'income' && showFees"
+        class="finance-subheader row items-center no-wrap"
+        data-test="fees-header"
+      >
+        <m-btn
+          icon="arrow_back"
+          color="on-surface"
+          flat
+          round
+          :aria-label="t('finance.tab.income')"
+          data-test="fees-back"
+          @click="closeFees"
+        />
+        <!-- Where it sits: the parent tab above, small, like a breadcrumb. -->
+        <div class="column col finance-subheader__title">
+          <span class="text-caption text-on-surface-variant ellipsis">
+            {{ t('finance.tab.income') }}
+          </span>
+          <span class="text-subtitle1 text-weight-medium ellipsis">
+            {{ t('finance.fee.title') }}
+          </span>
+        </div>
+        <!-- The group: one filter for the total, a switch between groups. -->
+        <q-btn
+          v-if="groups.length > 1"
+          :label="
+            selectedGroup
+              ? groupLabel(selectedGroup)
+              : t('finance.fee.allGroups')
+          "
+          icon-right="arrow_drop_down"
+          color="secondary-container"
+          text-color="on-secondary-container"
+          unelevated
+          rounded
+          no-caps
+          dense
+          class="finance-subheader__group"
+          data-test="fees-group"
+        >
+          <q-menu auto-close>
+            <q-list style="min-width: 200px">
+              <q-item
+                v-for="option in groupOptions"
+                :key="option.value ?? 'all'"
+                clickable
+                :active="selectedGroup === option.value"
+                :data-test="`fees-group-${option.value ?? 'all'}`"
+                @click="setQueryParams({ group: option.value })"
+              >
+                <q-item-section>{{ option.label }}</q-item-section>
+                <q-item-section
+                  v-if="selectedGroup === option.value"
+                  side
+                >
+                  <q-icon name="check" />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+      </div>
       <q-tabs
+        v-else
         v-model="tab"
-        align="left"
+        :align="quasar.screen.xs ? 'justify' : 'left'"
         no-caps
         inline-label
         active-color="primary"
@@ -53,24 +119,7 @@
       <!-- Their own data and loading state, and for their own permissions.
            The fee ledger opens from the income tab as a view of its own. -->
       <template v-if="tab === 'income'">
-        <template v-if="showFees">
-          <div
-            v-if="can('event.expenses.view')"
-            class="row"
-          >
-            <m-btn
-              :label="t('finance.tab.income')"
-              icon="arrow_back"
-              color="primary"
-              text
-              rounded
-              no-caps
-              data-test="fees-back"
-              @click="closeFees"
-            />
-          </div>
-          <fees-view />
-        </template>
+        <fees-view v-if="showFees" />
         <income-view
           v-else
           @open-fees="openFees"
@@ -211,6 +260,8 @@ import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { usePermissions } from '@/composables/permissions';
 import { useRouteTab } from '@/composables/routeTab';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
+import { useGroupLabel } from '@/composables/groupLabel';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -237,12 +288,16 @@ watch(
 );
 
 const tabs = computed(() => {
+  // Money out and in side by side, then settling up, then the result.
   const list: FinanceTab[] = [];
   if (expenseAccess.value) {
-    list.push('expenses', 'balances');
+    list.push('expenses');
   }
   if (can('event.expenses.view') || can('event.payments.view')) {
     list.push('income');
+  }
+  if (expenseAccess.value) {
+    list.push('balances');
   }
   if (can('event.expenses.view')) {
     list.push('summary');
@@ -270,13 +325,25 @@ const { getStringQueryParam, setQueryParams } = useRouteQueryParams();
 const showFees = computed(
   () =>
     getStringQueryParam('view') === 'fees' ||
-    getStringQueryParam('fees') !== null ||
-    !can('event.expenses.view'),
+    getStringQueryParam('fees') !== null,
 );
 
-function openFees() {
-  setQueryParams({ view: 'fees' });
+// A group's ledger, or every group's from a dashboard link.
+function openFees(group: string | null) {
+  setQueryParams({ view: 'fees', group });
 }
+
+const groupLabel = useGroupLabel();
+const eventDetailsStore = useEventDetailsStore();
+const groups = computed(() => eventDetailsStore.data?.countries ?? []);
+const selectedGroup = computed(() => {
+  const group = getStringQueryParam('group');
+  return group !== null && groups.value.includes(group) ? group : null;
+});
+const groupOptions = computed(() => [
+  { value: null, label: t('finance.fee.allGroups') },
+  ...groups.value.map((value) => ({ value, label: groupLabel(value) })),
+]);
 
 function closeFees() {
   setQueryParams({ view: null, fees: null, group: null });
@@ -317,12 +384,9 @@ const menuItems = computed<ResponsiveMenuItem[]>(() => [
   {
     label: t('finance.categories.title'),
     icon: 'category',
-    onClick: dialogs.categories,
-  },
-  {
-    label: t('finance.categories.incomeTitle'),
-    icon: 'savings',
-    onClick: dialogs.incomeCategories,
+    // Opens on the list the tab is about.
+    onClick: () =>
+      dialogs.categories(tab.value === 'income' ? 'INCOME' : 'EXPENSE'),
   },
   {
     label: t('finance.settings.title'),
@@ -345,5 +409,22 @@ const categories = computed(() => financeStore.categories ?? []);
 
 .finance-tabs {
   border-bottom: 1px solid var(--md3-outline-variant);
+}
+
+/* The tab bar's height and rule, so swapping one for the other moves nothing. */
+.finance-subheader {
+  gap: 4px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--md3-outline-variant);
+}
+
+.finance-subheader__title {
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.finance-subheader__group {
+  flex: none;
+  padding-inline: 12px 6px;
 }
 </style>

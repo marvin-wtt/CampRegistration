@@ -9,6 +9,7 @@ import {
   computeCategoryTotals,
   summarizeFees,
   summarizeIncome,
+  summaryResults,
 } from '#app/finance/finance.balances';
 import type {
   FinanceBalance,
@@ -51,6 +52,7 @@ export class FinanceService extends BaseService {
       e.paidByUserId !== null || e.paidByName !== null;
     const total =
       sum(spent.map((e) => e.amount)) - sum(refunded.map((e) => e.amount));
+    const income = summarizeIncome(incomes);
 
     return {
       currency,
@@ -70,8 +72,9 @@ export class FinanceService extends BaseService {
         .filter((e) => e.date === null)
         .map((e) => e.receiptNumber),
       byCategory: computeCategoryTotals(expenses),
-      ...summarizeIncome(incomes, fees.feesReceived, total),
-      feesByGroup: fees.feesByGroup,
+      ...income,
+      ...fees,
+      ...summaryResults({ ...income, ...fees, total }),
     };
   }
 
@@ -232,9 +235,19 @@ export class FinanceService extends BaseService {
     return { expenses, payouts };
   }
 
-  /** Manual income, and the registration fees received net of refunds. */
+  /** Manual income, and the registration fees received and still owed. */
   private async loadIncome(eventId: string, currency: string) {
-    const [incomes, payments] = await Promise.all([
+    const paid = {
+      where: { status: 'PAID' },
+      select: {
+        amount: true,
+        refunds: {
+          where: { status: 'REFUNDED' },
+          select: { amount: true, amountDueReduction: true },
+        },
+      },
+    } as const;
+    const [incomes, payments, registrations] = await Promise.all([
       this.prisma.income.findMany({
         where: { eventId },
         select: { amount: true, receivedOn: true, categoryId: true },
@@ -251,9 +264,29 @@ export class FinanceService extends BaseService {
           },
         },
       }),
+      this.prisma.registration.findMany({
+        where: { eventId },
+        select: {
+          group: true,
+          status: true,
+          currency: true,
+          quotedAmount: true,
+          amountDueOverride: true,
+          payments: paid,
+        },
+      }),
     ]);
 
-    return { incomes, fees: summarizeFees(payments, currency) };
+    const feeRegistrations = registrations.map((registration) => ({
+      ...registration,
+      accepted: registration.status === 'ACCEPTED',
+      currency: registration.currency ?? currency,
+    }));
+
+    return {
+      incomes,
+      fees: summarizeFees(payments, feeRegistrations, currency),
+    };
   }
 }
 

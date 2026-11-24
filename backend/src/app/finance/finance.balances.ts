@@ -5,7 +5,11 @@ import type {
   FinanceIncomeCategoryTotal,
   FinanceSummary,
 } from '@camp-registration/common/entities';
-import { partyKey } from '@camp-registration/common/utils';
+import {
+  type PaymentLedgerEntry,
+  partyKey,
+  paymentBalance,
+} from '@camp-registration/common/utils';
 
 export interface BalanceExpense {
   type: 'EXPENSE' | 'REFUND';
@@ -139,15 +143,9 @@ export interface SummaryIncome {
  */
 export function summarizeIncome(
   incomes: readonly SummaryIncome[],
-  feesReceived: number,
-  spent: number,
 ): Pick<
   FinanceSummary,
-  | 'incomeReceived'
-  | 'incomeExpected'
-  | 'feesReceived'
-  | 'incomeByCategory'
-  | 'result'
+  'incomeReceived' | 'incomeExpected' | 'incomeByCategory'
 > {
   const byCategory = new Map<string | null, FinanceIncomeCategoryTotal>();
   let received = 0;
@@ -174,9 +172,7 @@ export function summarizeIncome(
   return {
     incomeReceived: received,
     incomeExpected: expected,
-    feesReceived,
     incomeByCategory: [...byCategory.values()],
-    result: received + feesReceived - spent,
   };
 }
 
@@ -188,34 +184,97 @@ export interface SummaryFeePayment {
   refunds: { amount: number }[];
 }
 
+/** A registration as far as its fee balance needs it. */
+export interface SummaryFeeRegistration {
+  group: string | null;
+  accepted: boolean;
+  currency: string;
+  quotedAmount: number | null;
+  amountDueOverride: number | null;
+  payments: PaymentLedgerEntry[];
+}
+
+type FeeSummary = Pick<
+  FinanceSummary,
+  'feesReceived' | 'feesOutstanding' | 'feesToRefund' | 'feesByGroup'
+>;
+
 /**
- * Fees received net of refunds, per group and currency. Only the event's
- * currency adds up to `feesReceived`; other currencies are never converted.
+ * Fees per group and currency: received net of refunds (payments of deleted
+ * registrations included), still owed by accepted registrations, and to be
+ * paid back. Only the event's currency adds up; others are never converted.
  */
 export function summarizeFees(
   payments: readonly SummaryFeePayment[],
+  registrations: readonly SummaryFeeRegistration[],
   eventCurrency: string,
-): { feesReceived: number; feesByGroup: FinanceFeeGroupTotal[] } {
+): FeeSummary {
   const byGroup = new Map<string, FinanceFeeGroupTotal>();
-  let feesReceived = 0;
-
-  for (const payment of payments) {
-    const net =
-      payment.amount -
-      payment.refunds.reduce((sum, refund) => sum + refund.amount, 0);
-    const group = payment.registration?.group ?? null;
-    const key = `${group ?? ''}|${payment.currency}`;
+  const totalFor = (group: string | null, currency: string) => {
+    const key = `${group ?? ''}|${currency}`;
     const total = byGroup.get(key) ?? {
       group,
-      currency: payment.currency,
+      currency,
       received: 0,
+      outstanding: 0,
+      toRefund: 0,
     };
-    total.received += net;
     byGroup.set(key, total);
-    if (payment.currency === eventCurrency) {
-      feesReceived += net;
+    return total;
+  };
+
+  for (const payment of payments) {
+    totalFor(payment.registration?.group ?? null, payment.currency).received +=
+      payment.amount -
+      payment.refunds.reduce((sum, refund) => sum + refund.amount, 0);
+  }
+  for (const registration of registrations) {
+    const balance = paymentBalance(
+      registration,
+      registration.currency,
+      registration.payments,
+    );
+    if (!registration.accepted && balance.overpaid === 0) {
+      continue;
     }
+    const total = totalFor(registration.group, registration.currency);
+    total.outstanding += registration.accepted ? balance.outstanding : 0;
+    total.toRefund += balance.overpaid;
   }
 
-  return { feesReceived, feesByGroup: [...byGroup.values()] };
+  const own = [...byGroup.values()].filter((t) => t.currency === eventCurrency);
+  const sum = (pick: (t: FinanceFeeGroupTotal) => number) =>
+    own.reduce((total, t) => total + pick(t), 0);
+
+  return {
+    feesReceived: sum((t) => t.received),
+    feesOutstanding: sum((t) => t.outstanding),
+    feesToRefund: sum((t) => t.toRefund),
+    feesByGroup: [...byGroup.values()],
+  };
+}
+
+/** Expected and received result, from the totals of the summary. */
+export function summaryResults(
+  totals: Pick<
+    FinanceSummary,
+    | 'incomeReceived'
+    | 'incomeExpected'
+    | 'feesReceived'
+    | 'feesOutstanding'
+    | 'feesToRefund'
+    | 'total'
+  >,
+): Pick<FinanceSummary, 'result' | 'receivedResult'> {
+  const receivedResult =
+    totals.incomeReceived + totals.feesReceived - totals.total;
+
+  return {
+    receivedResult,
+    result:
+      receivedResult +
+      totals.incomeExpected +
+      totals.feesOutstanding -
+      totals.feesToRefund,
+  };
 }

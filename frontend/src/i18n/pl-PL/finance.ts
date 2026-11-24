@@ -97,6 +97,8 @@ export default {
     edit: 'Edytuj',
   },
   capture: {
+    incomeHint: 'Dotacja lub darowizna? To przychód, a nie zwrot.',
+    asIncome: 'Zapisz jako przychód',
     keepOriginal: 'Zachowaj oryginał paragonu.',
     newExpense: 'Nowy wydatek',
     newRefund: 'Nowy zwrot',
@@ -131,9 +133,6 @@ export default {
     owedToEvent: 'Należne wydarzeniu',
     settled: 'Rozliczone',
     pending: 'Płatność uzgodniona',
-    stillOpen: 'Jeszcze otwarte',
-    agreedUnpaid: 'Uzgodnione, niezapłacone',
-    toComeBack: 'Do odzyskania',
     settledProgress: 'Rozliczono {settled} z {total}',
     eventOwes: 'Wydarzenie jest winne: {name}',
     owesEvent: '{name}: dług wobec wydarzenia',
@@ -204,33 +203,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Wszystkie paragony są kompletne.',
-    income: 'Przychody i wynik',
     feesReceived: 'Opłaty uczestników',
-    incomeTotal: 'Otrzymano łącznie',
     result: 'Wynik',
-    promisedCaption: 'Obiecano {amount}',
     noGroup: 'Bez grupy',
-    unconverted:
-      'Nie uwzględniono, w innej walucie i bez przeliczenia: {amounts}',
     total: 'Łącznie wydano',
     totalCaption: 'Wydatki {expenses} − zwroty {refunds}',
     expenses: 'Wydatki',
     refunds: 'Zwroty',
-    net: 'Wydano netto',
-    byCategory: 'Według kategorii',
     refundedCaption: 'zwrócono {amount}',
     uncategorized: 'Bez kategorii',
-    paidFrom: 'Zapłacone przez',
-    people: 'Osoby',
-    gross: 'Brutto, przed zwrotami.',
-    receiptFiles: 'Pliki paragonów',
     recordsNote:
       'Dokumentami są papierowe paragony i eksport; pliki to wygodna kopia.',
   },
   categories: {
     ungrouped: 'Bez grupy',
-    incomeTitle: 'Kategorie przychodów',
+    expenses: 'Wydatki',
+    income: 'Przychody',
     title: 'Kategorie',
     subtitle:
       'Tylko dla tego wydarzenia. Kopiowane, gdy kolejne wydarzenie powstaje na jego podstawie.',
@@ -316,6 +304,8 @@ export default {
     recipient: 'Wybierz, kto otrzyma pieniądze',
   },
   fee: {
+    allGroups: 'Wszystkie grupy',
+    title: 'Opłaty uczestników',
     status: {
       NOT_REQUIRED: 'Nic do zapłaty',
       UNPAID: 'Niezapłacone',

@@ -15,6 +15,7 @@
           v-model="amount"
           :currency="fee.balance.currency"
           :label="t('amount')"
+          allow-zero
           autofocus
           large
           data-test="amount-due-amount"

@@ -80,7 +80,6 @@ export default {
         },
         settlement: {
           RETAINED: 'Ponecháno',
-          SETTLED_OUTSIDE: 'Vyúčtováno mimo aplikaci',
         },
       },
       reasons: {

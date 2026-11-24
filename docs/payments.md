@@ -137,9 +137,9 @@ The registration module reaches payments only through
   `registrationId` is `SetNull`: nothing financial cascades from a
   registration.
 - **Deleting one registration** that still holds money (paid − refunded)
-  needs `?settlement=`: `RETAINED` (e.g. a cancellation fee) or
-  `SETTLED_OUTSIDE` (refunded outside the ledger); without one the server
-  refuses with `PAYMENT_SETTLEMENT_REQUIRED`. Recorded on its payments and as
+  needs `?settlement=RETAINED` (kept, e.g. as a cancellation fee) — money
+  that goes back is recorded as a refund first, so the totals always add
+  up; without one the server refuses with `PAYMENT_SETTLEMENT_REQUIRED`. Recorded on its payments and as
   a `payment_settled` entry; it needs `event.payments.refund`. The dialog
   also offers to refund first.
 - **Bulk deletion and privacy purges** ("Delete all registrations", the
@@ -171,10 +171,14 @@ allowlist (`feeSelect`), its own resource, never a filter on
 | first and last name            | Recognizing the registration     |
 | contact email                  | Contacting about a payment       |
 | status, created at             | Who owes, who gets money back    |
+| group                          | Price and currency are per group |
 | `quotedAmount`, `amountDue`, … | What is due, adjusted and why    |
 | balance, payments, refunds     | What came in and went back       |
 
-Never `data`, files, date of birth, group or room. A payment's `payerName`
+Never `data`, files, date of birth or room. The group is in: price and
+currency are set per group, a partner often collects its own group's fees,
+and the fees view and summary total each group in its own currency (never
+converted). It is the group the registrant chose, not a form answer. A payment's `payerName`
 is the registration's name when it was recorded; who actually paid (a
 parent) goes in its note.
 

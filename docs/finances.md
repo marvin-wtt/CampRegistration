@@ -272,8 +272,10 @@ hashes or certificates.
 
 ## Income
 
-Status: designed, not built. It follows expenses wherever it can, so the
-payments feature only has to plug in a source.
+Status: implemented. It follows expenses wherever it can; the fee ledger is
+its second source, opened from the income tab. Both capture dialogs point
+across when money looks like the other kind: a shop refund is an expense
+refund, a grant or donation is income.
 
 ```
 Income  id, eventId, number, categoryId?, amount, originalAmount?,

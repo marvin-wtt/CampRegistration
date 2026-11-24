@@ -44,6 +44,8 @@ interface EventSeed {
   files?: FileCreateData;
   settings?: EventSettingCreateData;
   financeCategories?: FinanceCategoryCreateManyData;
+  /** The reference's number prefixes; the counters always start fresh. */
+  financePrefixes?: { payoutNumberPrefix: string; incomeNumberPrefix: string };
 }
 
 // The event's own fields, as plain values. Relations, generated columns and the
@@ -404,6 +406,16 @@ export class EventService extends BaseService {
     return { total, open, upcoming, closed };
   }
 
+  /** A reference event's number prefixes, for an event cloned from it. */
+  async getFinancePrefixes(eventId: string) {
+    const finance = await this.prisma.eventFinance.findUnique({
+      where: { eventId },
+      select: { payoutNumberPrefix: true, incomeNumberPrefix: true },
+    });
+
+    return finance ?? undefined;
+  }
+
   async createEvent({ event: data, userId, seed = {} }: EventCreateInput) {
     const {
       tableTemplates = [],
@@ -411,6 +423,7 @@ export class EventService extends BaseService {
       files = [],
       settings = [],
       financeCategories = [],
+      financePrefixes,
     } = seed;
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
@@ -459,7 +472,12 @@ export class EventService extends BaseService {
           // Not stripped: the ids are new ones, generated up front so a
           // category can name its group's new id in this same insert.
           financeCategories: { createMany: { data: financeCategories } },
-          finance: { create: { referenceCode: await freeReferenceCode(tx) } },
+          finance: {
+            create: {
+              referenceCode: await freeReferenceCode(tx),
+              ...financePrefixes,
+            },
+          },
         },
         include: { ...this.eventResourceInclude() },
       });

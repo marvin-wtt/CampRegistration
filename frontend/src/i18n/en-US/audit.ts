@@ -80,7 +80,6 @@ export default {
         },
         settlement: {
           RETAINED: 'Kept',
-          SETTLED_OUTSIDE: 'Settled outside the app',
         },
       },
       reasons: {

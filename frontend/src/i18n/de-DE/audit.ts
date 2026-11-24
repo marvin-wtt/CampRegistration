@@ -80,7 +80,6 @@ export default {
         },
         settlement: {
           RETAINED: 'Einbehalten',
-          SETTLED_OUTSIDE: 'Außerhalb der App abgerechnet',
         },
       },
       reasons: {

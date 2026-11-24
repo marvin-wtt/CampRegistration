@@ -97,6 +97,8 @@ export default {
     edit: 'Edit',
   },
   capture: {
+    incomeHint: 'A grant or a donation? That is income, not a refund.',
+    asIncome: 'Record as income',
     keepOriginal: 'Keep the paper original.',
     newExpense: 'New expense',
     newRefund: 'New refund',
@@ -130,9 +132,6 @@ export default {
     owedToEvent: 'Owed to the event',
     settled: 'Settled',
     pending: 'Payment arranged',
-    stillOpen: 'Still open',
-    agreedUnpaid: 'Agreed, not paid',
-    toComeBack: 'To get back',
     settledProgress: '{settled} of {total} settled',
     eventOwes: 'Event owes {name}',
     owesEvent: '{name} owes the event',
@@ -203,33 +202,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Every receipt is complete.',
-    income: 'Income and result',
     feesReceived: 'Registration fees',
-    incomeTotal: 'Received in total',
     result: 'Result',
-    promisedCaption: '{amount} promised',
     noGroup: 'Without group',
-    unconverted:
-      'Not included, in another currency and not converted: {amounts}',
     total: 'Total spent',
     totalCaption: '{expenses} expenses − {refunds} refunds',
     expenses: 'Expenses',
     refunds: 'Refunds',
-    net: 'Net spent',
-    byCategory: 'By category',
     refundedCaption: '{amount} refunded',
     uncategorized: 'No category',
-    paidFrom: 'Paid from',
-    people: 'People',
-    gross: 'Gross, before refunds.',
-    receiptFiles: 'Receipt files',
     recordsNote:
       'The paper receipts and the export are the records; files are a convenience copy.',
   },
   categories: {
     ungrouped: 'Without group',
-    incomeTitle: 'Income categories',
+    expenses: 'Expenses',
+    income: 'Income',
     title: 'Categories',
     subtitle:
       'For this event only. Copied when the next event is created from this one.',
@@ -315,6 +303,8 @@ export default {
     recipient: 'Pick who gets the money',
   },
   fee: {
+    allGroups: 'All groups',
+    title: 'Registration fees',
     status: {
       NOT_REQUIRED: 'Nothing due',
       UNPAID: 'Unpaid',

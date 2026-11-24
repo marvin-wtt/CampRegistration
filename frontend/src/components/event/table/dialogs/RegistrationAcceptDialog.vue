@@ -1,27 +1,27 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
+    <dialog-card
+      :title="t('title')"
+      :subtitle="personName"
+      icon="how_to_reg"
+      :width="480"
+      no-form
+      @cancel="onDialogCancel"
+    >
+      <div class="column no-wrap accept-body">
         <i18n-t
           keypath="text"
           tag="p"
+          class="text-body2 q-my-none"
         >
           <template #name>
-            <i>
-              <strong>{{ personName }}</strong>
-            </i>
+            <strong>{{ personName }}</strong>
           </template>
         </i18n-t>
-      </q-card-section>
 
-      <q-card-section>
         <q-checkbox
           v-if="hasTemplate"
           v-model="confirmationMessage"
@@ -31,30 +31,35 @@
         />
         <span
           v-else
-          class="text-caption text-grey-7"
+          class="text-caption text-on-surface-variant"
         >
           {{ t('field.noTemplate') }}
         </span>
-      </q-card-section>
+      </div>
 
-      <q-card-actions align="right">
-        <q-btn
+      <template #actions>
+        <m-btn
           :label="t('action.cancel')"
           color="primary"
+          text
           rounded
-          outline
           @click="onDialogCancel"
         />
-        <q-btn
-          :label="countdown > 0 ? countdown : t('action.accept')"
+        <m-btn
+          :label="
+            countdown > 0
+              ? `${t('action.accept')} (${countdown})`
+              : t('action.accept')
+          "
           :disable="countdown > 0"
-          color="warning"
+          color="primary"
+          unelevated
           rounded
           @click="onConfirm"
         />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script setup lang="ts">
@@ -62,6 +67,9 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onUnmounted, ref } from 'vue';
 import type { Registration } from '@camp-registration/common/entities';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -106,7 +114,11 @@ function onConfirm() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.accept-body {
+  gap: 16px;
+}
+</style>
 
 <i18n locale="en" lang="yaml">
 title: 'Accept Registration'

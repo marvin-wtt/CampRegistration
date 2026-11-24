@@ -54,6 +54,14 @@ export function useFinanceFormat() {
     return formatMoney(minor, currencyCode, locale.value);
   }
 
+  /** A share of an expected total, capped at 100 %. */
+  function percent(share: number): string {
+    return new Intl.NumberFormat(locale.value, {
+      style: 'percent',
+      maximumFractionDigits: 0,
+    }).format(Math.min(Math.max(share, 0), 1));
+  }
+
   /** What the expense moves: a refund reads as negative. */
   function signedMoney(expense: Pick<Expense, 'amount' | 'type'>): string {
     return money(expense.type === 'REFUND' ? -expense.amount : expense.amount);
@@ -85,6 +93,7 @@ export function useFinanceFormat() {
   return {
     currency,
     money,
+    percent,
     signedMoney,
     categoryName,
     categoryGroupName,

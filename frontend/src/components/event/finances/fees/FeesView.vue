@@ -17,104 +17,96 @@
     </div>
 
     <template v-else>
-      <!-- What is open leads; the rest beside it once there is room. -->
-      <finance-totals-strip
-        :dense="!wide"
-        :alert="totals.outstanding > 0"
+      <!-- What came in out of what is due; other currencies apart. -->
+      <finance-headline
+        icon="payments"
+        :eyebrow="t('headline.received')"
+        :amount="money(totals.received, totals.currency)"
+        :caption="caption"
+        :accent="
+          totals.expected > 0 && totals.outstanding === 0
+            ? 'positive'
+            : 'primary'
+        "
+        :badge="
+          totals.expected > 0
+            ? {
+                label: percent(totals.received / totals.expected),
+                tone: totals.outstanding === 0 ? 'positive' : 'primary',
+                icon: totals.outstanding === 0 ? 'check' : undefined,
+              }
+            : undefined
+        "
+        :segments="[
+          { key: 'received', value: totals.received, tone: 'primary' },
+          { key: 'outstanding', value: totals.outstanding, tone: 'warning' },
+        ]"
         data-test="fee-totals"
-      >
-        <finance-figures>
-          <finance-figure
-            :label="t('outstanding')"
-            :value="money(totals.outstanding, totals.currency)"
-            :tone="totals.outstanding > 0 ? 'warning' : undefined"
-            lead
-          />
-          <finance-figure
-            :label="t('received')"
-            :value="money(totals.received, totals.currency)"
-          />
-          <template v-if="wide">
-            <finance-figure
-              :label="t('expected')"
-              :value="money(totals.expected, totals.currency)"
-            />
-            <finance-figure
-              v-if="totals.overpaid > 0"
-              :label="t('overpaid')"
-              :value="money(totals.overpaid, totals.currency)"
-              tone="refund"
-            />
-          </template>
-        </finance-figures>
-        <!-- Another currency never adds up with the event's: its own line. -->
-        <div
-          v-for="other in otherTotals"
-          :key="other.currency"
-          class="text-caption text-on-surface-variant q-mt-xs"
-          data-test="fee-other-currency"
-        >
-          {{
-            t('otherCurrency', {
-              received: money(other.received, other.currency),
-              outstanding: money(other.outstanding, other.currency),
-            })
-          }}
-        </div>
-      </finance-totals-strip>
+      />
 
-      <!-- Only for events with more than one group. -->
-      <div
-        v-if="groups.length > 1"
-        class="row fee-chips"
-      >
-        <filter-chip
-          :active="group === null"
-          clickable
-          data-test="fee-group-all"
-          @click="group = null"
-        >
-          {{ t('allGroups') }}
-        </filter-chip>
-        <filter-chip
-          v-for="value in groups"
-          :key="value"
-          :active="group === value"
-          clickable
-          :data-test="`fee-group-${value}`"
-          @click="group = value"
-        >
-          {{ groupLabel(value) }}
-        </filter-chip>
-      </div>
-
-      <q-input
-        v-model="search"
+      <!-- One row of controls; on phones the filters wait in a sheet. -->
+      <list-controls
+        v-model:search="search"
+        v-model:sort="sort"
+        :sorts="sortOptions"
         :placeholder="t('search')"
-        outlined
-        rounded
-        dense
-        clearable
-        debounce="150"
-        data-test="fee-search"
+        test-id="fee"
       >
-        <template #prepend>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-
-      <div class="row fee-chips">
-        <filter-chip
-          v-for="value in FEE_FILTERS"
-          :key="value"
-          :active="filter === value"
-          clickable
-          :data-test="`fee-filter-${value}`"
-          @click="filter = value"
+        <m-btn
+          v-if="!wide"
+          icon="tune"
+          :color="activeFilters > 0 ? 'primary' : 'on-surface-variant'"
+          flat
+          round
+          :aria-label="t('filters')"
+          data-test="fee-filter-open"
+          @click="sheetOpen = true"
         >
-          {{ t(`filter.${value}`, { count: counts[value] }) }}
-        </filter-chip>
-      </div>
+          <q-badge
+            v-if="activeFilters > 0"
+            :label="activeFilters"
+            color="primary"
+            floating
+          />
+        </m-btn>
+        <template
+          v-if="wide"
+          #filters
+        >
+          <filter-chip
+            v-for="value in FEE_FILTERS"
+            :key="value"
+            :active="filter === value"
+            clickable
+            :data-test="`fee-filter-${value}`"
+            @click="filter = value"
+          >
+            {{ t(`filter.${value}`, { count: counts[value] }) }}
+          </filter-chip>
+        </template>
+      </list-controls>
+
+      <bottom-sheet
+        v-if="!wide"
+        v-model="sheetOpen"
+      >
+        <div class="column fee-sheet">
+          <div class="text-subtitle1 text-weight-medium">
+            {{ t('filters') }}
+          </div>
+          <div class="row fee-chips">
+            <filter-chip
+              v-for="value in FEE_FILTERS"
+              :key="value"
+              :active="filter === value"
+              clickable
+              @click="filter = value"
+            >
+              {{ t(`filter.${value}`, { count: counts[value] }) }}
+            </filter-chip>
+          </div>
+        </div>
+      </bottom-sheet>
 
       <div
         v-if="shown.length === 0"
@@ -221,11 +213,11 @@ import type {
   RegistrationFee,
 } from '@camp-registration/common/entities';
 import { refundedAmount } from '@camp-registration/common/utils';
+import ListControls from '@/components/common/ListControls.vue';
 import FilterChip from '@/components/common/FilterChip.vue';
-import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
-import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
+import FinanceHeadline from '@/components/event/finances/FinanceHeadline.vue';
 import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
-import FinanceFigures from '@/components/event/finances/FinanceFigures.vue';
 import PaymentStatusChip from '@/components/event/finances/fees/PaymentStatusChip.vue';
 import { useFeeDialogs } from '@/composables/feeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
@@ -233,11 +225,13 @@ import { usePermissions } from '@/composables/permissions';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import { useFeeStore } from '@/stores/fee-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { useGroupLabel } from '@/composables/groupLabel';
 import { parseLocalDate } from '@/utils/date';
 import {
   FEE_FILTERS,
+  FEE_SORTS,
   type FeeFilter,
+  type FeeSort,
+  sortFees,
   feeName,
   feeTotalsByCurrency,
   matchesFeeFilter,
@@ -247,8 +241,7 @@ import {
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
-const { money, currency } = useFinanceFormat();
-const groupLabel = useGroupLabel();
+const { money, currency, percent } = useFinanceFormat();
 const { can } = usePermissions();
 const { getEnumQueryParam, getStringQueryParam, setQueryParams } =
   useRouteQueryParams();
@@ -265,13 +258,10 @@ const fees = computed(() => feeStore.registrations ?? []);
 const orphaned = computed(() => feeStore.orphanedPayments ?? []);
 const groups = computed(() => eventStore.data?.countries ?? []);
 
-// Kept in the query like the filter, so a link can open one group.
-const group = computed<string | null>({
-  get: () => {
-    const value = getStringQueryParam('group');
-    return value !== null && groups.value.includes(value) ? value : null;
-  },
-  set: (value) => setQueryParams({ group: value }),
+// Picked on the income tab: each group's row opens its own ledger.
+const group = computed<string | null>(() => {
+  const value = getStringQueryParam('group');
+  return value !== null && groups.value.includes(value) ? value : null;
 });
 const inGroup = computed(() =>
   fees.value.filter((fee) => matchesFeeGroup(fee, group.value)),
@@ -293,12 +283,43 @@ const totals = computed(
 );
 const otherTotals = computed(() => currencyTotals.value.slice(1));
 
+// Other currencies are named beside the figure, never added to it.
+const caption = computed(() =>
+  [
+    totals.value.expected > totals.value.received &&
+      t('headline.ofExpected', {
+        amount: money(totals.value.expected, totals.value.currency),
+      }),
+    ...otherTotals.value.map((other) =>
+      t('otherCurrency', {
+        received: money(other.received, other.currency),
+        outstanding: money(other.outstanding, other.currency),
+      }),
+    ),
+  ]
+    .filter(Boolean)
+    .join(' · '),
+);
+
 // Kept in the query, so the dashboard can link straight to a filter.
 const filter = computed<FeeFilter>({
   get: () => getEnumQueryParam('fees', FEE_FILTERS) ?? 'all',
   set: (value) => setQueryParams({ fees: value === 'all' ? null : value }),
 });
 const search = ref<string | null>('');
+const sheetOpen = ref(false);
+
+const sort = computed<FeeSort>({
+  get: () => getEnumQueryParam('sort', FEE_SORTS) ?? 'name',
+  set: (value) => setQueryParams({ sort: value === 'name' ? null : value }),
+});
+
+const sortOptions = computed(() =>
+  FEE_SORTS.map((value) => ({ value, label: t(`sort.${value}`) })),
+);
+
+// Shown on the filter button, which hides the chips on phones.
+const activeFilters = computed(() => Number(filter.value !== 'all'));
 
 const counts = computed(
   () =>
@@ -311,10 +332,13 @@ const counts = computed(
 );
 
 const shown = computed(() =>
-  inGroup.value.filter(
-    (fee) =>
-      matchesFeeFilter(fee, filter.value) &&
-      matchesFeeSearch(fee, search.value ?? ''),
+  sortFees(
+    inGroup.value.filter(
+      (fee) =>
+        matchesFeeFilter(fee, filter.value) &&
+        matchesFeeSearch(fee, search.value ?? ''),
+    ),
+    sort.value,
   ),
 );
 
@@ -345,6 +369,11 @@ function refunded(payment: Payment): number {
 </script>
 
 <style scoped>
+.fee-sheet {
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
 .fee-stack,
 .fee-chips,
 .fee-empty,
@@ -360,12 +389,16 @@ function refunded(payment: Payment): number {
 </style>
 
 <i18n lang="yaml" locale="en">
-allGroups: 'All groups'
-otherCurrency: 'Also in another currency: {received} received · {outstanding} open'
-outstanding: 'Still open'
-received: 'Received'
-expected: 'Expected'
-overpaid: 'To give back'
+headline:
+  received: 'Fees received'
+  ofExpected: 'of {amount} expected'
+filters: 'Filters'
+sort:
+  name: 'Name'
+  reference: 'Reference'
+  newest: 'Newest first'
+  outstanding: 'Most open first'
+otherCurrency: 'also {received} received, {outstanding} open'
 search: 'Name or transfer reference'
 filter:
   owing: 'Owing ({count})'
@@ -378,16 +411,19 @@ anonymous: 'Name removed'
 refund: 'Refund'
 settlement:
   RETAINED: 'kept'
-  SETTLED_OUTSIDE: 'settled outside the app'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-allGroups: 'Alle Gruppen'
-otherCurrency: 'Außerdem in anderer Währung: {received} eingegangen · {outstanding} offen'
-outstanding: 'Noch offen'
-received: 'Eingegangen'
-expected: 'Erwartet'
-overpaid: 'Zurückzuzahlen'
+headline:
+  received: 'Beiträge eingegangen'
+  ofExpected: 'von {amount} erwartet'
+filters: 'Filter'
+sort:
+  name: 'Name'
+  reference: 'Verwendungszweck'
+  newest: 'Neueste zuerst'
+  outstanding: 'Höchster offener Betrag zuerst'
+otherCurrency: 'dazu {received} eingegangen, {outstanding} offen'
 search: 'Name oder Verwendungszweck'
 filter:
   owing: 'Offen ({count})'
@@ -400,16 +436,19 @@ anonymous: 'Name entfernt'
 refund: 'Erstatten'
 settlement:
   RETAINED: 'einbehalten'
-  SETTLED_OUTSIDE: 'außerhalb der App abgerechnet'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-allGroups: 'Tous les groupes'
-otherCurrency: 'Aussi dans une autre devise : {received} reçus · {outstanding} en attente'
-outstanding: 'Reste à payer'
-received: 'Reçu'
-expected: 'Attendu'
-overpaid: 'À rendre'
+headline:
+  received: 'Frais reçus'
+  ofExpected: 'sur {amount} attendus'
+filters: 'Filtres'
+sort:
+  name: 'Nom'
+  reference: 'Référence'
+  newest: 'Plus récentes d’abord'
+  outstanding: 'Montant dû le plus élevé d’abord'
+otherCurrency: 'plus {received} reçus, {outstanding} en attente'
 search: 'Nom ou référence du virement'
 filter:
   owing: 'À payer ({count})'
@@ -422,16 +461,19 @@ anonymous: 'Nom retiré'
 refund: 'Rembourser'
 settlement:
   RETAINED: 'conservé'
-  SETTLED_OUTSIDE: "réglé hors de l'application"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-allGroups: 'Wszystkie grupy'
-otherCurrency: 'Także w innej walucie: otrzymano {received} · zaległe {outstanding}'
-outstanding: 'Do zapłaty'
-received: 'Wpłynęło'
-expected: 'Oczekiwane'
-overpaid: 'Do zwrotu'
+headline:
+  received: 'Wpłacone opłaty'
+  ofExpected: 'z oczekiwanych {amount}'
+filters: 'Filtry'
+sort:
+  name: 'Nazwisko'
+  reference: 'Tytuł przelewu'
+  newest: 'Najnowsze najpierw'
+  outstanding: 'Najwyższa zaległość najpierw'
+otherCurrency: 'oraz {received} wpłynęło, {outstanding} do zapłaty'
 search: 'Imię i nazwisko lub tytuł przelewu'
 filter:
   owing: 'Do zapłaty ({count})'
@@ -444,16 +486,19 @@ anonymous: 'Dane usunięte'
 refund: 'Zwróć'
 settlement:
   RETAINED: 'zatrzymano'
-  SETTLED_OUTSIDE: 'rozliczono poza aplikacją'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-allGroups: 'Všechny skupiny'
-otherCurrency: 'Také v jiné měně: přijato {received} · nezaplaceno {outstanding}'
-outstanding: 'Zbývá zaplatit'
-received: 'Přijato'
-expected: 'Očekáváno'
-overpaid: 'K vrácení'
+headline:
+  received: 'Přijaté poplatky'
+  ofExpected: 'z očekávaných {amount}'
+filters: 'Filtry'
+sort:
+  name: 'Jméno'
+  reference: 'Variabilní symbol'
+  newest: 'Nejnovější první'
+  outstanding: 'Nejvyšší dluh první'
+otherCurrency: 'navíc {received} přijato, {outstanding} neuhrazeno'
 search: 'Jméno nebo reference platby'
 filter:
   owing: 'Dluží ({count})'
@@ -466,5 +511,4 @@ anonymous: 'Jméno odstraněno'
 refund: 'Vrátit'
 settlement:
   RETAINED: 'ponecháno'
-  SETTLED_OUTSIDE: 'vyúčtováno mimo aplikaci'
 </i18n>

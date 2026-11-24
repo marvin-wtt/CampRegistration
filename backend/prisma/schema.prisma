@@ -682,7 +682,6 @@ enum PaymentMethod {
 // How money still held was settled when its registration was deleted.
 enum PaymentSettlement {
   RETAINED
-  SETTLED_OUTSIDE
 }
 
 // A registration fee that came in. Outlives its registration as the

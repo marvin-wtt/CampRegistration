@@ -1,4 +1,5 @@
 import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
+import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -19,6 +20,12 @@ export class IncomeModule implements AppModule {
     registerFileGuard('income', { view: incomeFileGuard });
 
     router.useRouter('/events/:eventId/incomes', resolve(IncomeRouter));
+  }
+
+  registerJobs(scheduler: JobScheduler): void {
+    scheduler.schedule('income-record-retention', '20 4 1 * *', async () => {
+      await resolve(IncomeService).clearExpiredPayerNames();
+    });
   }
 
   // Coordinators and counselors record no income: it is the treasurer's.

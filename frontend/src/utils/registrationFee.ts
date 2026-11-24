@@ -8,6 +8,14 @@ import { formatPersonName } from '@/utils/formatters/personName';
 export const FEE_FILTERS = ['owing', 'overpaid', 'paid', 'all'] as const;
 export type FeeFilter = (typeof FEE_FILTERS)[number];
 
+export const FEE_SORTS = [
+  'name',
+  'reference',
+  'newest',
+  'outstanding',
+] as const;
+export type FeeSort = (typeof FEE_SORTS)[number];
+
 export function feeName(fee: Pick<RegistrationFee, 'firstName' | 'lastName'>) {
   return formatPersonName(
     [fee.firstName, fee.lastName].filter(Boolean).join(' '),
@@ -143,4 +151,30 @@ export function feeTotalsByCurrency(
           Number(a.currency === eventCurrency) ||
         a.currency.localeCompare(b.currency),
     );
+}
+
+const byName = (a: RegistrationFee, b: RegistrationFee) =>
+  (a.lastName ?? '').localeCompare(b.lastName ?? '') ||
+  (a.firstName ?? '').localeCompare(b.firstName ?? '');
+
+/**
+ * The fees in the chosen order; ties fall back to the name, so the list
+ * never shuffles between two equal amounts.
+ */
+export function sortFees(
+  fees: readonly RegistrationFee[],
+  sort: FeeSort,
+): RegistrationFee[] {
+  const compare: Record<
+    FeeSort,
+    (a: RegistrationFee, b: RegistrationFee) => number
+  > = {
+    name: byName,
+    reference: (a, b) => a.reference.localeCompare(b.reference),
+    newest: (a, b) => b.createdAt.localeCompare(a.createdAt) || byName(a, b),
+    outstanding: (a, b) =>
+      b.balance.outstanding - a.balance.outstanding || byName(a, b),
+  };
+
+  return [...fees].sort(compare[sort]);
 }

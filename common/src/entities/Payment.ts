@@ -17,7 +17,7 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
  * How money still held was settled when its registration was deleted: kept
  * (a cancellation fee, say) or given back outside the ledger.
  */
-export const PAYMENT_SETTLEMENTS = ['RETAINED', 'SETTLED_OUTSIDE'] as const;
+export const PAYMENT_SETTLEMENTS = ['RETAINED'] as const;
 export type PaymentSettlement = (typeof PAYMENT_SETTLEMENTS)[number];
 
 /** A registration fee going back — not an expense of type `REFUND`. */

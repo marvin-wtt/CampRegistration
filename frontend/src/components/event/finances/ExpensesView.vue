@@ -1,58 +1,63 @@
 <template>
   <finance-tab-layout>
-    <!-- The total leads; phones keep their filter button beside it. -->
-    <finance-totals-strip
-      :dense="!wide"
-      class="row items-center no-wrap"
+    <!-- Follows search and filters, so a filtered list has its own total. -->
+    <finance-headline
+      compact
+      icon="receipt_long"
+      :eyebrow="t('headline.spent')"
+      :amount="money(net)"
+      :caption="
+        [
+          t('finance.receiptCount', shown.length),
+          totals.refunds > 0 &&
+            t('headline.refunds', { amount: money(totals.refunds) }),
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      "
       data-test="expense-totals"
+    />
+
+    <list-controls
+      v-model:search="search"
+      v-model:sort="sort"
+      :sorts="sortOptions"
+      :placeholder="t('search')"
+      test-id="expense"
     >
-      <finance-figure
-        :label="
-          wide
-            ? t('finance.summary.net')
-            : `${t('finance.summary.net')} · ${t('finance.receiptCount', filtered.length)}`
-        "
-        :value="money(net)"
-        lead
-        :class="wide ? 'col-auto' : 'col'"
-      />
-      <template v-if="wide">
-        <q-separator
-          vertical
-          class="q-mx-lg"
-        />
-        <finance-figure
-          :label="t('finance.summary.expenses')"
-          :value="money(totals.expenses)"
-        />
-        <finance-figure
-          :label="t('finance.summary.refunds')"
-          :value="`−${money(totals.refunds)}`"
-          tone="refund"
-          class="q-ml-xl"
-        />
-        <q-space />
-        <span class="text-body2 text-on-surface-variant">
-          {{ t('finance.receiptCount', filtered.length) }}
-        </span>
-      </template>
-      <filter-chip
-        v-else-if="quasar.screen.xs"
-        :active="active.length > 0"
-        icon="filter_list"
-        clickable
+      <m-btn
+        v-if="quasar.screen.xs"
+        icon="tune"
+        :color="active.length > 0 ? 'primary' : 'on-surface-variant'"
+        flat
+        round
+        :aria-label="t('finance.filter.title')"
         data-test="expense-filter-open"
         @click="filterSheetOpen = true"
       >
-        {{
-          active.length
-            ? t('finance.filter.activeCount', { count: active.length })
-            : t('finance.filter.title')
-        }}
-      </filter-chip>
-    </finance-totals-strip>
+        <q-badge
+          v-if="active.length > 0"
+          :label="active.length"
+          color="primary"
+          floating
+        />
+      </m-btn>
+      <template
+        v-if="!quasar.screen.xs"
+        #filters
+      >
+        <expense-filter-bar
+          :choices
+          :flags
+          :active
+          @reset="reset"
+        />
+      </template>
+    </list-controls>
 
+    <!-- Phones: the active filters, and the sheet the button opens. -->
     <expense-filter-bar
+      v-if="quasar.screen.xs"
       v-model:sheet-open="filterSheetOpen"
       :choices
       :flags
@@ -61,7 +66,7 @@
     />
 
     <div
-      v-if="filtered.length === 0"
+      v-if="shown.length === 0"
       class="row items-center q-gutter-x-sm text-body2 text-on-surface-variant q-py-lg"
     >
       <q-icon
@@ -71,16 +76,18 @@
       <span>{{ t('finance.filter.noMatch') }}</span>
     </div>
 
-    <!-- Grouped by day, newest first; receipts still to come last -->
+    <!-- By date: grouped by day, receipts still to come last. By number or
+         amount: one list. -->
     <template v-else>
       <div
         v-for="day in days"
-        :key="day.date ?? 'pending'"
+        :key="day.key"
         class="column no-wrap day-group"
       >
         <div
+          v-if="day.date !== undefined"
           class="day-header row items-center justify-between no-wrap q-px-sm"
-          :class="{ 'day-header--pending': !day.date }"
+          :class="{ 'day-header--pending': day.date === null }"
         >
           <span
             v-if="day.date"
@@ -111,7 +118,7 @@
         <q-list
           separator
           class="expense-list rounded-xl"
-          :class="{ 'expense-list--pending': !day.date }"
+          :class="{ 'expense-list--pending': day.date === null }"
         >
           <expense-row
             v-for="expense in day.expenses"
@@ -134,16 +141,24 @@ import type {
   Expense,
   FinanceCategory,
 } from '@camp-registration/common/entities';
-import FilterChip from '@/components/common/FilterChip.vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import ListControls from '@/components/common/ListControls.vue';
 import ExpenseFilterBar from '@/components/event/finances/ExpenseFilterBar.vue';
 import ExpenseRow from '@/components/event/finances/ExpenseRow.vue';
-import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
-import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import FinanceHeadline from '@/components/event/finances/FinanceHeadline.vue';
 import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
 import { useExpenseFilters } from '@/composables/expenseFilters';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import { parseLocalDate } from '@/utils/date';
+import {
+  LEDGER_SORTS,
+  type LedgerSort,
+  groupsByDay,
+  sortLedger,
+} from '@/utils/ledgerSort';
+import { matchesText } from '@/utils/textSearch';
 
 const { expenses, categories } = defineProps<{
   expenses: readonly Expense[];
@@ -154,7 +169,8 @@ const dialogs = useFinanceDialogs();
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
-const { money } = useFinanceFormat();
+const { money, payerName, categoryPath } = useFinanceFormat();
+const { getEnumQueryParam, setQueryParams } = useRouteQueryParams();
 
 // Payer, receipt and actions get their own columns once there is room.
 const wide = computed(() => quasar.screen.gt.sm);
@@ -169,28 +185,55 @@ function signedAmount(expense: Expense): number {
   return expense.type === 'REFUND' ? -expense.amount : expense.amount;
 }
 
-// Newest first, as a log is read during the event. Receipts still to come
-// have no date and go last: they stay for weeks, and would otherwise push
-// today down every time. Their warning colour and the filter find them.
+const search = ref<string | null>('');
+
+// Newest first by default, as a log is read during the event.
+const sort = computed<LedgerSort>({
+  get: () => getEnumQueryParam('sort', LEDGER_SORTS) ?? 'newest',
+  set: (value) => setQueryParams({ sort: value === 'newest' ? null : value }),
+});
+const sortOptions = computed(() =>
+  LEDGER_SORTS.map((value) => ({ value, label: t(`sort.${value}`) })),
+);
+
+const shown = computed(() =>
+  filtered.value.filter((e) =>
+    matchesText(search.value, [
+      e.description,
+      e.vendor,
+      payerName(e),
+      categoryPath(e.categoryId),
+      `#${e.receiptNumber.toString()}`,
+    ]),
+  ),
+);
+
+// A day per date; `undefined` is the one list when not sorted by date.
 const days = computed(() => {
-  const byDate = new Map<string | null, Expense[]>();
-  const sorted = [...filtered.value].sort(
-    (a, b) =>
-      (b.date ?? '0000').localeCompare(a.date ?? '0000') ||
-      b.receiptNumber - a.receiptNumber,
-  );
-  for (const expense of sorted) {
-    byDate.set(expense.date, [...(byDate.get(expense.date) ?? []), expense]);
-  }
-  return [...byDate].map(([date, list]) => ({
+  const sorted = sortLedger(shown.value, sort.value, (e) => ({
+    date: e.date,
+    number: e.receiptNumber,
+    amount: e.amount,
+  }));
+  const section = (date: string | null | undefined, list: Expense[]) => ({
+    key: date === undefined ? 'all' : (date ?? 'pending'),
     date,
     expenses: list,
     total: list.reduce((sum, e) => sum + signedAmount(e), 0),
-  }));
+  });
+
+  if (!groupsByDay(sort.value)) {
+    return [section(undefined, sorted)];
+  }
+  const byDate = new Map<string | null, Expense[]>();
+  for (const expense of sorted) {
+    byDate.set(expense.date, [...(byDate.get(expense.date) ?? []), expense]);
+  }
+  return [...byDate].map(([date, list]) => section(date, list));
 });
 
 const totals = computed(() =>
-  filtered.value.reduce(
+  shown.value.reduce(
     (sum, e) =>
       e.type === 'REFUND'
         ? { ...sum, refunds: sum.refunds + e.amount }
@@ -224,3 +267,63 @@ const net = computed(() => totals.value.expenses - totals.value.refunds);
   border-color: color-mix(in srgb, var(--md3-warning) 40%, transparent);
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+headline:
+  spent: 'Spent'
+  refunds: 'after {amount} in refunds'
+search: 'Search or #number'
+sort:
+  newest: 'Newest first'
+  oldest: 'Oldest first'
+  number: 'Receipt number'
+  amount: 'Highest amount first'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+headline:
+  spent: 'Ausgegeben'
+  refunds: 'nach {amount} Erstattungen'
+search: 'Suchen oder #Nummer'
+sort:
+  newest: 'Neueste zuerst'
+  oldest: 'Älteste zuerst'
+  number: 'Belegnummer'
+  amount: 'Höchster Betrag zuerst'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+headline:
+  spent: 'Dépensé'
+  refunds: 'après {amount} de remboursements'
+search: 'Rechercher ou n°'
+sort:
+  newest: "Plus récentes d'abord"
+  oldest: "Plus anciennes d'abord"
+  number: 'Numéro de justificatif'
+  amount: "Montant le plus élevé d'abord"
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+headline:
+  spent: 'Wydano'
+  refunds: 'po zwrotach {amount}'
+search: 'Szukaj lub #numer'
+sort:
+  newest: 'Najnowsze najpierw'
+  oldest: 'Najstarsze najpierw'
+  number: 'Numer dowodu'
+  amount: 'Najwyższa kwota najpierw'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+headline:
+  spent: 'Utraceno'
+  refunds: 'po vratkách {amount}'
+search: 'Hledat nebo #číslo'
+sort:
+  newest: 'Nejnovější první'
+  oldest: 'Nejstarší první'
+  number: 'Číslo dokladu'
+  amount: 'Nejvyšší částka první'
+</i18n>

@@ -59,7 +59,7 @@ CREATE TABLE `payments` (
     `note` VARCHAR(255) NULL,
     `payer_name` VARCHAR(255) NULL,
     `registration_ref` CHAR(26) NOT NULL,
-    `settlement` ENUM('RETAINED', 'SETTLED_OUTSIDE') NULL,
+    `settlement` ENUM('RETAINED') NULL,
     `created_by_user_id` CHAR(26) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,

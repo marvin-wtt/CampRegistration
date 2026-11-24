@@ -1,17 +1,21 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
+    <dialog-card
+      :title="t('title')"
+      :subtitle="personName"
+      icon="swap_horiz"
+      :width="480"
+      no-form
+      @cancel="onDialogCancel"
+    >
+      <div class="column no-wrap move-body">
         <i18n-t
           keypath="text"
           tag="p"
+          class="text-body2 q-my-none"
         >
           <template #name>
             <strong>{{ personName }}</strong>
@@ -43,37 +47,38 @@
             </div>
           </template>
         </q-option-group>
-      </q-card-section>
 
-      <q-card-section class="q-pt-none">
-        <q-banner
-          dense
-          rounded
-          class="bg-warning-container text-on-warning-container text-body2"
+        <div
+          class="move-warning row no-wrap rounded-lg bg-warning-container text-on-warning-container text-body2"
         >
-          {{ t('warning', { current: currentName }) }}
-        </q-banner>
-      </q-card-section>
+          <q-icon
+            name="info"
+            size="20px"
+          />
+          <span>{{ t('warning', { current: currentName }) }}</span>
+        </div>
+      </div>
 
-      <q-card-actions align="right">
-        <q-btn
+      <template #actions>
+        <m-btn
           :label="t('action.cancel')"
           color="primary"
+          text
           rounded
-          outline
           @click="onDialogCancel"
         />
-        <q-btn
+        <m-btn
           :label="t('action.move')"
           :disable="!target"
           color="primary"
+          unelevated
           rounded
           data-test="registration-move-submit"
           @click="onDialogOK({ group: target })"
         />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script setup lang="ts">
@@ -84,6 +89,9 @@ import type {
   EventDetails,
   Registration,
 } from '@camp-registration/common/entities';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { countryName } from '@/utils/countries';
 import { groupFreePlaces } from '@/utils/eventAvailability';
@@ -138,6 +146,17 @@ const options = computed<MoveOption[]>(() =>
     }),
 );
 </script>
+
+<style scoped>
+.move-body {
+  gap: 16px;
+}
+
+.move-warning {
+  gap: 10px;
+  padding: 12px 14px;
+}
+</style>
 
 <i18n locale="en" lang="yaml">
 title: 'Change group'

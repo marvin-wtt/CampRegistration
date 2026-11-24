@@ -5,6 +5,7 @@ import {
   computeBalances,
   computeCategoryTotals,
   summarizeFees,
+  summaryResults,
   summarizeIncome,
 } from '#app/finance/finance.balances';
 
@@ -188,41 +189,54 @@ describe('computeCategoryTotals', () => {
 });
 
 describe('summarizeIncome', () => {
-  it('keeps promised income out of the result', () => {
-    const summary = summarizeIncome(
-      [
-        { amount: 300_00, receivedOn: '2026-05-01', categoryId: 'grants' },
-        { amount: 150_00, receivedOn: null, categoryId: 'grants' },
-        { amount: 50_00, receivedOn: '2026-05-02', categoryId: null },
-      ],
-      1_000_00,
-      900_00,
-    );
+  it('splits received from promised income per category', () => {
+    const summary = summarizeIncome([
+      { amount: 300_00, receivedOn: '2026-05-01', categoryId: 'grants' },
+      { amount: 150_00, receivedOn: null, categoryId: 'grants' },
+      { amount: 50_00, receivedOn: '2026-05-02', categoryId: null },
+    ]);
 
     expect(summary).toEqual({
       incomeReceived: 350_00,
       incomeExpected: 150_00,
-      feesReceived: 1_000_00,
       incomeByCategory: [
         { categoryId: 'grants', received: 300_00, expected: 150_00, count: 2 },
         { categoryId: null, received: 50_00, expected: 0, count: 1 },
       ],
-      result: 450_00,
     });
   });
 
   it('is zero without any income', () => {
-    expect(summarizeIncome([], 0, 0)).toMatchObject({
+    expect(summarizeIncome([])).toEqual({
       incomeReceived: 0,
       incomeExpected: 0,
       incomeByCategory: [],
-      result: 0,
     });
   });
 });
 
 describe('summarizeFees', () => {
-  it('totals per group and currency, adding up only the event currency', () => {
+  const paid = (amount: number, refunded = 0, reduction = 0) => ({
+    amount,
+    refunds: refunded
+      ? [{ amount: refunded, amountDueReduction: reduction }]
+      : [],
+  });
+  const registration = (
+    group: string | null,
+    quotedAmount: number | null,
+    payments: ReturnType<typeof paid>[] = [],
+    { accepted = true, currency = 'EUR' } = {},
+  ) => ({
+    group,
+    accepted,
+    currency,
+    quotedAmount,
+    amountDueOverride: null,
+    payments,
+  });
+
+  it('totals received per group and currency, adding up only the event currency', () => {
     const summary = summarizeFees(
       [
         {
@@ -245,16 +259,77 @@ describe('summarizeFees', () => {
         },
         { amount: 100_00, currency: 'EUR', registration: null, refunds: [] },
       ],
+      [],
       'EUR',
     );
 
     expect(summary).toEqual({
       feesReceived: 450_00,
+      feesOutstanding: 0,
+      feesToRefund: 0,
       feesByGroup: [
-        { group: 'de', currency: 'EUR', received: 350_00 },
-        { group: 'pl', currency: 'PLN', received: 800_00 },
-        { group: null, currency: 'EUR', received: 100_00 },
+        {
+          group: 'de',
+          currency: 'EUR',
+          received: 350_00,
+          outstanding: 0,
+          toRefund: 0,
+        },
+        {
+          group: 'pl',
+          currency: 'PLN',
+          received: 800_00,
+          outstanding: 0,
+          toRefund: 0,
+        },
+        {
+          group: null,
+          currency: 'EUR',
+          received: 100_00,
+          outstanding: 0,
+          toRefund: 0,
+        },
       ],
     });
+  });
+
+  it('counts what accepted registrations still owe and what is to be paid back', () => {
+    const summary = summarizeFees(
+      [],
+      [
+        registration('de', 200_00, [paid(50_00)]),
+        registration('de', 200_00, [paid(250_00)]),
+        // Not accepted: owes nothing.
+        registration('de', 200_00, [], { accepted: false }),
+        registration('de', 200_00, [paid(30_00)], { accepted: false }),
+        registration('pl', 900_00, [], { currency: 'PLN' }),
+      ],
+      'EUR',
+    );
+
+    expect(summary.feesOutstanding).toBe(150_00);
+    expect(summary.feesToRefund).toBe(50_00);
+    expect(summary.feesByGroup).toContainEqual({
+      group: 'pl',
+      currency: 'PLN',
+      received: 0,
+      outstanding: 900_00,
+      toRefund: 0,
+    });
+  });
+});
+
+describe('summaryResults', () => {
+  it('expects promised income and owed fees; the cash view leaves them out', () => {
+    expect(
+      summaryResults({
+        incomeReceived: 300_00,
+        incomeExpected: 100_00,
+        feesReceived: 1_000_00,
+        feesOutstanding: 400_00,
+        feesToRefund: 50_00,
+        total: 900_00,
+      }),
+    ).toEqual({ receivedResult: 400_00, result: 850_00 });
   });
 });

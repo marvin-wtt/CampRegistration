@@ -97,6 +97,9 @@ export default {
     edit: 'Bearbeiten',
   },
   capture: {
+    incomeHint:
+      'Ein Zuschuss oder eine Spende? Das ist eine Einnahme, keine Erstattung.',
+    asIncome: 'Als Einnahme erfassen',
     keepOriginal: 'Papierbeleg bitte aufbewahren.',
     newExpense: 'Neue Ausgabe',
     newRefund: 'Neue Erstattung',
@@ -132,9 +135,6 @@ export default {
     owedToEvent: 'Der Veranstaltung geschuldet',
     settled: 'Ausgeglichen',
     pending: 'Zahlung vereinbart',
-    stillOpen: 'Noch offen',
-    agreedUnpaid: 'Vereinbart, nicht bezahlt',
-    toComeBack: 'Zurückzubekommen',
     settledProgress: '{settled} von {total} ausgeglichen',
     eventOwes: 'Veranstaltung schuldet {name}',
     owesEvent: '{name} schuldet der Veranstaltung',
@@ -205,33 +205,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Alle Belege sind vollständig.',
-    income: 'Einnahmen und Ergebnis',
     feesReceived: 'Teilnahmebeiträge',
-    incomeTotal: 'Eingegangen gesamt',
     result: 'Ergebnis',
-    promisedCaption: '{amount} zugesagt',
     noGroup: 'Ohne Gruppe',
-    unconverted:
-      'Nicht enthalten, da in anderer Währung und nicht umgerechnet: {amounts}',
     total: 'Gesamtausgaben',
     totalCaption: '{expenses} Ausgaben − {refunds} Erstattungen',
     expenses: 'Ausgaben',
     refunds: 'Erstattungen',
-    net: 'Netto ausgegeben',
-    byCategory: 'Nach Kategorie',
     refundedCaption: '{amount} erstattet',
     uncategorized: 'Ohne Kategorie',
-    paidFrom: 'Bezahlt von',
-    people: 'Personen',
-    gross: 'Brutto, vor Erstattungen.',
-    receiptFiles: 'Belegdateien',
     recordsNote:
       'Die Papierbelege und der Export sind die Unterlagen; Dateien sind eine Kopie zur Bequemlichkeit.',
   },
   categories: {
     ungrouped: 'Ohne Gruppe',
-    incomeTitle: 'Einnahmekategorien',
+    expenses: 'Ausgaben',
+    income: 'Einnahmen',
     title: 'Kategorien',
     subtitle:
       'Nur für diese Veranstaltung. Wird kopiert, wenn die nächste Veranstaltung auf dieser aufbaut.',
@@ -317,6 +306,8 @@ export default {
     recipient: 'Wähle, wer das Geld bekommt',
   },
   fee: {
+    allGroups: 'Alle Gruppen',
+    title: 'Teilnahmebeiträge',
     status: {
       NOT_REQUIRED: 'Nichts fällig',
       UNPAID: 'Offen',

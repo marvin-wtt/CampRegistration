@@ -1457,6 +1457,36 @@ describe('/api/v1/events', () => {
         );
       });
 
+      it('should copy the number prefixes but start the counters anew', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken();
+        await prisma.eventFinance.update({
+          where: { eventId: referenceEvent.id },
+          data: {
+            payoutNumberPrefix: 'A',
+            incomeNumberPrefix: 'E',
+            lastPayoutNumber: 4,
+            lastIncomeNumber: 2,
+          },
+        });
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send({ ...eventCreateNational, referenceEventId: referenceEvent.id })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const finance = await prisma.eventFinance.findUniqueOrThrow({
+          where: { eventId: body.data.id },
+        });
+        expect(finance).toMatchObject({
+          payoutNumberPrefix: 'A',
+          incomeNumberPrefix: 'E',
+          lastPayoutNumber: 0,
+          lastIncomeNumber: 0,
+        });
+      });
+
       it('should copy all table templates from the referenced event', async () => {
         const { event: referenceEvent, accessToken } =
           await createEventWithManagerAndToken();

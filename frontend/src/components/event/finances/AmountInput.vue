@@ -9,7 +9,10 @@
     :autofocus
     :placeholder="zero"
     :rules="[
-      () => !required || model !== null || t('finance.validation.amount'),
+      () =>
+        !required ||
+        (model !== null && (allowZero || model > 0)) ||
+        t('finance.validation.amount'),
     ]"
     :input-class="large ? 'text-h6 amount-native' : 'amount-native'"
     lazy-rules="ondemand"
@@ -35,19 +38,26 @@ import { computed, nextTick, useTemplateRef, watch } from 'vue';
 import type { QInput } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { currencySymbol } from '@camp-registration/common/utils';
-import { amountDigits, formatAmountDigits } from '@/utils/moneyInput';
+import {
+  amountDigits,
+  amountFromInput,
+  formatAmountDigits,
+} from '@/utils/moneyInput';
 
 const {
   currency,
   label = undefined,
   autofocus = false,
   required = true,
+  allowZero = false,
   large = false,
 } = defineProps<{
   currency: string;
   label?: string | undefined;
   autofocus?: boolean;
   required?: boolean;
+  /** Zero is a valid amount, e.g. a waived fee; elsewhere it reads as empty. */
+  allowZero?: boolean;
   /** The headline amount of a capture form. */
   large?: boolean;
 }>();
@@ -67,8 +77,14 @@ const display = computed(() =>
 );
 
 function onInput(value: string | number | null) {
-  const digits = amountDigits(String(value ?? ''));
-  model.value = digits ? Number(digits) : null;
+  const text = String(value ?? '');
+  const amount = allowZero
+    ? amountFromInput(text)
+    : Number(amountDigits(text)) || null;
+  // Deleting from a zero empties the field instead of keeping it at zero.
+  const cleared =
+    amount === 0 && model.value === 0 && text.length < display.value.length;
+  model.value = cleared ? null : amount;
 
   // The field shows the formatted amount even when the value didn't change
   // (a letter typed, a separator deleted), with the caret where typing goes on.
