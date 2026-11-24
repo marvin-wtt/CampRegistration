@@ -9,19 +9,28 @@
       name="hourglass_empty"
       size="14px"
     >
-      <q-tooltip>{{ t('finance.receiptPending') }}</q-tooltip>
+      <q-tooltip>{{ pendingLabel ?? t('finance.receiptPending') }}</q-tooltip>
     </q-icon>
-    #{{ number.toString() }}
+    {{ label ?? `#${(number ?? 0).toString()}` }}
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 
-const { number, pending = false } = defineProps<{
-  number: number;
+const {
+  number = undefined,
+  label = undefined,
+  pending = false,
+  pendingLabel = undefined,
+} = defineProps<{
+  number?: number;
+  /** Shown instead of `#number`, e.g. an income's `I3`. */
+  label?: string | undefined;
   /** No date yet: the receipt is still to come. */
   pending?: boolean;
+  /** What pending means here; a receipt's wording otherwise. */
+  pendingLabel?: string | undefined;
 }>();
 
 const { t } = useI18n();

@@ -25,6 +25,7 @@ import type {
   Expense,
   FinanceCategory,
   FinanceCategoryCreateData,
+  FinanceCategoryKind,
   FinanceCategoryOrderData,
   FinanceCategoryUpdateData,
   ExpenseCreateData,
@@ -118,9 +119,24 @@ export const useFinanceStore = defineStore('finance', () => {
     realtime: { resource: 'finance_category' },
   });
 
+  // A list of their own: the expense screens never see income categories.
+  const incomeCategories = useCollection<FinanceCategory>({
+    name: 'financeCategory',
+    key,
+    fetch: (eventId) => api.fetchFinanceCategories(eventId, 'INCOME'),
+    realtime: { resource: 'finance_category' },
+  });
+
+  function categoriesOf(kind: FinanceCategoryKind) {
+    return kind === 'INCOME' ? incomeCategories : categories;
+  }
+
   // Once for every view and row that names a category.
   const categoriesById = computed(
     () => new Map((categories.data.value ?? []).map((c) => [c.id, c])),
+  );
+  const incomeCategoriesById = computed(
+    () => new Map((incomeCategories.data.value ?? []).map((c) => [c.id, c])),
   );
 
   const balances = useResource<FinanceBalance[]>({
@@ -181,6 +197,12 @@ export const useFinanceStore = defineStore('finance', () => {
   function reloadTotals() {
     void balances.reload();
     void summary.reload();
+  }
+
+  // Income moves no balance: only the summary and its categories' counts.
+  function reloadIncomeDerived() {
+    void summary.reload();
+    void incomeCategories.reload();
   }
 
   // Kept from the last change, so each change builds the keys once.
@@ -355,10 +377,11 @@ export const useFinanceStore = defineStore('finance', () => {
 
   function createCategory(
     data: FinanceCategoryCreateData,
+    kind: FinanceCategoryKind = 'EXPENSE',
   ): Promise<FinanceCategory> {
-    return categories.mutate(
+    return categoriesOf(kind).mutate(
       'create',
-      (eventId) => api.createFinanceCategory(eventId, data),
+      (eventId) => api.createFinanceCategory(eventId, { ...data, kind }),
       { apply: upsertById },
     );
   }
@@ -366,8 +389,9 @@ export const useFinanceStore = defineStore('finance', () => {
   function updateCategory(
     categoryId: string,
     data: FinanceCategoryUpdateData,
+    kind: FinanceCategoryKind = 'EXPENSE',
   ): Promise<FinanceCategory> {
-    return categories.mutate(
+    return categoriesOf(kind).mutate(
       'update',
       (eventId) => api.updateFinanceCategory(eventId, categoryId, data),
       { apply: replaceById },
@@ -376,10 +400,11 @@ export const useFinanceStore = defineStore('finance', () => {
 
   function orderCategories(
     data: FinanceCategoryOrderData,
+    kind: FinanceCategoryKind = 'EXPENSE',
   ): Promise<FinanceCategory[]> {
-    return categories.mutate(
+    return categoriesOf(kind).mutate(
       'order',
-      (eventId) => api.orderFinanceCategories(eventId, data),
+      (eventId) => api.orderFinanceCategories(eventId, data, kind),
       {
         // Shown in place while the request runs.
         optimistic: (list) =>
@@ -392,8 +417,11 @@ export const useFinanceStore = defineStore('finance', () => {
     );
   }
 
-  async function deleteCategory(categoryId: string): Promise<void> {
-    await categories.mutate(
+  async function deleteCategory(
+    categoryId: string,
+    kind: FinanceCategoryKind = 'EXPENSE',
+  ): Promise<void> {
+    await categoriesOf(kind).mutate(
       'delete',
       (eventId) => api.deleteFinanceCategory(eventId, categoryId),
       { apply: (list) => removeById(list, categoryId) },
@@ -442,6 +470,10 @@ export const useFinanceStore = defineStore('finance', () => {
     payouts: payouts.data,
     categories: categories.data,
     categoriesById,
+    incomeCategories: incomeCategories.data,
+    incomeCategoriesById,
+    loadIncomeCategories: () => incomeCategories.load(),
+    reloadIncomeDerived,
     balances: balances.data,
     summary: summary.data,
     summaryIsLoading: summary.isLoading,

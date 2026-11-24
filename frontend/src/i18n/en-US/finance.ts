@@ -12,6 +12,7 @@ export default {
     expenses: 'Expenses',
     balances: 'Balances',
     summary: 'Summary',
+    income: 'Income',
   },
   type: {
     expense: 'Expense',
@@ -69,6 +70,8 @@ export default {
   action: {
     retry: 'Try again',
     add: 'Add',
+    addIncome: 'Record income',
+    income: 'Income',
     addExpense: 'Add expense',
     expense: 'Expense',
     addFile: 'Another file',
@@ -94,6 +97,8 @@ export default {
     edit: 'Edit',
   },
   capture: {
+    incomeHint: 'A grant or a donation? That is income, not a refund.',
+    asIncome: 'Record as income',
     keepOriginal: 'Keep the paper original.',
     newExpense: 'New expense',
     newRefund: 'New refund',
@@ -127,9 +132,6 @@ export default {
     owedToEvent: 'Owed to the event',
     settled: 'Settled',
     pending: 'Payment arranged',
-    stillOpen: 'Still open',
-    agreedUnpaid: 'Agreed, not paid',
-    toComeBack: 'To get back',
     settledProgress: '{settled} of {total} settled',
     eventOwes: 'Event owes {name}',
     owesEvent: '{name} owes the event',
@@ -200,24 +202,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Every receipt is complete.',
+    feesReceived: 'Registration fees',
+    result: 'Result',
+    noGroup: 'Without group',
     total: 'Total spent',
     totalCaption: '{expenses} expenses − {refunds} refunds',
     expenses: 'Expenses',
     refunds: 'Refunds',
-    net: 'Net spent',
-    byCategory: 'By category',
     refundedCaption: '{amount} refunded',
     uncategorized: 'No category',
-    paidFrom: 'Paid from',
-    people: 'People',
-    gross: 'Gross, before refunds.',
-    receiptFiles: 'Receipt files',
     recordsNote:
       'The paper receipts and the export are the records; files are a convenience copy.',
   },
   categories: {
     ungrouped: 'Without group',
+    expenses: 'Expenses',
+    income: 'Income',
     title: 'Categories',
     subtitle:
       'For this event only. Copied when the next event is created from this one.',
@@ -230,6 +230,7 @@ export default {
     noGroup: 'no group',
     archive: 'Archive',
     restore: 'Restore',
+    usedIncome: '{n} entry | {n} entries',
     used: '{n} expense | {n} expenses',
     unused: 'unused',
     showArchived: 'Show archived ({count})',
@@ -277,6 +278,11 @@ export default {
   },
   settings: {
     title: 'Finance settings',
+    incomeNumbers: 'Income numbers',
+    incomePrefixHint:
+      'Income is numbered on its own, like payouts, so a grant letter or donation receipt can be filed under its number.',
+    incomeLocked:
+      'The prefix is fixed once the first income exists, so filed documents keep matching.',
     payoutNumbers: 'Payout numbers',
     flagMissingCategories: 'Mark expenses without a category',
     flagMissingCategoriesHint:
@@ -295,5 +301,22 @@ export default {
     name: 'Enter a name',
     prefix: 'Up to 8 letters, digits or dashes',
     recipient: 'Pick who gets the money',
+  },
+  fee: {
+    allGroups: 'All groups',
+    title: 'Registration fees',
+    status: {
+      NOT_REQUIRED: 'Nothing due',
+      UNPAID: 'Unpaid',
+      PARTIAL: 'Partly paid',
+      PAID: 'Paid',
+      OVERPAID: 'Overpaid',
+      REFUNDED: 'Refunded',
+    },
+    method: {
+      BANK_TRANSFER: 'Bank transfer',
+      CASH: 'Cash',
+      OTHER: 'Other',
+    },
   },
 };

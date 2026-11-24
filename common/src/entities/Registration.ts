@@ -1,6 +1,7 @@
 import { Identifiable } from './Identifiable.js';
 import { Timestamps } from './Timestamps.js';
 import { Translatable } from './Translatable.js';
+import type { PaymentSettlement } from './Payment.js';
 
 export interface Registration extends Identifiable, Timestamps {
   data: Record<string, unknown>;
@@ -79,4 +80,6 @@ export type RegistrationDeleteReason =
 export interface RegistrationDeleteQuery {
   suppressMessage?: boolean | undefined;
   reason?: RegistrationDeleteReason | undefined;
+  /** Needed while the registration still holds money; see `Payment`. */
+  settlement?: PaymentSettlement | undefined;
 }

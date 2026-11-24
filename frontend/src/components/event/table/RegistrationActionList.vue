@@ -1,5 +1,8 @@
 <template>
   <q-list>
+    <!-- Items of the host, e.g. the details dialog's history -->
+    <slot />
+
     <q-item
       v-if="!hideDetails"
       v-close-popup

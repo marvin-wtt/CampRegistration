@@ -31,11 +31,42 @@ index 465bdbf..a2769bc 100644
  // === Dialog Action Buttons ===
  // MD3E: action label text is primary-colored
  .q-dialog__inner > .q-card > .q-card__actions .q-btn {
+diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QItem.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QItem.scss
+index 1203629..de6b96e 100644
+--- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QItem.scss
++++ b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QItem.scss
+@@ -96,6 +96,13 @@
+   color: inherit;
+ }
+ 
++// Dark mode: Quasar mutes side sections of .q-item--dark with a rule of the
++// same specificity, loaded later. Outrank it, or the active colour is lost.
++.q-item--dark.q-item--active .q-item__section--side:not(.q-item__section--avatar),
++.q-item--dark.q-router-link--active .q-item__section--side:not(.q-item__section--avatar) {
++  color: inherit;
++}
++
+ // Caption and overline within active items
+ .q-item--active .q-item__label--caption,
+ .q-item--active .q-item__label--overline,
 diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss
-index 770dbf0..c03b61a 100644
+index 770dbf0..9b31364 100644
 --- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss
 +++ b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss
-@@ -175,3 +175,18 @@ body.desktop .q-menu .q-item.q-focusable:focus > .q-focus-helper {
+@@ -109,6 +109,12 @@ body.desktop .q-menu .q-item.q-focusable:focus > .q-focus-helper {
+   color: var(--md3-on-tertiary-container);
+ }
+ 
++// Dark mode: outrank Quasar's muted .q-item--dark side sections (see QItem).
++.q-menu .q-item--dark.q-item--active .q-item__section--side:not(.q-item__section--avatar),
++.q-menu .q-item--dark.q-router-link--active .q-item__section--side:not(.q-item__section--avatar) {
++  color: var(--md3-on-tertiary-container);
++}
++
+ // === Disabled Menu Items ===
+ // MD3E: on-surface at 38% opacity for disabled content
+ .q-menu .q-item.disabled {
+@@ -175,3 +181,18 @@ body.desktop .q-menu .q-item.q-focusable:focus > .q-focus-helper {
  .q-menu--vibrant .q-separator {
    background: var(--md3-on-tertiary-container);
  }

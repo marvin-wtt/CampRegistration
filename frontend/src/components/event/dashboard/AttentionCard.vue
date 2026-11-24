@@ -79,6 +79,8 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useFinanceStore } from '@/stores/finance-store';
+import { useFeeStore } from '@/stores/fee-store';
+import { isOwing } from '@/utils/registrationFee';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import type { EventPhase } from '@/composables/eventPhase';
 import {
@@ -96,6 +98,7 @@ const {
   registrations = false,
   files = false,
   rooms = false,
+  fees: showFees = false,
   finances = false,
 } = defineProps<{
   phase: EventPhase;
@@ -105,6 +108,8 @@ const {
   rooms?: boolean;
   /** Sees every expense; the summary is loaded during wrap-up only. */
   finances?: boolean;
+  /** Sees registration fees. */
+  fees?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -112,6 +117,7 @@ const router = useRouter();
 const eventDetailsStore = useEventDetailsStore();
 const eventFilesStore = useEventFilesStore();
 const financeStore = useFinanceStore();
+const feeStore = useFeeStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 
@@ -133,6 +139,8 @@ const items = computed<AttentionItem[]>(() => {
   const participants = stats.participants.value;
   const event = eventDetailsStore.data;
   const running = phase === 'running';
+  const feesShown = !!showFees;
+  const fees = feeStore.registrations ?? [];
 
   const missingInfo = participants.filter(
     (r) => !helper.email(r) || !helper.fullName(r),
@@ -215,6 +223,26 @@ const items = computed<AttentionItem[]>(() => {
       route: 'management.event.finances',
       query: { tab: 'expenses', pending: 'true' },
       shown: finances && phase === 'wrapUp',
+    },
+    {
+      // Paid twice or too much: there is money to give back.
+      key: 'feesOverpaid',
+      label: t('item.feesOverpaid'),
+      count: fees.filter((fee) => fee.balance.overpaid > 0).length,
+      icon: 'currency_exchange',
+      route: 'management.event.finances',
+      query: { tab: 'income', view: 'fees', fees: 'overpaid' },
+      shown: feesShown && phase !== 'setup',
+    },
+    {
+      // Before the event, reminders are the organizer's own mails.
+      key: 'feesOwing',
+      label: t('item.feesOwing'),
+      count: fees.filter(isOwing).length,
+      icon: 'request_quote',
+      route: 'management.event.finances',
+      query: { tab: 'income', view: 'fees', fees: 'owing' },
+      shown: feesShown && (running || phase === 'wrapUp'),
     },
   ];
 
@@ -327,6 +355,8 @@ item:
   age: 'Age outside event range'
   files: 'Missing files'
   receipts: 'Receipts without a date'
+  feesOverpaid: 'Fees paid too much'
+  feesOwing: 'Fees still open'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -341,6 +371,8 @@ item:
   age: 'Alter außerhalb des Bereichs'
   files: 'Fehlende Dateien'
   receipts: 'Belege ohne Datum'
+  feesOverpaid: 'Zu viel gezahlte Beiträge'
+  feesOwing: 'Offene Beiträge'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -355,6 +387,8 @@ item:
   age: 'Âge hors de la plage'
   files: 'Fichiers manquants'
   receipts: 'Justificatifs sans date'
+  feesOverpaid: 'Frais trop payés'
+  feesOwing: 'Frais encore dus'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -369,6 +403,8 @@ item:
   age: 'Wiek poza zakresem'
   files: 'Brakujące pliki'
   receipts: 'Paragony bez daty'
+  feesOverpaid: 'Nadpłacone opłaty'
+  feesOwing: 'Nieopłacone opłaty'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -383,4 +419,6 @@ item:
   age: 'Věk mimo rozsah'
   files: 'Chybějící soubory'
   receipts: 'Doklady bez data'
+  feesOverpaid: 'Přeplacené poplatky'
+  feesOwing: 'Nezaplacené poplatky'
 </i18n>

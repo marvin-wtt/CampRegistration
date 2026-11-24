@@ -1283,7 +1283,7 @@ describe('/api/v1/events', () => {
         });
       });
 
-      it('should create the default expense categories in the event languages', async () => {
+      it('should create the default expense and income categories in the event languages', async () => {
         const accessToken = await createEventCreatorToken();
 
         const { body } = await request()
@@ -1297,7 +1297,8 @@ describe('/api/v1/events', () => {
           orderBy: { position: 'asc' },
         });
 
-        expect(categories).toHaveLength(6);
+        expect(categories.filter((c) => c.kind === 'EXPENSE')).toHaveLength(6);
+        expect(categories.filter((c) => c.kind === 'INCOME')).toHaveLength(4);
         expect(categories.every((c) => typeof c.name === 'string')).toBe(true);
       });
 
@@ -1454,6 +1455,36 @@ describe('/api/v1/events', () => {
         expect(categories.find((c) => c.name === 'Food')?.parentId).toBe(
           copiedGroup?.id,
         );
+      });
+
+      it('should copy the number prefixes but start the counters anew', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken();
+        await prisma.eventFinance.update({
+          where: { eventId: referenceEvent.id },
+          data: {
+            payoutNumberPrefix: 'A',
+            incomeNumberPrefix: 'E',
+            lastPayoutNumber: 4,
+            lastIncomeNumber: 2,
+          },
+        });
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send({ ...eventCreateNational, referenceEventId: referenceEvent.id })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const finance = await prisma.eventFinance.findUniqueOrThrow({
+          where: { eventId: body.data.id },
+        });
+        expect(finance).toMatchObject({
+          payoutNumberPrefix: 'A',
+          incomeNumberPrefix: 'E',
+          lastPayoutNumber: 0,
+          lastIncomeNumber: 0,
+        });
       });
 
       it('should copy all table templates from the referenced event', async () => {

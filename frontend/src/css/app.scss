@@ -76,15 +76,17 @@
   }
 }
 
+// Navigation links only: Quasar marks any `active` item, e.g. a menu's
+// selected option, with the same class, and the theme styles those.
 .body--light {
-  .q-item.q-router-link--active:not(.q-router-link--exact-active) {
+  a.q-item.q-router-link--active:not(.q-router-link--exact-active) {
     background-color: $grey-4;
     color: black;
   }
 }
 
 .body--dark {
-  .q-item.q-router-link--active:not(.q-router-link--exact-active) {
+  a.q-item.q-router-link--active:not(.q-router-link--exact-active) {
     background-color: $grey-9;
     color: white;
   }

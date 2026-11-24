@@ -1,6 +1,10 @@
 import { Prisma } from '#generated/prisma/client.js';
 import prisma from '../client.js';
 import { faker } from '@faker-js/faker/locale/en';
+import {
+  nextPaymentReference,
+  randomReferenceCode,
+} from '#app/finance/finance.sequence';
 
 export const RegistrationFactory = {
   build: (
@@ -23,6 +27,8 @@ export const RegistrationFactory = {
       zipCode: faker.location.zipCode(),
       country: faker.helpers.arrayElement(['gb', 'fr']),
       status: 'ACCEPTED',
+      // Unique for a new event; `create` takes the event's next reference.
+      paymentReference: `${randomReferenceCode()}-0001`,
       data: {},
       event: {},
       ...data,
@@ -30,8 +36,19 @@ export const RegistrationFactory = {
   },
 
   create: async (data: Partial<Prisma.RegistrationCreateInput> = {}) => {
-    return prisma.registration.create({
-      data: RegistrationFactory.build(data),
+    const eventId = data.event?.connect?.id;
+    if (data.paymentReference !== undefined || !eventId) {
+      return prisma.registration.create({
+        data: RegistrationFactory.build(data),
+      });
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const paymentReference = await nextPaymentReference(tx, eventId);
+
+      return tx.registration.create({
+        data: RegistrationFactory.build({ ...data, paymentReference }),
+      });
     });
   },
 };

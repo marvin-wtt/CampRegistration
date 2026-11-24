@@ -32,6 +32,27 @@ export interface FinanceCategoryTotal {
   count: number;
 }
 
+export interface FinanceIncomeCategoryTotal {
+  /** `null` collects income without a category. */
+  categoryId: string | null;
+  received: number;
+  /** Promised, not paid yet. */
+  expected: number;
+  count: number;
+}
+
+export interface FinanceFeeGroupTotal {
+  /** `null` for payments without a group, e.g. of a deleted registration. */
+  group: string | null;
+  currency: string;
+  /** Net of refunds, in `currency`. */
+  received: number;
+  /** Still owed by accepted registrations. */
+  outstanding: number;
+  /** Paid beyond what is due: to be paid back. */
+  toRefund: number;
+}
+
 export interface FinanceSummary {
   currency: string;
   expenses: number;
@@ -52,16 +73,46 @@ export interface FinanceSummary {
   /** Receipt numbers whose receipt is still to come (no date yet). */
   receiptsPending: number[];
   byCategory: FinanceCategoryTotal[];
+  /** Grants, donations and the like that have arrived. */
+  incomeReceived: number;
+  /** The same, promised but not paid yet. */
+  incomeExpected: number;
+  /**
+   * Registration fees received, net of refunds. Payments in another currency
+   * than the event's are left out; they can't be added up.
+   */
+  feesReceived: number;
+  /** Still owed by accepted registrations, event currency only. */
+  feesOutstanding: number;
+  /** Overpaid and to be paid back, event currency only. */
+  feesToRefund: number;
+  /**
+   * Fees received per group, each in its own currency — a group paying in
+   * another currency is shown, never converted.
+   */
+  feesByGroup: FinanceFeeGroupTotal[];
+  incomeByCategory: FinanceIncomeCategoryTotal[];
+  /**
+   * What the event will end with: all income and fees expected, promised
+   * and still owed included, − `total`.
+   */
+  result: number;
+  /** The same from what has arrived only: the cash view. */
+  receivedResult: number;
 }
 
 export interface FinanceSettings {
   payoutNumberPrefix: string;
   /** The prefix is fixed once a payout exists, so printed slips keep matching. */
   payoutNumberPrefixLocked: boolean;
+  incomeNumberPrefix: string;
+  /** Likewise, once an income exists: filed documents carry its number. */
+  incomeNumberPrefixLocked: boolean;
 }
 
 export interface FinanceSettingsUpdateData {
   payoutNumberPrefix?: string | undefined;
+  incomeNumberPrefix?: string | undefined;
 }
 
 /** Who can be picked as payer or recipient: managers first, then names typed before. */

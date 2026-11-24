@@ -3,6 +3,7 @@ import type {
   Expense,
   FinanceCategory,
   FinanceCategoryCreateData,
+  FinanceCategoryKind,
   FinanceCategoryOrderData,
   FinanceCategoryUpdateData,
   ExpenseCreateData,
@@ -13,6 +14,9 @@ import type {
   FinanceSettings,
   FinanceSettingsUpdateData,
   FinanceSummary,
+  Income,
+  IncomeCreateData,
+  IncomeUpdateData,
   Payout,
   PayoutCreateData,
   PayoutSignatureData,
@@ -23,8 +27,11 @@ import { api } from '@/services/api';
 export function useFinanceService() {
   async function fetchFinanceCategories(
     eventId: string,
+    kind: FinanceCategoryKind = 'EXPENSE',
   ): Promise<FinanceCategory[]> {
-    const response = await api.get(`events/${eventId}/finance-categories/`);
+    const response = await api.get(`events/${eventId}/finance-categories/`, {
+      params: { kind },
+    });
 
     return response?.data?.data;
   }
@@ -57,10 +64,12 @@ export function useFinanceService() {
   async function orderFinanceCategories(
     eventId: string,
     data: FinanceCategoryOrderData,
+    kind: FinanceCategoryKind = 'EXPENSE',
   ): Promise<FinanceCategory[]> {
     const response = await api.put(
       `events/${eventId}/finance-categories/order/`,
       data,
+      { params: { kind } },
     );
 
     return response?.data?.data;
@@ -120,6 +129,50 @@ export function useFinanceService() {
     expenseId: string,
   ): Promise<void> {
     await api.delete(`events/${eventId}/expenses/${expenseId}/`);
+  }
+
+  async function fetchIncomes(eventId: string): Promise<Income[]> {
+    const response = await api.get(`events/${eventId}/incomes/`);
+
+    return response?.data?.data;
+  }
+
+  async function fetchIncome(
+    eventId: string,
+    incomeId: string,
+  ): Promise<Income> {
+    const response = await api.get(`events/${eventId}/incomes/${incomeId}/`);
+
+    return response?.data?.data;
+  }
+
+  async function createIncome(
+    eventId: string,
+    data: IncomeCreateData,
+  ): Promise<Income> {
+    const response = await api.post(`events/${eventId}/incomes/`, data);
+
+    return response?.data?.data;
+  }
+
+  async function updateIncome(
+    eventId: string,
+    incomeId: string,
+    data: IncomeUpdateData,
+  ): Promise<Income> {
+    const response = await api.patch(
+      `events/${eventId}/incomes/${incomeId}/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function deleteIncome(
+    eventId: string,
+    incomeId: string,
+  ): Promise<void> {
+    await api.delete(`events/${eventId}/incomes/${incomeId}/`);
   }
 
   async function fetchPayouts(
@@ -269,6 +322,11 @@ export function useFinanceService() {
     createExpense,
     updateExpense,
     deleteExpense,
+    fetchIncomes,
+    fetchIncome,
+    createIncome,
+    updateIncome,
+    deleteIncome,
     fetchPayouts,
     createPayout,
     updatePayout,

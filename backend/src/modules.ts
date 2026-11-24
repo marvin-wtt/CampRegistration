@@ -40,7 +40,9 @@ import { AuditModule } from '#app/audit/audit.module';
 import { FinanceModule } from '#app/finance/finance.module';
 import { FinanceCategoryModule } from '#app/financeCategory/finance-category.module';
 import { ExpenseModule } from '#app/expense/expense.module';
+import { PaymentModule } from '#app/payment/payment.module';
 import { PayoutModule } from '#app/payout/payout.module';
+import { IncomeModule } from '#app/income/income.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { AdminAccessModule } from '#app/adminAccess/admin-access.module';
 import { PermissionModule } from '#app/permission/permission.module';
@@ -108,6 +110,8 @@ export const createAppModules = (): AppModule[] => [
   new FinanceCategoryModule(),
   new ExpenseModule(),
   new PayoutModule(),
+  new IncomeModule(),
+  new PaymentModule(),
   new FeedbackModule(),
   new NewsletterModule(),
   new NewsletterSubscriberModule(),

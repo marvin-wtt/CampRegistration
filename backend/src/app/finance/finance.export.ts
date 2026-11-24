@@ -7,19 +7,25 @@ import {
   fromMinorUnits,
   translate,
 } from '@camp-registration/common/utils';
+import type { FeeExportPayment } from '#app/payment/payment.service';
 import type {
   Expense,
   FinanceCategory,
   File,
+  Income,
   Payout,
 } from '#generated/prisma/client';
 
 export interface FinanceExportData {
   currency: string;
   payoutNumberPrefix: string;
+  incomeNumberPrefix: string;
   expenses: (Expense & { files: Pick<File, 'id'>[] })[];
   payouts: Payout[];
+  incomes: (Income & { files: Pick<File, 'id'>[] })[];
   categories: FinanceCategory[];
+  /** Only for those who may see payments. */
+  fees?: FeeExportPayment[] | undefined;
 }
 
 const MONEY = '#,##0.00';
@@ -93,6 +99,8 @@ export function buildFinanceSheets(
   const sum = (key: 'expenses' | 'refunds' | 'total') =>
     money(totals.reduce((acc, total) => acc + total[key], 0));
 
+  const feeSheets: Sheet[] = data.fees ? [feeSheet(data.fees, t, money)] : [];
+
   return [
     {
       name: t('sheet.expenses'),
@@ -142,6 +150,40 @@ export function buildFinanceSheets(
       ]),
     },
     {
+      name: t('sheet.income'),
+      columns: [
+        { header: t('column.number'), width: 8 },
+        { header: t('column.receivedOn'), width: 12, numFmt: DATE },
+        { header: t('column.status'), width: 12 },
+        { header: t('column.description'), width: 32 },
+        { header: t('column.payer'), width: 22 },
+        { header: t('column.group'), width: 18 },
+        { header: t('column.category'), width: 18 },
+        { header: t('column.amount'), width: 12, numFmt: MONEY },
+        { header: t('column.currency'), width: 9 },
+        { header: t('column.originalAmount'), width: 14, numFmt: MONEY },
+        { header: t('column.originalCurrency'), width: 9 },
+        { header: t('column.files'), width: 8 },
+      ],
+      rows: data.incomes.map((i) => [
+        `${data.incomeNumberPrefix}${i.number.toString()}`,
+        excelDate(i.receivedOn),
+        t(i.receivedOn ? 'value.received' : 'value.expected'),
+        i.description,
+        i.payerName,
+        groupName(i.categoryId),
+        categoryName(i.categoryId),
+        money(i.amount),
+        data.currency,
+        i.originalAmount !== null && i.originalCurrency
+          ? fromMinorUnits(i.originalAmount, i.originalCurrency)
+          : null,
+        i.originalCurrency,
+        i.files.length,
+      ]),
+    },
+    ...feeSheets,
+    {
       name: t('sheet.categories'),
       columns: [
         { header: t('column.group'), width: 20 },
@@ -164,6 +206,61 @@ export function buildFinanceSheets(
       ],
     },
   ];
+}
+
+/**
+ * Registration fees: a row per payment and per refund, so the sheet adds up
+ * to what the event kept. Fees of deleted registrations have no reference.
+ */
+function feeSheet(
+  fees: FeeExportPayment[],
+  t: (key: string) => string,
+  money: (minor: number) => number,
+): Sheet {
+  const rows = fees.flatMap((payment): CellValue[][] => {
+    const reference = payment.registration?.paymentReference ?? null;
+
+    return [
+      [
+        reference,
+        excelDate(payment.paidOn),
+        t('value.PAYMENT'),
+        payment.payerName,
+        t(`value.${payment.method}`),
+        money(payment.amount),
+        money(payment.amount),
+        payment.currency,
+        payment.note,
+      ],
+      ...payment.refunds.map((refund): CellValue[] => [
+        reference,
+        excelDate(refund.refundedOn),
+        t('value.FEE_REFUND'),
+        payment.payerName,
+        t(`value.${payment.method}`),
+        money(refund.amount),
+        money(-refund.amount),
+        payment.currency,
+        refund.reason,
+      ]),
+    ];
+  });
+
+  return {
+    name: t('sheet.fees'),
+    columns: [
+      { header: t('column.reference'), width: 12 },
+      { header: t('column.date'), width: 12, numFmt: DATE },
+      { header: t('column.type'), width: 12 },
+      { header: t('column.payer'), width: 24 },
+      { header: t('column.method'), width: 14 },
+      { header: t('column.amount'), width: 12, numFmt: MONEY },
+      { header: t('column.net'), width: 12, numFmt: MONEY },
+      { header: t('column.currency'), width: 9 },
+      { header: t('column.note'), width: 32 },
+    ],
+    rows,
+  };
 }
 
 /**

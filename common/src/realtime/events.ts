@@ -24,7 +24,9 @@ export type RealtimeResource =
   | 'setting'
   | 'expense'
   | 'finance_category'
-  | 'payout';
+  | 'payout'
+  | 'income'
+  | 'registration_fee';
 
 /**
  * `created` / `updated` / `deleted` target a single entity (`id` set).
@@ -96,6 +98,9 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   // Counselors see only their own expenses and payouts: no events about others'.
   expense: 'event.expenses.view',
   payout: 'event.payouts.view',
+  income: 'event.expenses.view',
   // Everyone who records needs the category picker current.
   finance_category: 'event.expenses.create',
+  // By registration id: its balance, payments and refunds.
+  registration_fee: 'event.payments.view',
 };

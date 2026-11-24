@@ -185,6 +185,7 @@ export class EventController extends BaseController {
       messageTemplates,
       settings,
       financeCategories,
+      financePrefixes,
     ] = await Promise.all([
       this.fileService.queryModelFiles({
         name: 'event',
@@ -194,6 +195,7 @@ export class EventController extends BaseController {
       this.messageTemplateService.queryMessageTemplates(referenceEventId),
       this.settingService.querySettings(referenceEventId),
       this.financeCategoryService.cloneCategories(referenceEventId),
+      this.eventService.getFinancePrefixes(referenceEventId),
     ]);
 
     return {
@@ -204,6 +206,7 @@ export class EventController extends BaseController {
       messageTemplates,
       settings,
       financeCategories,
+      financePrefixes,
     };
   }
 

@@ -90,6 +90,7 @@
               :files="features.files"
               :rooms="features.rooms"
               :finances="features.finances"
+              :fees="features.fees"
               :style="card.style"
             />
             <tasks-card
@@ -163,6 +164,7 @@ import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
 import { useFinanceStore } from '@/stores/finance-store';
+import { useFeeStore } from '@/stores/fee-store';
 import { useProgramPlannerStore } from '@/stores/program-planner-store';
 import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
 import { useChoreStore } from '@/stores/chore-store';
@@ -235,6 +237,7 @@ const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
 const financeStore = useFinanceStore();
+const feeStore = useFeeStore();
 const programStore = useProgramPlannerStore();
 const publishedDayStore = useProgramPublishedDayStore();
 const choreStore = useChoreStore();
@@ -288,6 +291,7 @@ const features = computed(() => ({
   program: can('event.program_items.view') && isShown('program_planner'),
   rooms: can('event.rooms.view') && isShown('room_planner'),
   finances: can('event.expenses.view') && isShown('finances'),
+  fees: can('event.payments.view') && isShown('finances'),
 }));
 
 // A store is only asked once its permission is known to be held, so a
@@ -334,6 +338,11 @@ fetchWhen(
 // Before the event has loaded the registration layout stands in.
 const phase = computed<EventPhase>(() => viewedPhase.value ?? 'registration');
 
+fetchWhen(
+  () => features.value.fees,
+  () => feeStore.fetchData(),
+);
+
 // Only wrap-up asks about receipts still to come.
 fetchWhen(
   () => features.value.finances && phase.value === 'wrapUp',
@@ -346,7 +355,12 @@ function isAvailable(key: CardKey): boolean {
 
   switch (key) {
     case 'attention':
-      return registrations || features.value.files || features.value.finances;
+      return (
+        registrations ||
+        features.value.files ||
+        features.value.finances ||
+        features.value.fees
+      );
     case 'registrations':
     case 'demographics':
       return registrations;

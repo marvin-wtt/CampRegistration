@@ -85,6 +85,16 @@ export type PayoutPermission =
 
 export type FinancePermission = 'event.finances.configure';
 
+/** Seeing income goes with `event.expenses.view`; these record it. */
+export type IncomePermission =
+  'event.income.create' | 'event.income.edit' | 'event.income.delete';
+
+export type PaymentPermission =
+  | 'event.payments.view'
+  | 'event.payments.create'
+  | 'event.payments.refund'
+  | 'event.payments.adjust';
+
 export type NewsletterPermission =
   | 'newsletter.view'
   | 'newsletter.edit'
@@ -134,7 +144,9 @@ export type EventScopedPermission =
   | ChoreAssignmentPermission
   | ExpensePermission
   | PayoutPermission
-  | FinancePermission;
+  | FinancePermission
+  | IncomePermission
+  | PaymentPermission;
 
 export type Permission =
   EventScopedPermission | NewsletterPermission | OrganizationPermission;

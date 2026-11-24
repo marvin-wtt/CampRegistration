@@ -15,6 +15,14 @@ export function amountDigits(text: string): string {
   return text.replace(/\D/g, '').replace(/^0+/, '').slice(0, MAX_AMOUNT_DIGITS);
 }
 
+/**
+ * The field's amount in minor units: `null` without any digit, so a typed
+ * `0` or `0,00` reads as zero rather than as empty.
+ */
+export function amountFromInput(text: string): number | null {
+  return /\d/.test(text) ? Number(amountDigits(text) || '0') : null;
+}
+
 /** Minor units formatted for the field, e.g. `1.234,50` in German. */
 export function formatAmountDigits(
   minor: number,

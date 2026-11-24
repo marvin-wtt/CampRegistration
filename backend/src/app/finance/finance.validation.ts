@@ -4,6 +4,10 @@ import { RECORD_VIEWS } from '@camp-registration/common/permissions';
 
 const eventParams = z.object({ eventId: z.ulid() });
 
+const NUMBER_PREFIX = z
+  .string()
+  .regex(/^[\p{L}\p{N}-]{0,8}$/u, 'Up to 8 letters, digits or dashes');
+
 const balances = z.object({
   params: eventParams,
   query: z.object({ view: z.enum(RECORD_VIEWS).default('own') }),
@@ -24,10 +28,8 @@ const updateSettings = z.object({
   params: eventParams,
   body: z.object({
     // Written by hand on paper slips: short, no spaces. Empty means bare numbers.
-    payoutNumberPrefix: z
-      .string()
-      .regex(/^[\p{L}\p{N}-]{0,8}$/u, 'Up to 8 letters, digits or dashes')
-      .optional(),
+    payoutNumberPrefix: NUMBER_PREFIX.optional(),
+    incomeNumberPrefix: NUMBER_PREFIX.optional(),
   }) satisfies ZodType<FinanceSettingsUpdateData>,
 });
 

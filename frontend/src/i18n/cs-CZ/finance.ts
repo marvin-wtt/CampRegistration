@@ -12,6 +12,7 @@ export default {
     expenses: 'Výdaje',
     balances: 'Zůstatky',
     summary: 'Přehled',
+    income: 'Příjmy',
   },
   type: {
     expense: 'Výdaj',
@@ -68,6 +69,8 @@ export default {
   action: {
     retry: 'Zkusit znovu',
     add: 'Přidat',
+    addIncome: 'Zaznamenat příjem',
+    income: 'Příjem',
     addExpense: 'Přidat výdaj',
     expense: 'Výdaj',
     addFile: 'Další soubor',
@@ -93,6 +96,8 @@ export default {
     edit: 'Upravit',
   },
   capture: {
+    incomeHint: 'Dotace nebo dar? To je příjem, ne vratka.',
+    asIncome: 'Zaznamenat jako příjem',
     keepOriginal: 'Papírový originál si ponech.',
     newExpense: 'Nový výdaj',
     newRefund: 'Nová vratka',
@@ -127,9 +132,6 @@ export default {
     owedToEvent: 'Dlužno akci',
     settled: 'Vyrovnáno',
     pending: 'Platba sjednána',
-    stillOpen: 'Ještě otevřené',
-    agreedUnpaid: 'Domluveno, nezaplaceno',
-    toComeBack: 'K vrácení',
     settledProgress: 'Vyrovnáno {settled} z {total}',
     eventOwes: 'Akce dluží: {name}',
     owesEvent: '{name}: dluh vůči akci',
@@ -200,24 +202,22 @@ export default {
     },
   },
   summary: {
-    complete: 'Všechny doklady jsou kompletní.',
+    feesReceived: 'Účastnické poplatky',
+    result: 'Výsledek',
+    noGroup: 'Bez skupiny',
     total: 'Celkem utraceno',
     totalCaption: 'Výdaje {expenses} − vratky {refunds}',
     expenses: 'Výdaje',
     refunds: 'Vratky',
-    net: 'Utraceno netto',
-    byCategory: 'Podle kategorie',
     refundedCaption: 'vráceno {amount}',
     uncategorized: 'Bez kategorie',
-    paidFrom: 'Zaplaceno z',
-    people: 'Lidé',
-    gross: 'Hrubě, před vratkami.',
-    receiptFiles: 'Soubory dokladů',
     recordsNote:
       'Doklady tvoří papírové účtenky a export; soubory jsou jen praktická kopie.',
   },
   categories: {
     ungrouped: 'Bez skupiny',
+    expenses: 'Výdaje',
+    income: 'Příjmy',
     title: 'Kategorie',
     subtitle:
       'Jen pro tuto akci. Zkopírují se, když další akce vznikne na jejím základě.',
@@ -230,6 +230,7 @@ export default {
     noGroup: 'bez skupiny',
     archive: 'Archivovat',
     restore: 'Obnovit',
+    usedIncome: 'Příjmy: {n}',
     used: 'Výdaje: {n}',
     unused: 'nepoužitá',
     showArchived: 'Zobrazit archivované ({count})',
@@ -277,6 +278,11 @@ export default {
   },
   settings: {
     title: 'Nastavení financí',
+    incomeNumbers: 'Čísla příjmů',
+    incomePrefixHint:
+      'Příjmy se číslují samostatně, stejně jako výplaty, aby šlo rozhodnutí o dotaci nebo potvrzení o daru založit pod jeho číslem.',
+    incomeLocked:
+      'Předpona je pevná, jakmile existuje první příjem, aby založené dokumenty dál odpovídaly.',
     payoutNumbers: 'Čísla výplat',
     flagMissingCategories: 'Označovat výdaje bez kategorie',
     flagMissingCategoriesHint:
@@ -295,5 +301,22 @@ export default {
     name: 'Zadej název',
     prefix: 'Až 8 písmen, číslic nebo pomlček',
     recipient: 'Vyber, kdo peníze dostane',
+  },
+  fee: {
+    allGroups: 'Všechny skupiny',
+    title: 'Účastnické poplatky',
+    status: {
+      NOT_REQUIRED: 'Nic k úhradě',
+      UNPAID: 'Nezaplaceno',
+      PARTIAL: 'Částečně zaplaceno',
+      PAID: 'Zaplaceno',
+      OVERPAID: 'Přeplaceno',
+      REFUNDED: 'Vráceno',
+    },
+    method: {
+      BANK_TRANSFER: 'Převod',
+      CASH: 'Hotovost',
+      OTHER: 'Jiné',
+    },
   },
 };

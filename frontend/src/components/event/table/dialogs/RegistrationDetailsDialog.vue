@@ -6,9 +6,11 @@
   >
     <q-card
       v-if="registration"
-      class="details-card"
+      class="details-card column no-wrap"
       :class="sheet ? 'details-card--sheet' : 'rounded-xl'"
-      :style="sheet ? undefined : { width: 'min(560px, 95vw)' }"
+      :style="
+        sheet ? undefined : { width: 'min(960px, 95vw)', maxWidth: 'none' }
+      "
       :flat="sheet"
     >
       <registration-dialog-header :registration="registration">
@@ -26,7 +28,27 @@
             <registration-action-list
               :registration="registration"
               hide-details
-            />
+            >
+              <q-item
+                clickable
+                :disable="!event"
+                @click="showFormData"
+              >
+                <q-item-section>
+                  {{ t('action.showFormData') }}
+                </q-item-section>
+              </q-item>
+              <q-item
+                clickable
+                data-test="registration-history"
+                @click="showHistory"
+              >
+                <q-item-section>
+                  {{ t('action.history') }}
+                </q-item-section>
+              </q-item>
+              <q-separator />
+            </registration-action-list>
           </q-menu>
         </q-btn>
 
@@ -45,190 +67,168 @@
         </q-btn>
       </registration-dialog-header>
 
-      <q-tabs
-        v-model="activeTab"
-        align="justify"
-        no-caps
-        narrow-indicator
-        active-color="primary"
-        indicator-color="primary"
-        class="details-tabs"
-      >
-        <q-tab
-          name="details"
-          :label="t('tab.details')"
-        />
-        <q-tab
-          name="timeline"
-          :label="t('section.timeline')"
-        />
-      </q-tabs>
-
-      <q-tab-panels
-        v-model="activeTab"
-        animated
-        class="details-panels bg-transparent"
-      >
-        <q-tab-panel
-          name="details"
-          class="q-pa-none"
-        >
-          <div
-            v-if="hasDetails"
-            class="details-panel scroll"
+      <!-- Narrow: one column, the fee right after the facts. Wide: the facts
+           span the top, contact and fee sit side by side below. -->
+      <div class="details-body col scroll">
+        <div class="details-grid">
+          <section
+            v-if="personalRows.length"
+            class="area-wide"
           >
-            <section v-if="personalRows.length">
-              <div class="section-title">{{ t('section.personal') }}</div>
-              <q-list class="segmented-list">
-                <q-item
-                  v-for="row in personalRows"
-                  :key="row.key"
-                  class="segment"
+            <div class="section-title">{{ t('section.personal') }}</div>
+            <div class="fact-grid">
+              <div
+                v-for="row in personalRows"
+                :key="row.key"
+                class="fact rounded-lg"
+              >
+                <div class="fact-label row items-center no-wrap">
+                  <country-icon
+                    v-if="row.country"
+                    :country="row.country"
+                    class="q-mr-sm"
+                  />
+                  <q-icon
+                    v-else
+                    :name="row.icon"
+                    size="18px"
+                    class="fact-icon q-mr-sm"
+                  />
+                  <span class="ellipsis">{{ row.label }}</span>
+                </div>
+                <div class="fact-value">
+                  {{ row.value }}
+                </div>
+                <span
+                  v-if="row.badge"
+                  class="row-badge rounded-full"
                 >
-                  <q-item-section avatar>
-                    <div class="row-icon">
-                      <country-icon
-                        v-if="row.country"
-                        :country="row.country"
-                      />
-                      <q-icon
-                        v-else
-                        :name="row.icon"
-                        size="20px"
-                      />
-                    </div>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="row-label">
-                      {{ row.label }}
-                    </q-item-label>
-                    <q-item-label class="row-value">
-                      {{ row.value }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section
-                    v-if="row.badge"
-                    side
+                  {{ row.badge }}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <registration-fee-section
+            class="area-side"
+            :registration-id
+          />
+
+          <section
+            v-if="emails?.length || phoneNumbers.length || hasAddress"
+            class="area-main"
+          >
+            <div class="section-title">{{ t('section.contact') }}</div>
+            <q-list class="segmented-list">
+              <q-item
+                v-for="email in emails"
+                :key="email"
+                :href="`mailto:${email}`"
+                class="segment"
+                clickable
+                tag="a"
+              >
+                <q-item-section avatar>
+                  <div class="row-icon">
+                    <q-icon
+                      name="email"
+                      size="20px"
+                    />
+                  </div>
+                </q-item-section>
+                <q-item-section class="overflow-hidden">
+                  <q-item-label class="row-label">
+                    {{ t('field.email') }}
+                  </q-item-label>
+                  <q-item-label class="row-value row-value--link ellipsis">
+                    {{ email }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    class="row-action"
+                    flat
+                    icon="content_copy"
+                    round
+                    size="sm"
+                    @click.stop.prevent="copy(email)"
                   >
-                    <span class="row-badge rounded-full">{{ row.badge }}</span>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </section>
+                    <q-tooltip>
+                      {{ t('action.copy') }}
+                    </q-tooltip>
+                  </q-btn>
+                </q-item-section>
+              </q-item>
 
-            <section v-if="emails?.length || phoneNumbers.length || hasAddress">
-              <div class="section-title">{{ t('section.contact') }}</div>
-              <q-list class="segmented-list">
-                <q-item
-                  v-for="email in emails"
-                  :key="email"
-                  :href="`mailto:${email}`"
-                  class="segment"
-                  clickable
-                  tag="a"
-                >
-                  <q-item-section avatar>
-                    <div class="row-icon">
-                      <q-icon
-                        name="email"
-                        size="20px"
-                      />
-                    </div>
-                  </q-item-section>
-                  <q-item-section class="overflow-hidden">
-                    <q-item-label class="row-label">
-                      {{ t('field.email') }}
-                    </q-item-label>
-                    <q-item-label class="row-value row-value--link ellipsis">
-                      {{ email }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-btn
-                      class="row-action"
-                      flat
-                      icon="content_copy"
-                      round
-                      size="sm"
-                      @click.stop.prevent="copy(email)"
-                    >
-                      <q-tooltip>
-                        {{ t('action.copy') }}
-                      </q-tooltip>
-                    </q-btn>
-                  </q-item-section>
-                </q-item>
+              <q-item
+                v-for="phoneNumber in phoneNumbers"
+                :key="phoneNumber"
+                :href="`tel:${phoneNumber.replace(/\s/g, '')}`"
+                class="segment"
+                clickable
+                tag="a"
+              >
+                <q-item-section avatar>
+                  <div class="row-icon">
+                    <q-icon
+                      name="phone"
+                      size="20px"
+                    />
+                  </div>
+                </q-item-section>
+                <q-item-section class="overflow-hidden">
+                  <q-item-label class="row-label">
+                    {{ t('field.phone') }}
+                  </q-item-label>
+                  <q-item-label class="row-value row-value--link ellipsis">
+                    {{ phoneNumber }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    class="row-action"
+                    flat
+                    icon="content_copy"
+                    round
+                    size="sm"
+                    @click.stop.prevent="copy(phoneNumber)"
+                  >
+                    <q-tooltip>
+                      {{ t('action.copy') }}
+                    </q-tooltip>
+                  </q-btn>
+                </q-item-section>
+              </q-item>
 
-                <q-item
-                  v-for="phoneNumber in phoneNumbers"
-                  :key="phoneNumber"
-                  :href="`tel:${phoneNumber.replace(/\s/g, '')}`"
-                  class="segment"
-                  clickable
-                  tag="a"
-                >
-                  <q-item-section avatar>
-                    <div class="row-icon">
-                      <q-icon
-                        name="phone"
-                        size="20px"
-                      />
-                    </div>
-                  </q-item-section>
-                  <q-item-section class="overflow-hidden">
-                    <q-item-label class="row-label">
-                      {{ t('field.phone') }}
-                    </q-item-label>
-                    <q-item-label class="row-value row-value--link ellipsis">
-                      {{ phoneNumber }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-btn
-                      class="row-action"
-                      flat
-                      icon="content_copy"
-                      round
-                      size="sm"
-                      @click.stop.prevent="copy(phoneNumber)"
-                    >
-                      <q-tooltip>
-                        {{ t('action.copy') }}
-                      </q-tooltip>
-                    </q-btn>
-                  </q-item-section>
-                </q-item>
-
-                <q-item
-                  v-if="hasAddress"
-                  class="segment"
-                >
-                  <q-item-section avatar>
-                    <div class="row-icon">
-                      <q-icon
-                        name="home"
-                        size="20px"
-                      />
-                    </div>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="row-label">
-                      {{ t('section.address') }}
-                    </q-item-label>
-                    <q-item-label class="row-value">
-                      <div v-if="street">{{ street }}</div>
-                      <div v-if="city">{{ city }}</div>
-                      <div v-if="country">{{ country }}</div>
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </section>
-          </div>
+              <q-item
+                v-if="hasAddress"
+                class="segment"
+              >
+                <q-item-section avatar>
+                  <div class="row-icon">
+                    <q-icon
+                      name="home"
+                      size="20px"
+                    />
+                  </div>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="row-label">
+                    {{ t('section.address') }}
+                  </q-item-label>
+                  <q-item-label class="row-value">
+                    <div v-if="street">{{ street }}</div>
+                    <div v-if="city">{{ city }}</div>
+                    <div v-if="country">{{ country }}</div>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </section>
 
           <div
-            v-else
-            class="empty-state column flex-center text-center q-pa-xl"
+            v-if="!hasDetails"
+            class="area-main empty-state column flex-center text-center q-pa-xl"
           >
             <q-icon
               name="inbox"
@@ -238,36 +238,8 @@
               {{ t('empty') }}
             </div>
           </div>
-        </q-tab-panel>
-
-        <q-tab-panel
-          name="timeline"
-          class="q-pa-none"
-          lazy-render
-        >
-          <q-scroll-area class="timeline-panel">
-            <registration-timeline
-              :event-id
-              :registration-id
-              :created-at="registration.createdAt"
-            />
-          </q-scroll-area>
-        </q-tab-panel>
-      </q-tab-panels>
-
-      <q-card-actions
-        align="right"
-        class="details-actions"
-      >
-        <m-btn
-          tonal
-          primary
-          icon="assignment"
-          :disable="!event"
-          :label="t('action.showFormData')"
-          @click="showFormData"
-        />
-      </q-card-actions>
+        </div>
+      </div>
     </q-card>
   </responsive-dialog>
 </template>
@@ -275,10 +247,9 @@
 <script setup lang="ts">
 import { copyToClipboard, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { countryName } from '@/utils/countries';
 import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
@@ -288,7 +259,8 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationActionList from '@/components/event/table/RegistrationActionList.vue';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
-import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
+import RegistrationTimelineDialog from '@/components/event/table/dialogs/RegistrationTimelineDialog.vue';
+import RegistrationFeeSection from '@/components/event/finances/fees/RegistrationFeeSection.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
@@ -311,9 +283,6 @@ const { registrationId } = defineProps<{
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
 const eventId = String(route.params.eventId);
-// The timeline panel is `lazy-render`, so switching to it is what mounts
-// RegistrationTimeline and fires its fetch — not every dialog open.
-const activeTab = ref<'details' | 'timeline'>('details');
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
@@ -513,6 +482,23 @@ async function copy(value: string): Promise<void> {
   }
 }
 
+function showHistory(): void {
+  if (!registration.value) {
+    return;
+  }
+
+  const { firstName, lastName } = registration.value.computedData;
+  quasar.dialog({
+    component: RegistrationTimelineDialog,
+    componentProps: {
+      eventId,
+      registrationId,
+      createdAt: registration.value.createdAt,
+      name: [firstName, lastName].filter(Boolean).join(' '),
+    },
+  });
+}
+
 function showFormData(): void {
   if (!event.value || !registration.value) {
     return;
@@ -534,10 +520,6 @@ section:
   personal: 'Personal'
   contact: 'Contact'
   address: 'Address'
-  timeline: 'Timeline'
-
-tab:
-  details: 'Details'
 
 field:
   group: 'Group'
@@ -561,6 +543,7 @@ role:
 action:
   close: 'Close'
   menu: 'More actions'
+  history: 'History'
   copy: 'Copy'
   showFormData: 'Show form data'
 
@@ -576,10 +559,6 @@ section:
   personal: 'Persönliches'
   contact: 'Kontakt'
   address: 'Adresse'
-  timeline: 'Verlauf'
-
-tab:
-  details: 'Details'
 
 field:
   group: 'Gruppe'
@@ -603,6 +582,7 @@ role:
 action:
   close: 'Schließen'
   menu: 'Weitere Aktionen'
+  history: 'Verlauf'
   copy: 'Kopieren'
   showFormData: 'Formulardaten anzeigen'
 
@@ -618,10 +598,6 @@ section:
   personal: 'Informations personnelles'
   contact: 'Contact'
   address: 'Adresse'
-  timeline: 'Historique'
-
-tab:
-  details: 'Détails'
 
 field:
   group: 'Groupe'
@@ -645,6 +621,7 @@ role:
 action:
   close: 'Fermer'
   menu: 'Plus d’actions'
+  history: 'Historique'
   copy: 'Copier'
   showFormData: 'Afficher les données du formulaire'
 
@@ -660,10 +637,6 @@ section:
   personal: 'Dane osobowe'
   contact: 'Kontakt'
   address: 'Adres'
-  timeline: 'Historia'
-
-tab:
-  details: 'Szczegóły'
 
 field:
   group: 'Grupa'
@@ -687,6 +660,7 @@ role:
 action:
   close: 'Zamknij'
   menu: 'Więcej działań'
+  history: 'Historia'
   copy: 'Kopiuj'
   showFormData: 'Pokaż dane formularza'
 
@@ -702,10 +676,6 @@ section:
   personal: 'Osobní údaje'
   contact: 'Kontakt'
   address: 'Adresa'
-  timeline: 'Časová osa'
-
-tab:
-  details: 'Podrobnosti'
 
 field:
   group: 'Skupina'
@@ -729,6 +699,7 @@ role:
 action:
   close: 'Zavřít'
   menu: 'Další akce'
+  history: 'Historie'
   copy: 'Kopírovat'
   showFormData: 'Zobrazit data formuláře'
 
@@ -741,6 +712,7 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 
 <style scoped>
 .details-card {
+  max-height: min(840px, calc(100vh - 48px));
   background: var(--md3-surface-container-low);
   overflow: hidden;
 }
@@ -749,55 +721,77 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
   color: var(--md3-on-surface-variant);
 }
 
-/* Details size to their content; the timeline needs a fixed viewport for its
-   scroll area. */
-.details-panel {
-  display: flex;
-  flex-direction: column;
+/* Only the body scrolls. Sized by its own width, so the layout follows the
+   dialog rather than the viewport. */
+.details-body {
+  min-height: 0;
+  padding: 8px 20px 20px;
+  container-type: inline-size;
+}
+
+/* `dense` lets contact fill the row beside the fee though it comes later. */
+.details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-flow: row dense;
+  align-items: start;
   gap: 20px;
-  padding: 16px;
-  max-height: min(480px, 62vh);
 }
 
-.timeline-panel {
-  height: min(480px, 62vh);
+/* Short facts as tiles: two per row, an odd last one takes the full row. */
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
-/* The sheet draws the surface and sets the height: header, tabs and actions
-   stay put, the panels fill the rest and scroll. */
+.fact:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* Wide: the facts in one row of equal tiles; contact beside a fixed-width fee. */
+@container (min-width: 640px) {
+  .fact-grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .fact:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .details-grid:has(> .area-side) {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .details-grid .area-wide {
+    grid-column: 1 / -1;
+  }
+
+  .details-grid:has(> .area-side) .area-main {
+    grid-column: 1;
+  }
+
+  .details-grid .area-side {
+    grid-column: 2;
+  }
+}
+
+/* The sheet draws the surface and sets the height. */
 .details-card--sheet {
-  display: flex;
-  flex-direction: column;
   width: 100%;
   height: 100%;
+  max-height: none;
   background: transparent;
 }
 
 .details-card--sheet :deep(.dialog-header) {
   padding-top: 0;
-  background: transparent;
 }
 
-.details-card--sheet .details-tabs {
-  background: transparent;
-}
-
-.details-card--sheet .details-panels {
-  flex: 1;
-  min-height: 0;
-}
-
-.details-card--sheet .details-panel {
-  max-height: none;
-  height: 100%;
-}
-
-.details-card--sheet .timeline-panel {
-  height: 100%;
-}
-
-.details-card--sheet .details-actions {
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+.details-card--sheet .details-body {
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
 }
 
 .section-title {
@@ -806,6 +800,37 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--md3-primary);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
+}
+
+.fact-label {
+  max-width: 100%;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--md3-on-surface-variant);
+}
+
+.fact-icon {
+  color: var(--md3-primary);
+}
+
+.fact-value {
+  max-width: 100%;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5rem;
+  overflow-wrap: anywhere;
 }
 
 /* MD3 Expressive segmented list: rows are separate tiles with a small gap,
@@ -866,10 +891,10 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 
 .row-badge {
   display: inline-block;
-  padding: 4px 12px;
-  font-size: 0.875rem;
+  padding: 2px 10px;
+  font-size: 0.75rem;
   font-weight: 500;
-  line-height: 1.25rem;
+  line-height: 1.125rem;
   white-space: nowrap;
   background: var(--md3-tertiary-container);
   color: var(--md3-on-tertiary-container);
@@ -885,32 +910,5 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 
 .empty-state {
   color: var(--md3-on-surface-variant);
-}
-
-.details-actions {
-  padding: 8px 16px 16px;
-}
-
-/* Shares the header's surface tone, so the two read as one top zone; the
-   divider from content sits below the tabs instead of between them. */
-.details-tabs {
-  background: var(--md3-surface-container);
-  border-bottom: 1px solid var(--md3-outline-variant);
-}
-
-.details-tabs :deep(.q-tab) {
-  min-height: 48px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: var(--md3-on-surface-variant);
-}
-
-.details-tabs :deep(.q-tab--active) {
-  color: var(--md3-primary);
-}
-
-.details-tabs :deep(.q-tabs__indicator) {
-  height: 3px;
-  border-radius: 3px 3px 0 0;
 }
 </style>

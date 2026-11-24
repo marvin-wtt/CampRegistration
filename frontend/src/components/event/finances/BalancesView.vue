@@ -1,48 +1,49 @@
 <template>
-  <div class="column no-wrap balances-view">
+  <finance-tab-layout loose>
     <!-- What is left to do, by the same rule as each card's status. -->
-    <finance-totals-strip
+    <finance-headline
       v-if="viewsAll && balances.length > 0"
-      :alert="toComeBack > 0"
+      :icon="allSettled ? 'task_alt' : 'account_balance_wallet'"
+      :eyebrow="t('headline.toPay')"
+      :amount="allSettled ? t('headline.allSettled') : money(stillOpen)"
+      :amount-tone="allSettled ? 'positive' : undefined"
+      :accent="allSettled ? 'positive' : 'primary'"
+      :caption="allSettled ? undefined : t('headline.people', openPeople)"
+      :badge="{
+        label: t('finance.balance.settledProgress', {
+          settled,
+          total: balances.length,
+        }),
+        tone: allSettled ? 'positive' : 'primary',
+        icon: allSettled ? 'check' : 'group',
+      }"
+      :segments="[
+        { key: 'settled', value: settled, tone: 'positive' },
+        { key: 'agreed', value: agreedPeople, tone: 'info' },
+        {
+          key: 'open',
+          value: balances.length - settled - agreedPeople,
+          tone: 'neutral',
+        },
+      ]"
+      :stats="[
+        {
+          key: 'agreed',
+          label: t('headline.agreed'),
+          value: money(agreedUnpaid),
+          tone: 'info',
+          shown: agreedUnpaid > 0,
+        },
+        {
+          key: 'back',
+          label: t('headline.toComeBack'),
+          value: money(toComeBack),
+          tone: 'warning',
+          shown: toComeBack > 0,
+        },
+      ]"
       data-test="balance-totals"
-    >
-      <div class="figures row items-end">
-        <finance-figure
-          :label="t('finance.balance.stillOpen')"
-          :value="money(stillOpen)"
-          lead
-        />
-        <finance-figure
-          :label="t('finance.balance.agreedUnpaid')"
-          :value="money(agreedUnpaid)"
-        />
-        <!-- Rare: only while someone owes the event. -->
-        <finance-figure
-          v-if="toComeBack > 0"
-          :label="t('finance.balance.toComeBack')"
-          :value="money(toComeBack)"
-          tone="warning"
-        />
-      </div>
-      <div class="row items-center no-wrap q-gutter-x-md q-mt-sm">
-        <q-linear-progress
-          :value="settled / balances.length"
-          color="primary"
-          track-color="surface-container-highest"
-          rounded
-          size="6px"
-          class="col"
-        />
-        <span class="text-caption text-on-surface-variant no-wrap">
-          {{
-            t('finance.balance.settledProgress', {
-              settled,
-              total: balances.length,
-            })
-          }}
-        </span>
-      </div>
-    </finance-totals-strip>
+    />
 
     <div
       v-if="balances.length === 0"
@@ -83,7 +84,7 @@
         viewsAll ? t('finance.balance.formula') : t('finance.balance.ownOnly')
       }}
     </p>
-  </div>
+  </finance-tab-layout>
 </template>
 
 <script lang="ts" setup>
@@ -98,8 +99,8 @@ import type {
 } from '@camp-registration/common/entities';
 import { partyKey, recipientKey } from '@camp-registration/common/utils';
 import BalanceCard from '@/components/event/finances/BalanceCard.vue';
-import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
-import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import FinanceHeadline from '@/components/event/finances/FinanceHeadline.vue';
+import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { usePayoutActions } from '@/composables/payoutActions';
@@ -139,6 +140,16 @@ const toComeBack = computed(() =>
   balances.reduce((sum, b) => sum + Math.max(-b.balance, 0), 0),
 );
 const settled = computed(() => balances.filter((b) => b.balance === 0).length);
+// Arranged but not paid yet: neither settled nor still to arrange.
+const agreedPeople = computed(
+  () => balances.filter((b) => b.balance !== 0 && b.toPay > 0).length,
+);
+const openPeople = computed(
+  () => balances.filter((b) => b.balance !== 0).length,
+);
+const allSettled = computed(
+  () => settled.value === balances.length && agreedUnpaid.value === 0,
+);
 
 // --- Links: `?tab=balances&payout=<id>` opens a payout, e.g. to sign it ----
 
@@ -192,17 +203,54 @@ function pay(balance: FinanceBalance, direction: PayoutDirection) {
 </script>
 
 <style scoped>
-.balances-view {
-  gap: 24px;
-}
-
 .balance-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
-
-.figures {
-  gap: 8px 32px;
-}
 </style>
+
+<i18n lang="yaml" locale="en">
+headline:
+  toPay: 'Still to pay out'
+  allSettled: 'All settled'
+  people: '{n} person not settled | {n} people not settled'
+  agreed: 'Agreed, not transferred'
+  toComeBack: 'To come back'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+headline:
+  toPay: 'Noch auszuzahlen'
+  allSettled: 'Alles ausgeglichen'
+  people: '{n} Person nicht ausgeglichen | {n} Personen nicht ausgeglichen'
+  agreed: 'Vereinbart, nicht überwiesen'
+  toComeBack: 'Zurückzubekommen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+headline:
+  toPay: 'Encore à rembourser'
+  allSettled: 'Tout est réglé'
+  people: '{n} personne non réglée | {n} personnes non réglées'
+  agreed: 'Convenu, pas encore viré'
+  toComeBack: 'À récupérer'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+headline:
+  toPay: 'Jeszcze do wypłaty'
+  allSettled: 'Wszystko rozliczone'
+  people: 'Nierozliczone osoby: {n}'
+  agreed: 'Uzgodniono, nie przelano'
+  toComeBack: 'Do odzyskania'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+headline:
+  toPay: 'Zbývá vyplatit'
+  allSettled: 'Vše vyrovnáno'
+  people: 'Nevyrovnané osoby: {n}'
+  agreed: 'Dohodnuto, nepřevedeno'
+  toComeBack: 'K vrácení'
+</i18n>

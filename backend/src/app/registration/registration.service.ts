@@ -23,13 +23,18 @@ import { isParticipant } from '@camp-registration/common/form';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
-import type { RegistrationDeleteReason } from '@camp-registration/common/entities';
+import type {
+  PaymentSettlement,
+  RegistrationDeleteReason,
+} from '@camp-registration/common/entities';
+import { PaymentService } from '#app/payment/payment.service';
 import {
   type AuditedRegistration,
   registrationAuditPolicy,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { batchesById } from '#core/database/batches';
+import { nextPaymentReference } from '#app/finance/finance.sequence';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import {
   assertConsentsGiven,
@@ -92,6 +97,7 @@ export class RegistrationService extends BaseService {
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService) private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -168,6 +174,12 @@ export class RegistrationService extends BaseService {
         // Re-read inside the transaction: a deletion that started after this
         // request loaded the event must still stop it.
         await assertNotPurged(transaction, event.id);
+        // First, so concurrent registrations of the event queue on this row
+        // lock instead of deadlocking over the capacity reads below.
+        const paymentReference = await nextPaymentReference(
+          transaction,
+          event.id,
+        );
         // Staff never wait for a place.
         const waitingList =
           isParticipant(computedData.role) &&
@@ -188,6 +200,7 @@ export class RegistrationService extends BaseService {
             status,
             quotedAmount,
             currency: event.currency,
+            paymentReference,
             consentTexts:
               Object.keys(consentTexts).length > 0 ? consentTexts : undefined,
             platformPrivacyPolicyUpdatedAt:
@@ -393,8 +406,11 @@ export class RegistrationService extends BaseService {
   async deleteRegistration(
     registration: Registration,
     reason?: RegistrationDeleteReason,
+    settlement?: PaymentSettlement,
   ) {
     await this.transaction(async (tx) => {
+      // Its payments stay as the accounting record (docs/payments.md).
+      await this.paymentService.settleForDeletion(registration, settlement);
       const deleted = await tx.registration.delete({
         where: { id: registration.id },
       });

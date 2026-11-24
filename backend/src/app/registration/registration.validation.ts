@@ -2,6 +2,7 @@ import { z, type ZodType } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
 import { RegistrationForm } from '#app/registration/registration.form';
 import {
+  PAYMENT_SETTLEMENTS,
   REGISTRATION_DELETE_REASONS,
   type RegistrationCreateData,
   type RegistrationUpdateData,
@@ -131,6 +132,7 @@ const destroy = z.object({
     .object({
       suppressMessage: z.stringbool(),
       reason: z.enum(REGISTRATION_DELETE_REASONS),
+      settlement: z.enum(PAYMENT_SETTLEMENTS),
     })
     .partial() satisfies ZodType<RegistrationDeleteQuery>,
 });
