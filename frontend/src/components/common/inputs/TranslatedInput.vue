@@ -216,43 +216,17 @@
               </q-input>
             </template>
             <!-- One language at a time: with many locales a field each would be
-                 a long list, so the author adds the ones they write in. One
-                 button and a menu, however many locales there are. -->
+                 a long list, so the author adds the ones they write in. -->
             <div
               v-if="missingKeys.length"
               class="row"
               data-test="add-translation"
             >
-              <q-btn
-                :label="t('addTranslation')"
-                icon="add"
-                color="primary"
-                flat
-                dense
-                rounded
-                no-caps
-                size="sm"
+              <add-locale-menu
+                :locales="missingKeys"
                 :disable="Boolean(props.disable)"
-                data-test="add-translation-button"
-              >
-                <q-menu>
-                  <q-list dense>
-                    <q-item
-                      v-for="locale in missingKeys"
-                      :key="locale"
-                      v-close-popup
-                      clickable
-                      :data-test="`add-translation-${locale}`"
-                      @click="addLocale(locale)"
-                    >
-                      <q-item-section avatar>
-                        <country-icon v-bind="flagProps(locale)" />
-                      </q-item-section>
-                      <q-item-section>{{ localeName(locale) }}</q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
+                @add="addLocale"
+              />
             </div>
           </div>
         </div>
@@ -271,6 +245,7 @@
 
 <script lang="ts" setup>
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import AddLocaleMenu from '@/components/common/localization/AddLocaleMenu.vue';
 import { computed, ref, watch } from 'vue';
 import { type QInputProps } from 'quasar';
 import TranslationToggleBtn from '@/components/common/inputs/TranslationToggleBtn.vue';
@@ -281,6 +256,7 @@ import {
 } from '@/composables/passthroughProps';
 import { useTranslationStore } from '@/stores/translation-store';
 import { COUNTRY_LOCALES } from '@/i18n/locales';
+import { useAddedLocales, useLanguageName } from '@/composables/addedLocales';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
@@ -301,6 +277,9 @@ interface Props extends Omit<
   // itself — for values that can differ per locale but aren't language text,
   // e.g. a number.
   noTranslation?: boolean | undefined;
+  // Show the user's language and those with text, adding others one at a
+  // time. Ignored with `countries`: every country group needs its own value.
+  addLanguages?: boolean | undefined;
   // A native attribute, not a QInput prop — declared so it is forwarded to the
   // inputs instead of falling through to the wrapper's root element.
   placeholder?: string | undefined;
@@ -330,6 +309,7 @@ const props = withDefaults(defineProps<Props>(), {
   always: false,
   defaultUntranslated: false,
   noTranslation: false,
+  addLanguages: false,
 });
 
 // `autofocus` goes to the first input only: on each of them, the last
@@ -341,6 +321,7 @@ const inputProps = usePassthroughProps(props, [
   'always',
   'defaultUntranslated',
   'noTranslation',
+  'addLanguages',
 ]);
 
 const keys = computed<string[]>(() => props.countries ?? props.locales);
@@ -362,54 +343,28 @@ const enabled = computed<boolean>(() => {
   return keys.value.length > 1;
 });
 
-// Translations are added one language at a time; values per country group
-// (a capacity, a contact) list every group, as each needs its own.
-const addsLocales = computed<boolean>(() => !props.countries);
-
-// Languages the author added that hold no text yet.
-const addedKeys = ref<string[]>([]);
-
-// The language shown first: the user's own where the field offers it.
-const defaultKey = computed<string | undefined>(
-  () =>
-    keys.value.find((key) => languageOf(key) === userLocale.value) ??
-    keys.value[0],
+const addsLocales = computed<boolean>(
+  () => props.addLanguages && !props.countries,
 );
 
-// The default first, then the languages that already had text, then each
-// added one below the others, in the order it was added.
-const shownKeys = computed<string[]>(() => {
-  if (!addsLocales.value) {
-    return keys.value;
-  }
-  const rank = (key: string) => {
-    if (key === defaultKey.value) {
-      return -1;
-    }
-    const added = addedKeys.value.indexOf(key);
-    return added === -1 ? keys.value.indexOf(key) : keys.value.length + added;
-  };
-  return keys.value
-    .filter(
-      (key) =>
-        key === defaultKey.value ||
-        hasContent(translations.value[key]) ||
-        addedKeys.value.includes(key),
-    )
-    .sort((a, b) => rank(a) - rank(b));
-});
+const addedLocales = useAddedLocales(keys, () =>
+  keys.value.filter((key) => hasContent(translations.value[key])),
+);
+
+const shownKeys = computed<string[]>(() =>
+  addsLocales.value ? addedLocales.shownLocales.value : keys.value,
+);
 
 const missingKeys = computed<string[]>(() =>
-  keys.value.filter((key) => !shownKeys.value.includes(key)),
+  addsLocales.value ? addedLocales.missingLocales.value : [],
 );
 
-// Any language but the default can be removed again, text included.
 function canRemove(locale: string): boolean {
-  return addsLocales.value && locale !== defaultKey.value;
+  return addsLocales.value && addedLocales.canRemove(locale);
 }
 
 function addLocale(locale: string) {
-  addedKeys.value = [...addedKeys.value, locale];
+  addedLocales.add(locale);
   if (canAutoTranslate(locale)) {
     void autoTranslateInto(locale);
   }
@@ -430,18 +385,14 @@ const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
 
 // Localized country/language name for the locale marker tooltip; falls back to
 // the uppercased code when the name is unknown.
+const languageName = useLanguageName();
 function localeName(value: string): string {
   if (props.countries) {
     const key = `country.${value.toLowerCase()}`;
     return te(key) ? tGlobal(key) : value.toUpperCase();
   }
 
-  try {
-    const names = new Intl.DisplayNames([locale.value], { type: 'language' });
-    return names.of(value) ?? value.toUpperCase();
-  } catch {
-    return value.toUpperCase();
-  }
+  return languageName(value);
 }
 
 // The flag + code prepend is visual only, so screen readers can't tell one
@@ -502,12 +453,12 @@ watch(
   { deep: true },
 );
 
-// Clearing a language removes its field too; the default one stays.
+// With languages added one at a time, clearing one removes its field too.
 function clearTranslation(locale: string) {
   if (locale in translations.value) {
     delete translations.value[locale];
   }
-  addedKeys.value = addedKeys.value.filter((key) => key !== locale);
+  addedLocales.remove(locale);
 }
 
 // Bumped on every run, so a superseded one can neither write its stale result
@@ -707,31 +658,26 @@ watch(
 
 <i18n lang="yaml" locale="en">
 autoTranslate: 'Translate from another language'
-addTranslation: 'Add language'
 removeLocale: 'Remove {language}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 autoTranslate: 'Aus einer anderen Sprache übersetzen'
-addTranslation: 'Sprache hinzufügen'
 removeLocale: '{language} entfernen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 autoTranslate: 'Traduire depuis une autre langue'
-addTranslation: 'Ajouter une langue'
 removeLocale: 'Retirer : {language}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 autoTranslate: 'Przetłumacz z innego języka'
-addTranslation: 'Dodaj język'
 removeLocale: 'Usuń: {language}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 autoTranslate: 'Přeložit z jiného jazyka'
-addTranslation: 'Přidat jazyk'
 removeLocale: 'Odebrat: {language}'
 </i18n>
 

@@ -131,7 +131,12 @@
         </q-card-section>
         <q-separator />
         <q-card-section>
-          <locale-tabs v-model="freeTextLocale" />
+          <locale-tabs
+            v-model="freeTextLocale"
+            :filled="filledFreeTextLocales"
+            add-languages
+            @remove="clearFreeText"
+          />
           <rich-text-editor
             v-model="freeTextForLocale"
             :placeholder="t('freeText.placeholder')"
@@ -296,6 +301,7 @@
                   :model-value="purpose(key)?.legitimateInterest"
                   :label="t('field.legitimateInterest')"
                   :locales
+                  add-languages
                   always
                   dense
                   outlined
@@ -655,7 +661,12 @@
         >
           <p class="text-body2">{{ t('step.additional.hint') }}</p>
 
-          <locale-tabs v-model="additionalLocale" />
+          <locale-tabs
+            v-model="additionalLocale"
+            :filled="filledAdditionalLocales"
+            add-languages
+            @remove="clearAdditional"
+          />
           <rich-text-editor
             v-model="additionalForLocale"
             :placeholder="t('field.additionalPlaceholder')"
@@ -785,7 +796,11 @@ import {
   providePrivacyFramework,
   usePrivacyLabels,
 } from '@/composables/privacyLabels';
-import { localeText, useLocaleTextModel } from '@/composables/localeText';
+import {
+  localeText,
+  useLocaleTextModel,
+  withLocaleText,
+} from '@/composables/localeText';
 import { countryName } from '@/utils/countries';
 import { APP_LOCALES as locales } from '@/i18n/locales';
 
@@ -1167,11 +1182,23 @@ function addCustomRecipient() {
 // per-locale record so a notice can be read in every language a event runs in.
 // Art. 12 wants the notice in a language the reader understands, and nothing
 // translates free text for the organization — so name what is still missing.
-const missingFreeTextLocales = computed(() =>
-  locales.filter(
-    (loc) => localeText(content.value.freeText, loc).trim() === '',
-  ),
+const filledFreeTextLocales = computed(() =>
+  locales.filter((loc) => localeText(content.value.freeText, loc).trim()),
 );
+const missingFreeTextLocales = computed(() =>
+  locales.filter((loc) => !filledFreeTextLocales.value.includes(loc)),
+);
+const filledAdditionalLocales = computed(() =>
+  locales.filter((loc) => localeText(content.value.additional, loc).trim()),
+);
+
+function clearFreeText(loc: string) {
+  content.value.freeText = withLocaleText(content.value.freeText, loc, '');
+}
+
+function clearAdditional(loc: string) {
+  content.value.additional = withLocaleText(content.value.additional, loc, '');
+}
 
 async function publish() {
   publishing.value = true;

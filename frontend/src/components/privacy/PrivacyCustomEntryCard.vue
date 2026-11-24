@@ -12,6 +12,7 @@
           :label="t(`name.${kind}`)"
           :locales
           :countries
+          add-languages
           default-untranslated
           dense
           outlined
@@ -58,6 +59,7 @@
           :label="t('legitimateInterest')"
           :locales
           :countries
+          add-languages
           always
           dense
           outlined

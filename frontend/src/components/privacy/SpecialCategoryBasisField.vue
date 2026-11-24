@@ -52,6 +52,7 @@
       :hint="t('privacy.editor.field.legalReferenceHint')"
       :locales
       :countries
+      add-languages
       :disable="!canEdit"
       default-untranslated
       always
