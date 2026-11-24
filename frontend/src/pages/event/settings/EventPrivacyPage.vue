@@ -141,9 +141,13 @@
           icon="checklist"
           :title="t('addendum.purposes')"
           :summary="
-            sectionSummary(inheritedPurposes.length, ownPurposeKeys.length)
+            sectionSummary(
+              inheritedPurposes.length,
+              ownPurposeKeys.length + eventCustomPurposes.length,
+            )
           "
-          :more-count="canEdit ? morePurposeKeys.length : 0"
+          :more-count="canEdit ? Math.max(morePurposeKeys.length, 1) : 0"
+          v-model:open="purposesMoreOpen"
         >
           <privacy-entry-list
             v-if="inheritedPurposes.length || ownPurposeKeys.length"
@@ -195,6 +199,19 @@
               >
                 {{ legalBasisCaution(eventPurpose(key)?.legalBasis) }}
               </div>
+              <translated-input
+                v-if="eventPurpose(key)?.legalBasis === 'legitimate_interests'"
+                :model-value="eventPurpose(key)?.legitimateInterest"
+                :label="t('field.legitimateInterest')"
+                :countries="textCountries"
+                always
+                dense
+                outlined
+                rounded
+                :disable="!canEdit"
+                class="q-mt-sm"
+                @update:model-value="(v) => setEventLegitimateInterest(key, v)"
+              />
               <div
                 v-if="eventPurpose(key)?.legalBasis === 'consent'"
                 class="text-caption text-on-surface-variant q-mt-xs"
@@ -208,8 +225,33 @@
             </privacy-entry-row>
           </privacy-entry-list>
 
+          <!-- Entries only this event has, named by its team. Adding one
+               sits with the catalogue under "add more"; once added, it is
+               listed here like any ticked entry. -->
+          <div
+            v-if="eventCustomPurposes.length"
+            class="q-mt-sm"
+          >
+            <privacy-custom-entry-card
+              :ref="(card) => setCustomCard(entry.key, card)"
+              v-for="entry in eventCustomPurposes"
+              :key="entry.key"
+              :entry
+              kind="purpose"
+              :countries="textCountries"
+              :can-edit="canEdit"
+              @update:entry="
+                (updated) =>
+                  (content.purposes = replaceEntry(content.purposes, updated))
+              "
+              @remove="
+                content.purposes = withoutKey(content.purposes, entry.key)
+              "
+            />
+          </div>
+
           <template #more>
-            <privacy-entry-list>
+            <privacy-entry-list v-if="morePurposeKeys.length">
               <privacy-entry-row
                 v-for="key in morePurposeKeys"
                 :key="key"
@@ -219,6 +261,23 @@
                 @update:selected="(on) => toggleEventPurpose(key, on)"
               />
             </privacy-entry-list>
+
+            <div class="q-mt-md">
+              <div class="text-body2 text-weight-medium">
+                {{ t('custom.purpose.title') }}
+              </div>
+              <div class="text-caption text-on-surface-variant q-mb-sm">
+                {{ t('custom.purpose.hint') }}
+              </div>
+              <m-btn
+                :label="t('custom.purpose.add')"
+                icon="add"
+                outline
+                color="primary"
+                :disable="!canEdit"
+                @click="addEventPurpose"
+              />
+            </div>
           </template>
         </privacy-section>
 
@@ -229,10 +288,13 @@
           :summary="
             sectionSummary(
               inheritedCategoryCount,
-              ownCategoryKeys.length - inheritedCategoryKeys.length,
+              ownCategoryKeys.length -
+                inheritedCategoryKeys.length +
+                eventCustomCategories.length,
             )
           "
-          :more-count="canEdit ? moreCategoryKeys.length : 0"
+          :more-count="canEdit ? Math.max(moreCategoryKeys.length, 1) : 0"
+          v-model:open="categoriesMoreOpen"
         >
           <!-- The registration gate refuses this. -->
           <q-banner
@@ -348,7 +410,7 @@
                     :model-value="dataCategory(key)?.specialCategoryBasis"
                     :legal-reference="dataCategory(key)?.legalReference"
                     :can-edit="canEdit"
-                    :locales="additionalLocales"
+                    :countries="textCountries"
                     @update:model-value="(value) => setSpecialBasis(key, value)"
                     @update:legal-reference="
                       (value) => setLegalReference(key, value)
@@ -380,7 +442,7 @@
                     :model-value="dataCategory(key)?.specialCategoryBasis"
                     :legal-reference="dataCategory(key)?.legalReference"
                     :can-edit="canEdit"
-                    :locales="additionalLocales"
+                    :countries="textCountries"
                     @update:model-value="(value) => setSpecialBasis(key, value)"
                     @update:legal-reference="
                       (value) => setLegalReference(key, value)
@@ -420,8 +482,39 @@
             </privacy-entry-row>
           </privacy-entry-list>
 
+          <!-- Entries only this event has, named by its team. Adding one
+               sits with the catalogue under "add more"; once added, it is
+               listed here like any ticked entry. -->
+          <div
+            v-if="eventCustomCategories.length"
+            class="q-mt-sm"
+          >
+            <privacy-custom-entry-card
+              :ref="(card) => setCustomCard(entry.key, card)"
+              v-for="entry in eventCustomCategories"
+              :key="entry.key"
+              :entry
+              kind="category"
+              :countries="textCountries"
+              :can-edit="canEdit"
+              @update:entry="
+                (updated) =>
+                  (content.dataCategories = replaceEntry(
+                    content.dataCategories,
+                    updated,
+                  ))
+              "
+              @remove="
+                content.dataCategories = withoutKey(
+                  content.dataCategories,
+                  entry.key,
+                )
+              "
+            />
+          </div>
+
           <template #more>
-            <privacy-entry-list>
+            <privacy-entry-list v-if="moreCategoryKeys.length">
               <privacy-entry-row
                 v-for="key in moreCategoryKeys"
                 :key="key"
@@ -432,6 +525,23 @@
                 @update:selected="(on) => toggleDataCategory(key, on)"
               />
             </privacy-entry-list>
+
+            <div class="q-mt-md">
+              <div class="text-body2 text-weight-medium">
+                {{ t('custom.category.title') }}
+              </div>
+              <div class="text-caption text-on-surface-variant q-mb-sm">
+                {{ t('custom.category.hint') }}
+              </div>
+              <m-btn
+                :label="t('custom.category.add')"
+                icon="add"
+                outline
+                color="primary"
+                :disable="!canEdit"
+                @click="addEventCategory"
+              />
+            </div>
           </template>
         </privacy-section>
 
@@ -442,10 +552,13 @@
           :summary="
             sectionSummary(
               inheritedRecipientCount,
-              ownRecipientKeys.length - inheritedRecipientKeys.length,
+              ownRecipientKeys.length -
+                inheritedRecipientKeys.length +
+                eventCustomRecipients.length,
             )
           "
-          :more-count="canEdit ? moreRecipientKeys.length : 0"
+          :more-count="canEdit ? Math.max(moreRecipientKeys.length, 1) : 0"
+          v-model:open="recipientsMoreOpen"
         >
           <privacy-entry-list
             v-if="ownRecipientKeys.length || inheritedCustomRecipients.length"
@@ -543,8 +656,36 @@
             </privacy-entry-row>
           </privacy-entry-list>
 
+          <!-- Entries only this event has, named by its team. Adding one
+               sits with the catalogue under "add more"; once added, it is
+               listed here like any ticked entry. -->
+          <div
+            v-if="eventCustomRecipients.length"
+            class="q-mt-sm"
+          >
+            <privacy-custom-entry-card
+              :ref="(card) => setCustomCard(entry.key, card)"
+              v-for="entry in eventCustomRecipients"
+              :key="entry.key"
+              :entry
+              kind="recipient"
+              :countries="textCountries"
+              :can-edit="canEdit"
+              @update:entry="
+                (updated) =>
+                  (content.recipients = replaceEntry(
+                    content.recipients,
+                    updated,
+                  ))
+              "
+              @remove="
+                content.recipients = withoutKey(content.recipients, entry.key)
+              "
+            />
+          </div>
+
           <template #more>
-            <privacy-entry-list>
+            <privacy-entry-list v-if="moreRecipientKeys.length">
               <privacy-entry-row
                 v-for="key in moreRecipientKeys"
                 :key="key"
@@ -554,6 +695,23 @@
                 @update:selected="(on) => toggleRecipient(key, on)"
               />
             </privacy-entry-list>
+
+            <div class="q-mt-md">
+              <div class="text-body2 text-weight-medium">
+                {{ t('custom.recipient.title') }}
+              </div>
+              <div class="text-caption text-on-surface-variant q-mb-sm">
+                {{ t('custom.recipient.hint') }}
+              </div>
+              <m-btn
+                :label="t('custom.recipient.add')"
+                icon="add"
+                outline
+                color="primary"
+                :disable="!canEdit"
+                @click="addEventRecipient"
+              />
+            </div>
           </template>
         </privacy-section>
 
@@ -688,7 +846,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -707,6 +865,8 @@ import {
   isAdvisorySpecialCategory,
   isAlwaysRecipient,
   isCustomKey,
+  isEventCustomKey,
+  nextEventCustomKey,
   isSpecialCategory,
   normalizeExclusions,
   publishableAddendum,
@@ -724,13 +884,16 @@ import {
   type PublishedPrivacyNotice,
   type SpecialCategoryBasisKey,
 } from '@camp-registration/common/privacy';
+import type { Translatable } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
 import InheritedEntryToggle, {
   type InheritedEntryState,
 } from '@/components/privacy/InheritedEntryToggle.vue';
 import PrivacyCategoryNotes from '@/components/privacy/PrivacyCategoryNotes.vue';
+import PrivacyCustomEntryCard from '@/components/privacy/PrivacyCustomEntryCard.vue';
 import PrivacyEntryList from '@/components/privacy/PrivacyEntryList.vue';
 import PrivacyEntryRow from '@/components/privacy/PrivacyEntryRow.vue';
 import PrivacySection from '@/components/privacy/PrivacySection.vue';
@@ -747,7 +910,10 @@ import {
 } from '@/composables/privacyLabels';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
-import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
+import {
+  replaceEntry,
+  usePrivacyEntryEditor,
+} from '@/composables/privacyEntryEditor';
 import { localeText, useLocaleTextModel } from '@/composables/localeText';
 import {
   eventDataTagPrivacyCategory,
@@ -816,6 +982,8 @@ const {
 } = usePrivacyEntryEditor(content);
 
 const eventId = computed(() => event.value?.id);
+// The event's own texts are written per country, like its other texts.
+const textCountries = computed(() => event.value?.countries ?? []);
 const organizationId = computed(() => event.value?.organizationId);
 const canEdit = computed(() => can('event.edit'));
 const canEditOrganization = computed(
@@ -1164,6 +1332,86 @@ function setEventLegalBasis(key: PrivacyPurposeKey, value: LegalBasisKey) {
     entry.legalBasis = value;
   }
 }
+function setEventLegitimateInterest(key: PrivacyPurposeKey, value: unknown) {
+  const entry = eventPurpose(key);
+  if (entry) {
+    entry.legitimateInterest = (value ?? null) as Translatable | null;
+  }
+}
+
+/* Entries only this event has */
+
+// Their keys come from a range of their own (`nextEventCustomKey`), so none
+// can replace an organization entry when the two are composed.
+const eventCustomPurposes = computed(() =>
+  (content.value.purposes ?? []).filter((entry) => isEventCustomKey(entry.key)),
+);
+const eventCustomCategories = computed(() =>
+  (content.value.dataCategories ?? []).filter((entry) =>
+    isEventCustomKey(entry.key),
+  ),
+);
+const eventCustomRecipients = computed(() =>
+  (content.value.recipients ?? []).filter((entry) =>
+    isEventCustomKey(entry.key),
+  ),
+);
+
+// Whether each section's "add more" is open: adding an own entry closes it.
+const purposesMoreOpen = ref(false);
+const categoriesMoreOpen = ref(false);
+const recipientsMoreOpen = ref(false);
+
+const customCards = new Map<string, { reveal: () => void }>();
+
+function setCustomCard(key: string, card: unknown) {
+  if (card) {
+    customCards.set(key, card as { reveal: () => void });
+  } else {
+    customCards.delete(key);
+  }
+}
+
+/**
+ * The button sits at the end of "add more", the new card in the list above
+ * it: the panel closes, as choosing is done, and the card is brought to the
+ * author with the cursor in its name.
+ */
+async function revealAdded(key: string, moreOpen: Ref<boolean>) {
+  moreOpen.value = false;
+  await nextTick();
+  customCards.get(key)?.reveal();
+}
+
+// No basis preset: nothing is known about the purpose yet, so the author picks.
+function addEventPurpose() {
+  const entries = content.value.purposes ?? [];
+  const key = nextEventCustomKey(entries);
+  content.value.purposes = [...entries, { key, legalBasis: null, label: null }];
+  void revealAdded(key, purposesMoreOpen);
+}
+function addEventCategory() {
+  const entries = content.value.dataCategories ?? [];
+  const key = nextEventCustomKey(entries);
+  content.value.dataCategories = [
+    ...entries,
+    { key, label: null, special: false },
+  ];
+  void revealAdded(key, categoriesMoreOpen);
+}
+function addEventRecipient() {
+  const entries = content.value.recipients ?? [];
+  const key = nextEventCustomKey(entries);
+  content.value.recipients = [...entries, { key, label: null }];
+  void revealAdded(key, recipientsMoreOpen);
+}
+
+function withoutKey<T extends { key: string }>(
+  entries: T[] | undefined,
+  key: string,
+): T[] {
+  return (entries ?? []).filter((entry) => entry.key !== key);
+}
 
 /* Recipients */
 
@@ -1510,6 +1758,7 @@ addendum:
   suggestedBlocking: 'This event’s form asks for {categories}. Until they are declared here, the event takes no registrations.'
   applySuggested: 'Add these'
 field:
+  legitimateInterest: 'Describe the legitimate interest'
   legalBasis: 'Legal basis'
   additionalPlaceholder: 'Additional privacy information for this event…'
 status:
@@ -1532,6 +1781,19 @@ summary:
   inherited: '{count} from your organisation'
   own: '{count} of this event'
   none: 'Nothing yet'
+custom:
+  purpose:
+    title: 'Something only this event does?'
+    hint: 'Add a purpose that neither the list nor your organisation covers.'
+    add: 'Add a purpose'
+  category:
+    title: 'Other data this event collects?'
+    hint: 'Name it as a category, not as a single form field.'
+    add: 'Add a category'
+  recipient:
+    title: 'Anyone else receiving data?'
+    hint: 'For example a host family network, a bus company or a partner school of this event.'
+    add: 'Add a recipient'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -1563,6 +1825,7 @@ addendum:
   suggestedBlocking: 'Das Formular dieser Veranstaltung fragt nach {categories}. Solange sie hier nicht angegeben sind, nimmt die Veranstaltung keine Anmeldungen an.'
   applySuggested: 'Hinzufügen'
 field:
+  legitimateInterest: 'Das berechtigte Interesse beschreiben'
   legalBasis: 'Rechtsgrundlage'
   additionalPlaceholder: 'Zusätzliche Datenschutzinformationen zu dieser Veranstaltung…'
 status:
@@ -1585,6 +1848,19 @@ summary:
   inherited: '{count} von der Organisation'
   own: '{count} eigene'
   none: 'Noch nichts angegeben'
+custom:
+  purpose:
+    title: 'Etwas, das nur diese Veranstaltung tut?'
+    hint: 'Ergänze einen Zweck, den weder die Liste noch eure Organisation abdeckt.'
+    add: 'Zweck hinzufügen'
+  category:
+    title: 'Weitere Daten, die diese Veranstaltung erhebt?'
+    hint: 'Beschreibe eine Kategorie, nicht ein einzelnes Formularfeld.'
+    add: 'Kategorie hinzufügen'
+  recipient:
+    title: 'Erhält noch jemand Daten?'
+    hint: 'Zum Beispiel Gastfamilien, ein Busunternehmen oder eine Partnerschule dieser Veranstaltung.'
+    add: 'Empfänger hinzufügen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -1616,6 +1892,7 @@ addendum:
   suggestedBlocking: 'Le formulaire de cet événement demande {categories}. Tant qu’elles ne sont pas déclarées ici, l’événement n’accepte aucune inscription.'
   applySuggested: 'Ajouter'
 field:
+  legitimateInterest: 'Décrivez l’intérêt légitime'
   legalBasis: 'Base juridique'
   additionalPlaceholder: 'Informations complémentaires pour cet événement…'
 status:
@@ -1638,6 +1915,19 @@ summary:
   inherited: '{count} de votre organisation'
   own: '{count} de cet événement'
   none: 'Rien pour l’instant'
+custom:
+  purpose:
+    title: 'Quelque chose que seul cet événement fait ?'
+    hint: 'Ajoutez une finalité que ni la liste ni votre organisation ne couvrent.'
+    add: 'Ajouter une finalité'
+  category:
+    title: 'D’autres données collectées par cet événement ?'
+    hint: 'Décrivez une catégorie, pas un champ de formulaire.'
+    add: 'Ajouter une catégorie'
+  recipient:
+    title: 'Quelqu’un d’autre reçoit des données ?'
+    hint: 'Par exemple des familles d’accueil, une compagnie de bus ou une école partenaire de cet événement.'
+    add: 'Ajouter un destinataire'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1669,6 +1959,7 @@ addendum:
   suggestedBlocking: 'Formulář této akce se ptá na {categories}. Dokud zde nejsou uvedeny, akce nepřijímá registrace.'
   applySuggested: 'Přidat'
 field:
+  legitimateInterest: 'Popiš oprávněný zájem'
   legalBasis: 'Právní základ'
   additionalPlaceholder: 'Další informace o ochraně osobních údajů pro tuto akci…'
 status:
@@ -1691,6 +1982,19 @@ summary:
   inherited: '{count} od organizace'
   own: '{count} vlastní'
   none: 'Zatím nic'
+custom:
+  purpose:
+    title: 'Něco, co dělá jen tato akce?'
+    hint: 'Přidej účel, který nepokrývá seznam ani vaše organizace.'
+    add: 'Přidat účel'
+  category:
+    title: 'Další údaje, které tato akce shromažďuje?'
+    hint: 'Popiš kategorii, ne jednotlivé pole formuláře.'
+    add: 'Přidat kategorii'
+  recipient:
+    title: 'Dostává údaje ještě někdo?'
+    hint: 'Například hostitelské rodiny, autobusový dopravce nebo partnerská škola této akce.'
+    add: 'Přidat příjemce'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1722,6 +2026,7 @@ addendum:
   suggestedBlocking: 'Formularz tego wydarzenia pyta o {categories}. Dopóki nie zostaną tu podane, wydarzenie nie przyjmuje rejestracji.'
   applySuggested: 'Dodaj'
 field:
+  legitimateInterest: 'Opisz prawnie uzasadniony interes'
   legalBasis: 'Podstawa prawna'
   additionalPlaceholder: 'Dodatkowe informacje o ochronie danych dla tego wydarzenia…'
 status:
@@ -1744,4 +2049,17 @@ summary:
   inherited: '{count} od organizacji'
   own: '{count} własne'
   none: 'Jeszcze nic'
+custom:
+  purpose:
+    title: 'Coś, co robi tylko to wydarzenie?'
+    hint: 'Dodaj cel, którego nie obejmuje ani lista, ani Twoja organizacja.'
+    add: 'Dodaj cel'
+  category:
+    title: 'Inne dane zbierane przez to wydarzenie?'
+    hint: 'Opisz kategorię, a nie pojedyncze pole formularza.'
+    add: 'Dodaj kategorię'
+  recipient:
+    title: 'Czy ktoś jeszcze otrzymuje dane?'
+    hint: 'Na przykład rodziny goszczące, przewoźnik autobusowy lub szkoła partnerska tego wydarzenia.'
+    add: 'Dodaj odbiorcę'
 </i18n>

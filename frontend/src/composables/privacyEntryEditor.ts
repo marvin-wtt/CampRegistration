@@ -124,3 +124,13 @@ export function usePrivacyEntryEditor(content: Ref<EditableEntries>) {
     setRecipientName,
   };
 }
+
+/** The list with one entry swapped for its edited copy, matched by key. */
+export function replaceEntry<T extends { key: string }>(
+  entries: readonly T[] | undefined,
+  updated: T,
+): T[] {
+  return (entries ?? []).map((entry) =>
+    entry.key === updated.key ? updated : entry,
+  );
+}

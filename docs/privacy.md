@@ -88,6 +88,20 @@ only appear here where they touch registrant data.
   a custom recipient without a name is a completeness gap
   (`custom_recipient_label`). The organization editor adds them; events see them as
   inherited rows.
+- **[implemented]** Events add custom purposes, categories and recipients of
+  their own (`PrivacyCustomEntryCard.vue`, shared with the organization editor):
+  a recipient only one event has — host families, a bus company, a partner
+  school — otherwise had to go into the organization notice, over-declaring it
+  for every other event, or into free text that no check reads. Their keys come
+  from a range of their own, `custom:event-<n>` (`nextEventCustomKey`), because
+  composition merges by key and a plain `custom:<n>` would replace the
+  organization entry of the same number; the server refuses an organization
+  notice holding such a key. Their labels are written per event country, like
+  the event's other texts, and the completeness check reads a country key in
+  the language it writes (`gb` counts for `en`). Cloning copies them with the
+  addendum.
+  - **[gap]** Form questions cannot be tagged with a custom category, the
+    organization's or an event's: the tag choices are the catalogue's.
 - **[implemented]** Catalogue additions for the frequent cases:
   `partner_organization` (co-organizer or partner abroad — its `country` drives
   the transfer disclosure), `participants` (lists shared with other participants,

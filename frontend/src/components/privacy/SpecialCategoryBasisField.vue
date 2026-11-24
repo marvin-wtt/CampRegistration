@@ -51,6 +51,7 @@
       :label="t('privacy.editor.field.legalReference')"
       :hint="t('privacy.editor.field.legalReferenceHint')"
       :locales
+      :countries
       add-languages
       :disable="!canEdit"
       default-untranslated
@@ -81,7 +82,12 @@ const legalReference = defineModel<Translatable | null | undefined>(
   'legalReference',
 );
 
-defineProps<{ canEdit: boolean; locales: string[] }>();
+// Texts are keyed by `countries` where given (an event's), else by `locales`.
+defineProps<{
+  canEdit: boolean;
+  locales?: string[] | undefined;
+  countries?: string[] | undefined;
+}>();
 
 // The catalogue vocabulary is global: the same words appear in the notice a
 // registrant reads.

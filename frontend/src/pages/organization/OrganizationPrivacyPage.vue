@@ -332,88 +332,27 @@
               {{ t('custom.purpose.hint') }}
             </div>
 
-            <q-card
+            <privacy-custom-entry-card
               v-for="entry in customPurposes"
               :key="entry.key"
-              flat
-              bordered
-              class="inset-card q-mb-sm"
+              :entry
+              kind="purpose"
+              :locales
+              :can-edit="canEdit"
+              @update:entry="
+                (updated) =>
+                  (content.purposes = replaceEntry(content.purposes, updated))
+              "
+              @remove="removePurpose(entry.key)"
             >
-              <q-card-section class="q-pa-sm column q-gutter-y-sm">
-                <div class="row items-center no-wrap q-gutter-sm">
-                  <translated-input
-                    :model-value="entry.label"
-                    :label="t('field.customPurposeName')"
-                    :locales
-                    add-languages
-                    default-untranslated
-                    dense
-                    outlined
-                    rounded
-                    hide-bottom-space
-                    :disable="!canEdit"
-                    class="col"
-                    @update:model-value="(v) => setEntryLabel(entry, v)"
-                  />
-                  <all-events-toggle
-                    :model-value="entry.allEvents === true"
-                    :disable="!canEdit"
-                    @update:model-value="(v) => setAllEvents(entry, v)"
-                  />
-                  <m-btn
-                    flat
-                    round
-                    dense
-                    icon="delete"
-                    :aria-label="t('action.remove')"
-                    :disable="!canEdit"
-                    @click="removePurpose(entry.key)"
-                  />
-                </div>
-                <q-select
-                  v-model="entry.legalBasis"
-                  :options="legalBasisOptions"
-                  :label="t('field.legalBasis')"
-                  emit-value
-                  map-options
-                  dense
-                  outlined
-                  rounded
+              <template #actions>
+                <all-events-toggle
+                  :model-value="entry.allEvents === true"
                   :disable="!canEdit"
+                  @update:model-value="(v) => setAllEvents(entry, v)"
                 />
-                <div
-                  v-if="legalBasisCaution(entry.legalBasis)"
-                  class="text-caption text-warning q-mt-xs"
-                >
-                  {{ legalBasisCaution(entry.legalBasis) }}
-                </div>
-                <translated-input
-                  v-if="entry.legalBasis === 'legitimate_interests'"
-                  :model-value="entry.legitimateInterest"
-                  :label="t('field.legitimateInterest')"
-                  :locales
-                  add-languages
-                  always
-                  dense
-                  outlined
-                  rounded
-                  :disable="!canEdit"
-                  @update:model-value="
-                    (v) => (entry.legitimateInterest = asTranslatable(v))
-                  "
-                />
-                <div
-                  v-if="entry.legalBasis === 'consent'"
-                  class="text-caption text-on-surface-variant"
-                >
-                  {{
-                    gt('privacy.editor.field.consentQuestion', {
-                      citation: cite('freelyGiven'),
-                    })
-                  }}
-                </div>
-              </q-card-section>
-            </q-card>
+              </template>
+            </privacy-custom-entry-card>
 
             <m-btn
               :label="t('action.addPurpose')"
@@ -522,74 +461,30 @@
               {{ t('custom.category.hint') }}
             </div>
 
-            <q-card
+            <privacy-custom-entry-card
               v-for="entry in customCategories"
               :key="entry.key"
-              flat
-              bordered
-              class="inset-card q-mb-sm"
+              :entry
+              kind="category"
+              :locales
+              :can-edit="canEdit"
+              @update:entry="
+                (updated) =>
+                  (content.dataCategories = replaceEntry(
+                    content.dataCategories,
+                    updated,
+                  ))
+              "
+              @remove="removeDataCategory(entry.key)"
             >
-              <q-card-section class="q-pa-sm">
-                <div class="row items-center no-wrap q-gutter-sm">
-                  <translated-input
-                    :model-value="entry.label"
-                    :label="t('field.customCategoryName')"
-                    :locales
-                    add-languages
-                    default-untranslated
-                    dense
-                    outlined
-                    rounded
-                    hide-bottom-space
-                    :disable="!canEdit"
-                    class="col"
-                    @update:model-value="(v) => setEntryLabel(entry, v)"
-                  />
-                  <all-events-toggle
-                    :model-value="entry.allEvents === true"
-                    :disable="!canEdit"
-                    @update:model-value="(v) => setAllEvents(entry, v)"
-                  />
-                  <m-btn
-                    flat
-                    round
-                    dense
-                    icon="delete"
-                    :aria-label="t('action.remove')"
-                    :disable="!canEdit"
-                    @click="removeDataCategory(entry.key)"
-                  />
-                </div>
-
-                <q-checkbox
-                  :model-value="entry.special === true"
-                  :label="
-                    withCitation(
-                      t('field.customCategorySpecial'),
-                      'specialCategories',
-                    )
-                  "
-                  dense
+              <template #actions>
+                <all-events-toggle
+                  :model-value="entry.allEvents === true"
                   :disable="!canEdit"
-                  class="q-mt-sm"
-                  @update:model-value="(v) => setCustomSpecial(entry, v)"
+                  @update:model-value="(v) => setAllEvents(entry, v)"
                 />
-                <div
-                  class="text-caption text-on-surface-variant inset-card__hint"
-                >
-                  {{ t('field.customCategorySpecialHint') }}
-                </div>
-
-                <special-category-basis-field
-                  v-if="entry.special"
-                  v-model="entry.specialCategoryBasis"
-                  v-model:legal-reference="entry.legalReference"
-                  :can-edit="canEdit"
-                  :locales
-                  class="inset-card__basis q-mt-xs"
-                />
-              </q-card-section>
-            </q-card>
+              </template>
+            </privacy-custom-entry-card>
 
             <m-btn
               :label="t('action.addCategory')"
@@ -680,46 +575,30 @@
               {{ t('custom.recipient.hint') }}
             </div>
 
-            <q-card
+            <privacy-custom-entry-card
               v-for="entry in customRecipients"
               :key="entry.key"
-              flat
-              bordered
-              class="inset-card q-mb-sm"
+              :entry
+              kind="recipient"
+              :locales
+              :can-edit="canEdit"
+              @update:entry="
+                (updated) =>
+                  (content.recipients = replaceEntry(
+                    content.recipients,
+                    updated,
+                  ))
+              "
+              @remove="removeRecipient(entry.key)"
             >
-              <q-card-section class="q-pa-sm">
-                <div class="row items-center no-wrap q-gutter-sm">
-                  <translated-input
-                    :model-value="entry.label"
-                    :label="t('field.customRecipientName')"
-                    :locales
-                    add-languages
-                    default-untranslated
-                    dense
-                    outlined
-                    rounded
-                    hide-bottom-space
-                    :disable="!canEdit"
-                    class="col"
-                    @update:model-value="(v) => setEntryLabel(entry, v)"
-                  />
-                  <all-events-toggle
-                    :model-value="entry.allEvents === true"
-                    :disable="!canEdit"
-                    @update:model-value="(v) => setAllEvents(entry, v)"
-                  />
-                  <m-btn
-                    flat
-                    round
-                    dense
-                    icon="delete"
-                    :aria-label="t('action.remove')"
-                    :disable="!canEdit"
-                    @click="removeRecipient(entry.key)"
-                  />
-                </div>
-              </q-card-section>
-            </q-card>
+              <template #actions>
+                <all-events-toggle
+                  :model-value="entry.allEvents === true"
+                  :disable="!canEdit"
+                  @update:model-value="(v) => setAllEvents(entry, v)"
+                />
+              </template>
+            </privacy-custom-entry-card>
 
             <m-btn
               :label="t('action.addRecipient')"
@@ -861,7 +740,6 @@ import {
   PRIVACY_PURPOSE_KEYS,
   PRIVACY_PURPOSE_PRESETS,
   PRIVACY_RECIPIENT_KEYS,
-  DEFAULT_SPECIAL_CATEGORY_BASIS,
   ALWAYS_RECIPIENT_KEYS,
   composePrivacyNotice,
   frameworkRecord,
@@ -881,14 +759,11 @@ import {
   privacyNoticeCompleteness,
   type DataProtectionFramework,
   type LegalBasisKey,
-  type PrivacyDataCategoryEntry,
   type PrivacyDataCategoryKey,
   type PrivacyNoticeContent,
   type PrivacyNoticeSection,
-  type PrivacyPurposeEntry,
   type PrivacyPurposeKey,
   type PrivacyPurposeRef,
-  type PrivacyRecipientEntry,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
 import type { Translatable } from '@camp-registration/common/entities';
@@ -897,6 +772,7 @@ import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import LocaleTabs from '@/components/common/localization/LocaleTabs.vue';
 import AllEventsToggle from '@/components/privacy/AllEventsToggle.vue';
+import PrivacyCustomEntryCard from '@/components/privacy/PrivacyCustomEntryCard.vue';
 import PrivacyCategoryNotes from '@/components/privacy/PrivacyCategoryNotes.vue';
 import PrivacyEntryList from '@/components/privacy/PrivacyEntryList.vue';
 import PrivacyEntryRow from '@/components/privacy/PrivacyEntryRow.vue';
@@ -912,7 +788,10 @@ import { useOrganizationDetailsStore } from '@/stores/organization-details-store
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useNotifier } from '@/composables/notifier';
-import { usePrivacyEntryEditor } from '@/composables/privacyEntryEditor';
+import {
+  replaceEntry,
+  usePrivacyEntryEditor,
+} from '@/composables/privacyEntryEditor';
 import {
   providePrivacyFramework,
   usePrivacyLabels,
@@ -1206,16 +1085,6 @@ function addCustomCategory() {
     special: false,
   });
 }
-function setCustomSpecial(entry: PrivacyDataCategoryEntry, value: boolean) {
-  entry.special = value;
-  entry.specialCategoryBasis = value ? DEFAULT_SPECIAL_CATEGORY_BASIS : null;
-}
-function setEntryLabel(
-  entry: PrivacyDataCategoryEntry | PrivacyPurposeEntry | PrivacyRecipientEntry,
-  value: unknown,
-) {
-  entry.label = asTranslatable(value);
-}
 
 /* Purposes */
 
@@ -1392,7 +1261,6 @@ $indent-checkbox: 2.25rem;
 
 // Form controls are unreadable stretched across a wide page.
 $field-max: 32rem;
-$field-max-narrow: 28rem;
 
 // The grid columns are proportional, so on a very wide monitor 8/12 is still
 // far past a readable measure — and the fields inside cap at 32rem anyway.
@@ -1405,15 +1273,6 @@ $field-max-narrow: 28rem;
 .inset-card {
   background-color: var(--md3-surface-container-low);
   border-radius: 12px;
-
-  &__hint,
-  &__basis {
-    margin-left: $indent-checkbox;
-  }
-
-  &__basis {
-    max-width: $field-max-narrow;
-  }
 }
 
 // Even rows: a Quasar gutter would fight the section's own padding, and it is
@@ -1513,11 +1372,6 @@ custom:
     title: 'Something else?'
     hint: 'Add a purpose the list above does not cover.'
 field:
-  customRecipientName: 'Recipient'
-  customCategoryName: 'Name of the category'
-  customCategorySpecial: 'Sensitive'
-  customCategorySpecialHint: 'Health, disability, religion, ethnicity, politics, trade-union membership, sex life or biometric data.'
-  customPurposeName: 'Name of the purpose'
   legalBasis: 'Legal basis'
   legitimateInterest: 'Describe your legitimate interest'
   recipientAlways: 'Always a recipient.'
@@ -1533,7 +1387,6 @@ action:
   back: 'Back'
   addCategory: 'Add another category'
   addPurpose: 'Add another purpose'
-  remove: 'Remove'
 notify:
   submitted: 'Published. The organization has been submitted for verification.'
   rejected: 'Published. This organization is still rejected — publishing alone does not request a new review.'
@@ -1616,11 +1469,6 @@ custom:
     title: 'Etwas anderes?'
     hint: 'Ergänze einen Zweck, der in der Liste oben fehlt.'
 field:
-  customRecipientName: 'Empfänger'
-  customCategoryName: 'Bezeichnung der Kategorie'
-  customCategorySpecial: 'Besondere Kategorie'
-  customCategorySpecialHint: 'Gesundheit, Behinderung, Religion, ethnische Herkunft, politische Meinung, Gewerkschaftszugehörigkeit, Sexualleben oder biometrische Daten.'
-  customPurposeName: 'Bezeichnung des Zwecks'
   legalBasis: 'Rechtsgrundlage'
   legitimateInterest: 'Das berechtigte Interesse beschreiben'
   recipientAlways: 'Immer Empfänger.'
@@ -1636,7 +1484,6 @@ action:
   back: 'Zurück'
   addCategory: 'Weitere Kategorie hinzufügen'
   addPurpose: 'Weiteren Zweck hinzufügen'
-  remove: 'Entfernen'
 notify:
   submitted: 'Veröffentlicht. Die Organisation wurde zur Verifizierung eingereicht.'
   rejected: 'Veröffentlicht. Diese Organisation ist weiterhin abgelehnt – das Veröffentlichen allein fordert keine neue Prüfung an.'
@@ -1719,11 +1566,6 @@ custom:
     title: 'Autre chose ?'
     hint: 'Ajoutez une finalité que la liste ci-dessus ne couvre pas.'
 field:
-  customRecipientName: 'Destinataire'
-  customCategoryName: 'Nom de la catégorie'
-  customCategorySpecial: 'Donnée sensible'
-  customCategorySpecialHint: 'Santé, handicap, religion, origine ethnique, opinions politiques, appartenance syndicale, vie sexuelle ou données biométriques.'
-  customPurposeName: 'Nom de la finalité'
   legalBasis: 'Base légale'
   legitimateInterest: 'Décrivez votre intérêt légitime'
   recipientAlways: 'Toujours destinataire.'
@@ -1739,7 +1581,6 @@ action:
   back: 'Retour'
   addCategory: 'Ajouter une catégorie'
   addPurpose: 'Ajouter une finalité'
-  remove: 'Supprimer'
 notify:
   submitted: "Publiée. L'organisation a été soumise à la vérification."
   rejected: 'Publié. Cette organisation reste refusée : la publication seule ne demande pas de nouvelle vérification.'
@@ -1822,11 +1663,6 @@ custom:
     title: 'Něco dalšího?'
     hint: 'Přidej účel, který seznam výše nepokrývá.'
 field:
-  customRecipientName: 'Příjemce'
-  customCategoryName: 'Název kategorie'
-  customCategorySpecial: 'Citlivý údaj'
-  customCategorySpecialHint: 'Zdraví, postižení, náboženství, etnický původ, politické názory, členství v odborech, sexuální život nebo biometrické údaje.'
-  customPurposeName: 'Název účelu'
   legalBasis: 'Právní základ'
   legitimateInterest: 'Popiš váš oprávněný zájem'
   recipientAlways: 'Vždy příjemce.'
@@ -1842,7 +1678,6 @@ action:
   back: 'Zpět'
   addCategory: 'Přidat další kategorii'
   addPurpose: 'Přidat další účel'
-  remove: 'Odebrat'
 notify:
   submitted: 'Zveřejněno. Organizace byla odeslána k ověření.'
   rejected: 'Zveřejněno. Tato organizace je stále zamítnutá — samotné zveřejnění o nové ověření nežádá.'
@@ -1925,11 +1760,6 @@ custom:
     title: 'Coś jeszcze?'
     hint: 'Dodaj cel, którego nie obejmuje powyższa lista.'
 field:
-  customRecipientName: 'Odbiorca'
-  customCategoryName: 'Nazwa kategorii'
-  customCategorySpecial: 'Dane wrażliwe'
-  customCategorySpecialHint: 'Zdrowie, niepełnosprawność, religia, pochodzenie etniczne, poglądy polityczne, przynależność związkowa, życie seksualne lub dane biometryczne.'
-  customPurposeName: 'Nazwa celu'
   legalBasis: 'Podstawa prawna'
   legitimateInterest: 'Opisz Wasz prawnie uzasadniony interes'
   recipientAlways: 'Zawsze odbiorca.'
@@ -1945,7 +1775,6 @@ action:
   back: 'Wstecz'
   addCategory: 'Dodaj kolejną kategorię'
   addPurpose: 'Dodaj kolejny cel'
-  remove: 'Usuń'
 notify:
   submitted: 'Opublikowano. Organizacja została zgłoszona do weryfikacji.'
   rejected: 'Opublikowano. Ta organizacja nadal jest odrzucona — sama publikacja nie zgłasza prośby o ponowną weryfikację.'

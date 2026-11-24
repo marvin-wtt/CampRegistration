@@ -216,6 +216,9 @@ export interface PrivacySpecialCategoryRetention {
   weeks: number;
 }
 
+/** The sensitive-data period a new notice starts with. */
+export const DEFAULT_SPECIAL_CATEGORY_WEEKS = 6;
+
 /** Weeks a sensitive-data period may not exceed, given the main period. */
 export function maxSpecialCategoryWeeks(months: number): number {
   return months * 4;
@@ -350,7 +353,7 @@ export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
     retention: {
       months: 24,
       exceptions: [],
-      specialCategories: { weeks: 4 },
+      specialCategories: { weeks: DEFAULT_SPECIAL_CATEGORY_WEEKS },
     },
     thirdCountryTransfers: { enabled: false, countries: [] },
     dpo: null,

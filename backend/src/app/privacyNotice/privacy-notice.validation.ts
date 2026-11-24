@@ -8,6 +8,7 @@ import {
   PRIVACY_RECIPIENT_KEYS,
   SPECIAL_CATEGORY_BASIS_KEYS,
   TRANSFER_SAFEGUARDS,
+  isEventCustomKey,
   type EventPrivacyNoticeUpdateData,
   type CustomKey,
   type PrivacyNoticeAddendum,
@@ -119,39 +120,60 @@ const DpoSchema = z.object({
 // count: the arrays now carry `custom:` refs the catalogue knows nothing about.
 const MAX_CUSTOM_ENTRIES = 25;
 
-const ContentSchema = z.object({
-  framework: z.enum(DATA_PROTECTION_FRAMEWORKS).nullish(),
-  // Stamped by the server on publish; whatever the client sends is replaced.
-  frameworkVersion: z.string().max(64).nullish(),
-  supervisoryAuthority: z
-    .object({
-      name: z.string().max(255),
-      // Rendered as a link on the public notice: http(s) only, like
-      // `Organization.website`.
-      website: z
-        .url({ protocol: /^https?$/, hostname: z.regexes.domain })
-        .max(255)
-        .nullish(),
-    })
-    .nullish(),
-  mode: z.enum(['builder', 'free_text']),
-  purposes: z
-    .array(PurposeSchema)
-    .max(PRIVACY_PURPOSE_KEYS.length + MAX_CUSTOM_ENTRIES),
-  dataCategories: z
-    .array(DataCategorySchema)
-    .max(PRIVACY_DATA_CATEGORY_KEYS.length + MAX_CUSTOM_ENTRIES),
-  recipients: z
-    .array(RecipientSchema)
-    .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES),
-  retention: RetentionSchema.nullable(),
-  thirdCountryTransfers: ThirdCountryTransfersSchema,
-  dpo: DpoSchema.nullable(),
-  automatedDecisionMaking: z.boolean(),
-  automatedDecisionMakingDetails: TranslatableSchema.nullable(),
-  additional: TranslatableSchema.nullable(),
-  freeText: TranslatableSchema.nullable(),
-}) satisfies ZodType<PrivacyNoticeContent>;
+const ContentSchema = z
+  .object({
+    framework: z.enum(DATA_PROTECTION_FRAMEWORKS).nullish(),
+    // Stamped by the server on publish; whatever the client sends is replaced.
+    frameworkVersion: z.string().max(64).nullish(),
+    supervisoryAuthority: z
+      .object({
+        name: z.string().max(255),
+        // Rendered as a link on the public notice: http(s) only, like
+        // `Organization.website`.
+        website: z
+          .url({ protocol: /^https?$/, hostname: z.regexes.domain })
+          .max(255)
+          .nullish(),
+      })
+      .nullish(),
+    mode: z.enum(['builder', 'free_text']),
+    purposes: z
+      .array(PurposeSchema)
+      .max(PRIVACY_PURPOSE_KEYS.length + MAX_CUSTOM_ENTRIES),
+    dataCategories: z
+      .array(DataCategorySchema)
+      .max(PRIVACY_DATA_CATEGORY_KEYS.length + MAX_CUSTOM_ENTRIES),
+    recipients: z
+      .array(RecipientSchema)
+      .max(PRIVACY_RECIPIENT_KEYS.length + MAX_CUSTOM_ENTRIES),
+    retention: RetentionSchema.nullable(),
+    thirdCountryTransfers: ThirdCountryTransfersSchema,
+    dpo: DpoSchema.nullable(),
+    automatedDecisionMaking: z.boolean(),
+    automatedDecisionMakingDetails: TranslatableSchema.nullable(),
+    additional: TranslatableSchema.nullable(),
+    freeText: TranslatableSchema.nullable(),
+  })
+  // Event entries have a key range of their own so that composition, which
+  // merges by key, can never let one replace an organization entry.
+  .refine((content) => !organizationKeys(content).some(isEventCustomKey), {
+    message: 'Organization entries cannot use an event key',
+  }) satisfies ZodType<PrivacyNoticeContent>;
+
+function organizationKeys(content: {
+  purposes: { key: string }[];
+  dataCategories: { key: string }[];
+  recipients: { key: string }[];
+  retention: { exceptions: { scope: string }[] } | null;
+}): string[] {
+  return [
+    ...content.purposes.map((entry) => entry.key),
+    ...content.dataCategories.map((entry) => entry.key),
+    ...content.recipients.map((entry) => entry.key),
+    ...(content.retention?.exceptions.map((exception) => exception.scope) ??
+      []),
+  ];
+}
 
 const ExclusionsSchema = z.object({
   purposes: z
