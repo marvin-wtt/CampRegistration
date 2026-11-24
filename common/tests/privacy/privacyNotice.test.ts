@@ -390,11 +390,11 @@ describe('composePrivacyNotice', () => {
       recipients: [{ key: eventKey, label: { en: 'Host families' } }],
     });
 
-    expect(composed.recipients.map((entry) => entry.label?.en)).toEqual([
-      undefined,
-      'Sports club',
-      'Host families',
-    ]);
+    expect(
+      composed.recipients.map(({ label }) =>
+        typeof label === 'string' ? label : label?.en,
+      ),
+    ).toEqual([undefined, 'Sports club', 'Host families']);
   });
 
   it('merges the event addendum into the organization notice', () => {
