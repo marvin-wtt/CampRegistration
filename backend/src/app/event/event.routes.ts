@@ -2,13 +2,17 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { EventController } from '#app/event/event.controller';
 import { EventService } from './event.service.js';
 import { auth } from '#core/auth/auth.middleware';
-import { admin, guard, or } from '#core/guard';
+import { admin, and, guard, or } from '#core/guard';
 import { eventManagerSubscriber } from '#app/eventManager/event-manager.guard';
 import type { EventQuery } from '@camp-registration/common/entities';
 import { controller } from '#core/router/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
 import { resolve } from '#core/ioc/container';
-import { hasEventPermission, eventViewGuard } from '#app/event/event.guard';
+import {
+  canCopyReferenceEvent,
+  hasEventPermission,
+  eventViewGuard,
+} from '#app/event/event.guard';
 import { organizationFromBody } from '#app/organization/organization.middleware';
 import { organizationMember } from '#app/organization/organization.guard';
 
@@ -58,7 +62,12 @@ export class EventRouter extends ModuleRouter {
       '/',
       auth(),
       organizationFromBody(),
-      guard(organizationMember('organization.events.create')),
+      guard(
+        and(
+          organizationMember('organization.events.create'),
+          canCopyReferenceEvent,
+        ),
+      ),
       controller(eventController, 'store'),
     );
 

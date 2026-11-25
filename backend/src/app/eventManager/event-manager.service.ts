@@ -121,21 +121,6 @@ export class EventManagerService extends BaseService {
     };
   }
 
-  async eventManagerExistsWithUserIdAndEventId(
-    eventId: string,
-    userId: string,
-  ) {
-    return this.prisma.eventManager
-      .findFirst({
-        where: {
-          eventId,
-          userId,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-      })
-      .then((value) => value !== null);
-  }
-
   async eventManagerHasPermission(
     eventId: string,
     userId: string,
