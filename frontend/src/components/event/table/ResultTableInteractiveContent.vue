@@ -163,12 +163,17 @@
           </q-btn>
 
           <m-btn
-            :label="t('action.export_csv')"
+            :label="quasar.screen.lt.md ? undefined : t('action.export_csv')"
+            :aria-label="t('action.export_csv')"
             color="primary"
             icon="download"
             text
             @click="onExportCsv"
-          />
+          >
+            <q-tooltip v-if="quasar.screen.lt.md">
+              {{ t('action.export_csv') }}
+            </q-tooltip>
+          </m-btn>
 
           <m-btn
             :label="t('action.print')"
@@ -231,7 +236,7 @@
 
       <div
         v-if="!quasar.screen.xs || mobileSearchOpen"
-        class="col-12 col-sm"
+        class="col-12 col-sm search-col"
       >
         <q-input
           ref="searchInputRef"
@@ -852,6 +857,11 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
 
 .search-field {
   max-width: 360px;
+}
+
+// Without a floor the flex column collapses instead of wrapping the chips
+.search-col {
+  min-width: 200px;
 }
 
 .filter-row {

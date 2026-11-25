@@ -9,12 +9,12 @@ import validator from './event.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
-import { EventManagerService } from '#app/eventManager/event-manager.service.js';
 import { SettingService } from '#app/setting/setting.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { FinanceCategoryService } from '#app/financeCategory/finance-category.service';
 import ApiError from '#core/router/ApiError';
+import type { EventCopyPart } from '@camp-registration/common/permissions';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -22,8 +22,6 @@ export class EventController extends BaseController {
   constructor(
     @inject(EventService) private readonly eventService: EventService,
     @inject(FileService) private readonly fileService: FileService,
-    @inject(EventManagerService)
-    private readonly managerService: EventManagerService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
     @inject(TableTemplateService)
@@ -84,14 +82,11 @@ export class EventController extends BaseController {
     const userId = req.authUserId();
     const organization = req.modelOrFail('organization');
 
-    const { form, themes, ...seed } = body.referenceEventId
-      ? await this.cloneReferenceEvent(
-          body.referenceEventId,
-          userId,
-          body.countries,
-        )
+    const { form, themes, privacyNotice, ...seed } = body.referenceEventId
+      ? await this.cloneReferenceEvent(body.referenceEventId, body.countries)
       : {
           ...presetSeed(body.preset, body.countries),
+          privacyNotice: undefined,
           financeCategories: this.financeCategoryService.defaultCategories(
             body.countries,
           ),
@@ -125,41 +120,20 @@ export class EventController extends BaseController {
     });
 
     // Privacy notice versions aren't part of the event's own row, so they
-    // can't ride along in `createEvent`'s single insert — copy them over in
-    // a step of their own now that the new event exists.
-    if (body.referenceEventId) {
-      await this.privacyNoticeService.copyEventAddendum(
-        body.referenceEventId,
-        event.id,
-        organization.id,
-      );
-    }
+    // can't ride along in `createEvent`'s single insert.
+    await privacyNotice?.(event.id, organization.id);
 
     res.status(httpStatus.CREATED).resource(new EventDetailsResource(event));
   }
 
   /**
-   * Confirms the caller may clone the reference event and that its countries
-   * match the new event's, then copies its form, themes and child records.
+   * Loads each part the copy takes, once the reference's countries are known to
+   * match the new event's. `canCopyReferenceEvent` has authorized the copy.
    */
   private async cloneReferenceEvent(
     referenceEventId: string,
-    userId: string,
     countries: string[],
   ) {
-    const isManager =
-      await this.managerService.eventManagerExistsWithUserIdAndEventId(
-        referenceEventId,
-        userId,
-      );
-
-    if (!isManager) {
-      throw new ApiError(
-        httpStatus.FORBIDDEN,
-        'You are not allowed to create a event based on this reference event.',
-      );
-    }
-
     const referenceEvent =
       await this.eventService.getEventById(referenceEventId);
 
@@ -198,16 +172,23 @@ export class EventController extends BaseController {
       this.eventService.getFinancePrefixes(referenceEventId),
     ]);
 
+    // Keyed by EVENT_COPY_PERMISSIONS: a part without permissions is an error.
     return {
       form: referenceEvent.form,
       themes: referenceEvent.themes,
+      privacyNotice: (eventId: string, organizationId: string) =>
+        this.privacyNoticeService.copyEventAddendum(
+          referenceEventId,
+          eventId,
+          organizationId,
+        ),
       files,
       tableTemplates,
       messageTemplates,
       settings,
       financeCategories,
       financePrefixes,
-    };
+    } satisfies Record<EventCopyPart, unknown>;
   }
 
   async updateOrganization(req: Request, res: Response) {

@@ -37,6 +37,9 @@ import {
 } from './fixtures/event.fixtures.js';
 import { request } from '../utils/request.js';
 import config from '#config/index';
+import { resolve } from '#core/ioc/container';
+import { SettingsRegistry } from '#app/setting/setting.registry';
+import { EVENT_COPY_PERMISSIONS } from '@camp-registration/common/permissions';
 import { eventWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -1806,6 +1809,44 @@ describe('/api/v1/events', () => {
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(403);
+      });
+
+      it.each(['COORDINATOR', 'COUNSELOR', 'TREASURER', 'VIEWER'])(
+        'should respond with `403` status code when a %s cannot see all of the reference event',
+        async (role) => {
+          const { event: referenceEvent, accessToken } =
+            await createEventWithManagerAndToken({}, role);
+
+          await request()
+            .post(`/api/v1/events/`)
+            .send({
+              ...eventCreateNational,
+              referenceEventId: referenceEvent.id,
+            })
+            .auth(accessToken, { type: 'bearer' })
+            .expect(403);
+        },
+      );
+
+      it('should respond with `403` status code for an organization admin without a manager role', async () => {
+        const accessToken = await createEventCreatorToken();
+        const referenceEvent = await EventFactory.create({
+          organization: { connect: { id: EVENT_CREATE_ORGANIZATION_ID } },
+        });
+
+        await request()
+          .post(`/api/v1/events/`)
+          .send({ ...eventCreateNational, referenceEventId: referenceEvent.id })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
+
+      it('should declare every setting view permission as a copy permission', () => {
+        const declared: readonly string[] = EVENT_COPY_PERMISSIONS.settings;
+
+        for (const permission of resolve(SettingsRegistry).viewPermissions()) {
+          expect(declared).toContain(permission);
+        }
       });
 
       it('should respond with `403` status code when reference event does not exist', async () => {
