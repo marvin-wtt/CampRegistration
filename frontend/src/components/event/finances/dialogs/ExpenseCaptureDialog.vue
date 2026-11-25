@@ -132,37 +132,6 @@
             data-test="expense-type"
           />
 
-          <!-- A grant or donation is income: as a refund it would hide costs. -->
-          <div
-            v-if="
-              form.type === 'REFUND' && !expense && can('event.income.create')
-            "
-            class="income-hint rounded-lg"
-            :class="quasar.screen.xs ? 'column' : 'row items-center no-wrap'"
-            data-test="expense-income-hint"
-          >
-            <div class="row no-wrap items-start col income-hint__text">
-              <q-icon
-                name="info"
-                size="20px"
-                class="income-hint__icon"
-              />
-              <span class="text-body2">{{
-                t('finance.capture.incomeHint')
-              }}</span>
-            </div>
-            <m-btn
-              :label="t('finance.capture.asIncome')"
-              color="primary"
-              text
-              rounded
-              no-caps
-              class="self-end"
-              data-test="expense-as-income"
-              @click="switchToIncome"
-            />
-          </div>
-
           <q-input
             v-model="form.description"
             :label="t('finance.field.description')"
@@ -377,8 +346,6 @@ import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate, parseLocalDate } from '@/utils/date';
 import { useRouteKey } from '@/composables/routeKey';
-import { usePermissions } from '@/composables/permissions';
-import { useFinanceDialogs } from '@/composables/financeDialogs';
 
 interface CaptureForm {
   type: ExpenseType;
@@ -598,23 +565,6 @@ if (prefill) {
   restoreDraft();
 }
 
-const { can } = usePermissions();
-const dialogs = useFinanceDialogs();
-
-// Hands what was typed to the income dialog.
-function switchToIncome() {
-  const prefill = {
-    amount: form.amount,
-    description: form.description,
-    receivedOn: form.date,
-    files: files.value.flatMap((f) =>
-      f.id ? [{ key: f.key, id: f.id, name: f.name }] : [],
-    ),
-  };
-  onDialogCancel();
-  dialogs.incomeFrom(prefill);
-}
-
 // --- Saving ---------------------------------------------------------------
 
 async function save() {
@@ -700,20 +650,6 @@ function startNext() {
   /* The code, the clear icon and the arrow on one line. */
   width: 136px;
   flex: 0 0 auto;
-}
-
-.income-hint {
-  gap: 4px 8px;
-  padding: 8px 4px 4px 12px;
-  background: var(--md3-surface-container-high);
-}
-
-.income-hint__text {
-  gap: 8px;
-}
-
-.income-hint__icon {
-  color: var(--md3-on-surface-variant);
 }
 
 .type-toggle :deep(.q-btn) {

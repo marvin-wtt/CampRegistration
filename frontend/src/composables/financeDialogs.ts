@@ -14,9 +14,7 @@ import PayoutDetailsDialog from '@/components/event/finances/dialogs/PayoutDetai
 import FinanceCategoryDialog from '@/components/event/finances/dialogs/FinanceCategoryDialog.vue';
 import FinanceSettingsDialog from '@/components/event/finances/dialogs/FinanceSettingsDialog.vue';
 import IncomeDetailsDialog from '@/components/event/finances/dialogs/IncomeDetailsDialog.vue';
-import IncomeDialog, {
-  type IncomePrefill,
-} from '@/components/event/finances/dialogs/IncomeDialog.vue';
+import IncomeDialog from '@/components/event/finances/dialogs/IncomeDialog.vue';
 
 /**
  * The finance tabs' entry dialogs. The details dialogs stay open through
@@ -77,10 +75,6 @@ export function useFinanceDialogs() {
     });
   }
 
-  function incomeFrom(prefill: IncomePrefill) {
-    quasar.dialog({ component: IncomeDialog, componentProps: { prefill } });
-  }
-
   function settings() {
     quasar.dialog({ component: FinanceSettingsDialog });
   }
@@ -93,7 +87,6 @@ export function useFinanceDialogs() {
     linkParty,
     categories,
     income,
-    incomeFrom,
     incomeDetails,
     settings,
   };

@@ -201,19 +201,6 @@
   </responsive-dialog>
 </template>
 
-<script lang="ts">
-import type { ReceiptFile as PrefillFile } from '@/composables/receiptUploads';
-
-/** A new income started elsewhere, e.g. a grant first entered as a refund. */
-export interface IncomePrefill {
-  amount: number | null;
-  description: string;
-  receivedOn: string | null;
-  /** Already uploaded: only their ids and names carry over. */
-  files: Pick<PrefillFile, 'key' | 'id' | 'name'>[];
-}
-</script>
-
 <script lang="ts" setup>
 import { computed, reactive, ref, useTemplateRef } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -236,10 +223,9 @@ import { usePermissions } from '@/composables/permissions';
 import { formatLocalDate } from '@/utils/date';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 
-const { income = undefined, prefill = undefined } = defineProps<{
+const { income = undefined } = defineProps<{
   /** Edits this one; records a new income without. */
   income?: Income | undefined;
-  prefill?: IncomePrefill | undefined;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -268,16 +254,12 @@ const payers = computed(() =>
 );
 
 const form = reactive({
-  amount: income?.amount ?? prefill?.amount ?? null,
+  amount: income?.amount ?? null,
   originalAmount: income?.originalAmount ?? null,
   originalCurrency: income?.originalCurrency ?? null,
-  description: income?.description ?? prefill?.description ?? '',
+  description: income?.description ?? '',
   // Usually recorded as it arrives; cleared for a promise.
-  receivedOn: income
-    ? income.receivedOn
-    : prefill
-      ? prefill.receivedOn
-      : formatLocalDate(new Date()),
+  receivedOn: income ? income.receivedOn : formatLocalDate(new Date()),
   payerName: income?.payerName ?? null,
   categoryId: income?.categoryId ?? null,
 });
@@ -290,19 +272,7 @@ const {
   uploadedIds,
   add: addFiles,
   remove: removeFile,
-  reset: resetFiles,
 } = useReceiptUploads(income?.files ?? []);
-
-if (prefill) {
-  resetFiles(
-    prefill.files.map((f) => ({
-      ...f,
-      url: null,
-      preview: null,
-      uploading: false,
-    })),
-  );
-}
 
 async function save() {
   if (!(await formRef.value?.validate()) || form.amount === null) {

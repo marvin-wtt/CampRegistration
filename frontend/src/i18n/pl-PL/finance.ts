@@ -98,8 +98,6 @@ export default {
     edit: 'Edytuj',
   },
   capture: {
-    incomeHint: 'Dotacja lub darowizna? To przychód, a nie zwrot.',
-    asIncome: 'Zapisz jako przychód',
     keepOriginal: 'Zachowaj oryginał paragonu.',
     newExpense: 'Nowy wydatek',
     newRefund: 'Nowy zwrot',

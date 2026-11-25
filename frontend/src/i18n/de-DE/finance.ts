@@ -98,9 +98,6 @@ export default {
     edit: 'Bearbeiten',
   },
   capture: {
-    incomeHint:
-      'Ein Zuschuss oder eine Spende? Das ist eine Einnahme, keine Erstattung.',
-    asIncome: 'Als Einnahme erfassen',
     keepOriginal: 'Papierbeleg bitte aufbewahren.',
     newExpense: 'Neue Ausgabe',
     newRefund: 'Neue Erstattung',

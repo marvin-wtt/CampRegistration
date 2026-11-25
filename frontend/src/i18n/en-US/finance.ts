@@ -98,8 +98,6 @@ export default {
     edit: 'Edit',
   },
   capture: {
-    incomeHint: 'A grant or a donation? That is income, not a refund.',
-    asIncome: 'Record as income',
     keepOriginal: 'Keep the paper original.',
     newExpense: 'New expense',
     newRefund: 'New refund',

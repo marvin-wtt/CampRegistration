@@ -97,8 +97,6 @@ export default {
     edit: 'Upravit',
   },
   capture: {
-    incomeHint: 'Dotace nebo dar? To je příjem, ne vratka.',
-    asIncome: 'Zaznamenat jako příjem',
     keepOriginal: 'Papírový originál si ponech.',
     newExpense: 'Nový výdaj',
     newRefund: 'Nová vratka',

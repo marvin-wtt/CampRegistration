@@ -98,9 +98,6 @@ export default {
     edit: 'Modifier',
   },
   capture: {
-    incomeHint:
-      'Une subvention ou un don ? C’est une recette, pas un remboursement.',
-    asIncome: 'Enregistrer comme recette',
     keepOriginal: "Conservez l'original papier.",
     newExpense: 'Nouvelle dépense',
     newRefund: 'Nouveau remboursement',
