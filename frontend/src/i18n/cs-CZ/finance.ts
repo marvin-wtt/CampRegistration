@@ -32,7 +32,8 @@ export default {
   field: {
     vendor: 'Příjemce platby',
     vendorRefund: 'Vráceno od',
-    vendorHint: 'Nepovinné, např. obchod nebo firma',
+    vendorHint: 'např. obchod nebo firma',
+    optional: '{field} (nepovinné)',
     noCategoryMatch: 'Žádná odpovídající kategorie',
     paidOn: 'Zaplaceno',
     receiptPending: 'Prázdné: doklad teprve přijde',

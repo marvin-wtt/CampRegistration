@@ -33,7 +33,8 @@ export default {
   field: {
     vendor: 'Bezahlt an',
     vendorRefund: 'Erstattet von',
-    vendorHint: 'Optional, z. B. das Geschäft oder die Firma',
+    vendorHint: 'z. B. das Geschäft oder die Firma',
+    optional: '{field} (optional)',
     noCategoryMatch: 'Keine passende Kategorie',
     paidOn: 'Bezahlt am',
     receiptPending: 'Leer: Beleg steht noch aus',

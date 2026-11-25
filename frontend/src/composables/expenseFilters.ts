@@ -14,6 +14,8 @@ import { hasNoCategory, isMissingFile, isPending } from '@/utils/expenseState';
 export interface FilterOption {
   value: string;
   label: string;
+  /** Shown below the label in lists, e.g. a category's group. */
+  caption?: string | undefined;
 }
 
 /** A filter that is either on or off, e.g. "missing receipt file". */
@@ -74,9 +76,8 @@ export function useExpenseFilters(
     groupCategories(toValue(categories)).flatMap((group) =>
       group.categories.map((c) => ({
         value: c.id,
-        label: group.group
-          ? `${to(group.group.name)} · ${to(c.name)}`
-          : to(c.name),
+        label: to(c.name),
+        caption: group.group ? to(group.group.name) : undefined,
       })),
     ),
   );

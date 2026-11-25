@@ -33,7 +33,8 @@ export default {
   field: {
     vendor: 'Paid to',
     vendorRefund: 'Refunded by',
-    vendorHint: 'Optional, e.g. the shop or company',
+    vendorHint: 'e.g. the shop or company',
+    optional: '{field} (optional)',
     noCategoryMatch: 'No matching category',
     paidOn: 'Paid on',
     receiptPending: 'Empty: receipt still to come',

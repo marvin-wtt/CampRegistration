@@ -4,7 +4,7 @@
   <q-select
     v-model="model"
     :options="filtered"
-    :label="t('finance.field.category')"
+    :label="label ?? t('finance.field.category')"
     option-value="value"
     option-label="label"
     emit-value
@@ -54,8 +54,14 @@ import type { FinanceCategory } from '@camp-registration/common/entities';
 import { groupCategories } from '@/composables/financeFormat';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
-const { categories, keep = null } = defineProps<{
+const {
+  categories,
+  keep = null,
+  label = undefined,
+} = defineProps<{
   categories: readonly FinanceCategory[];
+  /** Defaults to "Category". */
+  label?: string | undefined;
   /** An archived category the expense already has: still shown, still picked. */
   keep?: string | null;
 }>();

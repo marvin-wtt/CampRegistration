@@ -163,11 +163,26 @@
             />
           </div>
 
+          <q-input
+            v-model="form.description"
+            :label="t('finance.field.description')"
+            :rules="[
+              (val?: string) =>
+                !!val?.trim() || t('finance.validation.description'),
+            ]"
+            maxlength="255"
+            :autofocus="!expense"
+            enterkeyhint="done"
+            hide-bottom-space
+            outlined
+            rounded
+            data-test="expense-description"
+          />
+
           <amount-input
             v-model="form.amount"
             :currency
             :label="t('finance.field.amount')"
-            :autofocus="!expense"
             hide-bottom-space
             large
             data-test="expense-amount"
@@ -196,28 +211,17 @@
               v-show="showOriginal"
               class="row no-wrap q-gutter-x-sm original-row"
             >
-              <q-select
+              <currency-select
                 v-model="form.originalCurrency"
-                :options="FOREIGN_CURRENCIES"
+                :exclude="currency"
                 :label="t('finance.field.originalCurrency')"
                 class="original-currency"
-                use-input
-                fill-input
-                hide-selected
-                new-value-mode="add-unique"
-                :input-debounce="0"
-                clearable
-                dense
-                outlined
-                rounded
-                hide-bottom-space
                 :rules="[
                   (val: string | null) =>
                     !form.originalAmount ||
                     /^[A-Z]{3}$/.test(val ?? '') ||
                     t('finance.validation.currency'),
                 ]"
-                @new-value="addCurrency"
               />
               <amount-input
                 v-model="form.originalAmount"
@@ -230,52 +234,23 @@
             </div>
           </q-slide-transition>
 
-          <!-- Read off the receipt with the amount: often yesterday's, never
-               a day ahead. -->
-          <event-date-input
-            v-model="form.date"
-            :label="t('finance.field.receiptDate')"
-            :hint="form.date ? undefined : t('finance.field.receiptPending')"
-            :max="formatLocalDate(new Date())"
-            open-on-today
-            clearable
-          />
-
-          <receipt-file-strip
-            :files
-            @add="addFiles"
-            @remove="removeFile"
-          />
-
-          <q-input
-            v-model="form.description"
-            :label="t('finance.field.description')"
-            :rules="[
-              (val?: string) =>
-                !!val?.trim() || t('finance.validation.description'),
-            ]"
-            maxlength="255"
-            enterkeyhint="done"
-            hide-bottom-space
-            outlined
-            rounded
-            data-test="expense-description"
-          />
-
           <category-picker
             v-if="categories.length > 0"
             v-model="form.categoryId"
             :categories
             :keep="expense?.categoryId ?? null"
+            :label="categoryLabel"
           />
 
-          <!-- Optional: who was paid. Names used before are suggested. -->
+          <!-- Who was paid. Names used before are suggested. -->
           <q-input
             v-model="form.vendor"
             :label="
-              form.type === 'REFUND'
-                ? t('finance.field.vendorRefund')
-                : t('finance.field.vendor')
+              optional(
+                form.type === 'REFUND'
+                  ? t('finance.field.vendorRefund')
+                  : t('finance.field.vendor'),
+              )
             "
             :hint="t('finance.field.vendorHint')"
             maxlength="255"
@@ -296,6 +271,16 @@
             />
           </datalist>
 
+          <!-- Often yesterday's, never a day ahead. -->
+          <event-date-input
+            v-model="form.date"
+            :label="t('finance.field.receiptDate')"
+            :hint="form.date ? undefined : t('finance.field.receiptPending')"
+            :max="formatLocalDate(new Date())"
+            open-on-today
+            clearable
+          />
+
           <party-select
             v-model="form.payer"
             :parties
@@ -305,6 +290,12 @@
                 : t('finance.field.paidBy')
             "
             data-test="expense-payer"
+          />
+
+          <receipt-file-strip
+            :files
+            @add="addFiles"
+            @remove="removeFile"
           />
         </div>
       </q-form>
@@ -376,6 +367,7 @@ import ReceiptFileStrip from '@/components/event/finances/ReceiptFileStrip.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
+import CurrencySelect from '@/components/event/finances/CurrencySelect.vue';
 import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import PartySelect, {
   type PartyValue,
@@ -387,8 +379,6 @@ import { formatLocalDate, parseLocalDate } from '@/utils/date';
 import { useRouteKey } from '@/composables/routeKey';
 import { usePermissions } from '@/composables/permissions';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
-
-const FOREIGN_CURRENCIES = ['PLN', 'CZK', 'GBP', 'CHF', 'USD', 'DKK', 'HUF'];
 
 interface CaptureForm {
   type: ExpenseType;
@@ -433,6 +423,14 @@ const eventId = useRouteKey('eventId');
 const formRef = useTemplateRef<QForm>('formRef');
 
 const categories = computed(() => storeCategories.value ?? []);
+
+const optional = (field: string) => t('finance.field.optional', { field });
+// Not optional where the event flags expenses without one.
+const categoryLabel = computed(() =>
+  financeStore.display.flagMissingCategories
+    ? t('finance.field.category')
+    : optional(t('finance.field.category')),
+);
 
 const typeOptions = computed(() => [
   { value: 'EXPENSE', label: t('finance.type.expense'), icon: 'shopping_cart' },
@@ -617,11 +615,6 @@ function switchToIncome() {
   dialogs.incomeFrom(prefill);
 }
 
-function addCurrency(value: string, done: (item?: string) => void) {
-  const code = value.trim().toUpperCase();
-  done(/^[A-Z]{3}$/.test(code) ? code : undefined);
-}
-
 // --- Saving ---------------------------------------------------------------
 
 async function save() {
@@ -704,7 +697,7 @@ function startNext() {
 }
 
 .original-currency {
-  /* Three letters, the clear icon and the arrow on one line. */
+  /* The code, the clear icon and the arrow on one line. */
   width: 136px;
   flex: 0 0 auto;
 }

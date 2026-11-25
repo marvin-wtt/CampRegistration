@@ -172,9 +172,9 @@ watch(current, (found) => {
   }
 });
 
-// Destructive, so behind the menu rather than beside Edit.
+// Delete is destructive, so only here; Edit also has its own button.
 const menu = computed(() =>
-  [actions.value.remove].filter((a) => a !== undefined),
+  [actions.value.edit, actions.value.remove].filter((a) => a !== undefined),
 );
 
 const caption = computed(() => {

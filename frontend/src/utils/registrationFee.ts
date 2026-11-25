@@ -11,10 +11,14 @@ export type FeeFilter = (typeof FEE_FILTERS)[number];
 export const FEE_SORTS = [
   'name',
   'reference',
-  'newest',
+  'created',
   'outstanding',
 ] as const;
 export type FeeSort = (typeof FEE_SORTS)[number];
+
+/** Each sort's natural direction: names A–Z, the rest highest first. */
+export const feeSortDescending = (sort: FeeSort): boolean =>
+  sort === 'created' || sort === 'outstanding';
 
 export function feeName(fee: Pick<RegistrationFee, 'firstName' | 'lastName'>) {
   return formatPersonName(
@@ -158,23 +162,27 @@ const byName = (a: RegistrationFee, b: RegistrationFee) =>
   (a.firstName ?? '').localeCompare(b.firstName ?? '');
 
 /**
- * The fees in the chosen order; ties fall back to the name, so the list
- * never shuffles between two equal amounts.
+ * The fees in the chosen order; ties fall back to the name, A–Z either way,
+ * so the list never shuffles between two equal amounts.
  */
 export function sortFees(
   fees: readonly RegistrationFee[],
   sort: FeeSort,
+  descending = feeSortDescending(sort),
 ): RegistrationFee[] {
-  const compare: Record<
+  const ascending: Record<
     FeeSort,
     (a: RegistrationFee, b: RegistrationFee) => number
   > = {
     name: byName,
     reference: (a, b) => a.reference.localeCompare(b.reference),
-    newest: (a, b) => b.createdAt.localeCompare(a.createdAt) || byName(a, b),
-    outstanding: (a, b) =>
-      b.balance.outstanding - a.balance.outstanding || byName(a, b),
+    created: (a, b) => a.createdAt.localeCompare(b.createdAt),
+    outstanding: (a, b) => a.balance.outstanding - b.balance.outstanding,
   };
+  const sign = descending ? -1 : 1;
 
-  return [...fees].sort(compare[sort]);
+  return [...fees].sort(
+    (a, b) =>
+      sign * ascending[sort](a, b) || (sort === 'name' ? 0 : byName(a, b)),
+  );
 }

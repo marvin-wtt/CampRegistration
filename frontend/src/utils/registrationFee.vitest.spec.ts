@@ -191,8 +191,8 @@ describe('sortFees', () => {
       },
     ),
   ];
-  const ids = (sort: Parameters<typeof sortFees>[1]) =>
-    sortFees(fees, sort).map((f) => f.id);
+  const ids = (sort: Parameters<typeof sortFees>[1], descending?: boolean) =>
+    sortFees(fees, sort, descending).map((f) => f.id);
 
   it('sorts by last name by default', () => {
     expect(ids('name')).toEqual(['b', 'c', 'a']);
@@ -200,7 +200,13 @@ describe('sortFees', () => {
 
   it('sorts by reference, newest and most open, ties by name', () => {
     expect(ids('reference')).toEqual(['c', 'b', 'a']);
-    expect(ids('newest')).toEqual(['a', 'c', 'b']);
+    expect(ids('created')).toEqual(['a', 'c', 'b']);
     expect(ids('outstanding')).toEqual(['b', 'c', 'a']);
+  });
+
+  it('reverses the direction, ties still by name', () => {
+    expect(ids('name', true)).toEqual(['a', 'c', 'b']);
+    expect(ids('created', false)).toEqual(['b', 'c', 'a']);
+    expect(ids('outstanding', false)).toEqual(['a', 'b', 'c']);
   });
 });

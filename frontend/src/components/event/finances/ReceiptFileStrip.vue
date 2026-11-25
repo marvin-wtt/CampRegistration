@@ -15,11 +15,13 @@
             :aria-label="t('finance.action.openFile', { name: file.name })"
             @click="open(file)"
           >
+            <!-- A photo the browser can't decode (e.g. HEIC) falls back to the icon. -->
             <img
-              v-if="file.preview"
+              v-if="file.preview && !broken.has(file.key)"
               :src="file.preview"
               :alt="file.name"
               class="file-thumb"
+              @error="broken.add(file.key)"
             />
             <q-icon
               v-else
@@ -100,7 +102,7 @@
 
 <script lang="ts" setup>
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { useTemplateRef } from 'vue';
+import { reactive, useTemplateRef } from 'vue';
 import { openURL } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import type { ReceiptFile } from '@/composables/receiptUploads';
@@ -114,6 +116,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
+const broken = reactive(new Set<string>());
 
 function onFilesPicked(event: Event) {
   const input = event.target as HTMLInputElement;

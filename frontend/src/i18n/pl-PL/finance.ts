@@ -33,7 +33,8 @@ export default {
   field: {
     vendor: 'Zapłacono dla',
     vendorRefund: 'Zwrócone przez',
-    vendorHint: 'Opcjonalnie, np. sklep lub firma',
+    vendorHint: 'np. sklep lub firma',
+    optional: '{field} (opcjonalnie)',
     noCategoryMatch: 'Brak pasującej kategorii',
     paidOn: 'Zapłacono',
     receiptPending: 'Puste: paragon dopiero będzie',

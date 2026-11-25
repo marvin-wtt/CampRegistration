@@ -33,7 +33,8 @@ export default {
   field: {
     vendor: 'Payé à',
     vendorRefund: 'Remboursé par',
-    vendorHint: 'Facultatif, p. ex. le magasin ou l’entreprise',
+    vendorHint: 'p. ex. le magasin ou l’entreprise',
+    optional: '{field} (facultatif)',
     noCategoryMatch: 'Aucune catégorie correspondante',
     paidOn: 'Payé le',
     receiptPending: 'Vide : justificatif à venir',

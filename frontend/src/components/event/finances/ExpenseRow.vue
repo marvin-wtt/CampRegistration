@@ -16,12 +16,12 @@
 
     <q-item-section class="expense-main">
       <q-item-label class="row items-center no-wrap q-gutter-x-sm">
-        <span class="ellipsis text-weight-medium">
+        <span class="expense-description ellipsis text-weight-medium">
           {{ expense.description }}
         </span>
         <span
           v-if="expense.vendor"
-          class="ellipsis text-on-surface-variant"
+          class="expense-vendor ellipsis text-on-surface-variant"
         >
           {{ expense.vendor }}
         </span>
@@ -218,6 +218,17 @@ const caption = computed(() =>
 }
 
 .expense-main {
+  min-width: 0;
+}
+
+/* Short of room, the vendor gives way before the description is cut. */
+.expense-description {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.expense-vendor {
+  flex: 0 1000 auto;
   min-width: 0;
 }
 

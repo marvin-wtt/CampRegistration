@@ -15,15 +15,16 @@ import { CaptchaService } from '#core/captcha/captcha.service';
 
 function helmetOptions(): HelmetOptions {
   const captcha = resolve(CaptchaService).cspSources;
-  if (!captcha) {
-    return {};
-  }
 
   return {
     contentSecurityPolicy: {
       directives: {
-        scriptSrc: ["'self'", ...captcha.scriptSrc],
-        frameSrc: ["'self'", ...captcha.frameSrc],
+        // blob: previews files picked for upload before they are stored
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        ...(captcha && {
+          scriptSrc: ["'self'", ...captcha.scriptSrc],
+          frameSrc: ["'self'", ...captcha.frameSrc],
+        }),
       },
     },
   };

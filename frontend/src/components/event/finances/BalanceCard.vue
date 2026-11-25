@@ -7,12 +7,15 @@
     data-test="balance-card"
   >
     <q-card-section class="row items-center no-wrap q-gutter-x-md">
+      <!-- A name typed in, with no account, gets the secondary tone. -->
       <q-avatar
-        color="primary-container"
-        text-color="on-primary-container"
-        :icon="balance.userId ? undefined : 'badge'"
+        :color="balance.userId ? 'primary-container' : 'secondary-container'"
+        :text-color="
+          balance.userId ? 'on-primary-container' : 'on-secondary-container'
+        "
+        :icon="initial ? undefined : 'badge'"
       >
-        <template v-if="balance.userId">{{ initial }}</template>
+        <template v-if="initial">{{ initial }}</template>
       </q-avatar>
       <div class="col">
         <div class="text-subtitle1 text-weight-medium ellipsis">
@@ -159,6 +162,7 @@ import type {
   Payout,
   PayoutDirection,
 } from '@camp-registration/common/entities';
+import { initials } from '@/utils/initials';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import {
   type PayoutStatusKey,
@@ -205,7 +209,7 @@ const rows = computed(() =>
   }),
 );
 
-const initial = computed(() => balance.name.trim().charAt(0).toUpperCase());
+const initial = computed(() => initials(balance.name));
 
 // By what is left to arrange: an agreed payout no longer reads as owed.
 const status = computed(() => {

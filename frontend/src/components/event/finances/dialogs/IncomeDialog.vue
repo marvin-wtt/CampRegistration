@@ -66,28 +66,17 @@
             v-show="showOriginal"
             class="row no-wrap original-row"
           >
-            <q-select
+            <currency-select
               v-model="form.originalCurrency"
-              :options="FOREIGN_CURRENCIES"
+              :exclude="currency"
               :label="t('finance.field.originalCurrency')"
               class="original-currency"
-              use-input
-              fill-input
-              hide-selected
-              new-value-mode="add-unique"
-              :input-debounce="0"
-              clearable
-              dense
-              outlined
-              rounded
-              hide-bottom-space
               :rules="[
                 (val: string | null) =>
                   !form.originalAmount ||
                   /^[A-Z]{3}$/.test(val ?? '') ||
                   t('finance.validation.currency'),
               ]"
-              @new-value="addCurrency"
             />
             <amount-input
               v-model="form.originalAmount"
@@ -237,6 +226,7 @@ import ReceiptFileStrip from '@/components/event/finances/ReceiptFileStrip.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
+import CurrencySelect from '@/components/event/finances/CurrencySelect.vue';
 import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import EventDateInput from '@/components/event/EventDateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
@@ -245,8 +235,6 @@ import { useFinanceFormat } from '@/composables/financeFormat';
 import { usePermissions } from '@/composables/permissions';
 import { formatLocalDate } from '@/utils/date';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
-
-const FOREIGN_CURRENCIES = ['PLN', 'CZK', 'GBP', 'CHF', 'USD', 'DKK', 'HUF'];
 
 const { income = undefined, prefill = undefined } = defineProps<{
   /** Edits this one; records a new income without. */
@@ -314,11 +302,6 @@ if (prefill) {
       uploading: false,
     })),
   );
-}
-
-function addCurrency(value: string, done: (item?: string) => void) {
-  const code = value.trim().toUpperCase();
-  done(/^[A-Z]{3}$/.test(code) ? code : undefined);
 }
 
 async function save() {
@@ -399,7 +382,7 @@ function switchToRefund() {
 }
 
 .original-currency {
-  /* Three letters, the clear icon and the arrow on one line. */
+  /* The code, the clear icon and the arrow on one line. */
   width: 136px;
   flex: 0 0 auto;
 }

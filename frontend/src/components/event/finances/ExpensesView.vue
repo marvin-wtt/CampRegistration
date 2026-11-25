@@ -21,6 +21,7 @@
     <list-controls
       v-model:search="search"
       v-model:sort="sort"
+      v-model:descending="descending"
       :sorts="sortOptions"
       :placeholder="t('search')"
       test-id="expense"
@@ -150,14 +151,9 @@ import FinanceTabLayout from '@/components/event/finances/FinanceTabLayout.vue';
 import { useExpenseFilters } from '@/composables/expenseFilters';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
+import { useQuerySort } from '@/composables/querySort';
 import { parseLocalDate } from '@/utils/date';
-import {
-  LEDGER_SORTS,
-  type LedgerSort,
-  groupsByDay,
-  sortLedger,
-} from '@/utils/ledgerSort';
+import { LEDGER_SORTS, groupsByDay, sortLedger } from '@/utils/ledgerSort';
 import { matchesText } from '@/utils/textSearch';
 
 const { expenses, categories } = defineProps<{
@@ -170,7 +166,6 @@ const dialogs = useFinanceDialogs();
 const quasar = useQuasar();
 const { t, d } = useI18n();
 const { money, payerName, categoryPath } = useFinanceFormat();
-const { getEnumQueryParam, setQueryParams } = useRouteQueryParams();
 
 // Payer, receipt and actions get their own columns once there is room.
 const wide = computed(() => quasar.screen.gt.sm);
@@ -188,12 +183,13 @@ function signedAmount(expense: Expense): number {
 const search = ref<string | null>('');
 
 // Newest first by default, as a log is read during the event.
-const sort = computed<LedgerSort>({
-  get: () => getEnumQueryParam('sort', LEDGER_SORTS) ?? 'newest',
-  set: (value) => setQueryParams({ sort: value === 'newest' ? null : value }),
-});
+const { sort, descending } = useQuerySort(LEDGER_SORTS, 'date', () => true);
 const sortOptions = computed(() =>
-  LEDGER_SORTS.map((value) => ({ value, label: t(`sort.${value}`) })),
+  LEDGER_SORTS.map((value) => ({
+    value,
+    label: t(`sort.${value}`),
+    direction: value === 'date' ? ('date' as const) : ('number' as const),
+  })),
 );
 
 const shown = computed(() =>
@@ -210,7 +206,7 @@ const shown = computed(() =>
 
 // A day per date; `undefined` is the one list when not sorted by date.
 const days = computed(() => {
-  const sorted = sortLedger(shown.value, sort.value, (e) => ({
+  const sorted = sortLedger(shown.value, sort.value, descending.value, (e) => ({
     date: e.date,
     number: e.receiptNumber,
     amount: e.amount,
@@ -274,10 +270,9 @@ headline:
   refunds: 'after {amount} in refunds'
 search: 'Search or #number'
 sort:
-  newest: 'Newest first'
-  oldest: 'Oldest first'
+  date: 'Date'
   number: 'Receipt number'
-  amount: 'Highest amount first'
+  amount: 'Amount'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -286,10 +281,9 @@ headline:
   refunds: 'nach {amount} Erstattungen'
 search: 'Suchen oder #Nummer'
 sort:
-  newest: 'Neueste zuerst'
-  oldest: 'Älteste zuerst'
+  date: 'Datum'
   number: 'Belegnummer'
-  amount: 'Höchster Betrag zuerst'
+  amount: 'Betrag'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -298,10 +292,9 @@ headline:
   refunds: 'après {amount} de remboursements'
 search: 'Rechercher ou n°'
 sort:
-  newest: "Plus récentes d'abord"
-  oldest: "Plus anciennes d'abord"
+  date: 'Date'
   number: 'Numéro de justificatif'
-  amount: "Montant le plus élevé d'abord"
+  amount: 'Montant'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -310,10 +303,9 @@ headline:
   refunds: 'po zwrotach {amount}'
 search: 'Szukaj lub #numer'
 sort:
-  newest: 'Najnowsze najpierw'
-  oldest: 'Najstarsze najpierw'
+  date: 'Data'
   number: 'Numer dowodu'
-  amount: 'Najwyższa kwota najpierw'
+  amount: 'Kwota'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -322,8 +314,7 @@ headline:
   refunds: 'po vratkách {amount}'
 search: 'Hledat nebo #číslo'
 sort:
-  newest: 'Nejnovější první'
-  oldest: 'Nejstarší první'
+  date: 'Datum'
   number: 'Číslo dokladu'
-  amount: 'Nejvyšší částka první'
+  amount: 'Částka'
 </i18n>
