@@ -142,6 +142,19 @@
                 {{ scope.opt.label }}
               </span>
             </template>
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label
+                    v-if="scope.opt.disable"
+                    caption
+                  >
+                    {{ t('field.template_missing_permissions') }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
           </q-select>
         </event-edit-step>
 
@@ -523,6 +536,8 @@ import OrganizationCreateDialog from '@/components/organization/OrganizationCrea
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 import { browserTimezone } from '@/utils/timezones';
+import { useProfileStore } from '@/stores/profile-store';
+import { EVENT_COPY_REQUIRED_PERMISSIONS } from '@camp-registration/common/permissions';
 
 const props = defineProps<{
   organizationId?: string | undefined;
@@ -531,6 +546,7 @@ const props = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const assignedEventsStore = useAssignedEventsStore();
+const profileStore = useProfileStore();
 const eventStore = useEventsStore();
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
@@ -635,12 +651,28 @@ function toTime(iso?: string): string | undefined {
   return iso ? dateUtil.formatDate(new Date(iso), 'HH:mm') : undefined;
 }
 
-type ReferenceEventOptions = QSelectOption<string | undefined>[];
+type ReferenceEventOption = QSelectOption<string | undefined> & {
+  disable: boolean;
+};
+type ReferenceEventOptions = ReferenceEventOption[];
+// Own grants only, as on the backend: an admin access grant doesn't let a copy
+// carry the event's content elsewhere.
+function canCopy(eventId: string): boolean {
+  const granted =
+    profileStore.user?.eventAccess.find((access) => access.eventId === eventId)
+      ?.permissions ?? [];
+
+  return EVENT_COPY_REQUIRED_PERMISSIONS.every((permission) =>
+    granted.includes(permission),
+  );
+}
+
 const referenceEventOptions = computed<ReferenceEventOptions>(() => {
   return (assignedEventsStore.data ?? [])
-    .map((event): QSelectOption => ({
+    .map((event): ReferenceEventOption => ({
       value: event.id,
       label: to(event.name),
+      disable: !canCopy(event.id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 });
@@ -812,6 +844,7 @@ field:
   name: 'Event name'
   use_template: 'Preset'
   template: 'Event'
+  template_missing_permissions: 'Copying needs access to all of its content'
   organizer: 'Organizer'
   contactEmail: 'Contact email'
   maxParticipants: 'Maximum number of participants'
@@ -905,6 +938,7 @@ field:
   name: 'Veranstaltungsname'
   use_template: 'Vorlage'
   template: 'Veranstaltung'
+  template_missing_permissions: 'Zum Kopieren brauchst du Zugriff auf alle Inhalte'
   organizer: 'Veranstalter'
   contactEmail: 'Kontakt-Email'
   maxParticipants: 'Maximale Teilnehmeranzahl'
@@ -998,6 +1032,7 @@ field:
   name: "Nom de l'événement"
   use_template: 'Modèle'
   template: 'Événement'
+  template_missing_permissions: "La copie nécessite l'accès à tout son contenu"
   organizer: 'Organisateur'
   contactEmail: 'Email de contact'
   maxParticipants: 'Nombre maximum de participants'
@@ -1091,6 +1126,7 @@ field:
   name: 'Nazwa wydarzenia'
   use_template: 'Szablon'
   template: 'Wydarzenie'
+  template_missing_permissions: 'Kopiowanie wymaga dostępu do całej zawartości'
   organizer: 'Organizator'
   contactEmail: 'E-mail kontaktowy'
   maxParticipants: 'Maksymalna liczba uczestników'
@@ -1184,6 +1220,7 @@ field:
   name: 'Název akce'
   use_template: 'Šablona'
   template: 'Akce'
+  template_missing_permissions: 'Kopírování vyžaduje přístup ke všemu obsahu'
   organizer: 'Organizátor'
   contactEmail: 'Kontaktní e-mail'
   maxParticipants: 'Maximální počet účastníků'

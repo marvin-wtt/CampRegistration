@@ -180,6 +180,30 @@ export const ORGANIZATION_EVENT_PERMISSIONS = [
 ] as const satisfies readonly EventScopedPermission[];
 
 /**
+ * What a new event copies from its reference event, each part with the
+ * permissions it takes on the reference. The backend's clone is typed against
+ * these keys, so copying a part without declaring its permissions won't compile.
+ * `settings` must cover every setting key's view permission (tested).
+ */
+export const EVENT_COPY_PERMISSIONS = {
+  form: ['event.view'],
+  themes: ['event.view'],
+  privacyNotice: ['event.view'],
+  files: ['event.files.view'],
+  tableTemplates: ['event.table_templates.view'],
+  messageTemplates: ['event.message_templates.view'],
+  settings: ['event.view', 'event.rooms.view', 'event.program_items.view'],
+  financeCategories: ['event.finances.configure'],
+  financePrefixes: ['event.finances.configure'],
+} as const satisfies Record<string, readonly EventScopedPermission[]>;
+
+export type EventCopyPart = keyof typeof EVENT_COPY_PERMISSIONS;
+
+/** Every permission copying an event takes: all parts are copied or none. */
+export const EVENT_COPY_REQUIRED_PERMISSIONS: readonly EventScopedPermission[] =
+  [...new Set(Object.values(EVENT_COPY_PERMISSIONS).flat())];
+
+/**
  * The newsletter counterpart of `ORGANIZATION_EVENT_PERMISSIONS`: what an
  * organization ADMIN holds on every newsletter their organization owns, without
  * any newsletter-manager record.
