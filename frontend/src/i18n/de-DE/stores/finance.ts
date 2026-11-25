@@ -62,6 +62,10 @@ export default {
       success: 'Einstellungen gespeichert',
       error: 'Fehler beim Speichern der Einstellungen',
     },
+    linkParty: {
+      success: 'Dem Konto zugeordnet',
+      error: 'Zuordnen fehlgeschlagen',
+    },
   },
   fee: {
     fetch: { error: 'Fehler beim Abrufen der Teilnahmebeiträge' },

@@ -733,6 +733,86 @@ describe('finances', () => {
       ]);
     });
 
+    it('links a typed name to a manager who joined later', async () => {
+      const { event, token } = await setup('TREASURER');
+      await createExpense(event, token, { amount: 5000, paidByName: 'Anna' });
+      // Another spelling from before names were matched, written directly.
+      await prisma.expense.create({
+        data: {
+          eventId: event.id,
+          receiptNumber: 901,
+          amount: 700,
+          description: 'Older',
+          paidByName: 'anna',
+        },
+      });
+      await request()
+        .post(`/api/v1/events/${event.id}/payouts`)
+        .send({
+          recipientName: 'Anna',
+          direction: 'OUT',
+          amount: 2000,
+          paidOn: '2026-07-24',
+        })
+        .auth(token, { type: 'bearer' })
+        .expect(201);
+      const { user: anna } = await addManager(event, 'COUNSELOR');
+      await prisma.user.update({
+        where: { id: anna.id },
+        data: { name: 'Anna Berg' },
+      });
+
+      const { body: linked } = await request()
+        .post(`/api/v1/events/${event.id}/finances/parties/link`)
+        .send({ name: 'Anna', userId: anna.id })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(linked.data).toEqual({ expenses: 1, payouts: 1 });
+
+      // Only the exact spelling moves; the account's name is snapshotted.
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/finances/balances?view=all`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            userId: anna.id,
+            name: 'Anna Berg',
+            paid: 5000,
+            paidOut: 2000,
+          }),
+          expect.objectContaining({ userId: null, name: 'anna', paid: 700 }),
+        ]),
+      );
+      expect(
+        await prisma.auditLog.count({
+          where: { eventId: event.id, action: 'updated' },
+        }),
+      ).toBe(2);
+    });
+
+    it('links only to a manager, and only with full edit rights', async () => {
+      const { event, token } = await setup('TREASURER');
+      await createExpense(event, token, { paidByName: 'Anna' });
+      const outsider = await UserFactory.create();
+      const { user: counselor, token: counselorToken } = await addManager(
+        event,
+        'COUNSELOR',
+      );
+
+      await request()
+        .post(`/api/v1/events/${event.id}/finances/parties/link`)
+        .send({ name: 'Anna', userId: outsider.id })
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+      await request()
+        .post(`/api/v1/events/${event.id}/finances/parties/link`)
+        .send({ name: 'Anna', userId: counselor.id })
+        .auth(counselorToken, { type: 'bearer' })
+        .expect(403);
+    });
+
     it('settles a balance only once the payout is paid', async () => {
       const { event, user, token } = await setup('TREASURER');
       await createExpense(event, token, {

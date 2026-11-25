@@ -57,6 +57,10 @@ export default {
       success: 'Ustawienia zapisane',
       error: 'Nie udało się zapisać ustawień',
     },
+    linkParty: {
+      success: 'Przypisano do konta',
+      error: 'Nie udało się przypisać',
+    },
   },
   fee: {
     fetch: { error: 'Nie udało się pobrać opłat za udział' },

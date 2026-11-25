@@ -54,6 +54,10 @@ export default {
       success: 'Nastavení uloženo',
       error: 'Uložení nastavení se nezdařilo',
     },
+    linkParty: {
+      success: 'Přiřazeno k účtu',
+      error: 'Přiřazení se nezdařilo',
+    },
   },
   fee: {
     fetch: { error: 'Načtení účastnických poplatků se nezdařilo' },

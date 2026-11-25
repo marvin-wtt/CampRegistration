@@ -9,6 +9,7 @@ import ExpenseCaptureDialog, {
   type ExpensePrefill,
 } from '@/components/event/finances/dialogs/ExpenseCaptureDialog.vue';
 import ExpenseDetailsDialog from '@/components/event/finances/dialogs/ExpenseDetailsDialog.vue';
+import PartyLinkDialog from '@/components/event/finances/dialogs/PartyLinkDialog.vue';
 import PayoutDetailsDialog from '@/components/event/finances/dialogs/PayoutDetailsDialog.vue';
 import FinanceCategoryDialog from '@/components/event/finances/dialogs/FinanceCategoryDialog.vue';
 import FinanceSettingsDialog from '@/components/event/finances/dialogs/FinanceSettingsDialog.vue';
@@ -51,6 +52,13 @@ export function useFinanceDialogs() {
     });
   }
 
+  function linkParty(name: string, suggested: string | null) {
+    quasar.dialog({
+      component: PartyLinkDialog,
+      componentProps: { name, suggested },
+    });
+  }
+
   function categories(kind: FinanceCategoryKind = 'EXPENSE') {
     quasar.dialog({
       component: FinanceCategoryDialog,
@@ -82,6 +90,7 @@ export function useFinanceDialogs() {
     captureFrom,
     expenseDetails,
     payoutDetails,
+    linkParty,
     categories,
     income,
     incomeFrom,

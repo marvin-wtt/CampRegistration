@@ -51,6 +51,10 @@ export default {
       success: 'Settings saved',
       error: 'Failed to save the settings',
     },
+    linkParty: {
+      success: 'Moved to the account',
+      error: 'Failed to move the records',
+    },
   },
   fee: {
     fetch: { error: 'Failed to fetch the registration fees' },

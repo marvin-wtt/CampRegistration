@@ -29,6 +29,42 @@
           }}
         </div>
       </div>
+      <m-btn
+        v-if="linkable"
+        icon="link"
+        color="on-surface-variant"
+        flat
+        round
+        :aria-label="t('link')"
+        data-test="balance-link"
+        @click="emit('link', match?.userId ?? null)"
+      >
+        <q-tooltip>{{ t('link') }}</q-tooltip>
+      </m-btn>
+    </q-card-section>
+
+    <!-- The same name joined as a manager: likely one person, split in two. -->
+    <q-card-section
+      v-if="linkable && match"
+      class="q-pt-none"
+    >
+      <q-banner
+        dense
+        rounded
+        class="bg-secondary-container text-on-secondary-container"
+        data-test="balance-link-hint"
+      >
+        {{ t('matchHint', { name: match.name }) }}
+        <template #action>
+          <m-btn
+            :label="t('linkShort')"
+            color="on-secondary-container"
+            flat
+            rounded
+            @click="emit('link', match.userId)"
+          />
+        </template>
+      </q-banner>
     </q-card-section>
 
     <q-card-section class="q-pt-none">
@@ -155,6 +191,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
@@ -169,6 +206,8 @@ import {
   usePayoutStatus,
 } from '@/composables/payoutStatus';
 import { usePermissions } from '@/composables/permissions';
+import { useFinanceStore } from '@/stores/finance-store';
+import { partyNameKey } from '@camp-registration/common/utils';
 
 const {
   balance,
@@ -183,7 +222,12 @@ const {
 }>();
 
 // Handled by the list, so a card per person needn't set up the dialogs.
-const emit = defineEmits<{ open: [payout: Payout]; pay: [PayoutDirection] }>();
+const emit = defineEmits<{
+  open: [payout: Payout];
+  pay: [PayoutDirection];
+  /** File a typed name under an account; the manager it likely is. */
+  link: [suggested: string | null];
+}>();
 
 const { t } = useI18n();
 const { can } = usePermissions();
@@ -210,6 +254,26 @@ const rows = computed(() =>
 );
 
 const initial = computed(() => initials(balance.name));
+
+const financeStore = useFinanceStore();
+const { parties } = storeToRefs(financeStore);
+
+// A typed name only, and the rights to rewrite all of its records.
+const linkable = computed(
+  () =>
+    !balance.userId &&
+    (parties.value?.managers.length ?? 0) > 0 &&
+    can('event.expenses.edit', 'event.payouts.edit'),
+);
+
+// The one manager of the same name; two of one name are left to pick.
+const match = computed(() => {
+  const key = partyNameKey(balance.name);
+  const same = (parties.value?.managers ?? []).filter(
+    (m) => partyNameKey(m.name) === key,
+  );
+  return same.length === 1 ? same[0] : undefined;
+});
 
 // By what is left to arrange: an agreed payout no longer reads as owed.
 const status = computed(() => {
@@ -270,3 +334,33 @@ const status = computed(() => {
   font-variant-numeric: tabular-nums;
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+link: 'Link to an account'
+linkShort: 'Link'
+matchHint: '{name} is a manager now. Link these records to their account?'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+link: 'Mit einem Konto verknüpfen'
+linkShort: 'Verknüpfen'
+matchHint: '{name} ist jetzt Leitungsperson. Diese Einträge mit dem Konto verknüpfen?'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+link: 'Rattacher à un compte'
+linkShort: 'Rattacher'
+matchHint: '{name} est maintenant responsable. Rattacher ces écritures à son compte ?'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+link: 'Połącz z kontem'
+linkShort: 'Połącz'
+matchHint: '{name} jest teraz osobą zarządzającą. Połączyć te wpisy z jej kontem?'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+link: 'Propojit s účtem'
+linkShort: 'Propojit'
+matchHint: '{name} je teď vedoucí. Propojit tyto záznamy s jeho účtem?'
+</i18n>

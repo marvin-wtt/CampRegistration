@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
 import { FinanceService } from '#app/finance/finance.service';
+import { FinancePartyService } from '#app/finance/finance-party.service';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import validator from '#app/finance/finance.validation';
 import { FileService } from '#app/file/file.service';
 import { PaymentService } from '#app/payment/payment.service';
@@ -24,6 +26,10 @@ export class FinanceController extends BaseController {
     @inject(FinanceService) private readonly financeService: FinanceService,
     @inject(FileService) private readonly fileService: FileService,
     @inject(PaymentService) private readonly paymentService: PaymentService,
+    @inject(FinancePartyService)
+    private readonly partyService: FinancePartyService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -58,6 +64,21 @@ export class FinanceController extends BaseController {
     res.json({
       data: await this.financeService.getParties(event.id, req.authUserId()),
     });
+  }
+
+  async linkParty(req: Request, res: Response) {
+    const { body } = await req.validate(validator.linkParty);
+    const event = req.modelOrFail('event');
+
+    const result = await this.partyService.linkName(
+      event.id,
+      body.name,
+      body.userId,
+    );
+    void this.realtimeService.emitInvalidation(event.id, 'expense');
+    void this.realtimeService.emitInvalidation(event.id, 'payout');
+
+    res.json({ data: result });
   }
 
   /** XLSX with a sheet each for expenses, payouts and categories; CSV of the expenses. */

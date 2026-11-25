@@ -7,4 +7,4 @@
 - [x] Expense details dialog should also offer edit in the top menu
 - [x] Expense item should cut off the recipient instead of the description when there is not enough space (e.g. on mobile)
 - [x] The category filter should display the group of a category differently (e.g. caption)
-- [ ] Expense sorting should have a direction
+- [x] Expense sorting should have a direction

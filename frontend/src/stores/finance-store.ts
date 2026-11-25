@@ -32,6 +32,8 @@ import type {
   ExpenseUpdateData,
   FinanceBalance,
   FinanceParties,
+  FinancePartyLinkData,
+  FinancePartyLinkResult,
   FinanceSettings,
   FinanceSettingsUpdateData,
   FinanceSummary,
@@ -268,6 +270,19 @@ export const useFinanceStore = defineStore('finance', () => {
     void parties.reload();
   }
 
+  /** Files a typed name's records under an account; both lists change. */
+  async function linkParty(
+    data: FinancePartyLinkData,
+  ): Promise<FinancePartyLinkResult> {
+    const result = await parties.mutate(
+      'linkParty',
+      (eventId) => api.linkFinanceParty(eventId, data),
+      { reload: true, multiWrite: true, feedback: 'result' },
+    );
+    await Promise.all([expenses.reload(), reloadPayouts()]);
+    return result;
+  }
+
   async function createExpense(data: ExpenseCreateData): Promise<Expense> {
     const expense = await expenses.mutate(
       'create',
@@ -487,6 +502,7 @@ export const useFinanceStore = defineStore('finance', () => {
     fetchData,
     loadSummary,
     retrySummary,
+    linkParty,
     createExpense,
     updateExpense,
     deleteExpense,

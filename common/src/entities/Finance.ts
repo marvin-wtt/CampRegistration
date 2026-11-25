@@ -115,6 +115,18 @@ export interface FinanceSettingsUpdateData {
   incomeNumberPrefix?: string | undefined;
 }
 
+/** Files a typed name's expenses and payouts under a manager's account. */
+export interface FinancePartyLinkData {
+  name: string;
+  userId: string;
+}
+
+/** How many records a link moved. */
+export interface FinancePartyLinkResult {
+  expenses: number;
+  payouts: number;
+}
+
 /** Who can be picked as payer or recipient: managers first, then names typed before. */
 export interface FinanceParties {
   managers: { userId: string; name: string; role: EventManagerRole }[];

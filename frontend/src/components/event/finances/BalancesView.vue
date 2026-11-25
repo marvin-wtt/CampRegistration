@@ -72,6 +72,7 @@
         :linked-payout-id="linkedPayoutId"
         @open="dialogs.payoutDetails"
         @pay="(direction) => pay(balance, direction)"
+        @link="(suggested) => dialogs.linkParty(balance.name, suggested)"
       />
     </div>
 
