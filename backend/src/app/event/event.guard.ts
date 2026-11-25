@@ -1,5 +1,9 @@
 import type { Request } from 'express';
-import type { ScopePermission } from '@camp-registration/common/permissions';
+import {
+  EVENT_COPY_REQUIRED_PERMISSIONS,
+  type ScopePermission,
+} from '@camp-registration/common/permissions';
+import { SettingsRegistry } from '#app/setting/setting.registry';
 import { type GuardFn, or } from '#core/guard';
 import {
   scoped,
@@ -39,6 +43,32 @@ export const hasEventPermission = (
 /** For lists with `?view=all|own`; see {@link scopedView}. */
 export const hasEventView = (permission: ScopePermission<'event'>): GuardFn =>
   scopedView('event', permission);
+
+/**
+ * A copy carries everything over, so it takes every permission the copy needs
+ * on the reference (`EVENT_COPY_PERMISSIONS`). Only the caller's own grants
+ * count, never an admin access grant. Reads the raw body, as guards run before
+ * validation: a malformed id passes here and fails validation next.
+ */
+export const canCopyReferenceEvent: GuardFn = async (req) => {
+  const id = (req.body as { referenceEventId?: unknown } | undefined)
+    ?.referenceEventId;
+  if (typeof id !== 'string') {
+    return true;
+  }
+
+  const authorization = await resolve(
+    EventManagerService,
+  ).getManagerAuthorization(id, req.authUserId());
+  const required = [
+    ...EVENT_COPY_REQUIRED_PERMISSIONS,
+    ...resolve(SettingsRegistry).viewPermissions(),
+  ];
+
+  return required.every((permission) =>
+    authorization?.permissions.has(permission),
+  );
+};
 
 export const registrationOpen = (req: Request): boolean => {
   const event = req.modelOrFail('event');
