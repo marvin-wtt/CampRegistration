@@ -304,8 +304,9 @@ import {
 } from 'vue';
 import type {
   Token,
-  TokenRegistry,
+  TokenItem,
 } from '@/components/event/contact/TokenRegistry';
+import { flattenTokens } from '@/components/event/contact/TokenRegistry';
 import TokenSelectionDialog from '@/components/event/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, useEditor } from '@tiptap/vue-3';
@@ -320,9 +321,12 @@ import Typography from '@tiptap/extension-typography';
 import Document from '@tiptap/extension-document';
 import HardBreak from '@tiptap/extension-hard-break';
 import Variable, {
+  VARIABLE_SOURCE,
+  type VariableAttributes,
   type VariableDefinition,
   type VariableList,
 } from './VariableNode';
+import VariableFallbackDialog from './VariableFallbackDialog.vue';
 import EmailButton, { type EmailButtonAttributes } from './ButtonNode';
 import ButtonEditDialog from './ButtonEditDialog.vue';
 
@@ -340,35 +344,19 @@ const {
   plainText = false,
   placeholder,
 } = defineProps<{
-  tokens?: TokenRegistry[];
+  tokens?: TokenItem[];
   plainText?: boolean | undefined;
   singleLine?: boolean | undefined;
   placeholder?: string | undefined;
 }>();
 
-const variables = computed<VariableList>(() => {
-  return tokens.flatMap(tokenRegistryToVariableList);
-});
+const variables = computed<VariableList>(() =>
+  flattenTokens(tokens).map(tokenToVariable),
+);
 
 const urlTokens = computed<VariableList>(() =>
   variables.value.filter(({ type }) => type === 'url'),
 );
-
-function tokenRegistryToVariableList(
-  registry: TokenRegistry | Token,
-): VariableList {
-  if ('items' in registry) {
-    return registry.items.flatMap((item) =>
-      tokenRegistryToVariableList({
-        ...item,
-        value: `${registry.value}.${item.value}`,
-        category: registry.category ?? registry.label,
-      }),
-    );
-  }
-
-  return [tokenToVariable(registry)];
-}
 
 function tokenToVariable(token: Token): VariableDefinition {
   return {
@@ -423,6 +411,7 @@ const editor = useEditor({
     ...(singleLine ? [] : [HardBreak]),
     Variable.configure({
       variables: variables.value,
+      edit: openFallbackDialog,
     }),
     ...(singleLine || plainText
       ? []
@@ -477,8 +466,7 @@ function getEditorValue(editor: Editor) {
 function wrapTemplateVariables(html: string): string {
   // Matches a whole tag, so a {{ some.variable }} inside an attribute such as
   // a button's href stays as it is, or a variable in text.
-  const regex = /(<[^>]*>)|(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})/g;
-
+  const regex = new RegExp(`(<[^>]*>)|${VARIABLE_SOURCE}`, 'g');
   return html.replace(regex, (match, tag?: string) =>
     tag ? match : `<span data-variable>${match}</span>`,
   );
@@ -486,10 +474,12 @@ function wrapTemplateVariables(html: string): string {
 
 function unwrapTemplateVariables(html: string): string {
   // This regex matches the <span data-variable> wrapper around the template pattern.
-  const regex =
-    /<span\b(?=[^>]*\bdata-variable\b)[^>]*>(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})<\/span>/g;
+  const regex = new RegExp(
+    String.raw`<span\b(?=[^>]*\bdata-variable\b)[^>]*>(${VARIABLE_SOURCE})<\/span>`,
+    'g',
+  );
 
-  return html.replace(regex, '$1');
+  return html.replace(regex, (_match, variable: string) => variable);
 }
 
 watch(
@@ -514,13 +504,27 @@ function onAddToken() {
         tokens,
       },
     })
-    .onOk(({ token }) => {
-      editor.value
-        ?.chain()
-        .focus()
-        .insertVariable(tokenToVariable(token))
-        .run();
+    .onOk(({ token }: { token: Token }) => {
+      editor.value?.chain().focus().insertVariable(token).run();
     });
+}
+
+function openFallbackDialog(
+  attrs: VariableAttributes,
+): Promise<string | null | undefined> {
+  const label =
+    variables.value.find(({ value }) => value === attrs.value)?.label ??
+    attrs.value;
+
+  return new Promise((resolve) => {
+    quasar
+      .dialog({
+        component: VariableFallbackDialog,
+        componentProps: { label, fallback: attrs.fallback },
+      })
+      .onOk((fallback: string | null) => resolve(fallback))
+      .onCancel(() => resolve(undefined));
+  });
 }
 
 function openButtonDialog(
@@ -608,6 +612,16 @@ async function onAddButton() {
     margin-right: 4px;
     font-style: italic;
     color: var(--md3-primary);
+  }
+
+  .variable-fallback {
+    margin-left: 4px;
+    font-style: italic;
+    color: var(--md3-on-surface-variant);
+
+    &::before {
+      content: '· ';
+    }
   }
 }
 
@@ -796,7 +810,7 @@ tooltip:
   formatIndentDecrease: 'Decrease indent'
   formatIndentIncrease: 'Increase indent'
   formatClear: 'Clear formatting'
-  addToken: 'Add token'
+  addToken: 'Add variable'
   addButton: 'Add button'
   undo: 'Undo'
   redo: 'Redo'
@@ -850,7 +864,7 @@ tooltip:
   formatIndentDecrease: 'Diminuer le retrait'
   formatIndentIncrease: 'Augmenter le retrait'
   formatClear: 'Effacer la mise en forme'
-  addToken: 'Ajouter un jeton'
+  addToken: 'Ajouter une variable'
   addButton: 'Ajouter un bouton'
   undo: 'Annuler'
   redo: 'Rétablir'
