@@ -37,6 +37,15 @@ export class SettingsRegistry {
     return definition;
   }
 
+  /** What it takes to see every registered setting, e.g. to copy them all. */
+  viewPermissions(): Set<EventScopedPermission> {
+    return new Set(
+      [...this.definitions.values()].map(
+        ({ viewPermission }) => viewPermission,
+      ),
+    );
+  }
+
   keyOrFail(key: string): SettingKey {
     this.getOrFail(key);
     return key as SettingKey;
