@@ -296,12 +296,12 @@ export class RegistrationForm {
   }
 
   /**
-   * The response shaped like `data`, but as a reader sees it in the survey's
-   * locale: choices by their labels, yes/no as words, dates numeric — in
-   * `dateLocale`'s format.
+   * `data` as a reader sees it in the survey's locale: choices by their labels,
+   * yes/no as words, dates numeric — in `dateLocale`'s format. Answers no
+   * question of the form holds any more stay as stored.
    */
   displayData(dateLocale = this.survey.locale): Record<string, unknown> {
-    const display: Record<string, unknown> = {};
+    const display: Record<string, unknown> = { ...this.data };
     for (const question of this.survey.getAllQuestions()) {
       if (!question.isEmpty()) {
         display[question.getValueName()] = displayValueOf(question, dateLocale);

@@ -58,14 +58,17 @@ const NUMERIC_DATE_TIME: Intl.DateTimeFormatOptions = {
  * Event dates and birth dates are UTC carriers of the digits the organizer or
  * participant entered (see `@camp-registration/common/utils`), so they format
  * in UTC. A real instant, like `createdAt`, formats in the event's timezone.
+ * Queued payloads went through JSON, so their dates arrive as ISO strings.
  */
 function formatDate(
-  date: Date,
+  date: Date | string,
   locale: string,
   options: Intl.DateTimeFormatOptions,
   timeZone = 'UTC',
 ): string {
-  return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(date);
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(
+    new Date(date),
+  );
 }
 
 export interface RegistrationTemplatePayload {
