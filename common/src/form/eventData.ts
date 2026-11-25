@@ -2,6 +2,7 @@ import type { SurveyModel } from 'survey-core';
 
 interface TaggedPlainDataEntry {
   value: unknown;
+  displayValue?: unknown;
   eventDataType?: unknown;
   data?: TaggedPlainDataEntry[];
 }
@@ -9,9 +10,11 @@ interface TaggedPlainDataEntry {
 /**
  * The answers of the questions tagged with an `eventDataType`, by tag. Shared
  * so the registration form computes from the same values the server stores.
+ * `displayValue` reads them as shown instead: choices by their labels.
  */
 export function extractEventData(
   survey: SurveyModel,
+  field: 'value' | 'displayValue' = 'value',
 ): Record<string, unknown[]> {
   const plain = survey.getPlainData({
     includeEmpty: true,
@@ -31,7 +34,7 @@ export function extractEventData(
       }
 
       // Undefined is not accepted by prisma and must be replaced with null
-      (eventData[tag] ??= []).push(entry.value ?? null);
+      (eventData[tag] ??= []).push(entry[field] ?? null);
     }
   };
   collect(plain);
