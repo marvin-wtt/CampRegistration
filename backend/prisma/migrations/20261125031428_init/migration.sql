@@ -317,7 +317,7 @@ CREATE TABLE "event_settings" (
 CREATE TABLE "tokens" (
     "id" SERIAL NOT NULL,
     "user_id" CHAR(26) NOT NULL,
-    "token" CHAR(255) NOT NULL,
+    "token" VARCHAR(255) NOT NULL,
     "type" "TokenType" NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
     "blacklisted" BOOLEAN NOT NULL DEFAULT false,
@@ -533,7 +533,7 @@ CREATE TABLE "jobs" (
     "status" "JobStatus" NOT NULL DEFAULT 'PENDING',
     "priority" SMALLINT NOT NULL DEFAULT 1,
     "attempts" INTEGER NOT NULL DEFAULT 0,
-    "error" TIMESTAMP(3),
+    "error" TEXT,
     "run_at" TIMESTAMP(3),
     "reserved_at" TIMESTAMP(3),
     "finished_at" TIMESTAMP(3),
@@ -558,7 +558,7 @@ CREATE TABLE "newsletters" (
     "organization_id" CHAR(26) NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "description" TEXT,
-    "reply_to" CHAR(255),
+    "reply_to" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3),
 
@@ -1350,3 +1350,4 @@ ALTER TABLE "event_retention_states" ADD CONSTRAINT "event_retention_states_even
 
 -- AddForeignKey
 ALTER TABLE "event_retention_states" ADD CONSTRAINT "event_retention_states_postponed_by_id_fkey" FOREIGN KEY ("postponed_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+

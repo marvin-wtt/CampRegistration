@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
@@ -425,9 +426,11 @@ export class PrivacyNoticeService extends BaseService {
       async (tx) => {
         const latest = await this.latestVersion(scope, scopeId, tx);
 
+        // jsonb reorders keys, so compare structurally; the round trip drops
+        // `undefined` the way storing does.
         if (
           latest &&
-          JSON.stringify(latest.content) === JSON.stringify(content)
+          isDeepStrictEqual(latest.content, JSON.parse(JSON.stringify(content)))
         ) {
           return latest;
         }

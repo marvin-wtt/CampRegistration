@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import type { Event, Registration } from '#generated/prisma/client.js';
 import {
   RegistrationForm,
@@ -95,7 +96,12 @@ function deepEqual(a: unknown, b: unknown): boolean {
     return true;
   }
 
-  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  // Key order differs between jsonb and request data, so compare structurally.
+  return isDeepStrictEqual(normalize(a), normalize(b));
+}
+
+function normalize(value: unknown): unknown {
+  return JSON.parse(JSON.stringify(value ?? null));
 }
 
 /**

@@ -442,7 +442,7 @@ model EventSetting {
 model Token {
   id          Int       @id @default(autoincrement())
   userId      String    @map("user_id") @db.Char(26)
-  token       String    @db.Char(255)
+  token       String    @db.VarChar(255)
   type        TokenType
   expiresAt   DateTime  @map("expires_at")
   blacklisted Boolean   @default(false)
@@ -839,7 +839,7 @@ model Job {
   status     JobStatus @default(PENDING)
   priority   Int       @default(1) @db.SmallInt
   attempts   Int       @default(0)
-  error      DateTime?
+  error      String?
   runAt      DateTime? @map("run_at")
   reservedAt DateTime? @map("reserved_at")
   finishedAt DateTime? @map("finished_at")
@@ -864,7 +864,7 @@ model Newsletter {
   organizationId String    @map("organization_id") @db.Char(26)
   name           String    @db.VarChar(255)
   description    String?
-  replyTo        String?   @map("reply_to") @db.Char(255)
+  replyTo        String?   @map("reply_to")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime? @updatedAt @map("updated_at")
 

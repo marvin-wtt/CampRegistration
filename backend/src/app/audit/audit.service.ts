@@ -344,7 +344,7 @@ export class AuditService extends BaseService {
       where: {
         OR: [
           { actorId: user.id },
-          { details: { path: '$.subjectId', equals: user.id } },
+          { details: { path: ['subjectId'], equals: user.id } },
         ],
       },
       select: { id: true },
