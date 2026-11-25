@@ -1,46 +1,43 @@
-version: "3.9"
-
 name: "app_dev"
 
 services:
   db:
-    image: mariadb:10.11.15
-    profiles: ["_base"]          # avoids accidental start
+    image: postgres:18-alpine
+    profiles: ["_base"]
     environment:
-      MYSQL_DATABASE: "database"
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: database
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "user", "-d", "database"]
       interval: 5s
       timeout: 3s
       retries: 30
 
-  # DEV DB:
-  db_dev:
+  # DEV DB
+  pg_dev:
     extends:
       service: db
     profiles: ["dev"]
     ports:
-      - "3306:3306"
+      - "127.0.0.1:5432:5432"
     volumes:
-      - db:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql
 
-  # TEST DB:
-  db_test:
+  # TEST DB
+  pg_test:
     extends:
       service: db
     profiles: ["test"]
     ports:
-      - "3307:3306"
+      - "127.0.0.1:5433:5432"
 
   # Redis
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "no"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -52,23 +49,9 @@ services:
     image: maildev/maildev:2.2.1
     profiles: ["dev", "test"]
     ports:
-      - "1080:1080" # Web UI
-      - "1025:1025" # SMTP
-
-  phpmyadmin:
-    image: phpmyadmin
-    profiles: ["dev"]
-    restart: always
-    ports:
-      - 8080:80
-    depends_on:
-      - db_dev
-    environment:
-      - PMA_HOST=db_dev
-      - PMA_PORT=3306
-      - PMA_USER=root
-      - PMA_PASSWORD=root
+      - "127.0.0.1:1080:1080"
+      - "127.0.0.1:1025:1025"
 
 volumes:
-  db:
+  postgres_data:
     driver: local

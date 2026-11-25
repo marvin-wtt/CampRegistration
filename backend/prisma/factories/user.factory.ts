@@ -24,7 +24,7 @@ export const UserFactory = {
 
     return {
       name: faker.person.fullName(),
-      email: faker.internet.email(),
+      email: faker.internet.exampleEmail().toLowerCase(),
       emailVerified: true,
       ...data,
       twoFactor,

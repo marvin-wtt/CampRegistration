@@ -13,7 +13,7 @@ export const NewsletterFactory = {
       },
       name: faker.lorem.words(3),
       description: faker.lorem.sentence(),
-      replyTo: faker.internet.email(),
+      replyTo: faker.internet.exampleEmail().toLowerCase(),
       ...data,
     };
   },

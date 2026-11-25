@@ -1,5 +1,0 @@
--- Delete OTP tokens
-DELETE FROM `tokens` WHERE `type` = 'OTP';
-
--- AlterTable
-ALTER TABLE `tokens` MODIFY `type` ENUM('ACCESS', 'REFRESH', 'RESET_PASSWORD', 'VERIFY_EMAIL', 'RESTRICTED_ACCESS') NOT NULL;

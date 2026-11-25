@@ -28,25 +28,24 @@ jobs:
     if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     services:
-      # Use MySQL (not MariaDB) as the shadow database. Prisma's `mysql` provider
-      # models native MySQL JSON, but MariaDB aliases JSON to LONGTEXT, which makes
-      # `migrate diff` report a spurious "type changed" on every JSON column.
-      mysql:
-        image: mysql:8
+      # Dedicated shadow database for Prisma migration verification.
+      postgres:
+        image: postgres:18-alpine
         env:
-          MYSQL_DATABASE: shadow_db
-          MYSQL_ROOT_PASSWORD: admin123
+          POSTGRES_DB: shadow_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
         options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 --silent"
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres -d shadow_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
           --health-start-period 30s
         ports:
-          - 3306:3306
+          - 5432:5432
 
     env:
-      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
+      DATABASE_URL: postgresql://postgres:admin123@localhost:5432/postgres
 
     steps:
       - name: Checkout code
@@ -117,13 +116,14 @@ jobs:
       image: node:${{ matrix.node }}-bookworm
 
     services:
-      mariadb:
-        image: mariadb:10.11.15
+      postgres:
+        image: postgres:18-alpine
         env:
-          MYSQL_DATABASE: test_db
-          MYSQL_ROOT_PASSWORD: admin123
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
         options: >-
-          --health-cmd "mysqladmin ping"
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres -d test_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 3
@@ -140,8 +140,7 @@ jobs:
       APP_PORT: 3000
       APP_URL: http://localhost:3000
       APP_NAME: Test App
-      DATABASE_URL: mysql://root:admin123@mariadb:3306/test_db
-      SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
+      DATABASE_URL: postgresql://postgres:admin123@postgres:5432/test_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: disk
@@ -301,8 +300,7 @@ jobs:
       APP_PORT: 3001
       APP_URL: http://localhost:3001
       APP_NAME: Test App
-      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
-      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
+      DATABASE_URL: postgresql://postgres:admin123@localhost:5432/test_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: disk
@@ -378,18 +376,19 @@ jobs:
             browser: webkit
 
     services:
-      mariadb:
-        image: mariadb:10.11.15
+      postgres:
+        image: postgres:18-alpine
         env:
-          MYSQL_DATABASE: test_db
-          MYSQL_ROOT_PASSWORD: admin123
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
         options: >-
-          --health-cmd "mysqladmin ping"
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres -d test_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 3
         ports:
-          - 3306:3306
+          - 5432:5432
 
       maildev:
         image: maildev/maildev:2.2.1
@@ -407,8 +406,7 @@ jobs:
       APP_PORT: 3001
       APP_URL: http://localhost:3001
       APP_NAME: Test App
-      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
-      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
+      DATABASE_URL: postgresql://postgres:admin123@localhost:5432/test_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: disk
@@ -484,13 +482,14 @@ jobs:
       options: --ipc=host
 
     services:
-      mariadb:
-        image: mariadb:10.11.15
+      postgres:
+        image: postgres:18-alpine
         env:
-          MYSQL_DATABASE: test_db
-          MYSQL_ROOT_PASSWORD: admin123
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
         options: >-
-          --health-cmd "mysqladmin ping"
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres -d test_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 3
@@ -510,8 +509,7 @@ jobs:
       APP_NAME: Test App
       # Inside a job container the services are reachable by their label, not
       # on localhost, and on their container-internal ports.
-      DATABASE_URL: mysql://root:admin123@mariadb:3306/test_db
-      SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
+      DATABASE_URL: postgresql://postgres:admin123@postgres:5432/test_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: disk

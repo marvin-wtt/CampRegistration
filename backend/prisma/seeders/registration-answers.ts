@@ -260,7 +260,7 @@ function textAnswer(question: QuestionTextModel): unknown {
     case 'date':
       return moment(faker.date.past()).format('YYYY-MM-DD');
     case 'email':
-      return faker.internet.email();
+      return faker.internet.exampleEmail().toLowerCase();
     case 'tel':
       return faker.phone.number({ style: 'international' });
     case 'url':

@@ -39,7 +39,7 @@ export const EventFactory = {
       countries,
       name: faker.lorem.word(),
       organizer: faker.company.name(),
-      contactEmail: faker.internet.email(),
+      contactEmail: faker.internet.exampleEmail().toLowerCase(),
       maxParticipants,
       minAge,
       maxAge,

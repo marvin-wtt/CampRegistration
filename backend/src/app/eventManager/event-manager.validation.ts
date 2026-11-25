@@ -4,6 +4,7 @@ import {
   type EventManagerCreateData,
   type EventManagerUpdateData,
 } from '@camp-registration/common/entities';
+import { EmailSchema } from '#core/validation/helper';
 
 const index = z.object({
   params: z.object({
@@ -23,7 +24,7 @@ const store = z.object({
     eventId: z.ulid(),
   }),
   body: z.object({
-    email: z.email(),
+    email: EmailSchema,
     role: z.enum(EVENT_MANAGER_ROLES),
     expiresAt: z.iso.datetime().optional(),
   }) satisfies ZodType<EventManagerCreateData>,

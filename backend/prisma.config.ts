@@ -14,6 +14,5 @@ export default defineConfig({
     // in CI environments. Pass `undefined` (not `''`) when unset: Prisma 7 treats
     // an empty string as an invalid URL, but an omitted value as "not provided".
     url: process.env.DATABASE_URL,
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

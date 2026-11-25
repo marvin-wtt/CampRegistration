@@ -24,7 +24,7 @@ export const OrganizationFactory = {
     return {
       name: faker.company.name(),
       verificationStatus: 'VERIFIED',
-      contactEmail: faker.internet.email(),
+      contactEmail: faker.internet.exampleEmail().toLowerCase(),
       phone: faker.phone.number(),
       website: faker.internet.url(),
       country: 'de',

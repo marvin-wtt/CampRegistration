@@ -81,7 +81,7 @@ async function trackingTableExists(): Promise<boolean> {
   const rows = await prisma.$queryRaw<{ count: bigint }[]>`
     SELECT COUNT(*) AS count
     FROM information_schema.tables
-    WHERE table_schema = DATABASE()
+    WHERE table_schema = current_schema()
       AND table_name = ${TRACKING_TABLE}
   `;
   return Number(rows[0]?.count ?? 0) > 0;

@@ -1,11 +1,15 @@
 import { z, type ZodType } from 'zod';
-import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
+import {
+  EmailSchema,
+  LocaleSchema,
+  PasswordSchema,
+} from '#core/validation/helper';
 import type { ProfileUpdateData } from '@camp-registration/common/entities';
 
 const update = z.object({
   body: z
     .object({
-      email: z.email(),
+      email: EmailSchema,
       password: PasswordSchema,
       currentPassword: z.string(),
       name: z.string(),

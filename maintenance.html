@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <meta
+      name="robots"
+      content="noindex"
+    />
+    <title>Under maintenance</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f8fc;
+        --card: #ffffff;
+        --text: #1b1c22;
+        --muted: #5b5e6b;
+        --primary: #3d5fd9;
+        --on-primary: #ffffff;
+        --outline: #e2e4ee;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121318;
+          --card: #1d1f26;
+          --text: #e4e5ee;
+          --muted: #a4a7b6;
+          --primary: #b6c4ff;
+          --on-primary: #0f2a80;
+          --outline: #2e313b;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        width: 100%;
+        max-width: 28rem;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        background: var(--card);
+        border: 1px solid var(--outline);
+        border-radius: 1.75rem;
+      }
+      .icon {
+        width: 4rem;
+        height: 4rem;
+        margin: 0 auto 1.5rem;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--primary) 15%, transparent);
+        color: var(--primary);
+      }
+      .icon svg {
+        width: 2rem;
+        height: 2rem;
+        animation: spin 6s linear infinite;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+      p {
+        margin: 0 0 2rem;
+        color: var(--muted);
+      }
+      button {
+        padding: 0.65rem 1.5rem;
+        font: inherit;
+        font-weight: 500;
+        color: var(--on-primary);
+        background: var(--primary);
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      button:hover {
+        filter: brightness(1.08);
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .icon svg {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div
+        class="icon"
+        aria-hidden="true"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2Z"
+          />
+        </svg>
+      </div>
+      <h1 id="title">We'll be right back</h1>
+      <p id="text">
+        We're performing scheduled maintenance. Please check back in a few
+        minutes.
+      </p>
+      <button
+        id="retry"
+        type="button"
+        onclick="location.reload()"
+      >
+        Try again
+      </button>
+    </main>
+    <script>
+      const t = {
+        de: [
+          'Wir sind gleich zurück',
+          'Wir führen gerade Wartungsarbeiten durch. Bitte schau in ein paar Minuten wieder vorbei.',
+          'Erneut versuchen',
+        ],
+        fr: [
+          'Nous revenons bientôt',
+          'Une maintenance est en cours. Merci de revenir dans quelques minutes.',
+          'Réessayer',
+        ],
+        pl: [
+          'Zaraz wracamy',
+          'Trwają prace konserwacyjne. Wróć za kilka minut.',
+          'Spróbuj ponownie',
+        ],
+        cs: [
+          'Hned jsme zpět',
+          'Probíhá údržba. Vrať se prosím za pár minut.',
+          'Zkusit znovu',
+        ],
+      }[navigator.language.slice(0, 2)];
+      if (t) {
+        document.documentElement.lang = navigator.language.slice(0, 2);
+        document.title = t[0];
+        ['title', 'text', 'retry'].forEach(
+          (id, i) => (document.getElementById(id).textContent = t[i]),
+        );
+      }
+      setTimeout(() => location.reload(), 60_000);
+    </script>
+  </body>
+</html>

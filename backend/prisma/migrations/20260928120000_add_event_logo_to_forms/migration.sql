@@ -1,3 +1,0 @@
--- This is an empty migration.
--- It hosts the data migration in `migration.ts`, which points the header logo
--- of existing registration forms at the event's logo slot.

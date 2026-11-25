@@ -422,9 +422,6 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   async poll(): Promise<QueuedJob<P> | null> {
-    // READ COMMITTED is required: the rate limit check reads before the claim
-    // query, so under REPEATABLE READ the `FOR UPDATE` below fails with
-    // ER_CHECKREAD (1020) on any job written since that read.
     return prisma.$transaction(
       async (tx) => {
         const rate = await this.getAvailableRateLimitTokens(tx);
@@ -432,22 +429,18 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
           return null;
         }
 
-        // The payload is read as text and parsed here: whether a raw query
-        // returns a JSON column parsed depends on the driver adapter detecting
-        // it, which @prisma/adapter-mariadb 7.10.1 no longer does.
-        // See https://github.com/prisma/orm/issues/30818
         const rows = await tx.$queryRaw<
           {
             id: string;
             name: string;
-            payload: string;
+            payload: P;
             attempts: number;
           }[]
         >`
-          SELECT id, name, CAST(payload AS CHAR) AS payload, attempts
+          SELECT id, name, payload, attempts
           FROM jobs
           WHERE status = 'PENDING'
-            AND run_at <= NOW(3)
+            AND run_at <= statement_timestamp()
             AND queue = ${this.queue}
             AND reserved_at IS NULL
           ORDER BY priority, run_at, created_at
@@ -485,7 +478,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         return {
           id: job.id,
           name: job.name,
-          payload: JSON.parse(job.payload) as P,
+          payload: job.payload,
           attempt: job.attempts + 1,
         };
       },

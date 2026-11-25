@@ -270,7 +270,11 @@ export class EventService extends BaseService {
 
     const rows = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM events
-      WHERE JSON_SEARCH(name, 'one', ${`%${escaped}%`}) IS NOT NULL
+      WHERE EXISTS (
+        SELECT 1
+        FROM jsonb_each_text(name) AS translation
+        WHERE translation.value ILIKE ${`%${escaped}%`}
+      )
     `;
 
     return rows.map((row) => row.id);
