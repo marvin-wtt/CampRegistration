@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#core/router/ApiError';
@@ -7,7 +7,13 @@ import {
   partyNameKey,
   pickSpelling,
 } from '@camp-registration/common/utils';
-import type { EventManagerRole } from '@camp-registration/common/entities';
+import type {
+  EventManagerRole,
+  FinancePartyLinkResult,
+} from '@camp-registration/common/entities';
+import { AuditService } from '#app/audit/audit.service';
+import { expenseAuditPolicy } from '#app/expense/expense.audit';
+import { payoutAuditPolicy } from '#app/payout/payout.audit';
 
 export interface FinanceParty {
   userId: string | null;
@@ -34,6 +40,10 @@ function currentManager() {
  */
 @injectable()
 export class FinancePartyService extends BaseService {
+  constructor(@inject(AuditService) private readonly audit: AuditService) {
+    super();
+  }
+
   async resolveParty(
     eventId: string,
     party: { userId?: string | null; name?: string | null },
@@ -133,6 +143,51 @@ export class FinancePartyService extends BaseService {
       known.names.filter((spelling) => partyNameKey(spelling) === key),
     );
     return typed ? { userId: null, name: typed } : undefined;
+  }
+
+  /**
+   * Files everything under a typed name to a manager's account, e.g. once
+   * that person has joined: otherwise their balance stays split in two.
+   * Only the exact spelling moves, as the balances group by it.
+   */
+  async linkName(
+    eventId: string,
+    name: string,
+    userId: string,
+  ): Promise<FinancePartyLinkResult> {
+    return this.transaction(async (tx) => {
+      const account = await this.resolveParty(eventId, { userId });
+      const accountName = account.name ?? name;
+
+      // The collation ignores case: the exact spelling is picked in code.
+      const expenses = (
+        await tx.expense.findMany({
+          where: { eventId, paidByUserId: null, paidByName: name },
+        })
+      ).filter((e) => e.paidByName === name);
+      const payouts = (
+        await tx.payout.findMany({
+          where: { eventId, recipientUserId: null, recipientName: name },
+        })
+      ).filter((p) => p.recipientName === name);
+
+      for (const expense of expenses) {
+        const after = await tx.expense.update({
+          where: { id: expense.id },
+          data: { paidByUserId: userId, paidByName: accountName },
+        });
+        await this.audit.updated(expenseAuditPolicy, expense, after);
+      }
+      for (const payout of payouts) {
+        const after = await tx.payout.update({
+          where: { id: payout.id },
+          data: { recipientUserId: userId, recipientName: accountName },
+        });
+        await this.audit.updated(payoutAuditPolicy, payout, after);
+      }
+
+      return { expenses: expenses.length, payouts: payouts.length };
+    });
   }
 
   /**

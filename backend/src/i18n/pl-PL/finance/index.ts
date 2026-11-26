@@ -10,6 +10,7 @@ export default {
     column: {
       receiptNumber: 'Nr paragonu',
       date: 'Data',
+      receiptDate: 'Data dowodu',
       paidOn: 'Zapłacono',
       type: 'Rodzaj',
       description: 'Opis',

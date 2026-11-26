@@ -10,6 +10,7 @@ export default {
     column: {
       receiptNumber: 'Č. dokladu',
       date: 'Datum',
+      receiptDate: 'Datum dokladu',
       paidOn: 'Zaplaceno',
       type: 'Druh',
       description: 'Popis',

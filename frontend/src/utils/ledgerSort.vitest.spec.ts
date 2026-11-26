@@ -6,8 +6,11 @@ const r = (number: number, date: string | null, amount = 100): LedgerKey => ({
   date,
   amount,
 });
-const sorted = (list: LedgerKey[], sort: Parameters<typeof sortLedger>[1]) =>
-  sortLedger(list, sort, (x) => x).map((x) => x.number);
+const sorted = (
+  list: LedgerKey[],
+  sort: Parameters<typeof sortLedger>[1],
+  descending = true,
+) => sortLedger(list, sort, descending, (x) => x).map((x) => x.number);
 
 describe('sortLedger', () => {
   const list = [
@@ -18,15 +21,20 @@ describe('sortLedger', () => {
   ];
 
   it('newest first, still to come last', () => {
-    expect(sorted(list, 'newest')).toEqual([3, 4, 1, 2]);
+    expect(sorted(list, 'date')).toEqual([3, 4, 1, 2]);
   });
 
   it('oldest first, still to come last', () => {
-    expect(sorted(list, 'oldest')).toEqual([1, 4, 3, 2]);
+    expect(sorted(list, 'date', false)).toEqual([1, 4, 3, 2]);
   });
 
   it('by number and by amount', () => {
     expect(sorted(list, 'number')).toEqual([4, 3, 2, 1]);
     expect(sorted(list, 'amount')).toEqual([2, 3, 4, 1]);
+  });
+
+  it('by number and by amount, ascending', () => {
+    expect(sorted(list, 'number', false)).toEqual([1, 2, 3, 4]);
+    expect(sorted(list, 'amount', false)).toEqual([1, 4, 3, 2]);
   });
 });

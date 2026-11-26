@@ -32,6 +32,8 @@ import type {
   ExpenseUpdateData,
   FinanceBalance,
   FinanceParties,
+  FinancePartyLinkData,
+  FinancePartyLinkResult,
   FinanceSettings,
   FinanceSettingsUpdateData,
   FinanceSummary,
@@ -51,12 +53,16 @@ function categoryUse(list: readonly Expense[] | undefined): string {
 }
 
 /**
- * What payout statements depend on: the figures a statement freezes. A
- * description, date or file change leaves every statement as it was.
+ * What payout statements depend on: the figures a statement freezes, and
+ * whether it is paid. A description, date or file change leaves every
+ * statement as it was.
  */
 function statementUse(list: readonly Expense[] | undefined): string {
   return (list ?? [])
-    .map((e) => `${e.id}:${e.type}:${e.amount.toString()}:${payerKey(e) ?? ''}`)
+    .map(
+      (e) =>
+        `${e.id}:${e.type}:${e.amount.toString()}:${payerKey(e) ?? ''}:${e.paidOn === null ? 'unpaid' : 'paid'}`,
+    )
     .sort()
     .join(',');
 }
@@ -266,6 +272,19 @@ export const useFinanceStore = defineStore('finance', () => {
   // A free-text payer or recipient joins the suggestions.
   function reloadDerived() {
     void parties.reload();
+  }
+
+  /** Files a typed name's records under an account; both lists change. */
+  async function linkParty(
+    data: FinancePartyLinkData,
+  ): Promise<FinancePartyLinkResult> {
+    const result = await parties.mutate(
+      'linkParty',
+      (eventId) => api.linkFinanceParty(eventId, data),
+      { reload: true, multiWrite: true, feedback: 'result' },
+    );
+    await Promise.all([expenses.reload(), reloadPayouts()]);
+    return result;
   }
 
   async function createExpense(data: ExpenseCreateData): Promise<Expense> {
@@ -487,6 +506,7 @@ export const useFinanceStore = defineStore('finance', () => {
     fetchData,
     loadSummary,
     retrySummary,
+    linkParty,
     createExpense,
     updateExpense,
     deleteExpense,

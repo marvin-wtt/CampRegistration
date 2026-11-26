@@ -48,6 +48,7 @@
       <list-controls
         v-model:search="search"
         v-model:sort="sort"
+        v-model:descending="descending"
         :sorts="sortOptions"
         :placeholder="t('search')"
         test-id="fee"
@@ -223,6 +224,8 @@ import { useFeeDialogs } from '@/composables/feeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { usePermissions } from '@/composables/permissions';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
+import { useQuerySort } from '@/composables/querySort';
+import type { SortDirectionKind } from '@/components/common/ListControls.vue';
 import { useFeeStore } from '@/stores/fee-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { parseLocalDate } from '@/utils/date';
@@ -232,6 +235,7 @@ import {
   type FeeFilter,
   type FeeSort,
   sortFees,
+  feeSortDescending,
   feeName,
   feeTotalsByCurrency,
   matchesFeeFilter,
@@ -309,13 +313,20 @@ const filter = computed<FeeFilter>({
 const search = ref<string | null>('');
 const sheetOpen = ref(false);
 
-const sort = computed<FeeSort>({
-  get: () => getEnumQueryParam('sort', FEE_SORTS) ?? 'name',
-  set: (value) => setQueryParams({ sort: value === 'name' ? null : value }),
-});
+const FEE_SORT_DIRECTION: Record<FeeSort, SortDirectionKind> = {
+  name: 'text',
+  reference: 'text',
+  created: 'date',
+  outstanding: 'number',
+};
+const { sort, descending } = useQuerySort(FEE_SORTS, 'name', feeSortDescending);
 
 const sortOptions = computed(() =>
-  FEE_SORTS.map((value) => ({ value, label: t(`sort.${value}`) })),
+  FEE_SORTS.map((value) => ({
+    value,
+    label: t(`sort.${value}`),
+    direction: FEE_SORT_DIRECTION[value],
+  })),
 );
 
 // Shown on the filter button, which hides the chips on phones.
@@ -339,6 +350,7 @@ const shown = computed(() =>
         matchesFeeSearch(fee, search.value ?? ''),
     ),
     sort.value,
+    descending.value,
   ),
 );
 
@@ -396,8 +408,8 @@ filters: 'Filters'
 sort:
   name: 'Name'
   reference: 'Reference'
-  newest: 'Newest first'
-  outstanding: 'Most open first'
+  created: 'Registered'
+  outstanding: 'Outstanding'
 otherCurrency: 'also {received} received, {outstanding} open'
 search: 'Name or transfer reference'
 filter:
@@ -421,8 +433,8 @@ filters: 'Filter'
 sort:
   name: 'Name'
   reference: 'Verwendungszweck'
-  newest: 'Neueste zuerst'
-  outstanding: 'Höchster offener Betrag zuerst'
+  created: 'Anmeldedatum'
+  outstanding: 'Offener Betrag'
 otherCurrency: 'dazu {received} eingegangen, {outstanding} offen'
 search: 'Name oder Verwendungszweck'
 filter:
@@ -446,8 +458,8 @@ filters: 'Filtres'
 sort:
   name: 'Nom'
   reference: 'Référence'
-  newest: 'Plus récentes d’abord'
-  outstanding: 'Montant dû le plus élevé d’abord'
+  created: 'Date d’inscription'
+  outstanding: 'Montant dû'
 otherCurrency: 'plus {received} reçus, {outstanding} en attente'
 search: 'Nom ou référence du virement'
 filter:
@@ -471,8 +483,8 @@ filters: 'Filtry'
 sort:
   name: 'Nazwisko'
   reference: 'Tytuł przelewu'
-  newest: 'Najnowsze najpierw'
-  outstanding: 'Najwyższa zaległość najpierw'
+  created: 'Data zgłoszenia'
+  outstanding: 'Zaległość'
 otherCurrency: 'oraz {received} wpłynęło, {outstanding} do zapłaty'
 search: 'Imię i nazwisko lub tytuł przelewu'
 filter:
@@ -496,8 +508,8 @@ filters: 'Filtry'
 sort:
   name: 'Jméno'
   reference: 'Variabilní symbol'
-  newest: 'Nejnovější první'
-  outstanding: 'Nejvyšší dluh první'
+  created: 'Datum přihlášení'
+  outstanding: 'Dluh'
 otherCurrency: 'navíc {received} přijato, {outstanding} neuhrazeno'
 search: 'Jméno nebo reference platby'
 filter:

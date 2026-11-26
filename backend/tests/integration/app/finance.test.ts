@@ -733,6 +733,136 @@ describe('finances', () => {
       ]);
     });
 
+    it('counts an unpaid invoice as a cost but in nobody’s balance', async () => {
+      const { event, user, token } = await setup('TREASURER');
+      const paid = await createExpense(event, token, {
+        amount: 3000,
+        paidByUserId: user.id,
+      });
+      const invoice = await createExpense(event, token, {
+        amount: 9000,
+        paidOn: null,
+        paidByUserId: user.id,
+      });
+
+      const row = await prisma.expense.findUniqueOrThrow({
+        where: { id: paid.id },
+      });
+      // Paid on the receipt date unless said otherwise.
+      expect(row.paidOn).toBe('2026-07-27');
+
+      const balances = async () =>
+        (
+          await request()
+            .get(`/api/v1/events/${event.id}/finances/balances?view=all`)
+            .auth(token, { type: 'bearer' })
+            .expect(200)
+        ).body.data;
+      expect(await balances()).toEqual([
+        expect.objectContaining({ userId: user.id, paid: 3000 }),
+      ]);
+
+      const { body: summary } = await request()
+        .get(`/api/v1/events/${event.id}/finances/summary`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(summary.data).toMatchObject({
+        total: 12000,
+        unpaid: 9000,
+        receiptsUnpaid: [invoice.receiptNumber],
+      });
+
+      await request()
+        .patch(`/api/v1/events/${event.id}/expenses/${invoice.id}`)
+        .send({ paidOn: '2026-08-02' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(await balances()).toEqual([
+        expect.objectContaining({ userId: user.id, paid: 12000 }),
+      ]);
+    });
+
+    it('links a typed name to a manager who joined later', async () => {
+      const { event, token } = await setup('TREASURER');
+      await createExpense(event, token, { amount: 5000, paidByName: 'Anna' });
+      // Another spelling from before names were matched, written directly.
+      await prisma.expense.create({
+        data: {
+          eventId: event.id,
+          receiptNumber: 901,
+          amount: 700,
+          description: 'Older',
+          paidOn: '2026-07-20',
+          paidByName: 'anna',
+        },
+      });
+      await request()
+        .post(`/api/v1/events/${event.id}/payouts`)
+        .send({
+          recipientName: 'Anna',
+          direction: 'OUT',
+          amount: 2000,
+          paidOn: '2026-07-24',
+        })
+        .auth(token, { type: 'bearer' })
+        .expect(201);
+      const { user: anna } = await addManager(event, 'COUNSELOR');
+      await prisma.user.update({
+        where: { id: anna.id },
+        data: { name: 'Anna Berg' },
+      });
+
+      const { body: linked } = await request()
+        .post(`/api/v1/events/${event.id}/finances/parties/link`)
+        .send({ name: 'Anna', userId: anna.id })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(linked.data).toEqual({ expenses: 1, payouts: 1 });
+
+      // Only the exact spelling moves; the account's name is snapshotted.
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/finances/balances?view=all`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(body.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            userId: anna.id,
+            name: 'Anna Berg',
+            paid: 5000,
+            paidOut: 2000,
+          }),
+          expect.objectContaining({ userId: null, name: 'anna', paid: 700 }),
+        ]),
+      );
+      expect(
+        await prisma.auditLog.count({
+          where: { eventId: event.id, action: 'updated' },
+        }),
+      ).toBe(2);
+    });
+
+    it('links only to a manager, and only with full edit rights', async () => {
+      const { event, token } = await setup('TREASURER');
+      await createExpense(event, token, { paidByName: 'Anna' });
+      const outsider = await UserFactory.create();
+      const { user: counselor, token: counselorToken } = await addManager(
+        event,
+        'COUNSELOR',
+      );
+
+      await request()
+        .post(`/api/v1/events/${event.id}/finances/parties/link`)
+        .send({ name: 'Anna', userId: outsider.id })
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+      await request()
+        .post(`/api/v1/events/${event.id}/finances/parties/link`)
+        .send({ name: 'Anna', userId: counselor.id })
+        .auth(counselorToken, { type: 'bearer' })
+        .expect(403);
+    });
+
     it('settles a balance only once the payout is paid', async () => {
       const { event, user, token } = await setup('TREASURER');
       await createExpense(event, token, {

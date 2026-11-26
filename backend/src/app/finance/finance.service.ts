@@ -48,8 +48,13 @@ export class FinanceService extends BaseService {
     const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
     const spent = expenses.filter((e) => e.type === 'EXPENSE');
     const refunded = expenses.filter((e) => e.type === 'REFUND');
+    const paid = spent.filter((e) => e.paidOn !== null);
+    const unpaid = expenses.filter((e) => e.paidOn === null);
     const byPerson = (e: (typeof expenses)[number]) =>
       e.paidByUserId !== null || e.paidByName !== null;
+    const signed = (e: (typeof expenses)[number]) =>
+      e.type === 'REFUND' ? -e.amount : e.amount;
+    // Invoices still to pay count all the same: the event will pay them.
     const total =
       sum(spent.map((e) => e.amount)) - sum(refunded.map((e) => e.amount));
     const income = summarizeIncome(incomes);
@@ -59,11 +64,12 @@ export class FinanceService extends BaseService {
       expenses: sum(spent.map((e) => e.amount)),
       refunds: sum(refunded.map((e) => e.amount)),
       total,
+      unpaid: sum(unpaid.map(signed)),
       owedToPeople: sum(balances.map((b) => Math.max(b.balance, 0))),
       owedToEvent: sum(balances.map((b) => Math.max(-b.balance, 0))),
       toTransfer: sum(balances.map((b) => b.toPay)),
-      paidByPeople: sum(spent.filter(byPerson).map((e) => e.amount)),
-      paidByFunds: sum(spent.filter((e) => !byPerson(e)).map((e) => e.amount)),
+      paidByPeople: sum(paid.filter(byPerson).map((e) => e.amount)),
+      paidByFunds: sum(paid.filter((e) => !byPerson(e)).map((e) => e.amount)),
       receiptCount: expenses.length,
       receiptsWithoutFile: expenses
         .filter((e) => e._count.files === 0)
@@ -71,6 +77,7 @@ export class FinanceService extends BaseService {
       receiptsPending: expenses
         .filter((e) => e.date === null)
         .map((e) => e.receiptNumber),
+      receiptsUnpaid: unpaid.map((e) => e.receiptNumber),
       byCategory: computeCategoryTotals(expenses),
       ...income,
       ...fees,
@@ -210,6 +217,7 @@ export class FinanceService extends BaseService {
         select: {
           receiptNumber: true,
           date: true,
+          paidOn: true,
           type: true,
           amount: true,
           categoryId: true,

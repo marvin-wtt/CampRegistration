@@ -10,6 +10,7 @@ export default {
     column: {
       receiptNumber: 'Beleg-Nr.',
       date: 'Datum',
+      receiptDate: 'Belegdatum',
       paidOn: 'Bezahlt am',
       type: 'Art',
       description: 'Beschreibung',

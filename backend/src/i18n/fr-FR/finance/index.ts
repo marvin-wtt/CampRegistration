@@ -10,6 +10,7 @@ export default {
     column: {
       receiptNumber: 'N° justificatif',
       date: 'Date',
+      receiptDate: 'Date du justificatif',
       paidOn: 'Payé le',
       type: 'Type',
       description: 'Description',

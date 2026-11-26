@@ -14,6 +14,7 @@ const expense = (overrides: Partial<StatementExpense>): StatementExpense => ({
   type: 'EXPENSE',
   amount: 1000,
   date: '2026-07-20',
+  paidOn: '2026-07-20',
   description: 'Groceries',
   paidByUserId: 'lena',
   paidByName: 'Lena',
@@ -67,6 +68,20 @@ describe('buildPayoutStatement', () => {
       after: 0,
     });
     expect(statement.earlier).toEqual([advance]);
+  });
+
+  it('leaves out invoices the recipient has not paid yet', () => {
+    const statement = buildPayoutStatement(
+      payout({ number: 1 }),
+      [
+        expense({ receiptNumber: 1 }),
+        expense({ receiptNumber: 2, paidOn: null }),
+      ],
+      [],
+      2,
+    );
+
+    expect(statement.expenses.map((e) => e.receiptNumber)).toEqual([1]);
   });
 
   it('leaves out receipts numbered after the payout was made', () => {

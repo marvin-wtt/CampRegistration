@@ -132,42 +132,26 @@
             data-test="expense-type"
           />
 
-          <!-- A grant or donation is income: as a refund it would hide costs. -->
-          <div
-            v-if="
-              form.type === 'REFUND' && !expense && can('event.income.create')
-            "
-            class="income-hint rounded-lg"
-            :class="quasar.screen.xs ? 'column' : 'row items-center no-wrap'"
-            data-test="expense-income-hint"
-          >
-            <div class="row no-wrap items-start col income-hint__text">
-              <q-icon
-                name="info"
-                size="20px"
-                class="income-hint__icon"
-              />
-              <span class="text-body2">{{
-                t('finance.capture.incomeHint')
-              }}</span>
-            </div>
-            <m-btn
-              :label="t('finance.capture.asIncome')"
-              color="primary"
-              text
-              rounded
-              no-caps
-              class="self-end"
-              data-test="expense-as-income"
-              @click="switchToIncome"
-            />
-          </div>
+          <q-input
+            v-model="form.description"
+            :label="t('finance.field.description')"
+            :rules="[
+              (val?: string) =>
+                !!val?.trim() || t('finance.validation.description'),
+            ]"
+            maxlength="255"
+            :autofocus="!expense"
+            enterkeyhint="done"
+            hide-bottom-space
+            outlined
+            rounded
+            data-test="expense-description"
+          />
 
           <amount-input
             v-model="form.amount"
             :currency
             :label="t('finance.field.amount')"
-            :autofocus="!expense"
             hide-bottom-space
             large
             data-test="expense-amount"
@@ -196,28 +180,17 @@
               v-show="showOriginal"
               class="row no-wrap q-gutter-x-sm original-row"
             >
-              <q-select
+              <currency-select
                 v-model="form.originalCurrency"
-                :options="FOREIGN_CURRENCIES"
+                :exclude="currency"
                 :label="t('finance.field.originalCurrency')"
                 class="original-currency"
-                use-input
-                fill-input
-                hide-selected
-                new-value-mode="add-unique"
-                :input-debounce="0"
-                clearable
-                dense
-                outlined
-                rounded
-                hide-bottom-space
                 :rules="[
                   (val: string | null) =>
                     !form.originalAmount ||
                     /^[A-Z]{3}$/.test(val ?? '') ||
                     t('finance.validation.currency'),
                 ]"
-                @new-value="addCurrency"
               />
               <amount-input
                 v-model="form.originalAmount"
@@ -230,52 +203,23 @@
             </div>
           </q-slide-transition>
 
-          <!-- Read off the receipt with the amount: often yesterday's, never
-               a day ahead. -->
-          <event-date-input
-            v-model="form.date"
-            :label="t('finance.field.receiptDate')"
-            :hint="form.date ? undefined : t('finance.field.receiptPending')"
-            :max="formatLocalDate(new Date())"
-            open-on-today
-            clearable
-          />
-
-          <receipt-file-strip
-            :files
-            @add="addFiles"
-            @remove="removeFile"
-          />
-
-          <q-input
-            v-model="form.description"
-            :label="t('finance.field.description')"
-            :rules="[
-              (val?: string) =>
-                !!val?.trim() || t('finance.validation.description'),
-            ]"
-            maxlength="255"
-            enterkeyhint="done"
-            hide-bottom-space
-            outlined
-            rounded
-            data-test="expense-description"
-          />
-
           <category-picker
             v-if="categories.length > 0"
             v-model="form.categoryId"
             :categories
             :keep="expense?.categoryId ?? null"
+            :label="categoryLabel"
           />
 
-          <!-- Optional: who was paid. Names used before are suggested. -->
+          <!-- Who was paid. Names used before are suggested. -->
           <q-input
             v-model="form.vendor"
             :label="
-              form.type === 'REFUND'
-                ? t('finance.field.vendorRefund')
-                : t('finance.field.vendor')
+              optional(
+                form.type === 'REFUND'
+                  ? t('finance.field.vendorRefund')
+                  : t('finance.field.vendor'),
+              )
             "
             :hint="t('finance.field.vendorHint')"
             maxlength="255"
@@ -296,15 +240,53 @@
             />
           </datalist>
 
+          <!-- Often yesterday's, never a day ahead. Paid beside it, as most
+               receipts are paid at the till; an invoice may still be due. -->
+          <div class="row no-wrap items-start date-row">
+            <event-date-input
+              v-model="form.date"
+              :label="t('finance.field.receiptDate')"
+              :hint="form.date ? undefined : t('finance.field.receiptPending')"
+              :max="formatLocalDate(new Date())"
+              class="col"
+              open-on-today
+              clearable
+            />
+            <!-- A toggle the height of the field beside it: tonal when on,
+                 like the type toggle above. -->
+            <m-btn
+              :tonal="form.paid"
+              :outline="!form.paid"
+              :allow-color="!form.paid"
+              unelevated
+              rounded
+              no-caps
+              :color="form.paid ? 'secondary' : 'on-surface-variant'"
+              :icon="form.paid ? 'check' : 'schedule'"
+              :label="
+                form.type === 'REFUND'
+                  ? t('finance.field.received')
+                  : t('finance.field.paid')
+              "
+              role="switch"
+              :aria-checked="form.paid"
+              class="paid-toggle"
+              data-test="expense-paid"
+              @click="form.paid = !form.paid"
+            />
+          </div>
+
           <party-select
             v-model="form.payer"
             :parties
-            :label="
-              form.type === 'REFUND'
-                ? t('finance.field.receivedBy')
-                : t('finance.field.paidBy')
-            "
+            :label="payerLabel"
             data-test="expense-payer"
+          />
+
+          <receipt-file-strip
+            :files
+            @add="addFiles"
+            @remove="removeFile"
           />
         </div>
       </q-form>
@@ -376,6 +358,7 @@ import ReceiptFileStrip from '@/components/event/finances/ReceiptFileStrip.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
+import CurrencySelect from '@/components/event/finances/CurrencySelect.vue';
 import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import PartySelect, {
   type PartyValue,
@@ -385,10 +368,6 @@ import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate, parseLocalDate } from '@/utils/date';
 import { useRouteKey } from '@/composables/routeKey';
-import { usePermissions } from '@/composables/permissions';
-import { useFinanceDialogs } from '@/composables/financeDialogs';
-
-const FOREIGN_CURRENCIES = ['PLN', 'CZK', 'GBP', 'CHF', 'USD', 'DKK', 'HUF'];
 
 interface CaptureForm {
   type: ExpenseType;
@@ -400,6 +379,7 @@ interface CaptureForm {
   categoryId: string | null;
   payer: PartyValue;
   date: string | null;
+  paid: boolean;
 }
 
 const { expense = undefined, prefill = undefined } = defineProps<{
@@ -433,6 +413,14 @@ const eventId = useRouteKey('eventId');
 const formRef = useTemplateRef<QForm>('formRef');
 
 const categories = computed(() => storeCategories.value ?? []);
+
+const optional = (field: string) => t('finance.field.optional', { field });
+// Not optional where the event flags expenses without one.
+const categoryLabel = computed(() =>
+  financeStore.display.flagMissingCategories
+    ? t('finance.field.category')
+    : optional(t('finance.field.category')),
+);
 
 const typeOptions = computed(() => [
   { value: 'EXPENSE', label: t('finance.type.expense'), icon: 'shopping_cart' },
@@ -473,6 +461,7 @@ function emptyForm(): CaptureForm {
     categoryId: null,
     payer: selfPayer(),
     date: formatLocalDate(new Date()),
+    paid: true,
   };
 }
 
@@ -487,10 +476,36 @@ function formOf(source: Expense): CaptureForm {
     categoryId: source.categoryId,
     payer: { userId: source.paidByUserId, name: source.paidByName },
     date: source.date,
+    paid: source.paidOn !== null,
   };
 }
 
 const form = reactive<CaptureForm>(expense ? formOf(expense) : emptyForm());
+
+// Who will pay an invoice still due; who did once it is paid.
+const payerLabel = computed(() => {
+  if (form.type === 'REFUND') {
+    return form.paid
+      ? t('finance.field.receivedBy')
+      : t('finance.field.toBeReceivedBy');
+  }
+  return form.paid ? t('finance.field.paidBy') : t('finance.field.toBePaidBy');
+});
+
+/**
+ * Kept when it was paid already. Otherwise paid at the till, on the receipt's
+ * date, for a new one; today for an invoice now ticked off.
+ */
+function paidOn(): string | null {
+  if (!form.paid) {
+    return null;
+  }
+  const today = formatLocalDate(new Date());
+  if (expense) {
+    return expense.paidOn ?? today;
+  }
+  return form.date ?? today;
+}
 const {
   files,
   uploading,
@@ -509,6 +524,7 @@ const savedMeta = computed(() =>
     ? [
         categoryName(saved.value.categoryId),
         payerName(saved.value),
+        saved.value.paidOn === null && t('finance.unpaid'),
         saved.value.date
           ? d(parseLocalDate(saved.value.date), 'date')
           : t('finance.receiptPending'),
@@ -600,28 +616,6 @@ if (prefill) {
   restoreDraft();
 }
 
-const { can } = usePermissions();
-const dialogs = useFinanceDialogs();
-
-// Hands what was typed to the income dialog.
-function switchToIncome() {
-  const prefill = {
-    amount: form.amount,
-    description: form.description,
-    receivedOn: form.date,
-    files: files.value.flatMap((f) =>
-      f.id ? [{ key: f.key, id: f.id, name: f.name }] : [],
-    ),
-  };
-  onDialogCancel();
-  dialogs.incomeFrom(prefill);
-}
-
-function addCurrency(value: string, done: (item?: string) => void) {
-  const code = value.trim().toUpperCase();
-  done(/^[A-Z]{3}$/.test(code) ? code : undefined);
-}
-
 // --- Saving ---------------------------------------------------------------
 
 async function save() {
@@ -642,6 +636,7 @@ async function save() {
     amount: form.amount,
     ...original,
     date: form.date,
+    paidOn: paidOn(),
     description: form.description.trim(),
     vendor: form.vendor?.trim() || null,
     categoryId: form.categoryId,
@@ -703,24 +698,26 @@ function startNext() {
   line-height: 1.1;
 }
 
-.original-currency {
-  /* Three letters, the clear icon and the arrow on one line. */
-  width: 136px;
-  flex: 0 0 auto;
-}
-
-.income-hint {
-  gap: 4px 8px;
-  padding: 8px 4px 4px 12px;
-  background: var(--md3-surface-container-high);
-}
-
-.income-hint__text {
+.date-row {
   gap: 8px;
 }
 
-.income-hint__icon {
-  color: var(--md3-on-surface-variant);
+/* As tall as the outlined field, so the row reads as one. */
+.paid-toggle {
+  flex: none;
+  height: 56px;
+  min-width: 112px;
+}
+
+/* Off, it is bordered like the fields; the label keeps its own tone. */
+.paid-toggle.q-btn--outline::before {
+  border-color: var(--md3-outline);
+}
+
+.original-currency {
+  /* The code, the clear icon and the arrow on one line. */
+  width: 136px;
+  flex: 0 0 auto;
 }
 
 .type-toggle :deep(.q-btn) {

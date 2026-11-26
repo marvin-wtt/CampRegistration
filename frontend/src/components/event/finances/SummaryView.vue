@@ -79,16 +79,27 @@
         data-test="finance-summary-expenses"
       >
         <template
-          v-if="summary.refunds > 0"
+          v-if="summary.refunds > 0 || summary.unpaid !== 0"
           #footer
         >
-          <span class="text-caption text-on-surface-variant">
+          <span
+            v-if="summary.refunds > 0"
+            class="text-caption text-on-surface-variant"
+          >
             {{
               t('finance.summary.totalCaption', {
                 expenses: money(summary.expenses),
                 refunds: money(summary.refunds),
               })
             }}
+          </span>
+          <!-- Invoices still to pay are in the total: the event will pay them. -->
+          <span
+            v-if="summary.unpaid !== 0"
+            class="text-caption text-on-surface-variant"
+            data-test="finance-summary-unpaid"
+          >
+            {{ t('unpaidOfTotal', { amount: money(summary.unpaid) }) }}
           </span>
         </template>
       </category-totals-card>
@@ -383,6 +394,15 @@ const openPoints = computed(() => {
     ? (summary.byCategory.find((c) => c.categoryId === null)?.count ?? 0)
     : 0;
   return [
+    summary.receiptsUnpaid.length > 0 && {
+      key: 'unpaid',
+      icon: 'schedule',
+      label: t('finance.filter.unpaid', {
+        count: summary.receiptsUnpaid.length,
+      }),
+      numbers: numbers(summary.receiptsUnpaid),
+      to: expensesWith({ unpaid: 'true' }),
+    },
     missingFiles.value.length > 0 && {
       key: 'missing-files',
       icon: 'no_photography',
@@ -512,6 +532,7 @@ asOfToday: 'Received so far'
 equation: '{income} income − {expenses} expenses'
 unconverted: 'Not converted'
 ofWhichOpen: '{amount} of it still open'
+unpaidOfTotal: '{amount} of it still to pay'
 ofWhichPromised: '{amount} of it promised'
 openFeesTodo: '{amount} in fees still open'
 </i18n>
@@ -532,6 +553,7 @@ asOfToday: 'Bisher eingegangen'
 equation: '{income} Einnahmen − {expenses} Ausgaben'
 unconverted: 'Nicht umgerechnet'
 ofWhichOpen: 'davon {amount} offen'
+unpaidOfTotal: 'davon {amount} noch zu zahlen'
 ofWhichPromised: 'davon {amount} zugesagt'
 openFeesTodo: '{amount} Beiträge noch offen'
 </i18n>
@@ -552,6 +574,7 @@ asOfToday: 'Reçu à ce jour'
 equation: '{income} de recettes − {expenses} de dépenses'
 unconverted: 'Non converti'
 ofWhichOpen: 'dont {amount} en attente'
+unpaidOfTotal: 'dont {amount} encore à payer'
 ofWhichPromised: 'dont {amount} promis'
 openFeesTodo: '{amount} de frais en attente'
 </i18n>
@@ -572,6 +595,7 @@ asOfToday: 'Dotychczas wpłynęło'
 equation: '{income} przychodów − {expenses} wydatków'
 unconverted: 'Nieprzeliczone'
 ofWhichOpen: 'w tym {amount} do zapłaty'
+unpaidOfTotal: 'w tym {amount} do zapłaty'
 ofWhichPromised: 'w tym {amount} obiecano'
 openFeesTodo: '{amount} opłat do zapłaty'
 </i18n>
@@ -592,6 +616,7 @@ asOfToday: 'Dosud přijato'
 equation: '{income} příjmů − {expenses} výdajů'
 unconverted: 'Nepřepočteno'
 ofWhichOpen: 'z toho {amount} otevřeno'
+unpaidOfTotal: 'z toho {amount} k zaplacení'
 ofWhichPromised: 'z toho {amount} přislíbeno'
 openFeesTodo: '{amount} poplatků otevřeno'
 </i18n>

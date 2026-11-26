@@ -278,6 +278,7 @@
 </template>
 
 <script lang="ts" setup>
+import { initials as nameInitials } from '@/utils/initials';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useEventManagerStore } from '@/stores/event-manager-store';
@@ -389,12 +390,7 @@ function roleClass(role: string): string {
 }
 
 function initials(manager: EventManager): string {
-  const parts = (manager.name ?? manager.email).trim().split(/\s+/);
-  const first = parts[0]?.charAt(0) ?? '';
-  const last =
-    parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
-
-  return (first + last).toUpperCase();
+  return nameInitials(manager.name ?? manager.email);
 }
 
 function isExpired(manager: EventManager): boolean {

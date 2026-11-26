@@ -224,6 +224,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
+import { initials as nameInitials } from '@/utils/initials';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useQuasar, type QSelectOption, type QMenuProps } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
@@ -256,19 +257,7 @@ const profile = computed<Profile | undefined>(() => {
   return profileStore.user;
 });
 
-const initials = computed<string>(() => {
-  const name = profile.value?.name?.trim();
-  if (!name) {
-    return '';
-  }
-
-  const parts = name.split(/\s+/).filter(Boolean);
-  const first = parts[0]?.charAt(0) ?? '';
-  const last =
-    parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
-
-  return (first + last).toUpperCase();
-});
+const initials = computed(() => nameInitials(profile.value?.name));
 
 const loading = computed<boolean>(() => {
   return authStore.isLoading || profileStore.isLoading;

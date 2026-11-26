@@ -186,6 +186,7 @@
             v-if="incomes.length > SEARCH_FROM"
             v-model:search="incomeSearch"
             v-model:sort="incomeSort"
+            v-model:descending="incomeDescending"
             :sorts="incomeSorts"
             :placeholder="t('incomeSearch')"
             test-id="income"
@@ -280,9 +281,17 @@ const incomes = computed(() => incomeStore.incomes ?? []);
 
 const SEARCH_FROM = 5;
 const incomeSearch = ref<string | null>('');
-const incomeSort = ref<LedgerSort>('newest');
+const incomeSort = ref<LedgerSort>('date');
+const incomeDescending = ref(true);
+watch(incomeSort, () => {
+  incomeDescending.value = true;
+});
 const incomeSorts = computed(() =>
-  LEDGER_SORTS.map((value) => ({ value, label: t(`sort.${value}`) })),
+  LEDGER_SORTS.map((value) => ({
+    value,
+    label: t(`sort.${value}`),
+    direction: value === 'date' ? ('date' as const) : ('number' as const),
+  })),
 );
 const shownIncomes = computed(() =>
   sortLedger(
@@ -295,6 +304,7 @@ const shownIncomes = computed(() =>
       ]),
     ),
     incomeSort.value,
+    incomeDescending.value,
     (income) => ({
       date: income.receivedOn,
       number: income.number,
@@ -399,10 +409,9 @@ headline:
 incomeSearch: 'Description, payer or number'
 noMatch: 'Nothing matches the search.'
 sort:
-  newest: 'Newest first'
-  oldest: 'Oldest first'
+  date: 'Date'
   number: 'Number'
-  amount: 'Highest amount first'
+  amount: 'Amount'
 total: 'Total'
 registrations: '1 registration | {n} registrations'
 noGroup: 'Without group'
@@ -422,10 +431,9 @@ headline:
 incomeSearch: 'Beschreibung, Geldgeber oder Nummer'
 noMatch: 'Nichts passt zur Suche.'
 sort:
-  newest: 'Neueste zuerst'
-  oldest: 'Älteste zuerst'
+  date: 'Datum'
   number: 'Nummer'
-  amount: 'Höchster Betrag zuerst'
+  amount: 'Betrag'
 total: 'Gesamt'
 registrations: '1 Anmeldung | {n} Anmeldungen'
 noGroup: 'Ohne Gruppe'
@@ -445,10 +453,9 @@ headline:
 incomeSearch: 'Description, payeur ou numéro'
 noMatch: 'Aucun résultat.'
 sort:
-  newest: "Plus récentes d'abord"
-  oldest: "Plus anciennes d'abord"
+  date: 'Date'
   number: 'Numéro'
-  amount: "Montant le plus élevé d'abord"
+  amount: 'Montant'
 total: 'Total'
 registrations: '1 inscription | {n} inscriptions'
 noGroup: 'Sans groupe'
@@ -468,10 +475,9 @@ headline:
 incomeSearch: 'Opis, płacący lub numer'
 noMatch: 'Brak wyników wyszukiwania.'
 sort:
-  newest: 'Najnowsze najpierw'
-  oldest: 'Najstarsze najpierw'
+  date: 'Data'
   number: 'Numer'
-  amount: 'Najwyższa kwota najpierw'
+  amount: 'Kwota'
 total: 'Razem'
 registrations: 'Zgłoszenia: {n}'
 noGroup: 'Bez grupy'
@@ -491,10 +497,9 @@ headline:
 incomeSearch: 'Popis, plátce nebo číslo'
 noMatch: 'Hledání nic nenašlo.'
 sort:
-  newest: 'Nejnovější první'
-  oldest: 'Nejstarší první'
+  date: 'Datum'
   number: 'Číslo'
-  amount: 'Nejvyšší částka první'
+  amount: 'Částka'
 total: 'Celkem'
 registrations: 'Přihlášky: {n}'
 noGroup: 'Bez skupiny'

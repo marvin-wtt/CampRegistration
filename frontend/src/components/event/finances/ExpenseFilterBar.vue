@@ -26,7 +26,15 @@
               choice.set(choice.value === option.value ? null : option.value)
             "
           >
-            <q-item-section>{{ option.label }}</q-item-section>
+            <q-item-section>
+              <q-item-label>{{ option.label }}</q-item-label>
+              <q-item-label
+                v-if="option.caption"
+                caption
+              >
+                {{ option.caption }}
+              </q-item-label>
+            </q-item-section>
           </q-item>
         </q-list>
       </q-menu>
@@ -117,7 +125,21 @@
           outlined
           rounded
           @update:model-value="choice.set"
-        />
+        >
+          <template #option="{ opt, itemProps }">
+            <q-item v-bind="itemProps">
+              <q-item-section>
+                <q-item-label>{{ opt.label }}</q-item-label>
+                <q-item-label
+                  v-if="opt.caption"
+                  caption
+                >
+                  {{ opt.caption }}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
       </div>
     </bottom-sheet>
   </template>

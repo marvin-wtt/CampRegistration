@@ -12,6 +12,7 @@ import {
 const expense = (overrides: Partial<BalanceExpense>): BalanceExpense => ({
   type: 'EXPENSE',
   amount: 1000,
+  paidOn: '2026-07-20',
   categoryId: 'food',
   paidByUserId: null,
   paidByName: null,
@@ -145,6 +146,25 @@ describe('computeBalances', () => {
 
   it('moves no balance for event funds', () => {
     expect(computeBalances([expense({ amount: 50000 })], [])).toEqual([]);
+  });
+
+  it('moves no balance for an invoice still to pay', () => {
+    const balances = computeBalances(
+      [
+        expense({ amount: 5000, paidByUserId: 'lena', paidByName: 'Lena' }),
+        expense({
+          amount: 9000,
+          paidOn: null,
+          paidByUserId: 'lena',
+          paidByName: 'Lena',
+        }),
+      ],
+      [],
+    );
+
+    expect(balances).toEqual([
+      expect.objectContaining({ userId: 'lena', paid: 5000, balance: 5000 }),
+    ]);
   });
 
   it('groups by account first and by exact name otherwise', () => {

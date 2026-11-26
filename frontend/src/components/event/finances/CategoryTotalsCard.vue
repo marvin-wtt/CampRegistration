@@ -25,7 +25,7 @@
         v-if="group.name"
         class="total-row group-row q-px-md q-py-sm"
       >
-        <span class="text-weight-medium ellipsis">{{ group.name }}</span>
+        <span class="total-name text-weight-medium">{{ group.name }}</span>
         <span class="share text-on-surface-variant">
           {{ share(group.total) }}
         </span>
@@ -40,8 +40,9 @@
         class="total-row category-row q-px-md q-py-sm"
         :class="{ 'category-row--nested': !!group.name }"
       >
-        <div class="column min-width-0">
-          <span class="ellipsis">{{ row.name }}</span>
+        <!-- no-wrap: a wrapping column grows to its widest line and overflows. -->
+        <div class="column no-wrap min-width-0">
+          <span class="total-name">{{ row.name }}</span>
           <span
             v-if="row.caption"
             class="text-caption text-on-surface-variant ellipsis"
@@ -136,6 +137,11 @@ function share(amount: number): string {
   font-size: 0.8125rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Long names wrap: an overview should name each category in full. */
+.total-name {
+  overflow-wrap: anywhere;
 }
 
 .min-width-0 {

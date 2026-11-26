@@ -9,13 +9,12 @@ import ExpenseCaptureDialog, {
   type ExpensePrefill,
 } from '@/components/event/finances/dialogs/ExpenseCaptureDialog.vue';
 import ExpenseDetailsDialog from '@/components/event/finances/dialogs/ExpenseDetailsDialog.vue';
+import PartyLinkDialog from '@/components/event/finances/dialogs/PartyLinkDialog.vue';
 import PayoutDetailsDialog from '@/components/event/finances/dialogs/PayoutDetailsDialog.vue';
 import FinanceCategoryDialog from '@/components/event/finances/dialogs/FinanceCategoryDialog.vue';
 import FinanceSettingsDialog from '@/components/event/finances/dialogs/FinanceSettingsDialog.vue';
 import IncomeDetailsDialog from '@/components/event/finances/dialogs/IncomeDetailsDialog.vue';
-import IncomeDialog, {
-  type IncomePrefill,
-} from '@/components/event/finances/dialogs/IncomeDialog.vue';
+import IncomeDialog from '@/components/event/finances/dialogs/IncomeDialog.vue';
 
 /**
  * The finance tabs' entry dialogs. The details dialogs stay open through
@@ -51,6 +50,13 @@ export function useFinanceDialogs() {
     });
   }
 
+  function linkParty(name: string, suggested: string | null) {
+    quasar.dialog({
+      component: PartyLinkDialog,
+      componentProps: { name, suggested },
+    });
+  }
+
   function categories(kind: FinanceCategoryKind = 'EXPENSE') {
     quasar.dialog({
       component: FinanceCategoryDialog,
@@ -69,10 +75,6 @@ export function useFinanceDialogs() {
     });
   }
 
-  function incomeFrom(prefill: IncomePrefill) {
-    quasar.dialog({ component: IncomeDialog, componentProps: { prefill } });
-  }
-
   function settings() {
     quasar.dialog({ component: FinanceSettingsDialog });
   }
@@ -82,9 +84,9 @@ export function useFinanceDialogs() {
     captureFrom,
     expenseDetails,
     payoutDetails,
+    linkParty,
     categories,
     income,
-    incomeFrom,
     incomeDetails,
     settings,
   };

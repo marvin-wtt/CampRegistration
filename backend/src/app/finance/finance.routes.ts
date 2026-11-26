@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { auth } from '#core/auth/auth.middleware';
-import { guard } from '#core/guard';
+import { and, guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#core/router/bindController';
 import { hasEventPermission, hasEventView } from '#app/event/event.guard';
@@ -47,6 +47,17 @@ export class FinanceRouter extends ModuleRouter {
       '/parties',
       guard(financeMember),
       controller(this.financeController, 'parties'),
+    );
+    // Rewrites who many records belong to: only with full edit rights.
+    this.router.post(
+      '/parties/link',
+      guard(
+        and(
+          hasEventPermission('event.expenses.edit'),
+          hasEventPermission('event.payouts.edit'),
+        ),
+      ),
+      controller(this.financeController, 'linkParty'),
     );
     this.router.get(
       '/settings',

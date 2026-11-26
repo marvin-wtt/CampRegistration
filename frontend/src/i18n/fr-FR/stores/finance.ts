@@ -60,6 +60,10 @@ export default {
       success: 'Paramètres enregistrés',
       error: "Échec de l'enregistrement des paramètres",
     },
+    linkParty: {
+      success: 'Rattaché au compte',
+      error: 'Échec du rattachement',
+    },
   },
   fee: {
     fetch: { error: "Échec du chargement des frais d'inscription" },

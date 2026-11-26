@@ -56,6 +56,31 @@
                 <q-icon name="check" />
               </q-item-section>
             </q-item>
+            <!-- The direction, worded for what the active option sorts by. -->
+            <template v-if="directionKind && descending !== undefined">
+              <q-separator class="q-my-xs" />
+              <q-item
+                v-for="direction in directions"
+                :key="direction.value"
+                clickable
+                :active="descending === direction.descending"
+                :data-test="`${testId}-sort-${direction.value}`"
+                @click="descending = direction.descending"
+              >
+                <q-item-section avatar>
+                  <q-icon :name="direction.icon" />
+                </q-item-section>
+                <q-item-section>
+                  {{ t(`direction.${directionKind}.${direction.value}`) }}
+                </q-item-section>
+                <q-item-section
+                  v-if="descending === direction.descending"
+                  side
+                >
+                  <q-icon name="check" />
+                </q-item-section>
+              </q-item>
+            </template>
           </q-list>
         </q-menu>
       </m-btn>
@@ -63,13 +88,24 @@
   </div>
 </template>
 
+<script lang="ts">
+/** How a direction is worded: by date, by amount or count, or by name. */
+export type SortDirectionKind = 'date' | 'number' | 'text';
+</script>
+
 <script lang="ts" setup generic="T extends string">
+import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { sorts, placeholder, testId } = defineProps<{
-  sorts: readonly { value: T; label: string }[];
+  /** With a `direction`, the menu also offers to reverse it. */
+  sorts: readonly {
+    value: T;
+    label: string;
+    direction?: SortDirectionKind | undefined;
+  }[];
   placeholder: string;
   /** Prefix of the controls' data-test ids. */
   testId: string;
@@ -77,9 +113,21 @@ const { sorts, placeholder, testId } = defineProps<{
 
 const search = defineModel<string | null>('search', { required: true });
 const sort = defineModel<T>('sort', { required: true });
+/** Unbound: the list has no direction to choose. */
+const descending = defineModel<boolean | undefined>('descending', {
+  default: undefined,
+});
 
 const { t } = useI18n();
 const quasar = useQuasar();
+
+const directionKind = computed(
+  () => sorts.find((o) => o.value === sort.value)?.direction,
+);
+const directions = [
+  { value: 'asc', descending: false, icon: 'arrow_upward' },
+  { value: 'desc', descending: true, icon: 'arrow_downward' },
+] as const;
 </script>
 
 <style scoped>
@@ -134,20 +182,70 @@ const quasar = useQuasar();
 
 <i18n lang="yaml" locale="en">
 sort: 'Sort'
+direction:
+  date:
+    asc: 'Oldest first'
+    desc: 'Newest first'
+  number:
+    asc: 'Lowest first'
+    desc: 'Highest first'
+  text:
+    asc: 'A–Z'
+    desc: 'Z–A'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 sort: 'Sortieren'
+direction:
+  date:
+    asc: 'Älteste zuerst'
+    desc: 'Neueste zuerst'
+  number:
+    asc: 'Niedrigste zuerst'
+    desc: 'Höchste zuerst'
+  text:
+    asc: 'A–Z'
+    desc: 'Z–A'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 sort: 'Trier'
+direction:
+  date:
+    asc: "Plus anciens d'abord"
+    desc: "Plus récents d'abord"
+  number:
+    asc: "Plus bas d'abord"
+    desc: "Plus élevés d'abord"
+  text:
+    asc: 'A–Z'
+    desc: 'Z–A'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 sort: 'Sortuj'
+direction:
+  date:
+    asc: 'Najstarsze najpierw'
+    desc: 'Najnowsze najpierw'
+  number:
+    asc: 'Najniższe najpierw'
+    desc: 'Najwyższe najpierw'
+  text:
+    asc: 'A–Z'
+    desc: 'Z–A'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 sort: 'Seřadit'
+direction:
+  date:
+    asc: 'Nejstarší první'
+    desc: 'Nejnovější první'
+  number:
+    asc: 'Nejnižší první'
+    desc: 'Nejvyšší první'
+  text:
+    asc: 'A–Z'
+    desc: 'Z–A'
 </i18n>

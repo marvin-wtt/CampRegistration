@@ -4,12 +4,16 @@ import type { Expense } from '@camp-registration/common/entities';
 import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import type { ResponsiveMenuItem } from '@/types/menu';
 import ExpenseCaptureDialog from '@/components/event/finances/dialogs/ExpenseCaptureDialog.vue';
+import ExpensePaidDialog from '@/components/event/finances/dialogs/ExpensePaidDialog.vue';
+import { isUnpaid } from '@/utils/expenseState';
 import { usePermissions } from '@/composables/permissions';
 import { useExpenseDeleteMessage } from '@/composables/payoutStatements';
 import { useFinanceStore } from '@/stores/finance-store';
 
 /** What the viewer may do with a receipt; absent where they may not. */
 export interface ExpenseActions {
+  /** Only on an invoice still to pay. */
+  markPaid?: ResponsiveMenuItem | undefined;
   edit?: ResponsiveMenuItem | undefined;
   remove?: ResponsiveMenuItem | undefined;
 }
@@ -25,6 +29,13 @@ export function useExpenseActions() {
   function edit(expense: Expense) {
     quasar.dialog({
       component: ExpenseCaptureDialog,
+      componentProps: { expense },
+    });
+  }
+
+  function markPaid(expense: Expense) {
+    quasar.dialog({
+      component: ExpensePaidDialog,
       componentProps: { expense },
     });
   }
@@ -46,8 +57,20 @@ export function useExpenseActions() {
   }
 
   function actionsFor(expense: Expense): ExpenseActions {
+    const editable = canOn('event.expenses.edit', expense);
     return {
-      edit: canOn('event.expenses.edit', expense)
+      markPaid:
+        editable && isUnpaid(expense)
+          ? {
+              label:
+                expense.type === 'REFUND'
+                  ? t('finance.action.markReceived')
+                  : t('finance.action.markPaid'),
+              icon: 'price_check',
+              onClick: () => markPaid(expense),
+            }
+          : undefined,
+      edit: editable
         ? {
             label: t('finance.expenseDetails.edit'),
             icon: 'edit',

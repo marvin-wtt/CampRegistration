@@ -21,6 +21,8 @@ export interface StatementExpense {
   type: ExpenseType;
   amount: number;
   date: string | null;
+  /** `null` for an invoice still to pay: nobody has laid out the money yet. */
+  paidOn: string | null;
   description: string;
   paidByUserId: string | null;
   paidByName: string | null;
@@ -137,7 +139,12 @@ export function buildPayoutStatement(
 ): Statement {
   const recipient = recipientKey(payout);
   const own = expenses
-    .filter((e) => e.receiptNumber <= receiptsUpTo && payerKey(e) === recipient)
+    .filter(
+      (e) =>
+        e.receiptNumber <= receiptsUpTo &&
+        e.paidOn !== null &&
+        payerKey(e) === recipient,
+    )
     .sort((a, b) => a.receiptNumber - b.receiptNumber);
   const earlier = payouts
     .filter((p) => p.number < payout.number && recipientKey(p) === recipient)

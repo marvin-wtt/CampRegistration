@@ -8,6 +8,7 @@ import { FinanceCategoryService } from '#app/financeCategory/finance-category.se
 import { FinancePartyService } from '#app/finance/finance-party.service';
 import { expenseAuditPolicy } from '#app/expense/expense.audit';
 import { nextFinanceNumber } from '#app/finance/finance.sequence';
+import { toDateString } from '#utils/date';
 import type { ExpenseType } from '@camp-registration/common/entities';
 
 export type ExpenseWithFiles = Expense & { files: File[] };
@@ -27,6 +28,7 @@ export interface ExpenseWriteData {
   originalAmount?: number | null | undefined;
   originalCurrency?: string | null | undefined;
   date?: string | null | undefined;
+  paidOn?: string | null | undefined;
   description?: string | undefined;
   vendor?: string | null | undefined;
   categoryId?: string | null | undefined;
@@ -115,6 +117,11 @@ export class ExpenseService extends BaseService {
           originalAmount: data.originalAmount ?? null,
           originalCurrency: data.originalCurrency ?? null,
           date: data.date ?? null,
+          // Unless said otherwise, paid when the receipt was issued.
+          paidOn:
+            data.paidOn === undefined
+              ? (data.date ?? toDateString(new Date()))
+              : data.paidOn,
           description: data.description,
           vendor: data.vendor ?? null,
           categoryId: data.categoryId ?? null,
@@ -172,6 +179,7 @@ export class ExpenseService extends BaseService {
           originalAmount: data.originalAmount,
           originalCurrency: data.originalCurrency,
           date: data.date,
+          paidOn: data.paidOn,
           description: data.description,
           vendor: data.vendor,
           categoryId: data.categoryId,

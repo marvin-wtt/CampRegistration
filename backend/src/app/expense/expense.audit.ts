@@ -13,6 +13,7 @@ const FIELD_ALLOWLIST: (keyof Expense)[] = [
   'originalAmount',
   'originalCurrency',
   'date',
+  'paidOn',
   'description',
   'vendor',
   'categoryId',
@@ -22,7 +23,7 @@ const FIELD_ALLOWLIST: (keyof Expense)[] = [
 
 // Amounts, type and date are what a treasurer reconciles; names and
 // descriptions only appear as changed fields.
-const VALUE_KEYS = ['type', 'amount', 'date'] as const;
+const VALUE_KEYS = ['type', 'amount', 'date', 'paidOn'] as const;
 
 type AuditedExpense = Expense & { files?: { id: string }[] };
 

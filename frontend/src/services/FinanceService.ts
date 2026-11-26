@@ -11,6 +11,8 @@ import type {
   ExpenseUpdateData,
   FinanceBalance,
   FinanceParties,
+  FinancePartyLinkData,
+  FinancePartyLinkResult,
   FinanceSettings,
   FinanceSettingsUpdateData,
   FinanceSummary,
@@ -256,6 +258,18 @@ export function useFinanceService() {
     return response?.data?.data;
   }
 
+  async function linkFinanceParty(
+    eventId: string,
+    data: FinancePartyLinkData,
+  ): Promise<FinancePartyLinkResult> {
+    const response = await api.post(
+      `events/${eventId}/finances/parties/link/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
   async function fetchFinanceParties(eventId: string): Promise<FinanceParties> {
     const response = await api.get(`events/${eventId}/finances/parties/`);
 
@@ -336,6 +350,7 @@ export function useFinanceService() {
     fetchFinanceBalances,
     fetchFinanceSummary,
     fetchFinanceParties,
+    linkFinanceParty,
     fetchFinanceSettings,
     updateFinanceSettings,
     downloadFinanceExport,

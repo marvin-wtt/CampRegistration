@@ -66,28 +66,17 @@
             v-show="showOriginal"
             class="row no-wrap original-row"
           >
-            <q-select
+            <currency-select
               v-model="form.originalCurrency"
-              :options="FOREIGN_CURRENCIES"
+              :exclude="currency"
               :label="t('finance.field.originalCurrency')"
               class="original-currency"
-              use-input
-              fill-input
-              hide-selected
-              new-value-mode="add-unique"
-              :input-debounce="0"
-              clearable
-              dense
-              outlined
-              rounded
-              hide-bottom-space
               :rules="[
                 (val: string | null) =>
                   !form.originalAmount ||
                   /^[A-Z]{3}$/.test(val ?? '') ||
                   t('finance.validation.currency'),
               ]"
-              @new-value="addCurrency"
             />
             <amount-input
               v-model="form.originalAmount"
@@ -212,19 +201,6 @@
   </responsive-dialog>
 </template>
 
-<script lang="ts">
-import type { ReceiptFile as PrefillFile } from '@/composables/receiptUploads';
-
-/** A new income started elsewhere, e.g. a grant first entered as a refund. */
-export interface IncomePrefill {
-  amount: number | null;
-  description: string;
-  receivedOn: string | null;
-  /** Already uploaded: only their ids and names carry over. */
-  files: Pick<PrefillFile, 'key' | 'id' | 'name'>[];
-}
-</script>
-
 <script lang="ts" setup>
 import { computed, reactive, ref, useTemplateRef } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -237,6 +213,7 @@ import ReceiptFileStrip from '@/components/event/finances/ReceiptFileStrip.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
+import CurrencySelect from '@/components/event/finances/CurrencySelect.vue';
 import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import EventDateInput from '@/components/event/EventDateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
@@ -246,12 +223,9 @@ import { usePermissions } from '@/composables/permissions';
 import { formatLocalDate } from '@/utils/date';
 import { useFinanceDialogs } from '@/composables/financeDialogs';
 
-const FOREIGN_CURRENCIES = ['PLN', 'CZK', 'GBP', 'CHF', 'USD', 'DKK', 'HUF'];
-
-const { income = undefined, prefill = undefined } = defineProps<{
+const { income = undefined } = defineProps<{
   /** Edits this one; records a new income without. */
   income?: Income | undefined;
-  prefill?: IncomePrefill | undefined;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -280,16 +254,12 @@ const payers = computed(() =>
 );
 
 const form = reactive({
-  amount: income?.amount ?? prefill?.amount ?? null,
+  amount: income?.amount ?? null,
   originalAmount: income?.originalAmount ?? null,
   originalCurrency: income?.originalCurrency ?? null,
-  description: income?.description ?? prefill?.description ?? '',
+  description: income?.description ?? '',
   // Usually recorded as it arrives; cleared for a promise.
-  receivedOn: income
-    ? income.receivedOn
-    : prefill
-      ? prefill.receivedOn
-      : formatLocalDate(new Date()),
+  receivedOn: income ? income.receivedOn : formatLocalDate(new Date()),
   payerName: income?.payerName ?? null,
   categoryId: income?.categoryId ?? null,
 });
@@ -302,24 +272,7 @@ const {
   uploadedIds,
   add: addFiles,
   remove: removeFile,
-  reset: resetFiles,
 } = useReceiptUploads(income?.files ?? []);
-
-if (prefill) {
-  resetFiles(
-    prefill.files.map((f) => ({
-      ...f,
-      url: null,
-      preview: null,
-      uploading: false,
-    })),
-  );
-}
-
-function addCurrency(value: string, done: (item?: string) => void) {
-  const code = value.trim().toUpperCase();
-  done(/^[A-Z]{3}$/.test(code) ? code : undefined);
-}
 
 async function save() {
   if (!(await formRef.value?.validate()) || form.amount === null) {
@@ -399,7 +352,7 @@ function switchToRefund() {
 }
 
 .original-currency {
-  /* Three letters, the clear icon and the arrow on one line. */
+  /* The code, the clear icon and the arrow on one line. */
   width: 136px;
   flex: 0 0 auto;
 }

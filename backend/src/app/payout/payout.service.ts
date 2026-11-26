@@ -42,6 +42,7 @@ const statementExpenseSelect = {
   type: true,
   amount: true,
   date: true,
+  paidOn: true,
   description: true,
   paidByUserId: true,
   paidByName: true,
