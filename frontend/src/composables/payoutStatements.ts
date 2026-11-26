@@ -24,31 +24,38 @@ export function statementLabels(
     .join(', ');
 }
 
+type StatementFields =
+  'type' | 'amount' | 'paidOn' | 'paidByUserId' | 'paidByName';
+
 /**
  * The current statements an edit would make outdated: those listing the
- * receipt, and on a new payer, theirs it now falls under.
+ * receipt, and those of the payer it now falls under: a new payer, or one
+ * whose invoice is now paid. Unpaid invoices are on no statement.
  */
 function affectedStatementLabels(
   before: Expense,
-  after: Pick<Expense, 'type' | 'amount' | 'paidByUserId' | 'paidByName'>,
+  after: Pick<Expense, StatementFields>,
   payouts: readonly Payout[] | undefined,
 ): string {
   const newPayer = payerKey(after);
   const samePayer = payerKey(before) === newPayer;
+  const samePaid = (before.paidOn === null) === (after.paidOn === null);
   if (
     samePayer &&
+    samePaid &&
     before.type === after.type &&
     before.amount === after.amount
   ) {
     return '';
   }
+  const joins = after.paidOn !== null && (!samePayer || !samePaid);
 
   return (payouts ?? [])
     .filter(
       (p) =>
         !p.outdated &&
         (p.statementExpenseIds.includes(before.id) ||
-          (!samePayer &&
+          (joins &&
             recipientKey(p) === newPayer &&
             before.receiptNumber <= p.statementReceiptsUpTo)),
     )
@@ -64,7 +71,7 @@ export function useConfirmStatementChange() {
 
   return (
     before: Expense,
-    after: Pick<Expense, 'type' | 'amount' | 'paidByUserId' | 'paidByName'>,
+    after: Pick<Expense, StatementFields>,
   ): Promise<boolean> => {
     const labels = affectedStatementLabels(before, after, financeStore.payouts);
     if (!labels) {

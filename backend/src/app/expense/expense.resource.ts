@@ -17,6 +17,7 @@ export class ExpenseResource extends JsonResource<
       originalAmount: this.data.originalAmount,
       originalCurrency: this.data.originalCurrency,
       date: this.data.date,
+      paidOn: this.data.paidOn,
       description: this.data.description,
       vendor: this.data.vendor,
       categoryId: this.data.categoryId,

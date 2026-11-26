@@ -23,6 +23,8 @@ const fields = {
   originalCurrency: CURRENCY.nullable(),
   // Empty while the receipt is still to come.
   date: DateSchema.nullable(),
+  // Empty for an invoice still to pay.
+  paidOn: DateSchema.nullable(),
   description: z.string().trim().min(1).max(255),
   // Blank means none, like a cleared input.
   vendor: NAME.nullable().transform((value) => (value === '' ? null : value)),
@@ -74,6 +76,7 @@ const store = z.object({
       originalAmount: fields.originalAmount.optional(),
       originalCurrency: fields.originalCurrency.optional(),
       date: fields.date.optional(),
+      paidOn: fields.paidOn.optional(),
       description: fields.description,
       vendor: fields.vendor.optional(),
       categoryId: fields.categoryId.optional(),

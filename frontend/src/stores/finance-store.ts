@@ -53,12 +53,16 @@ function categoryUse(list: readonly Expense[] | undefined): string {
 }
 
 /**
- * What payout statements depend on: the figures a statement freezes. A
- * description, date or file change leaves every statement as it was.
+ * What payout statements depend on: the figures a statement freezes, and
+ * whether it is paid. A description, date or file change leaves every
+ * statement as it was.
  */
 function statementUse(list: readonly Expense[] | undefined): string {
   return (list ?? [])
-    .map((e) => `${e.id}:${e.type}:${e.amount.toString()}:${payerKey(e) ?? ''}`)
+    .map(
+      (e) =>
+        `${e.id}:${e.type}:${e.amount.toString()}:${payerKey(e) ?? ''}:${e.paidOn === null ? 'unpaid' : 'paid'}`,
+    )
     .sort()
     .join(',');
 }

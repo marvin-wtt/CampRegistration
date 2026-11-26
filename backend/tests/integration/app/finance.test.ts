@@ -733,6 +733,55 @@ describe('finances', () => {
       ]);
     });
 
+    it('counts an unpaid invoice as a cost but in nobody’s balance', async () => {
+      const { event, user, token } = await setup('TREASURER');
+      const paid = await createExpense(event, token, {
+        amount: 3000,
+        paidByUserId: user.id,
+      });
+      const invoice = await createExpense(event, token, {
+        amount: 9000,
+        paidOn: null,
+        paidByUserId: user.id,
+      });
+
+      const row = await prisma.expense.findUniqueOrThrow({
+        where: { id: paid.id },
+      });
+      // Paid on the receipt date unless said otherwise.
+      expect(row.paidOn).toBe('2026-07-27');
+
+      const balances = async () =>
+        (
+          await request()
+            .get(`/api/v1/events/${event.id}/finances/balances?view=all`)
+            .auth(token, { type: 'bearer' })
+            .expect(200)
+        ).body.data;
+      expect(await balances()).toEqual([
+        expect.objectContaining({ userId: user.id, paid: 3000 }),
+      ]);
+
+      const { body: summary } = await request()
+        .get(`/api/v1/events/${event.id}/finances/summary`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(summary.data).toMatchObject({
+        total: 12000,
+        unpaid: 9000,
+        receiptsUnpaid: [invoice.receiptNumber],
+      });
+
+      await request()
+        .patch(`/api/v1/events/${event.id}/expenses/${invoice.id}`)
+        .send({ paidOn: '2026-08-02' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(await balances()).toEqual([
+        expect.objectContaining({ userId: user.id, paid: 12000 }),
+      ]);
+    });
+
     it('links a typed name to a manager who joined later', async () => {
       const { event, token } = await setup('TREASURER');
       await createExpense(event, token, { amount: 5000, paidByName: 'Anna' });

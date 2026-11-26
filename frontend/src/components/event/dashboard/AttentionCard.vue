@@ -106,7 +106,7 @@ const {
   registrations?: boolean;
   files?: boolean;
   rooms?: boolean;
-  /** Sees every expense; the summary is loaded during wrap-up only. */
+  /** Sees every expense, and the finance summary. */
   finances?: boolean;
   /** Sees registration fees. */
   fees?: boolean;
@@ -223,6 +223,16 @@ const items = computed<AttentionItem[]>(() => {
       route: 'management.event.finances',
       query: { tab: 'expenses', pending: 'true' },
       shown: finances && phase === 'wrapUp',
+    },
+    {
+      // Due whatever the phase: a bill paid late can cost a fee.
+      key: 'unpaidInvoices',
+      label: t('item.unpaidInvoices'),
+      count: financeStore.summary?.receiptsUnpaid.length ?? 0,
+      icon: 'schedule',
+      route: 'management.event.finances',
+      query: { tab: 'expenses', unpaid: 'true' },
+      shown: finances,
     },
     {
       // Paid twice or too much: there is money to give back.
@@ -355,6 +365,7 @@ item:
   age: 'Age outside event range'
   files: 'Missing files'
   receipts: 'Receipts without a date'
+  unpaidInvoices: 'Invoices to pay'
   feesOverpaid: 'Fees paid too much'
   feesOwing: 'Fees still open'
 </i18n>
@@ -371,6 +382,7 @@ item:
   age: 'Alter außerhalb des Bereichs'
   files: 'Fehlende Dateien'
   receipts: 'Belege ohne Datum'
+  unpaidInvoices: 'Offene Rechnungen'
   feesOverpaid: 'Zu viel gezahlte Beiträge'
   feesOwing: 'Offene Beiträge'
 </i18n>
@@ -387,6 +399,7 @@ item:
   age: 'Âge hors de la plage'
   files: 'Fichiers manquants'
   receipts: 'Justificatifs sans date'
+  unpaidInvoices: 'Factures à payer'
   feesOverpaid: 'Frais trop payés'
   feesOwing: 'Frais encore dus'
 </i18n>
@@ -403,6 +416,7 @@ item:
   age: 'Wiek poza zakresem'
   files: 'Brakujące pliki'
   receipts: 'Paragony bez daty'
+  unpaidInvoices: 'Faktury do zapłaty'
   feesOverpaid: 'Nadpłacone opłaty'
   feesOwing: 'Nieopłacone opłaty'
 </i18n>
@@ -419,6 +433,7 @@ item:
   age: 'Věk mimo rozsah'
   files: 'Chybějící soubory'
   receipts: 'Doklady bez data'
+  unpaidInvoices: 'Faktury k zaplacení'
   feesOverpaid: 'Přeplacené poplatky'
   feesOwing: 'Nezaplacené poplatky'
 </i18n>

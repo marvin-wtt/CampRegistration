@@ -57,21 +57,25 @@ export interface FinanceSummary {
   currency: string;
   expenses: number;
   refunds: number;
-  /** expenses − refunds */
+  /** expenses − refunds, unpaid invoices included */
   total: number;
+  /** Of `total`, the invoices still to pay. */
+  unpaid: number;
   /** Sum of positive balances. */
   owedToPeople: number;
   /** Sum of negative balances, as a positive amount. */
   owedToEvent: number;
   /** Payouts agreed but not transferred yet. */
   toTransfer: number;
-  /** Gross, before refunds. */
+  /** Gross, before refunds; paid ones only. */
   paidByPeople: number;
   paidByFunds: number;
   receiptCount: number;
   receiptsWithoutFile: number[];
   /** Receipt numbers whose receipt is still to come (no date yet). */
   receiptsPending: number[];
+  /** Receipt numbers of invoices still to pay. */
+  receiptsUnpaid: number[];
   byCategory: FinanceCategoryTotal[];
   /** Grants, donations and the like that have arrived. */
   incomeReceived: number;

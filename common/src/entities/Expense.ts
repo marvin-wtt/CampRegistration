@@ -20,6 +20,11 @@ export interface Expense extends Identifiable, Ownable, Timestamps {
   originalCurrency: string | null;
   /** `YYYY-MM-DD` on the receipt; `null` while the receipt is still to come. */
   date: string | null;
+  /**
+   * `YYYY-MM-DD` it was paid; `null` for an invoice still to pay, which
+   * counts towards the costs but not yet towards anyone's balance.
+   */
+  paidOn: string | null;
   description: string;
   /** Who was paid: a shop, a bus company. */
   vendor: string | null;
@@ -36,6 +41,7 @@ export interface ExpenseCreateData {
   originalAmount?: number | null | undefined;
   originalCurrency?: string | null | undefined;
   date?: string | null | undefined;
+  paidOn?: string | null | undefined;
   description: string;
   vendor?: string | null | undefined;
   categoryId?: string | null | undefined;

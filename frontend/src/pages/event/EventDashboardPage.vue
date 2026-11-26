@@ -343,9 +343,9 @@ fetchWhen(
   () => feeStore.fetchData(),
 );
 
-// Only wrap-up asks about receipts still to come.
+// Invoices to pay matter in every phase; receipts to come at wrap-up.
 fetchWhen(
-  () => features.value.finances && phase.value === 'wrapUp',
+  () => features.value.finances,
   () => financeStore.loadSummary(),
 );
 

@@ -42,6 +42,14 @@
         >
           {{ caption }}
         </span>
+        <!-- Due, not a mistake: a calmer tone than the warnings. -->
+        <q-badge
+          v-if="unpaid"
+          color="secondary-container"
+          text-color="on-secondary-container"
+          :label="t('finance.unpaid')"
+          data-test="expense-unpaid"
+        />
         <q-badge
           v-if="financeStore.isMissingCategory(expense)"
           color="warning-container"
@@ -183,7 +191,7 @@ import type { Expense } from '@camp-registration/common/entities';
 import ReceiptBadge from '@/components/event/finances/ReceiptBadge.vue';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { useFinanceStore } from '@/stores/finance-store';
-import { isMissingFile } from '@/utils/expenseState';
+import { isMissingFile, isUnpaid } from '@/utils/expenseState';
 
 const { expense, wide = false } = defineProps<{
   expense: Expense;
@@ -199,6 +207,7 @@ const { money, signedMoney, categoryName, categoryPath, payerName } =
   useFinanceFormat();
 
 const missingFile = computed(() => isMissingFile(expense));
+const unpaid = computed(() => isUnpaid(expense));
 
 // Wide: the category with its group. Narrow: category and payer, which has
 // no column there.

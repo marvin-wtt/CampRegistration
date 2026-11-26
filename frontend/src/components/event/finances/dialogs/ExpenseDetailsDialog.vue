@@ -45,13 +45,35 @@
             "
             :warn="!expense.date"
           />
+          <!-- An invoice still to pay is flagged; marking it paid is at hand. -->
           <detail-row
-            icon="person"
+            :icon="expense.paidOn ? 'price_check' : 'schedule'"
             :label="
               expense.type === 'REFUND'
-                ? t('finance.field.receivedBy')
-                : t('finance.field.paidBy')
+                ? t('finance.field.refundReceivedOn')
+                : t('finance.field.paidOn')
             "
+            :value="paidValue"
+            :warn="!expense.paidOn"
+          >
+            <template
+              v-if="actions.markPaid"
+              #side
+            >
+              <m-btn
+                :label="actions.markPaid.label"
+                color="primary"
+                text
+                rounded
+                no-caps
+                data-test="expense-details-mark-paid"
+                @click="actions.markPaid.onClick()"
+              />
+            </template>
+          </detail-row>
+          <detail-row
+            icon="person"
+            :label="payerLabel"
             :value="payerName(expense)"
           />
           <detail-row
@@ -174,7 +196,9 @@ watch(current, (found) => {
 
 // Delete is destructive, so only here; Edit also has its own button.
 const menu = computed(() =>
-  [actions.value.edit, actions.value.remove].filter((a) => a !== undefined),
+  [actions.value.markPaid, actions.value.edit, actions.value.remove].filter(
+    (a) => a !== undefined,
+  ),
 );
 
 const caption = computed(() => {
@@ -187,6 +211,26 @@ const caption = computed(() => {
 });
 
 const category = computed(() => categoryPath(expense.value.categoryId));
+
+const paidValue = computed(() => {
+  const { paidOn, type } = expense.value;
+  if (paidOn) {
+    return d(parseLocalDate(paidOn), 'date');
+  }
+  return type === 'REFUND'
+    ? t('finance.unreceivedLong')
+    : t('finance.unpaidLong');
+});
+
+const payerLabel = computed(() => {
+  const { paidOn, type } = expense.value;
+  if (type === 'REFUND') {
+    return paidOn
+      ? t('finance.field.receivedBy')
+      : t('finance.field.toBeReceivedBy');
+  }
+  return paidOn ? t('finance.field.paidBy') : t('finance.field.toBePaidBy');
+});
 const missingCategory = computed(() =>
   financeStore.isMissingCategory(expense.value),
 );

@@ -9,7 +9,12 @@ import { groupCategories, useFinanceFormat } from '@/composables/financeFormat';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import { useFinanceStore } from '@/stores/finance-store';
-import { hasNoCategory, isMissingFile, isPending } from '@/utils/expenseState';
+import {
+  hasNoCategory,
+  isMissingFile,
+  isPending,
+  isUnpaid,
+} from '@/utils/expenseState';
 
 export interface FilterOption {
   value: string;
@@ -49,7 +54,14 @@ export interface ActiveFilter {
   clear: () => void;
 }
 
-const QUERY_KEYS = ['category', 'payer', 'noFile', 'noCategory', 'pending'];
+const QUERY_KEYS = [
+  'category',
+  'payer',
+  'noFile',
+  'noCategory',
+  'pending',
+  'unpaid',
+];
 
 // Expenses from event funds have no payer: filtered as their own entry.
 const payerFilterKey = (expense: Expense) => payerKey(expense) ?? 'funds';
@@ -131,6 +143,14 @@ export function useExpenseFilters(
     const noCategory = count((e) => financeStore.isMissingCategory(e));
 
     return [
+      // Invoices still to pay: offered while there are any.
+      flagFilter(
+        'unpaid',
+        'schedule',
+        t('finance.filter.unpaid', { count: count(isUnpaid) }),
+        t('finance.unpaid'),
+        count(isUnpaid) > 0 || flag('unpaid'),
+      ),
       flagFilter(
         'pending',
         'hourglass_empty',
@@ -159,6 +179,7 @@ export function useExpenseFilters(
 
   const flagTests: Record<string, (e: Expense) => boolean> = {
     noFile: isMissingFile,
+    unpaid: isUnpaid,
     // Also where the event doesn't flag it, e.g. from an older link.
     noCategory: hasNoCategory,
     pending: isPending,

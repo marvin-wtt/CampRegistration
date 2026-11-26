@@ -240,24 +240,46 @@
             />
           </datalist>
 
-          <!-- Often yesterday's, never a day ahead. -->
-          <event-date-input
-            v-model="form.date"
-            :label="t('finance.field.receiptDate')"
-            :hint="form.date ? undefined : t('finance.field.receiptPending')"
-            :max="formatLocalDate(new Date())"
-            open-on-today
-            clearable
-          />
+          <!-- Often yesterday's, never a day ahead. Paid beside it, as most
+               receipts are paid at the till; an invoice may still be due. -->
+          <div class="row no-wrap items-start date-row">
+            <event-date-input
+              v-model="form.date"
+              :label="t('finance.field.receiptDate')"
+              :hint="form.date ? undefined : t('finance.field.receiptPending')"
+              :max="formatLocalDate(new Date())"
+              class="col"
+              open-on-today
+              clearable
+            />
+            <!-- A toggle the height of the field beside it: tonal when on,
+                 like the type toggle above. -->
+            <m-btn
+              :tonal="form.paid"
+              :outline="!form.paid"
+              :allow-color="!form.paid"
+              unelevated
+              rounded
+              no-caps
+              :color="form.paid ? 'secondary' : 'on-surface-variant'"
+              :icon="form.paid ? 'check' : 'schedule'"
+              :label="
+                form.type === 'REFUND'
+                  ? t('finance.field.received')
+                  : t('finance.field.paid')
+              "
+              role="switch"
+              :aria-checked="form.paid"
+              class="paid-toggle"
+              data-test="expense-paid"
+              @click="form.paid = !form.paid"
+            />
+          </div>
 
           <party-select
             v-model="form.payer"
             :parties
-            :label="
-              form.type === 'REFUND'
-                ? t('finance.field.receivedBy')
-                : t('finance.field.paidBy')
-            "
+            :label="payerLabel"
             data-test="expense-payer"
           />
 
@@ -357,6 +379,7 @@ interface CaptureForm {
   categoryId: string | null;
   payer: PartyValue;
   date: string | null;
+  paid: boolean;
 }
 
 const { expense = undefined, prefill = undefined } = defineProps<{
@@ -438,6 +461,7 @@ function emptyForm(): CaptureForm {
     categoryId: null,
     payer: selfPayer(),
     date: formatLocalDate(new Date()),
+    paid: true,
   };
 }
 
@@ -452,10 +476,36 @@ function formOf(source: Expense): CaptureForm {
     categoryId: source.categoryId,
     payer: { userId: source.paidByUserId, name: source.paidByName },
     date: source.date,
+    paid: source.paidOn !== null,
   };
 }
 
 const form = reactive<CaptureForm>(expense ? formOf(expense) : emptyForm());
+
+// Who will pay an invoice still due; who did once it is paid.
+const payerLabel = computed(() => {
+  if (form.type === 'REFUND') {
+    return form.paid
+      ? t('finance.field.receivedBy')
+      : t('finance.field.toBeReceivedBy');
+  }
+  return form.paid ? t('finance.field.paidBy') : t('finance.field.toBePaidBy');
+});
+
+/**
+ * Kept when it was paid already. Otherwise paid at the till, on the receipt's
+ * date, for a new one; today for an invoice now ticked off.
+ */
+function paidOn(): string | null {
+  if (!form.paid) {
+    return null;
+  }
+  const today = formatLocalDate(new Date());
+  if (expense) {
+    return expense.paidOn ?? today;
+  }
+  return form.date ?? today;
+}
 const {
   files,
   uploading,
@@ -474,6 +524,7 @@ const savedMeta = computed(() =>
     ? [
         categoryName(saved.value.categoryId),
         payerName(saved.value),
+        saved.value.paidOn === null && t('finance.unpaid'),
         saved.value.date
           ? d(parseLocalDate(saved.value.date), 'date')
           : t('finance.receiptPending'),
@@ -585,6 +636,7 @@ async function save() {
     amount: form.amount,
     ...original,
     date: form.date,
+    paidOn: paidOn(),
     description: form.description.trim(),
     vendor: form.vendor?.trim() || null,
     categoryId: form.categoryId,
@@ -644,6 +696,22 @@ function startNext() {
   font-size: 64px;
   font-weight: 700;
   line-height: 1.1;
+}
+
+.date-row {
+  gap: 8px;
+}
+
+/* As tall as the outlined field, so the row reads as one. */
+.paid-toggle {
+  flex: none;
+  height: 56px;
+  min-width: 112px;
+}
+
+/* Off, it is bordered like the fields; the label keeps its own tone. */
+.paid-toggle.q-btn--outline::before {
+  border-color: var(--md3-outline);
 }
 
 .original-currency {

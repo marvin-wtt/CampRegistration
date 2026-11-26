@@ -14,6 +14,8 @@ import {
 export interface BalanceExpense {
   type: 'EXPENSE' | 'REFUND';
   amount: number;
+  /** `null` for an invoice still to pay: it moves no balance yet. */
+  paidOn: string | null;
   categoryId: string | null;
   paidByUserId: string | null;
   paidByName: string | null;
@@ -30,7 +32,7 @@ export interface BalancePayout {
 
 /**
  * balance = paid − refunds received − paid out + paid back. Expenses paid
- * from event funds move nobody's balance. Records come oldest first, so the
+ * from event funds, and invoices still to pay, move nobody's balance. Records come oldest first, so the
  * latest name snapshot wins for an account.
  */
 export function computeBalances(
@@ -67,7 +69,11 @@ export function computeBalances(
 
   for (const expense of expenses) {
     const balance = entry(expense.paidByUserId, expense.paidByName ?? '');
-    if (!balance || (!expense.paidByUserId && !expense.paidByName)) {
+    if (
+      !balance ||
+      expense.paidOn === null ||
+      (!expense.paidByUserId && !expense.paidByName)
+    ) {
       continue;
     }
     if (expense.type === 'REFUND') {

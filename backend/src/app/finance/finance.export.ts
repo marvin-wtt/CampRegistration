@@ -63,6 +63,7 @@ export function buildFinanceSheets(
   const expenseRows: CellValue[][] = data.expenses.map((e) => [
     e.receiptNumber,
     excelDate(e.date),
+    excelDate(e.paidOn),
     t(`value.${e.type}`),
     e.description,
     e.vendor,
@@ -106,7 +107,8 @@ export function buildFinanceSheets(
       name: t('sheet.expenses'),
       columns: [
         { header: t('column.receiptNumber'), width: 10 },
-        { header: t('column.date'), width: 12, numFmt: DATE },
+        { header: t('column.receiptDate'), width: 14, numFmt: DATE },
+        { header: t('column.paidOn'), width: 12, numFmt: DATE },
         { header: t('column.type'), width: 12 },
         { header: t('column.description'), width: 32 },
         { header: t('column.vendor'), width: 22 },

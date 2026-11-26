@@ -71,7 +71,7 @@ string>`), limited to the event's locales. Only managers see them, so a
 
 ```
 Expense  id, eventId, receiptNumber, type (EXPENSE | REFUND), amount,
-         originalAmount?, originalCurrency?, date, description, vendor?,
+         originalAmount?, originalCurrency?, date, paidOn?, description, vendor?,
          categoryId?, paidByUserId?, paidByName?, createdByUserId
 File     … expenseId?   (the receipt files)
 ```
@@ -92,6 +92,15 @@ File     … expenseId?   (the receipt files)
   counts all the same and the number is assigned now, to go on the paper once
   it arrives; the list badges and filters such expenses, the summary names
   them.
+- **Paid on** is when the money went out; empty means an invoice still to
+  pay. Such an invoice counts in the totals all the same, since the event will
+  pay it, and the summary names its share (`unpaid`, `receiptsUnpaid`). It
+  moves nobody's balance and is on no payout statement until it is paid: the
+  payer, set up front as who _will_ pay, hasn't laid anything out yet. The
+  capture form has a **Paid** box beside the receipt date, ticked by default,
+  which dates the payment on the receipt date (today while the receipt is to
+  come); **Mark as paid** dates one paid later, today by default. Expenses
+  from before this field were backfilled as paid on their receipt date.
 - **Paid by** is one of:
   - a manager (`paidByUserId`, with the name snapshotted in `paidByName` so it
     survives the manager leaving or deleting their account). The picker
@@ -360,9 +369,11 @@ them (`?tab=expenses&filter=pending`).
   on phones the filter button sits beside it. Rows without a file or a
   category are marked; the category mark can be turned off in the finance
   settings (event setting `finances`, for events that don't sort expenses).
+  Unpaid invoices carry an **Unpaid** badge.
   Filters: category, payer, missing receipt file, missing category (while
-  marked), still to come, kept in the query (`category`, `payer`, `noFile`,
-  `noCategory`, `pending`) so the summary and dashboard link to them. Tapping
+  marked), still to come, unpaid, kept in the query (`category`, `payer`,
+  `noFile`, `noCategory`, `pending`, `unpaid`) so the summary and dashboard
+  link to them. Tapping
   a receipt opens its details — amounts, date, payer, vendor, category, the
   payout statements it is on and its files — for everyone who sees it. Like a
   payout's, the dialog follows the record live and stays open: **Edit** is the
@@ -389,7 +400,7 @@ them (`?tab=expenses&filter=pending`).
   switch it. Counselors see their own card.
 - **Summary.** Totals per category with group subtotals, each row linking
   to its expenses, total spent, total still owed, and the receipts still to
-  complete (missing file, still to come, no category), each linking to the
+  complete (unpaid, missing file, still to come, no category), each linking to the
   filtered list. Export: CSV/XLSX (expenses, payouts and category totals on
   separate sheets) plus a ZIP of receipt files named by receipt number
   (`017.jpg`, `017-2.jpg`), either flat or with a folder per group

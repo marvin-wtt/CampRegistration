@@ -10,6 +10,7 @@ export default {
     column: {
       receiptNumber: 'Receipt no.',
       date: 'Date',
+      receiptDate: 'Receipt date',
       paidOn: 'Paid on',
       type: 'Type',
       description: 'Description',
