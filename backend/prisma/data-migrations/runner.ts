@@ -25,21 +25,7 @@ import prisma from '../client.js';
  * and modify every row, matching the previous standalone migration scripts.
  */
 
-const TRACKING_TABLE = '_data_migrations';
 const MIGRATIONS_DIR = path.join(import.meta.dirname, '..', 'migrations');
-
-/**
- * Data migrations applied **manually** before this runner existed (the legacy
- * self-running `migration.ts` scripts). Recorded as already-applied the first
- * time the tracking table is created, so they are never re-run; they would be
- * no-ops on a fresh database anyway.
- *
- * New migrations are discovered automatically — do not list them here.
- */
-const baselinedMigrations = [
-  '20260121175357_update_message_templates_add_country_column',
-  '20260124022616_update_registrations_replace_waitinglist_with_status',
-];
 
 interface MigrationModule {
   up?: (tx: Prisma.TransactionClient) => Promise<void>;
@@ -77,30 +63,20 @@ async function loadMigration(
   return mod.up;
 }
 
-async function trackingTableExists(): Promise<boolean> {
-  const rows = await prisma.$queryRaw<{ count: bigint }[]>`
-    SELECT COUNT(*) AS count
-    FROM information_schema.tables
-    WHERE table_schema = DATABASE()
-      AND table_name = ${TRACKING_TABLE}
-  `;
-  return Number(rows[0]?.count ?? 0) > 0;
-}
-
 async function ensureTrackingTable(): Promise<void> {
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS \`${TRACKING_TABLE}\` (
-      \`name\` VARCHAR(255) NOT NULL,
-      \`applied_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (\`name\`)
+  await prisma.$executeRaw`
+    CREATE TABLE IF NOT EXISTS _data_migrations (
+      name VARCHAR(255) PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `;
 }
 
 async function getAppliedNames(): Promise<Set<string>> {
-  const rows = await prisma.$queryRawUnsafe<{ name: string }[]>(
-    `SELECT \`name\` FROM \`${TRACKING_TABLE}\``,
-  );
+  const rows = await prisma.$queryRaw<{ name: string }[]>`
+    SELECT name FROM _data_migrations
+  `;
+
   return new Set(rows.map((r) => r.name));
 }
 
@@ -108,25 +84,13 @@ async function markApplied(
   tx: Prisma.TransactionClient,
   name: string,
 ): Promise<void> {
-  await tx.$executeRaw`INSERT INTO \`_data_migrations\` (\`name\`) VALUES (${name})`;
+  await tx.$executeRaw`
+    INSERT INTO _data_migrations (name) VALUES (${name})
+  `;
 }
 
 async function main(): Promise<void> {
-  const existedBefore = await trackingTableExists();
   await ensureTrackingTable();
-
-  // Seed baselined migrations the first time the table is created so that
-  // migrations applied manually before this runner are never re-run.
-  if (!existedBefore && baselinedMigrations.length > 0) {
-    await prisma.$transaction(async (tx) => {
-      for (const name of baselinedMigrations) {
-        await markApplied(tx, name);
-      }
-    });
-    console.log(
-      `Baselined ${baselinedMigrations.length.toString()} previously-applied data migration(s).`,
-    );
-  }
 
   const applied = await getAppliedNames();
   const discovered = await discoverMigrationNames();

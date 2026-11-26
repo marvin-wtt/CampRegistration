@@ -109,8 +109,12 @@ export class AdminAccessService extends BaseService {
         ? {
             AND: {
               OR: [
-                { reason: { contains: filter.search } },
-                { user: { name: { contains: filter.search } } },
+                { reason: { contains: filter.search, mode: 'insensitive' } },
+                {
+                  user: {
+                    name: { contains: filter.search, mode: 'insensitive' },
+                  },
+                },
                 { user: { email: { contains: filter.search } } },
               ],
             },

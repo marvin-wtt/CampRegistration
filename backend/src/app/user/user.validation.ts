@@ -1,5 +1,9 @@
 import { z, type ZodType } from 'zod';
-import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
+import {
+  EmailSchema,
+  LocaleSchema,
+  PasswordSchema,
+} from '#core/validation/helper';
 import type {
   UserCreateData,
   UserUpdateData,
@@ -42,7 +46,7 @@ const index = z.object({
 
 const store = z.object({
   body: z.object({
-    email: z.email(),
+    email: EmailSchema,
     password: PasswordSchema,
     name: z.string(),
     role: RoleSchema.optional(),
@@ -57,7 +61,7 @@ const update = z.object({
   }),
   body: z
     .object({
-      email: z.email(),
+      email: EmailSchema,
       password: PasswordSchema,
       name: z.string(),
       role: RoleSchema,

@@ -1,10 +1,10 @@
 import { PrismaClient } from '#generated/prisma/client';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { PrismaPg } from '@prisma/adapter-pg';
 import logger from '#core/logger';
 import config from '#config';
 
 function createClient(): PrismaClient {
-  const adapter = new PrismaMariaDb(config.database.url);
+  const adapter = new PrismaPg(config.database.url);
 
   return new PrismaClient({ adapter });
 }

@@ -1,3 +1,0 @@
--- This is an empty migration.
--- It hosts the data migration in `migration.ts`, which rewrites the removed
--- `permission_leave` table cell renderer to the generic `icon_mapping` renderer.

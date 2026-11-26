@@ -7,7 +7,7 @@ export const InvitationFactory = {
     data: Partial<Prisma.EventInvitationCreateInput> = {},
   ): Prisma.EventInvitationCreateInput => {
     return {
-      email: faker.internet.email(),
+      email: faker.internet.exampleEmail().toLowerCase(),
       ...data,
     };
   },

@@ -254,8 +254,7 @@ export class EventService extends BaseService {
 
   /**
    * Resolve event ids whose translated `name` JSON contains the query in any
-   * locale. Matching the serialized JSON with LIKE covers every locale value
-   * without needing per-locale JSON paths. `null` means "don't filter by name".
+   * locale. `null` means "don't filter by name".
    */
   private async eventIdsMatchingName(query?: string): Promise<string[] | null> {
     const name = query?.trim();
@@ -268,9 +267,20 @@ export class EventService extends BaseService {
       .replace(/%/g, '\\%')
       .replace(/_/g, '\\_');
 
+    // A name is a plain JSON string or a locale map; jsonb_each_text rejects
+    // scalars, and only CASE guarantees it is not reached for them.
+    const pattern = `%${escaped}%`;
     const rows = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM events
-      WHERE JSON_SEARCH(name, 'one', ${`%${escaped}%`}) IS NOT NULL
+      WHERE CASE jsonb_typeof(name)
+        WHEN 'object' THEN EXISTS (
+          SELECT 1
+          FROM jsonb_each_text(name) AS translation
+          WHERE translation.value ILIKE ${pattern}
+        )
+        WHEN 'string' THEN name #>> '{}' ILIKE ${pattern}
+        ELSE FALSE
+      END
     `;
 
     return rows.map((row) => row.id);

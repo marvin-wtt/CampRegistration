@@ -1,8 +1,8 @@
 import { PrismaClient } from '#generated/prisma/client.js';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
+  adapter: new PrismaPg(process.env.DATABASE_URL!),
 });
 
 export default prisma;

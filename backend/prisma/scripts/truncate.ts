@@ -2,36 +2,21 @@ import { pathToFileURL } from 'node:url';
 import prisma from '../client.js';
 
 export async function main() {
-  // https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries
-  const tableNames = await prisma.$queryRaw<
-    Array<{ TABLE_NAME: string }>
-  >`SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = DATABASE();`;
+  const tableNames = await prisma.$queryRaw<Array<{ table_name: string }>>`
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE'
+      AND table_name != '_prisma_migrations';
+  `;
 
-  // An interactive transaction rather than a batch, because
-  // `SET FOREIGN_KEY_CHECKS` is session-scoped and every statement therefore
-  // has to run on one connection. It buys no atomicity: TRUNCATE is DDL and
-  // implicitly commits in MariaDB. The batch form also takes no timeout, and
-  // the 5s default is not enough for a full truncate on a loaded CI runner —
-  // the seed then fails with P2028.
-  await prisma.$transaction(
-    async (tx) => {
-      await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`;
+  if (tableNames.length === 0) return;
 
-      for (const { TABLE_NAME } of tableNames) {
-        if (TABLE_NAME === '_prisma_migrations') {
-          continue;
-        }
+  const tables = tableNames
+    .map(({ table_name }) => `public."${table_name.replace(/"/g, '""')}"`)
+    .join(', ');
 
-        await tx.$executeRawUnsafe(`TRUNCATE ${TABLE_NAME};`);
-      }
-
-      await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`;
-    },
-    // Sometimes CI fails due to timeout.
-    // This is an attempt to fix it.
-    // But I really don't understand why it should ever take that long.
-    { maxWait: 10_000, timeout: 60_000 },
-  );
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} RESTRICT`);
 }
 
 const isMainModule =

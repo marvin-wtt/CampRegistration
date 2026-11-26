@@ -9,13 +9,13 @@ generator json {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 model User {
-  id            String    @id @unique(map: "users_id_unique") @default(ulid()) @db.Char(26)
+  id            String    @id @unique() @default(ulid()) @db.Char(26)
   name          String    @db.VarChar(255)
-  email         String    @unique(map: "users_email_unique") @db.VarChar(255)
+  email         String    @unique() @db.VarChar(255)
   emailVerified Boolean   @default(false) @map("email_verified")
   password      String    @db.VarChar(255)
   role          Role      @default(USER)
@@ -55,7 +55,7 @@ enum AdminAccessScope {
 /// Temporary access of a system administrator to an event, newsletter or
 /// organization beyond their own role. See docs/admin-access.md.
 model AdminAccessGrant {
-  id        String           @id @unique(map: "admin_access_grants_id_unique") @default(ulid()) @db.Char(26)
+  id        String           @id @unique() @default(ulid()) @db.Char(26)
   userId    String           @map("user_id") @db.Char(26)
   scope     AdminAccessScope
   scopeId   String           @map("scope_id") @db.Char(26)
@@ -64,10 +64,10 @@ model AdminAccessGrant {
   endedAt   DateTime?        @map("ended_at")
   createdAt DateTime         @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "admin_access_grants_user_id_foreign")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([userId, scope, scopeId, expiresAt], map: "admin_access_grants_lookup_index")
-  @@index([scope, scopeId, createdAt], map: "admin_access_grants_scope_index")
+  @@index([userId, scope, scopeId, expiresAt])
+  @@index([scope, scopeId, createdAt])
   @@map("admin_access_grants")
 }
 
@@ -82,22 +82,22 @@ model UserTwoFactor {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime? @updatedAt @map("updated_at")
 
-  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "user_two_factor_user_id_foreign")
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   recoveryCodes TwoFactorRecoveryCode[]
 
   @@map("user_two_factor")
 }
 
 model TwoFactorRecoveryCode {
-  id        String    @id @unique(map: "two_factor_recovery_codes_id_unique") @default(ulid()) @db.Char(26)
+  id        String    @id @unique() @default(ulid()) @db.Char(26)
   userId    String    @map("user_id") @db.Char(26)
   code      String    @db.VarChar(255)
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
-  twoFactor UserTwoFactor @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade, map: "two_factor_recovery_codes_user_id_foreign")
+  twoFactor UserTwoFactor @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([userId], map: "two_factor_recovery_codes_user_id_index")
+  @@index([userId])
   @@map("two_factor_recovery_codes")
 }
 
@@ -120,7 +120,7 @@ enum OrganizationVerificationStatus {
 }
 
 model Organization {
-  id                 String                         @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  id                 String                         @id @unique() @default(ulid()) @db.Char(26)
   name               String                         @db.VarChar(255)
   verificationStatus OrganizationVerificationStatus @default(DRAFT) @map("verification_status")
 
@@ -134,8 +134,8 @@ model Organization {
   addressCity    String @map("address_city") @db.VarChar(255)
   country        String @db.Char(2)
 
-  verificationNote String?   @map("verification_note") @db.Text
-  reviewNote       String?   @map("review_note") @db.Text
+  verificationNote String?   @map("verification_note")
+  reviewNote       String?   @map("review_note")
   reviewedAt       DateTime? @map("reviewed_at")
   reviewedByUserId String?   @map("reviewed_by_user_id") @db.Char(26)
   submittedAt      DateTime? @map("submitted_at")
@@ -143,95 +143,95 @@ model Organization {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
   events      Event[]
   newsletters Newsletter[]
 
-  @@index([verificationStatus], map: "organizations_verification_status_index")
-  @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
+  @@index([verificationStatus])
+  @@index([reviewedByUserId])
   @@map("organizations")
 }
 
 model OrganizationMember {
-  id             String   @id @unique(map: "organization_members_id_unique") @default(ulid()) @db.Char(26)
+  id             String   @id @unique() @default(ulid()) @db.Char(26)
   organizationId String   @map("organization_id") @db.Char(26)
   userId         String?  @map("user_id") @db.Char(26)
   role           String   @default("MEMBER") @db.VarChar(50)
   invitationId   String?  @map("invitation_id") @db.Char(26)
   createdAt      DateTime @default(now()) @map("created_at")
 
-  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_members_organization_id_foreign")
-  user         User?                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_members_user_id_foreign")
-  invitation   OrganizationInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organization_members_invitation_id_foreign")
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user         User?                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  invitation   OrganizationInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  @@unique([organizationId, userId], map: "organization_members_organization_id_user_id_unique")
-  @@index([userId], map: "organization_members_user_id_index")
-  @@index([invitationId], map: "organization_members_invitation_id_index")
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([invitationId])
   @@map("organization_members")
 }
 
 model OrganizationInvitation {
-  id             String @id @unique(map: "organization_invitations_id_unique") @default(ulid()) @db.Char(26)
+  id             String @id @unique() @default(ulid()) @db.Char(26)
   organizationId String @map("organization_id") @db.Char(26)
   email          String @db.VarChar(255)
 
-  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_invitations_organization_id_foreign")
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   members      OrganizationMember[]
 
-  @@index([organizationId], map: "organization_invitations_organization_id_index")
-  @@index([email], map: "organization_invitations_email_index")
+  @@index([organizationId])
+  @@index([email])
   @@map("organization_invitations")
 }
 
 model Event {
-  id                       String           @id @unique(map: "events_id_unique") @default(ulid()) @db.Char(26)
+  id                       String           @id @unique() @default(ulid()) @db.Char(26)
   organizationId           String           @map("organization_id") @db.Char(26)
   listed                   Boolean
-  registrationOpensAt      DateTime?        @map("registration_opens_at") @db.DateTime(0)
-  registrationClosesAt     DateTime?        @map("registration_closes_at") @db.DateTime(0)
+  registrationOpensAt      DateTime?        @map("registration_opens_at") @db.Timestamp(0)
+  registrationClosesAt     DateTime?        @map("registration_closes_at") @db.Timestamp(0)
   confirmationMode         ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
   /// ![Array<string>]
-  countries                Json             @db.Json
+  countries                Json
   /// ![string | Record<string, string>]
-  name                     Json             @db.Json
+  name                     Json
   /// ![string | Record<string, string>]
-  organizer                Json             @db.Json
+  organizer                Json
   /// ![string | Record<string, string>]
-  contactEmail             Json             @map("contact_email") @db.Json
+  contactEmail             Json
   /// ![number | Record<string, number>]
-  maxParticipants          Json             @map("max_participants") @db.Json
-  minAge                   Int              @map("min_age") @db.UnsignedInt
-  maxAge                   Int              @map("max_age") @db.UnsignedInt
-  startAt                  DateTime         @map("start_at") @db.DateTime(0)
-  endAt                    DateTime         @map("end_at") @db.DateTime(0)
+  maxParticipants          Json
+  minAge                   Int              @map("min_age")
+  maxAge                   Int              @map("max_age")
+  startAt                  DateTime         @map("start_at") @db.Timestamp(0)
+  endAt                    DateTime         @map("end_at") @db.Timestamp(0)
   timezone                 String           @default("Europe/Berlin") @db.VarChar(64)
   /// Minor units of `currency`: one for every group, or one per group.
   /// ![number | Record<string, number>]
-  price                    Json             @db.Json
+  price                    Json
   currency                 String           @default("EUR") @db.Char(3)
   /// ![string | Record<string, string>]
-  location                 Json?            @db.Json
+  location                 Json?
   /// ![Record<string, unknown>]
-  form                     Json             @db.Json
+  form                     Json
   /// ![Record<string, unknown>]
-  themes                   Json             @default("{}") @db.Json
+  themes                   Json             @default("{}")
   /// When deleting the answers to special-category questions began, for good
   /// (docs/privacy.md, 8): no edit brings them back. Implied by
   /// `registrationDataPurgedAt`.
-  sensitiveDataPurgedAt    DateTime?        @map("sensitive_data_purged_at") @db.DateTime(0)
+  sensitiveDataPurgedAt    DateTime?        @map("sensitive_data_purged_at") @db.Timestamp(0)
   /// When every registration's sensitive answers were cleared. Until then the
   /// deletion is still open and can be run again.
-  sensitiveDataClearedAt   DateTime?        @map("sensitive_data_cleared_at") @db.DateTime(0)
+  sensitiveDataClearedAt   DateTime?        @map("sensitive_data_cleared_at") @db.Timestamp(0)
   /// When all registration data was deleted for good. The event never takes
   /// registrations again.
-  registrationDataPurgedAt DateTime?        @map("registration_data_purged_at") @db.DateTime(0)
+  registrationDataPurgedAt DateTime?        @map("registration_data_purged_at") @db.Timestamp(0)
   archivedAt               DateTime?        @map("archived_at")
   createdAt                DateTime?        @default(now()) @map("created_at")
   updatedAt                DateTime?        @updatedAt @map("updated_at")
 
-  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   eventManager         EventManager[]
   registrations        Registration[]
   rooms                Room[]
@@ -254,7 +254,7 @@ model Event {
   finance              EventFinance?
   retentionStates      EventRetentionState[]
 
-  @@index([organizationId], map: "events_organization_id_index")
+  @@index([organizationId])
   @@map("events")
 }
 
@@ -268,15 +268,15 @@ model EventFinance {
   incomeNumberPrefix  String @default("I") @map("income_number_prefix") @db.VarChar(8)
   /// The last receipt and payout numbers handed out. Counters rather than
   /// `MAX() + 1`, so deleting the newest record never frees its number.
-  lastReceiptNumber   Int    @default(0) @map("last_receipt_number") @db.UnsignedInt
-  lastPayoutNumber    Int    @default(0) @map("last_payout_number") @db.UnsignedInt
-  lastIncomeNumber    Int    @default(0) @map("last_income_number") @db.UnsignedInt
+  lastReceiptNumber   Int    @default(0) @map("last_receipt_number")
+  lastPayoutNumber    Int    @default(0) @map("last_payout_number")
+  lastIncomeNumber    Int    @default(0) @map("last_income_number")
   /// Starts every transfer reference of the event (`K7MX-0042`), so transfers
   /// for several events on one bank account stay apart.
-  referenceCode       String @unique(map: "event_finances_reference_code_unique") @map("reference_code") @db.Char(4)
-  lastReferenceNumber Int    @default(0) @map("last_reference_number") @db.UnsignedInt
+  referenceCode       String @unique() @map("reference_code") @db.Char(4)
+  lastReferenceNumber Int    @default(0) @map("last_reference_number")
 
-  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_finances_event_id_foreign")
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   payouts Payout[]
   incomes Income[]
 
@@ -284,27 +284,27 @@ model EventFinance {
 }
 
 model EventManager {
-  id           String    @id @unique(map: "event_managers_id_unique") @default(ulid()) @db.Char(26)
+  id           String    @id @unique() @default(ulid()) @db.Char(26)
   eventId      String    @map("event_id") @db.Char(26)
   userId       String?   @map("user_id") @db.Char(26)
   role         String    @db.VarChar(50)
   invitationId String?   @map("invitation_id") @db.Char(26)
-  expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
+  expiresAt    DateTime? @map("expires_at") @db.Timestamp(0)
 
-  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_managers_event_id_foreign")
-  user          User?            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_managers_user_id_foreign")
-  invitation    EventInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_managers_invitation_id_foreign")
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user          User?            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  invitation    EventInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   assignedTasks Task[]
 
-  @@unique([eventId, userId], map: "event_managers_event_id_user_id_unique")
-  @@index([eventId], map: "event_managers_event_id_foreign")
-  @@index([userId], map: "event_managers_user_id_foreign")
-  @@index([invitationId], map: "event_manager_invitation_id_foreign")
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@index([invitationId])
   @@map("event_managers")
 }
 
 model EventInvitation {
-  id           String         @id @unique(map: "invitations_id_unique") @default(ulid()) @db.Char(26)
+  id           String         @id @unique() @default(ulid()) @db.Char(26)
   email        String         @db.VarChar(255)
   eventManager EventManager[]
 
@@ -318,12 +318,12 @@ enum RegistrationStatus {
 }
 
 model Registration {
-  id                                 String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
+  id                                 String             @id @unique() @default(ulid()) @db.Char(26)
   eventId                            String             @map("event_id") @db.Char(26)
   /// ![Record<string, unknown>]
-  data                               Json               @db.Json
+  data                               Json
   /// ![Record<string, unknown>]
-  customData                         Json?              @map("custom_data") @db.Json
+  customData                         Json?              @map("custom_data")
   // Computed fields
   firstName                          String?            @map("first_name")
   lastName                           String?            @map("last_name")
@@ -348,18 +348,18 @@ model Registration {
   // What the server calculated — and the form showed — at submission, in
   // minor units of `currency`, and never changes. Null on registrations
   // predating it.
-  quotedAmount                       Int?               @map("quoted_amount") @db.UnsignedInt
+  quotedAmount                       Int?               @map("quoted_amount")
   // The currency the registration's amounts are in: its event's at
   // submission, so each amount says what it is in.
   currency                           String?            @db.Char(3)
   // Set by hand in place of the quote; what is owed is this (or the quote)
   // minus what refunds cancelled (docs/payments.md).
-  amountDueOverride                  Int?               @map("amount_due_override") @db.UnsignedInt
+  amountDueOverride                  Int?               @map("amount_due_override")
   amountDueNote                      String?            @map("amount_due_note") @db.VarChar(255)
   amountDueAdjustedAt                DateTime?          @map("amount_due_adjusted_at")
   // The transfer reference (`K7MX-0042`): the event's `referenceCode` and a
   // number of the event's own.
-  paymentReference                   String             @unique(map: "registrations_payment_reference_unique") @map("payment_reference") @db.VarChar(16)
+  paymentReference                   String             @unique() @map("payment_reference") @db.VarChar(16)
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
@@ -368,34 +368,35 @@ model Registration {
   // The wording of each consent given, as shown, by answer path — proof
   // under Art. 7(1). Null on registrations predating it; do not backfill.
   /// ![Record<string, string>]
-  consentTexts                       Json?              @map("consent_texts") @db.Json
-  createdAt                          DateTime           @default(now()) @map("created_at")
-  updatedAt                          DateTime?          @updatedAt @map("updated_at")
+  consentTexts                       Json?              @map("consent_texts")
 
-  event                     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_event_id_foreign")
-  organizationPrivacyNotice PrivacyNoticeVersion?   @relation("RegistrationOrganizationPrivacyNotice", fields: [organizationPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_organization_privacy_notice_version_id_foreign")
-  eventPrivacyNotice        PrivacyNoticeVersion?   @relation("RegistrationEventPrivacyNotice", fields: [eventPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_event_privacy_notice_version_id_foreign")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  event                     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationPrivacyNotice PrivacyNoticeVersion?   @relation("RegistrationOrganizationPrivacyNotice", fields: [organizationPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  eventPrivacyNotice        PrivacyNoticeVersion?   @relation("RegistrationEventPrivacyNotice", fields: [eventPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   bed                       Bed?
   files                     File[]
   deliveries                MessageDelivery[]
   choreAssignmentMembers    ChoreAssignmentMember[]
   payments                  Payment[]
 
-  @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
-  @@index([eventPrivacyNoticeVersionId], map: "registrations_event_privacy_notice_version_id_index")
+  @@index([organizationPrivacyNoticeVersionId])
+  @@index([eventPrivacyNoticeVersionId])
   // Counted per group on every registration, for its participant limit.
-  @@index([eventId, group], map: "registrations_event_id_group_index")
+  @@index([eventId, group])
   @@map("registrations")
 }
 
 model Room {
-  id        String @id @unique(map: "rooms_id_unique") @default(ulid()) @db.Char(26)
+  id        String @id @unique() @default(ulid()) @db.Char(26)
   eventId   String @map("event_id") @db.Char(26)
   /// ![string | Record<string, string>]
-  name      Json   @db.Json
+  name      Json
   sortOrder Int    @default(999) @map("sort_order")
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_event_id_foreign")
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   beds  Bed[]
 
   @@map("rooms")
@@ -404,44 +405,44 @@ model Room {
 model Bed {
   id             String  @id @unique @default(ulid()) @db.Char(26)
   roomId         String  @map("room_id") @db.Char(26)
-  registrationId String? @unique(map: "beds_registration_id_unique") @map("registration_id") @db.Char(26)
+  registrationId String? @unique() @map("registration_id") @db.Char(26)
 
-  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_room_id_foreign")
-  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "beds_registration_id_foreign")
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("beds")
 }
 
 model TableTemplate {
-  id      String @id @unique(map: "table_templates_id_unique") @default(ulid()) @db.Char(26)
+  id      String @id @unique() @default(ulid()) @db.Char(26)
   eventId String @map("event_id") @db.Char(26)
   /// ![Record<string, unknown>]
-  data    Json   @db.Json
+  data    Json
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_event_id_foreign")
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([eventId], map: "table_templates_event_id_foreign")
+  @@index([eventId])
   @@map("table_templates")
 }
 
 model EventSetting {
-  id        String    @id @unique(map: "event_settings_id_unique") @default(ulid()) @db.Char(26)
+  id        String    @id @unique() @default(ulid()) @db.Char(26)
   eventId   String    @map("event_id") @db.Char(26)
   key       String    @db.VarChar(100)
   /// ![Record<string, unknown>]
-  data      Json      @db.Json
+  data      Json
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_settings_event_id_foreign")
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([eventId, key], map: "event_settings_event_id_key_unique")
+  @@unique([eventId, key])
   @@map("event_settings")
 }
 
 model Token {
   id          Int       @id @default(autoincrement())
   userId      String    @map("user_id") @db.Char(26)
-  token       String    @db.Char(255)
+  token       String    @db.VarChar(255)
   type        TokenType
   expiresAt   DateTime  @map("expires_at")
   blacklisted Boolean   @default(false)
@@ -466,7 +467,7 @@ enum UploadStatus {
 }
 
 model File {
-  id                  String       @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
+  id                  String       @id @unique() @default(ulid()) @db.Char(26)
   eventId             String?      @map("event_id") @db.Char(26) // Prisma does not support morth
   registrationId      String?      @map("registration_id") @db.Char(26) // Prisma does not support morth
   messageId           String?      @map("message_id") @db.Char(26) // Prisma does not support morth
@@ -500,9 +501,9 @@ model File {
   payout            Payout?            @relation(fields: [payoutId], references: [id], onDelete: SetNull)
   income            Income?            @relation(fields: [incomeId], references: [id], onDelete: SetNull)
 
-  @@index([expenseId], map: "files_expense_id_index")
-  @@index([payoutId], map: "files_payout_id_index")
-  @@index([incomeId], map: "files_income_id_index")
+  @@index([expenseId])
+  @@index([payoutId])
+  @@index([incomeId])
   @@map("files")
 }
 
@@ -515,27 +516,27 @@ enum FinanceCategoryKind {
 // category with a `parentId` is a leaf, and only leaves hold records. Expense
 // and income categories are separate lists, each grouped within itself.
 model FinanceCategory {
-  id         String              @id @unique(map: "finance_categories_id_unique") @default(ulid()) @db.Char(26)
+  id         String              @id @unique() @default(ulid()) @db.Char(26)
   eventId    String              @map("event_id") @db.Char(26)
   kind       FinanceCategoryKind @default(EXPENSE)
   parentId   String?             @map("parent_id") @db.Char(26)
   /// ![string | Record<string, string>]
-  name       Json                @db.Json
-  position   Int                 @default(0) @db.UnsignedInt
+  name       Json
+  position   Int                 @default(0)
   // Used categories are archived instead of deleted: hidden from the picker,
   // kept on their expenses.
   archivedAt DateTime?           @map("archived_at")
   createdAt  DateTime            @default(now()) @map("created_at")
   updatedAt  DateTime?           @updatedAt @map("updated_at")
 
-  event    Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "finance_categories_event_id_foreign")
-  parent   FinanceCategory?  @relation("FinanceCategoryGroup", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "finance_categories_parent_id_foreign")
+  event    Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  parent   FinanceCategory?  @relation("FinanceCategoryGroup", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   children FinanceCategory[] @relation("FinanceCategoryGroup")
   expenses Expense[]
   incomes  Income[]
 
-  @@index([eventId], map: "finance_categories_event_id_index")
-  @@index([parentId], map: "finance_categories_parent_id_index")
+  @@index([eventId])
+  @@index([parentId])
   @@map("finance_categories")
 }
 
@@ -547,13 +548,13 @@ enum ExpenseType {
 // Amounts are positive minor units of the event's currency; `type` carries
 // the direction. Neither payer column set means event funds paid.
 model Expense {
-  id               String      @id @unique(map: "expenses_id_unique") @default(ulid()) @db.Char(26)
+  id               String      @id @unique() @default(ulid()) @db.Char(26)
   eventId          String      @map("event_id") @db.Char(26)
-  receiptNumber    Int         @map("receipt_number") @db.UnsignedInt
+  receiptNumber    Int         @map("receipt_number")
   type             ExpenseType @default(EXPENSE)
-  amount           Int         @db.UnsignedInt
+  amount           Int
   // What the receipt says, when it is in another currency; set together.
-  originalAmount   Int?        @map("original_amount") @db.UnsignedInt
+  originalAmount   Int?        @map("original_amount")
   originalCurrency String?     @map("original_currency") @db.Char(3)
   // The date on the receipt; `null` while the receipt is still to come.
   date             String?     @db.Char(10)
@@ -571,28 +572,28 @@ model Expense {
   createdAt        DateTime    @default(now()) @map("created_at")
   updatedAt        DateTime?   @updatedAt @map("updated_at")
 
-  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "expenses_event_id_foreign")
-  category  FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "expenses_category_id_foreign")
-  paidBy    User?            @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "expenses_paid_by_user_id_foreign")
-  createdBy User?            @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "expenses_created_by_user_id_foreign")
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  category  FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  paidBy    User?            @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdBy User?            @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   files     File[]
 
-  @@unique([eventId, receiptNumber], map: "expenses_event_id_receipt_number_unique")
-  @@index([categoryId], map: "expenses_category_id_index")
-  @@index([paidByUserId], map: "expenses_paid_by_user_id_index")
-  @@index([createdByUserId], map: "expenses_created_by_user_id_index")
+  @@unique([eventId, receiptNumber])
+  @@index([categoryId])
+  @@index([paidByUserId])
+  @@index([createdByUserId])
   @@map("expenses")
 }
 
 // Money the event receives other than registration fees: grants, donations.
 // See "Income" in docs/finances.md. Always shared funds, never a balance.
 model Income {
-  id               String    @id @unique(map: "incomes_id_unique") @default(ulid()) @db.Char(26)
+  id               String    @id @unique() @default(ulid()) @db.Char(26)
   eventId          String    @map("event_id") @db.Char(26)
-  number           Int       @db.UnsignedInt
-  amount           Int       @db.UnsignedInt
+  number           Int
+  amount           Int
   // What the grant letter says, when it is in another currency; set together.
-  originalAmount   Int?      @map("original_amount") @db.UnsignedInt
+  originalAmount   Int?      @map("original_amount")
   originalCurrency String?   @map("original_currency") @db.Char(3)
   // When the money arrived; `null` while it is promised but not yet paid.
   receivedOn       String?   @map("received_on") @db.Char(10)
@@ -604,16 +605,16 @@ model Income {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime? @updatedAt @map("updated_at")
 
-  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "incomes_event_id_foreign")
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   // The same event id: an income reads its number prefix from here.
   finance   EventFinance     @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: Cascade, map: "incomes_event_id_finance_foreign")
-  category  FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "incomes_category_id_foreign")
-  createdBy User?            @relation("IncomeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "incomes_created_by_user_id_foreign")
+  category  FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdBy User?            @relation("IncomeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   files     File[]
 
-  @@unique([eventId, number], map: "incomes_event_id_number_unique")
-  @@index([categoryId], map: "incomes_category_id_index")
-  @@index([createdByUserId], map: "incomes_created_by_user_id_index")
+  @@unique([eventId, number])
+  @@index([categoryId])
+  @@index([createdByUserId])
   @@map("incomes")
 }
 
@@ -625,13 +626,13 @@ enum PayoutDirection {
 // A transfer between event funds and a person, never a cost: `OUT` pays
 // them, `IN` is money they hand back.
 model Payout {
-  id                String          @id @unique(map: "payouts_id_unique") @default(ulid()) @db.Char(26)
+  id                String          @id @unique() @default(ulid()) @db.Char(26)
   eventId           String          @map("event_id") @db.Char(26)
-  number            Int             @db.UnsignedInt
+  number            Int
   recipientUserId   String?         @map("recipient_user_id") @db.Char(26)
   recipientName     String          @map("recipient_name") @db.VarChar(255)
   direction         PayoutDirection
-  amount            Int             @db.UnsignedInt
+  amount            Int
   // When the money moved; `null` while the payout is still to be made (the
   // statement is usually signed first, the transfer follows).
   paidOn            String?         @map("paid_on") @db.Char(10)
@@ -643,7 +644,7 @@ model Payout {
   bankBic           String?         @map("bank_bic") @db.VarChar(11)
   // The recipient's signature under the statement, as SVG path data. A scan
   // of a slip signed on paper is one of `files` instead.
-  signature         String?         @db.Text
+  signature         String?
   signedAt          DateTime?       @map("signed_at")
   // `{ content, basis }`, frozen at creation and never written again: see
   // "Frozen statements" in docs/finances.md.
@@ -652,16 +653,16 @@ model Payout {
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime?       @updatedAt @map("updated_at")
 
-  event     Event        @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
+  event     Event        @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   // The same event id: a payout reads its number prefix from here.
   finance   EventFinance @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_finance_foreign")
-  recipient User?        @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_recipient_user_id_foreign")
-  createdBy User?        @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_created_by_user_id_foreign")
+  recipient User?        @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdBy User?        @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   files     File[]
 
-  @@unique([eventId, number], map: "payouts_event_id_number_unique")
-  @@index([recipientUserId], map: "payouts_recipient_user_id_index")
-  @@index([createdByUserId], map: "payouts_created_by_user_id_index")
+  @@unique([eventId, number])
+  @@index([recipientUserId])
+  @@index([createdByUserId])
   @@map("payouts")
 }
 
@@ -690,12 +691,12 @@ enum PaymentSettlement {
 // A registration fee that came in. Outlives its registration as the
 // accounting record, with its own snapshot of who paid.
 model Payment {
-  id              String             @id @unique(map: "payments_id_unique") @default(ulid()) @db.Char(26)
+  id              String             @id @unique() @default(ulid()) @db.Char(26)
   eventId         String             @map("event_id") @db.Char(26)
   registrationId  String?            @map("registration_id") @db.Char(26)
   source          PaymentSource      @default(MANUAL)
   status          PaymentStatus      @default(PAID)
-  amount          Int                @db.UnsignedInt
+  amount          Int
   currency        String             @db.Char(3)
   method          PaymentMethod
   // The booking date, a calendar date like `Payout.paidOn`.
@@ -710,15 +711,15 @@ model Payment {
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime?          @updatedAt @map("updated_at")
 
-  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payments_event_id_foreign")
-  registration Registration?   @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payments_registration_id_foreign")
-  createdBy    User?           @relation("PaymentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payments_created_by_user_id_foreign")
+  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  registration Registration?   @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdBy    User?           @relation("PaymentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   refunds      PaymentRefund[]
 
-  @@index([eventId], map: "payments_event_id_index")
-  @@index([registrationId], map: "payments_registration_id_index")
-  @@index([registrationRef], map: "payments_registration_ref_index")
-  @@index([createdByUserId], map: "payments_created_by_user_id_index")
+  @@index([eventId])
+  @@index([registrationId])
+  @@index([registrationRef])
+  @@index([createdByUserId])
   @@map("payments")
 }
 
@@ -729,68 +730,68 @@ enum PaymentRefundStatus {
 
 // A fee going back to a registrant — not an expense of type `REFUND`.
 model PaymentRefund {
-  id                 String              @id @unique(map: "payment_refunds_id_unique") @default(ulid()) @db.Char(26)
+  id                 String              @id @unique() @default(ulid()) @db.Char(26)
   paymentId          String              @map("payment_id") @db.Char(26)
   status             PaymentRefundStatus @default(REFUNDED)
-  amount             Int                 @db.UnsignedInt
+  amount             Int
   refundedOn         String              @map("refunded_on") @db.Char(10)
   reason             String?             @db.VarChar(255)
   // What this refund took off the amount due (a cancellation); none for an
   // overpayment. Derived, so deleting the refund gives it back.
-  amountDueReduction Int                 @default(0) @map("amount_due_reduction") @db.UnsignedInt
+  amountDueReduction Int                 @default(0) @map("amount_due_reduction")
   createdByUserId    String?             @map("created_by_user_id") @db.Char(26)
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime?           @updatedAt @map("updated_at")
 
-  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payment_refunds_payment_id_foreign")
-  createdBy User?   @relation("PaymentRefundCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payment_refunds_created_by_user_id_foreign")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdBy User?   @relation("PaymentRefundCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  @@index([paymentId], map: "payment_refunds_payment_id_index")
-  @@index([createdByUserId], map: "payment_refunds_created_by_user_id_index")
+  @@index([paymentId])
+  @@index([createdByUserId])
   @@map("payment_refunds")
 }
 
 model Message {
-  id           String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  id           String   @id @unique() @default(ulid()) @db.Char(26)
   eventId      String   @map("event_id") @db.Char(26)
   sentByUserId String?  @map("sent_by_user_id") @db.Char(26)
   priority     String   @default("normal")
   replyTo      String?  @map("reply_to")
-  subject      String   @db.Text
-  body         String   @db.LongText
+  subject      String
+  body         String
   createdAt    DateTime @default(now()) @map("created_at")
 
   event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  sentBy      User?             @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, map: "messages_sent_by_user_id_foreign")
+  sentBy      User?             @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
   deliveries  MessageDelivery[]
   attachments File[]
 
-  @@index([sentByUserId], map: "messages_sent_by_user_id_index")
+  @@index([sentByUserId])
   @@map("messages")
 }
 
 // A single per-recipient rendered email produced from a Message (ad-hoc send)
 // or a MessageTemplate (automated event template).
 model MessageDelivery {
-  id                  String    @id @unique(map: "message_delivery_id_unique") @default(ulid()) @db.Char(26)
+  id                  String    @id @unique() @default(ulid()) @db.Char(26)
   templateId          String?   @map("message_template_id") @db.Char(26)
   messageId           String?   @map("message_id") @db.Char(26)
   registrationId      String    @map("registration_id") @db.Char(26)
   // Shared by the per-address deliveries of one send to a registration.
   batchId             String?   @map("batch_id") @db.Char(26)
-  to                  String?   @db.TinyText
-  cc                  String?   @db.TinyText
-  bcc                 String?   @db.TinyText
+  to                  String?   @db.VarChar(255)
+  cc                  String?   @db.VarChar(255)
+  bcc                 String?   @db.VarChar(255)
   replyTo             String?   @map("reply_to")
-  subject             String    @db.MediumText
-  body                String    @db.MediumText
+  subject             String
+  body                String
   priority            String    @default("normal")
   createdAt           DateTime  @default(now()) @map("created_at")
   // The rendered email's Message-ID, doubling as the DSN ENVID a bounce
   // report is matched on. Not to be confused with `messageId` (the FK above).
   bounceCorrelationId String?   @unique @map("bounce_correlation_id")
   bouncedAt           DateTime? @map("bounced_at")
-  bounceReason        String?   @map("bounce_reason") @db.Text
+  bounceReason        String?   @map("bounce_reason")
 
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   message      Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
@@ -806,15 +807,15 @@ model MessageDelivery {
 
 // Reusable, automated template keyed by a trigger event (and optional country).
 model MessageTemplate {
-  id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
+  id        String    @id @unique() @default(ulid()) @db.Char(26)
   eventId   String    @map("event_id") @db.Char(26)
   // The group the template is for, by its country code; null for every group.
   group     String?
   trigger   String
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
-  subject   String    @db.Text
-  body      String    @db.LongText
+  subject   String
+  body      String
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
@@ -822,7 +823,7 @@ model MessageTemplate {
   deliveries  MessageDelivery[]
   attachments File[]
 
-  @@unique([group, trigger, eventId], map: "message_templates_group_trigger_event_id_unique")
+  @@unique([group, trigger, eventId])
   @@map("message_templates")
 }
 
@@ -834,108 +835,108 @@ enum JobStatus {
 }
 
 model Job {
-  id         String    @id @unique(map: "jobs_id_unique") @default(ulid()) @db.Char(26)
+  id         String    @id @unique() @default(ulid()) @db.Char(26)
   name       String    @db.VarChar(255)
   queue      String    @db.VarChar(255)
-  payload    Json      @db.Json
+  payload    Json
   status     JobStatus @default(PENDING)
-  priority   Int       @default(1) @db.UnsignedTinyInt
+  priority   Int       @default(1) @db.SmallInt
   attempts   Int       @default(0)
-  error      String?   @db.Text
-  runAt      DateTime? @map("run_at") @db.DateTime(3)
-  reservedAt DateTime? @map("reserved_at") @db.DateTime(3)
-  finishedAt DateTime? @map("finished_at") @db.DateTime(3)
+  error      String?
+  runAt      DateTime? @map("run_at")
+  reservedAt DateTime? @map("reserved_at")
+  finishedAt DateTime? @map("finished_at")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  @@index([status, runAt], map: "jobs_status_run_at_index")
+  @@index([status, runAt])
   @@map("jobs")
 }
 
 model JobRateLimit {
-  queue      String   @id @unique(map: "queue_unique") @db.VarChar(255)
+  queue      String   @id @unique() @db.VarChar(255)
   tokens     Float
-  refilledAt DateTime @map("refilled_at") @db.DateTime(3)
+  refilledAt DateTime @map("refilled_at")
 
   @@map("job_rate_limits")
 }
 
 model Newsletter {
-  id             String    @id @unique(map: "newsletters_id_unique") @default(ulid()) @db.Char(26)
+  id             String    @id @unique() @default(ulid()) @db.Char(26)
   organizationId String    @map("organization_id") @db.Char(26)
   name           String    @db.VarChar(255)
-  description    String?   @db.Text
-  replyTo        String?   @map("reply_to") @db.Char(255)
+  description    String?
+  replyTo        String?   @map("reply_to")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime? @updatedAt @map("updated_at")
 
-  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "newsletters_organization_id_foreign")
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   managers     NewsletterManager[]
   subscribers  NewsletterSubscriber[]
   messages     NewsletterMessage[]
 
-  @@index([organizationId], map: "newsletters_organization_id_index")
+  @@index([organizationId])
   @@map("newsletters")
 }
 
 model NewsletterManager {
-  id           String @id @unique(map: "newsletter_managers_id_unique") @default(ulid()) @db.Char(26)
+  id           String @id @unique() @default(ulid()) @db.Char(26)
   newsletterId String @map("newsletter_id") @db.Char(26)
   userId       String @map("user_id") @db.Char(26)
   role         String @default("OWNER") @db.VarChar(50)
 
-  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_managers_newsletter_id_foreign")
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_managers_user_id_foreign")
+  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([newsletterId, userId], map: "newsletter_managers_newsletter_id_user_id_unique")
-  @@index([newsletterId], map: "newsletter_managers_newsletter_id_index")
-  @@index([userId], map: "newsletter_managers_user_id_index")
+  @@unique([newsletterId, userId])
+  @@index([newsletterId])
+  @@index([userId])
   @@map("newsletter_managers")
 }
 
 model NewsletterSubscriber {
-  id                 String    @id @unique(map: "newsletter_subscribers_id_unique") @default(ulid()) @db.Char(26)
+  id                 String    @id @unique() @default(ulid()) @db.Char(26)
   newsletterId       String    @map("newsletter_id") @db.Char(26)
   email              String    @db.VarChar(255)
   name               String?   @db.VarChar(255)
   locale             String?   @db.VarChar(5)
-  unsubscribeToken   String    @unique(map: "newsletter_subscribers_unsubscribe_token_unique") @map("unsubscribe_token") @db.Char(64)
+  unsubscribeToken   String    @unique() @map("unsubscribe_token") @db.Char(64)
   // Double opt-in: when the person agreed (e.g. their registration), and when
   // they clicked the confirmation link. Only confirmed subscribers get mail.
   consentedAt        DateTime  @map("consented_at")
   confirmedAt        DateTime? @map("confirmed_at")
-  confirmationToken  String?   @unique(map: "newsletter_subscribers_confirmation_token_unique") @map("confirmation_token") @db.Char(64)
+  confirmationToken  String?   @unique() @map("confirmation_token") @db.Char(64)
   confirmationSentAt DateTime? @map("confirmation_sent_at")
   subscribedAt       DateTime  @default(now()) @map("subscribed_at")
 
-  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_subscribers_newsletter_id_foreign")
+  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([newsletterId, email], map: "newsletter_subscribers_newsletter_id_email_unique")
-  @@index([newsletterId], map: "newsletter_subscribers_newsletter_id_index")
-  @@index([newsletterId, confirmedAt], map: "newsletter_subscribers_newsletter_id_confirmed_at_index")
+  @@unique([newsletterId, email])
+  @@index([newsletterId])
+  @@index([newsletterId, confirmedAt])
   @@map("newsletter_subscribers")
 }
 
 model NewsletterMessage {
-  id             String   @id @unique(map: "newsletter_messages_id_unique") @default(ulid()) @db.Char(26)
+  id             String   @id @unique() @default(ulid()) @db.Char(26)
   newsletterId   String   @map("newsletter_id") @db.Char(26)
   sentByUserId   String?  @map("sent_by_user_id") @db.Char(26)
   subject        String   @db.VarChar(255)
-  body           String   @db.Text
+  body           String
   recipientCount Int      @map("recipient_count")
   sentAt         DateTime @default(now()) @map("sent_at")
 
-  newsletter  Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_messages_newsletter_id_foreign")
-  sentBy      User?      @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "newsletter_messages_sent_by_user_id_foreign")
+  newsletter  Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sentBy      User?      @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   attachments File[]
 
-  @@index([newsletterId], map: "newsletter_messages_newsletter_id_index")
+  @@index([newsletterId])
   @@map("newsletter_messages")
 }
 
 model ProgramItem {
-  id       String  @id @unique(map: "program_item_id_unique") @default(ulid()) @db.Char(26)
+  id       String  @id @unique() @default(ulid()) @db.Char(26)
   eventId  String  @map("event_id") @db.Char(26) // Prisma does not support morth
   /// ![string | Record<string, string>]
   title    Json
@@ -954,34 +955,34 @@ model ProgramItem {
 }
 
 model ProgramPublishedDay {
-  id      String @id @unique(map: "program_published_days_id_unique") @default(ulid()) @db.Char(26)
+  id      String @id @unique() @default(ulid()) @db.Char(26)
   eventId String @map("event_id") @db.Char(26)
   date    String @db.Char(10)
   plan    String @default("both")
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "program_published_days_event_id_foreign")
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([eventId, date], map: "program_published_days_event_id_date_unique")
+  @@unique([eventId, date])
   @@map("program_published_days")
 }
 
 model Task {
-  id         String  @id @unique(map: "tasks_id_unique") @default(ulid()) @db.Char(26)
+  id         String  @id @unique() @default(ulid()) @db.Char(26)
   eventId    String  @map("event_id") @db.Char(26)
   title      String
-  notes      String? @db.Text
+  notes      String?
   dueDate    String? @map("due_date")
   completed  Boolean @default(false)
   assigneeId String? @map("assignee_id") @db.Char(26)
 
   reminderSentAt DateTime? @map("reminder_sent_at")
 
-  event    Event         @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "tasks_event_id_foreign")
-  assignee EventManager? @relation(fields: [assigneeId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "tasks_assignee_id_foreign")
+  event    Event         @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assignee EventManager? @relation(fields: [assigneeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  @@index([eventId], map: "tasks_event_id_foreign")
-  @@index([assigneeId], map: "tasks_assignee_id_foreign")
-  @@index([dueDate], map: "tasks_due_date_index")
+  @@index([eventId])
+  @@index([assigneeId])
+  @@index([dueDate])
   @@map("tasks")
 }
 
@@ -1014,45 +1015,46 @@ enum ChoreMemberRole {
 }
 
 model Chore {
-  id                  String            @id @unique(map: "chores_id_unique") @default(ulid()) @db.Char(26)
-  eventId             String            @map("event_id") @db.Char(26)
+  id      String @id @unique() @default(ulid()) @db.Char(26)
+  eventId String @map("event_id") @db.Char(26)
   /// ![string | Record<string, string>]
-  name                Json              @db.Json
+  name    Json
+
   sortOrder           Int               @default(999) @map("sort_order")
-  defaultCount        Int?              @map("default_count") @db.UnsignedInt
-  supervisorCount     Int               @default(0) @map("supervisor_count") @db.UnsignedInt
+  defaultCount        Int?              @map("default_count")
+  supervisorCount     Int               @default(0) @map("supervisor_count")
   eligibility         ChoreEligibility  @default(PARTICIPANTS)
   effort              ChoreEffort       @default(NORMAL)
   defaultRotationUnit ChoreRotationUnit @default(PERSON) @map("default_rotation_unit")
   balanceGroups       Boolean           @default(false) @map("balance_groups")
 
-  event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chores_event_id_foreign")
+  event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   slots       ChoreSlot[]
   assignments ChoreAssignment[]
 
-  @@index([eventId], map: "chores_event_id_foreign")
+  @@index([eventId])
   @@map("chores")
 }
 
 model ChoreSlot {
-  id              String       @id @unique(map: "chore_slots_id_unique") @default(ulid()) @db.Char(26)
+  id              String       @id @unique() @default(ulid()) @db.Char(26)
   choreId         String       @map("chore_id") @db.Char(26)
   /// ![string | Record<string, string>]
-  name            Json         @db.Json
+  name            Json
   sortOrder       Int          @default(0) @map("sort_order")
-  headcount       Int?         @db.UnsignedInt
-  supervisorCount Int?         @map("supervisor_count") @db.UnsignedInt
+  headcount       Int?
+  supervisorCount Int?         @map("supervisor_count")
   effort          ChoreEffort?
 
-  chore       Chore             @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_slots_chore_id_foreign")
+  chore       Chore             @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assignments ChoreAssignment[]
 
-  @@index([choreId], map: "chore_slots_chore_id_foreign")
+  @@index([choreId])
   @@map("chore_slots")
 }
 
 model ChoreAssignment {
-  id              String                @id @unique(map: "chore_assignments_id_unique") @default(ulid()) @db.Char(26)
+  id              String                @id @unique() @default(ulid()) @db.Char(26)
   eventId         String                @map("event_id") @db.Char(26)
   choreId         String                @map("chore_id") @db.Char(26)
   slotId          String?               @map("slot_id") @db.Char(26)
@@ -1064,34 +1066,34 @@ model ChoreAssignment {
   status          ChoreAssignmentStatus @default(PLANNED)
   note            String?               @db.VarChar(500)
   /// This duty's own counts; null inherits the slot's, then the chore's.
-  headcount       Int?                  @db.UnsignedInt
-  supervisorCount Int?                  @map("supervisor_count") @db.UnsignedInt
+  headcount       Int?
+  supervisorCount Int?                  @map("supervisor_count")
   createdAt       DateTime              @default(now()) @map("created_at")
 
-  event     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_event_id_foreign")
-  chore     Chore                   @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_chore_id_foreign")
-  choreSlot ChoreSlot?              @relation(fields: [slotId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "chore_assignments_slot_id_foreign")
+  event     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chore     Chore                   @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  choreSlot ChoreSlot?              @relation(fields: [slotId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   members   ChoreAssignmentMember[]
 
-  @@index([eventId], map: "chore_assignments_event_id_foreign")
-  @@index([choreId], map: "chore_assignments_chore_id_foreign")
-  @@index([slotId], map: "chore_assignments_slot_id_foreign")
-  @@index([batchId], map: "chore_assignments_batch_id_index")
+  @@index([eventId])
+  @@index([choreId])
+  @@index([slotId])
+  @@index([batchId])
   @@map("chore_assignments")
 }
 
 model ChoreAssignmentMember {
-  id                String          @id @unique(map: "chore_assignment_members_id_unique") @default(ulid()) @db.Char(26)
+  id                String          @id @unique() @default(ulid()) @db.Char(26)
   choreAssignmentId String          @map("chore_assignment_id") @db.Char(26)
   registrationId    String          @map("registration_id") @db.Char(26)
   role              ChoreMemberRole @default(MEMBER)
   missed            Boolean         @default(false)
 
-  choreAssignment ChoreAssignment @relation(fields: [choreAssignmentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignment_members_chore_assignment_id_foreign")
-  registration    Registration    @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignment_members_registration_id_foreign")
+  choreAssignment ChoreAssignment @relation(fields: [choreAssignmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  registration    Registration    @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([choreAssignmentId, registrationId], map: "chore_assignment_members_unique")
-  @@index([registrationId], map: "chore_assignment_members_registration_id_foreign")
+  @@unique([choreAssignmentId, registrationId])
+  @@index([registrationId])
   @@map("chore_assignment_members")
 }
 
@@ -1101,10 +1103,10 @@ enum LegalDocumentType {
 }
 
 model LegalDocument {
-  id        String            @id @unique(map: "legal_documents_id_unique") @default(ulid()) @db.Char(26)
-  type      LegalDocumentType @unique(map: "legal_documents_type_unique")
+  id        String            @id @unique() @default(ulid()) @db.Char(26)
+  type      LegalDocumentType @unique()
   /// ![string | Record<string, string>]
-  content   Json?             @db.Json
+  content   Json?
   updatedAt DateTime?         @updatedAt @map("updated_at")
 
   @@map("legal_documents")
@@ -1118,39 +1120,39 @@ enum PrivacyNoticeScope {
 /// Append-only. A registration points at the exact version it was shown, so an
 /// organization can still prove what the notice said months later.
 model PrivacyNoticeVersion {
-  id      String             @id @unique(map: "privacy_notice_versions_id_unique") @default(ulid()) @db.Char(26)
+  id      String             @id @unique() @default(ulid()) @db.Char(26)
   scope   PrivacyNoticeScope
   scopeId String             @map("scope_id") @db.Char(26)
   version Int
   /// ![PrivacyNoticeContent]
-  content Json               @db.Json
+  content Json
 
   publishedAt DateTime @default(now()) @map("published_at")
 
   registrationsAsOrganization Registration[] @relation("RegistrationOrganizationPrivacyNotice")
   registrationsAsEvent        Registration[] @relation("RegistrationEventPrivacyNotice")
 
-  @@unique([scope, scopeId, version], map: "privacy_notice_versions_scope_scope_id_version_unique")
-  @@index([scope, scopeId], map: "privacy_notice_versions_scope_scope_id_index")
+  @@unique([scope, scopeId, version])
+  @@index([scope, scopeId])
   @@map("privacy_notice_versions")
 }
 
 model AuditLog {
-  id         String   @id @unique(map: "audit_logs_id_unique") @default(ulid()) @db.Char(26)
+  id         String   @id @unique() @default(ulid()) @db.Char(26)
   action     String   @db.VarChar(64)
   entityType String   @map("entity_type") @db.VarChar(64)
   entityId   String   @map("entity_id") @db.Char(26)
   eventId    String?  @map("event_id") @db.Char(26)
   actorId    String?  @map("actor_id") @db.Char(26)
   /// ![{ changedFields?: Array<string>; values?: Record<string, string | number | boolean | null>; context?: Record<string, string | number | boolean | null>; reason?: string; subjectId?: string | null; subjectHint?: string }]
-  details    Json?    @db.Json
+  details    Json?
   createdAt  DateTime @default(now()) @map("created_at")
 
-  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull, map: "audit_logs_event_id_foreign")
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
-  @@index([entityType, entityId, createdAt], map: "audit_logs_entity_created_at_index")
-  @@index([eventId, createdAt], map: "audit_logs_event_id_created_at_index")
-  @@index([actorId], map: "audit_logs_actor_id_index")
+  @@index([entityType, entityId, createdAt])
+  @@index([eventId, createdAt])
+  @@index([actorId])
   @@map("audit_logs")
 }
 
@@ -1161,7 +1163,7 @@ model AuditDeletedUser {
   name      String   @db.VarChar(255)
   deletedAt DateTime @default(now()) @map("deleted_at")
 
-  @@index([deletedAt], map: "audit_deleted_users_deleted_at_index")
+  @@index([deletedAt])
   @@map("audit_deleted_users")
 }
 
@@ -1180,8 +1182,8 @@ model EventRetentionState {
   eventId        String                     @map("event_id") @db.Char(26)
   kind           EventRetentionDeadlineKind
   postponedUntil String?                    @map("postponed_until") @db.Char(10)
-  postponeReason String?                    @map("postpone_reason") @db.Text
-  postponedAt    DateTime?                  @map("postponed_at") @db.DateTime(0)
+  postponeReason String?                    @map("postpone_reason")
+  postponedAt    DateTime?                  @map("postponed_at") @db.Timestamp(0)
   postponedById  String?                    @map("postponed_by_id") @db.Char(26)
   /// The deadline the last reminder was for: a moved deadline is reminded anew.
   remindedFor    String?                    @map("reminded_for") @db.Char(10)

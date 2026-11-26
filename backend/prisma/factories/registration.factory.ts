@@ -20,7 +20,7 @@ export const RegistrationFactory = {
         min: 6,
         max: 17,
       }),
-      emails: [faker.internet.email()],
+      emails: [faker.internet.exampleEmail().toLowerCase()],
       phoneNumbers: [faker.phone.number({ style: 'international' })],
       street: faker.location.street(),
       city: faker.location.city(),

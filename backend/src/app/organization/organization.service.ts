@@ -42,7 +42,9 @@ export class OrganizationService extends BaseService {
     const sortType = options.sortType ?? 'desc';
 
     const where: Prisma.OrganizationWhereInput = {
-      name: filter.name ? { contains: filter.name } : undefined,
+      name: filter.name
+        ? { contains: filter.name, mode: 'insensitive' }
+        : undefined,
       verificationStatus: filter.verificationStatus,
     };
 

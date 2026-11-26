@@ -34,7 +34,9 @@ export class NewsletterService extends BaseService {
     const sortType = options.sortType ?? 'desc';
 
     const where: Prisma.NewsletterWhereInput = {
-      name: filter.name ? { contains: filter.name } : undefined,
+      name: filter.name
+        ? { contains: filter.name, mode: 'insensitive' }
+        : undefined,
       organizationId: filter.organizationId,
     };
 

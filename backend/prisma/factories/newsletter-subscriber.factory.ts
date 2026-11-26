@@ -14,7 +14,7 @@ export const NewsletterSubscriberFactory = {
 
     return {
       newsletter: {},
-      email: faker.internet.email(),
+      email: faker.internet.exampleEmail().toLowerCase(),
       name: faker.person.fullName(),
       unsubscribeToken: token(),
       subscribedAt,

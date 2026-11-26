@@ -1,18 +1,18 @@
 import { z, type ZodType } from 'zod';
-import { PasswordSchema } from '#core/validation/helper';
+import { PasswordSchema, EmailSchema } from '#core/validation/helper';
 import type { LoginData } from '@camp-registration/common/entities';
 
 const register = z.object({
   body: z.object({
     name: z.string(),
-    email: z.email(),
+    email: EmailSchema,
     password: PasswordSchema,
   }),
 });
 
 const login = z.object({
   body: z.object({
-    email: z.email(),
+    email: EmailSchema,
     password: z.string(),
     remember: z.boolean().default(false),
   }) satisfies ZodType<LoginData>,
@@ -40,14 +40,14 @@ const refreshTokens = z.object({
 
 const forgotPassword = z.object({
   body: z.object({
-    email: z.email(),
+    email: EmailSchema,
   }),
 });
 
 const resetPassword = z.object({
   body: z.object({
     token: z.string(),
-    email: z.email(),
+    email: EmailSchema,
     password: PasswordSchema,
   }),
 });
