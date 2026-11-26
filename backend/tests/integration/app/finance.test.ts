@@ -792,6 +792,7 @@ describe('finances', () => {
           receiptNumber: 901,
           amount: 700,
           description: 'Older',
+          paidOn: '2026-07-20',
           paidByName: 'anna',
         },
       });
